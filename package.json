@@ -1,0 +1,29 @@
+{
+  "name": "bagcart-ecommerce",
+  "version": "1.0.0",
+  "description": "This is the site you have to visit to buy bags.",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "test": "node index.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Manjubs-123/BagCart-Ecommerce.git"
+  },
+  "author": "Manju BS",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Manjubs-123/BagCart-Ecommerce/issues"
+  },
+  "homepage": "https://github.com/Manjubs-123/BagCart-Ecommerce#readme",
+  "dependencies": {
+    "@tailwindcss/cli": "^4.1.14",
+    "ejs": "^3.1.10",
+    "express": "^5.1.0",
+    "tailwindcss": "^4.1.14"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.10"
+  }
+}

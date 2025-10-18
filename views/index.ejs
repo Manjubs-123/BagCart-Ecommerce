@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BagCart - Ecommerce</title>
+     <!-- <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script> -->
+      <link href="/styles/output.css" rel="stylesheet">
+</head>
+<body>
+      <!-- Header -->
+<header class="bg-green-900 text-white p-4 flex justify-between items-center">
+    <div class="text-2xl font-bold">BagHub</div>
+    <nav class="hidden md:flex space-x-6">
+      <a href="#" class="hover:underline">Home</a>
+      <a href="#" class="hover:underline">Shop</a>
+      <a href="#" class="hover:underline">Contact</a>
+      <a href="#" class="hover:underline">Login</a>
+    </nav>
+    <button class="md:hidden flex items-center">
+      <!-- Mobile menu button -->
+      <svg class="w-6 h-6" /* menu icon SVG here */></svg>
+    </button>
+  </header>
+  
+  <!-- Hero Section -->
+  <section class="bg-green-100 px-6 py-12 text-center">
+    <h1 class="text-3xl md:text-4xl font-bold mb-4">Adventure Awaits with Premium Backpacks</h1>
+    <p class="mb-8 text-gray-700">Shop our exclusive collection of stylish and sturdy bags for every journey.</p>
+    <a href="#" class="bg-green-900 text-white px-6 py-2 rounded shadow hover:bg-green-700 transition">Shop Now</a>
+  </section>
+  
+  <!-- Featured Products Grid -->
+  <main class="max-w-7xl mx-auto px-6 py-8">
+    <h2 class="text-xl font-semibold mb-6">Featured Products</h2>
+    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+      <% bags.forEach(function(bag) { %>
+      <div class="bg-white shadow rounded overflow-hidden flex flex-col">
+        <img src="<%= bag.image %>" alt="<%= bag.name %>" class="w-full object-cover h-48" />
+        <div class="p-4 flex-1 flex flex-col justify-between">
+          <h3 class="font-bold text-lg mb-2"><%= bag.name %></h3>
+          <p class="text-green-900 font-semibold mb-2">₹<%= bag.price %></p>
+          <a href="/cart/add/<%= bag.id %>" class="bg-green-900 text-white px-4 py-2 rounded hover:bg-green-700 transition text-center mt-auto">Add to Cart</a>
+        </div>
+      </div>
+      <% }); %>
+    </div>
+  </main>
+  
+  <!-- Footer -->
+  <footer class="bg-green-900 text-white mt-12 px-6 py-8">
+    <div class="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div>
+        <h4 class="font-bold mb-2">BagHub</h4>
+        <p>Premium backpacks for every adventure.</p>
+      </div>
+      <div>
+        <h4 class="font-bold mb-2">Quick Links</h4>
+        <ul>
+          <li><a href="#" class="hover:underline">Home</a></li>
+          <li><a href="#" class="hover:underline">Shop</a></li>
+          <li><a href="#" class="hover:underline">Contact</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4 class="font-bold mb-2">Contact Us</h4>
+        <p>Email: support@baghub.com</p>
+        <p>Phone: +91 12345 67890</p>
+      </div>
+    </div>
+    <div class="text-center mt-6 text-sm">
+      &copy; 2025 BagHub. All rights reserved.
+    </div>
+  </footer>
+
+</body>
+</html>
