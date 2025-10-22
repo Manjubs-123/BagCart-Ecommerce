@@ -1,0 +1,210 @@
+
+
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Signup | BagHub</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+  </head>
+
+  <body class="bg-gray-50 text-gray-900 font-sans">
+    <!-- Header -->
+    <%- include('../partials/header') %>
+
+    <!-- Signup Section -->
+    <section class="flex justify-center items-center min-h-screen bg-gray-50">
+      <div class="w-full max-w-md bg-white p-8 rounded-xl shadow-lg border">
+        <h2 class="text-2xl font-bold mb-6 text-center text-emerald-800">Create Account</h2>
+
+         <!-- Error message display block -->
+  <div id="errorMessage" class="bg-red-100 text-red-700 p-3 mb-4 rounded text-sm text-center <%= typeof error === 'undefined' || !error ? 'hidden' : '' %>">
+    <%= typeof error !== 'undefined' ? error : '' %>
+  </div>
+
+        <!-- Signup Form -->
+        <form id="signupForm" action="/user/signup" method="POST" class="space-y-4">
+          <div>
+            <label for="name" class="block text-sm font-medium mb-1">Full Name</label>
+            <input
+              id="name"
+              name="name"
+              type="text"
+              placeholder="Enter your full name"
+              class="w-full border px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-700"
+              required
+            />
+            <p id="nameError" class="text-red-600 text-sm mt-1 hidden">Name must be at least 6 characters long and contain only letters.</p>
+          </div>
+
+          <div>
+            <label for="email" class="block text-sm font-medium mb-1">Email</label>
+            <input
+              id="email"
+              name="email"
+              type="email"
+              placeholder="Enter your email"
+              class="w-full border px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-700"
+              required
+            />
+            <p id="emailError" class="text-red-600 text-sm mt-1 hidden">Please enter a valid Gmail address.</p>
+          </div>
+
+          <div>
+            <label for="password" class="block text-sm font-medium mb-1">Password</label>
+            <input
+              id="password"
+              name="password"
+              type="password"
+              placeholder="Enter a strong password"
+              class="w-full border px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-700"
+              required
+            />
+            <p id="passwordError" class="text-red-600 text-sm mt-1 hidden">Password must have 6+ characters, 1 uppercase, 1 number, and 1 special character.</p>
+          </div>
+
+          <div>
+            <label for="confirmPassword" class="block text-sm font-medium mb-1">Confirm Password</label>
+            <input
+              id="confirmPassword"
+              name="confirmPassword"
+              type="password"
+              placeholder="Confirm your password"
+              class="w-full border px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-700"
+              required
+            />
+            <p id="confirmError" class="text-red-600 text-sm mt-1 hidden">Passwords do not match.</p>
+          </div>
+
+          <button
+            type="submit"
+            class="w-full bg-emerald-800 text-white py-2 rounded-lg hover:bg-emerald-700 transition"
+          >
+            Sign Up
+          </button>
+        </form>
+
+        <!-- Google Signup -->
+        <div class="text-center mt-4">
+          <p class="text-gray-600 text-sm mb-2">or sign up with</p>
+          <a
+            href="/user/auth/google"
+            class="flex items-center justify-center gap-2 w-full border py-2 rounded-lg hover:bg-gray-100 transition"
+          >
+            <img
+              src="https://www.svgrepo.com/show/355037/google.svg"
+              alt="Google"
+              class="w-5 h-5"
+            />
+            <span>Sign up with Google</span>
+          </a>
+        </div>
+
+        <div class="text-center mt-6">
+          <p class="text-sm text-gray-700">
+            Already have an account?
+            <a href="/user/login" class="text-emerald-700 hover:underline font-semibold">Login</a>
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Footer -->
+    <%- include('../partials/footer') %>
+
+    <!-- Enhanced Client-side Validation Script -->
+    <script>
+      const form = document.getElementById("signupForm");
+      const nameInput = document.getElementById("name");
+      const emailInput = document.getElementById("email");
+      const passwordInput = document.getElementById("password");
+      const confirmInput = document.getElementById("confirmPassword");
+      const nameError = document.getElementById("nameError");
+      const emailError = document.getElementById("emailError");
+      const passwordError = document.getElementById("passwordError");
+      const confirmError = document.getElementById("confirmError");
+      const errorMessage = document.getElementById("errorMessage");
+
+      // Validation rules
+      const nameRegex = /^[a-zA-Z\s]+$/;
+      const emailRegex = /^[a-zA-Z0-9._-]+@gmail\.com$/;
+      const passwordRegex = /^(?=.*[A-Z])(?=.*[0-9])(?=.*[!@#$%^&*()_+{}:"<>?~]).{6,}$/;
+
+      let debounceTimeout;
+
+      // Real-time field validation
+      function validateField(input, errorElement, validationFn, errorMessage) {
+        clearTimeout(debounceTimeout);
+        debounceTimeout = setTimeout(() => {
+          const isValid = validationFn(input.value);
+          if (!isValid && input.value) {
+            errorElement.classList.remove("hidden");
+            input.classList.add("border-red-500");
+            input.classList.remove("border-emerald-500");
+          } else {
+            errorElement.classList.add("hidden");
+            input.classList.remove("border-red-500");
+            if (input.value) {
+              input.classList.add("border-emerald-500");
+            }
+          }
+        }, 300);
+      }
+
+      // Validation functions
+      const validateName = (name) => name.trim().length >= 6 && nameRegex.test(name);
+      const validateEmail = (email) => emailRegex.test(email);
+      const validatePassword = (password) => passwordRegex.test(password);
+      const validateConfirmPassword = () => passwordInput.value === confirmInput.value;
+
+      // Add input listeners
+      nameInput.addEventListener("input", () => {
+        validateField(nameInput, nameError, validateName);
+      });
+
+      emailInput.addEventListener("input", () => {
+        validateField(emailInput, emailError, validateEmail);
+      });
+
+      passwordInput.addEventListener("input", () => {
+        validateField(passwordInput, passwordError, validatePassword);
+        if (confirmInput.value) {
+          validateField(confirmInput, confirmError, validateConfirmPassword);
+        }
+      });
+
+      confirmInput.addEventListener("input", () => {
+        validateField(confirmInput, confirmError, validateConfirmPassword);
+      });
+
+      // Form submission
+      form.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        
+        // Clear any previous error message
+        errorMessage.classList.add("hidden");
+        
+        // Validate all fields
+        const isNameValid = validateName(nameInput.value);
+        const isEmailValid = validateEmail(emailInput.value);
+        const isPasswordValid = validatePassword(passwordInput.value);
+        const isConfirmValid = validateConfirmPassword();
+
+        if (!isNameValid || !isEmailValid || !isPasswordValid || !isConfirmValid) {
+          errorMessage.textContent = "Please fix the errors in the form.";
+          errorMessage.classList.remove("hidden");
+          return;
+        }
+
+        try {
+          form.submit();
+        } catch (error) {
+          errorMessage.textContent = error.response?.data?.error || "Something went wrong. Please try again.";
+          errorMessage.classList.remove("hidden");
+        }
+      });
+    </script>
+  </body>
+</html>

@@ -1,17 +1,26 @@
-
 <!DOCTYPE html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>BagHub | Premium Backpacks</title>
+    <link rel="icon" type="image/png" href="/public/images/favicon.png" />
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
+      integrity="sha512-..."
+      crossorigin="anonymous"
+      referrerpolicy="no-referrer"
+    />
   </head>
-  <body class="font-sans bg-gray-50 text-gray-900">
-    <!-- HEADER -->
-  <%- include('partials/header')%>
-    <!-- HERO SECTION -->
+
+  <body class="bg-white text-gray-800 font-sans">
+    <!-- ✅ Header -->
+   <%- include('../partials/landingheader') %>
+
+     <!-- HERO SECTION -->
     <section class="bg-emerald-800 text-white">
       <div class="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between px-6 py-16">
         <div class="max-w-xl">
@@ -58,7 +67,7 @@
       </div>
     </section>
 
-    <!-- SHOP YOUR FAVOURITES -->
+     <!-- SHOP YOUR FAVOURITES -->
     <section class="py-12 bg-gray-50">
       <div class="max-w-7xl mx-auto px-4 text-center">
         <h2 class="text-2xl font-semibold mb-8">Shop Your Favourites</h2>
@@ -70,7 +79,7 @@
       </div>
     </section>
 
-    <!-- HAND PICKED -->
+     <!-- HAND PICKED -->
     <section class="py-12 bg-white text-center">
       <h2 class="text-2xl font-semibold mb-4">Hand Picked</h2>
       <p class="text-sm text-gray-600 mb-8">Discover our hand-picked collection featuring quality, style, and timeless appeal.</p>
@@ -94,18 +103,14 @@
     </section>
 
     <!-- FOOTER -->
-<%-include('partials/footer')%>
-    <!-- AXIOS SAMPLE -->
+<%-include('../partials/footer')%>
+
+
+
     <script>
-      async function loadProducts() {
-        try {
-          const res = await axios.get("/api/products");
-          console.log(res.data);
-        } catch (err) {
-          console.error("Error loading products:", err);
-        }
-      }
-      loadProducts();
+      const btn = document.getElementById('mobile-menu-btn');
+      const menu = document.getElementById('mobile-menu');
+      btn.addEventListener('click', () => {
+        menu.classList.toggle('hidden');
+      });
     </script>
-  </body>
-</html>

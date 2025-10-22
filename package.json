@@ -19,8 +19,16 @@
   "homepage": "https://github.com/Manjubs-123/BagCart-Ecommerce#readme",
   "dependencies": {
     "@tailwindcss/cli": "^4.1.14",
+    "bcryptjs": "^3.0.2",
+    "dotenv": "^17.2.3",
     "ejs": "^3.1.10",
     "express": "^5.1.0",
+    "express-session": "^1.18.2",
+    "mongoose": "^8.19.1",
+    "nodemailer": "^7.0.9",
+    "otp-generator": "^4.0.1",
+    "passport": "^0.7.0",
+    "passport-google-oauth20": "^2.0.0",
     "tailwindcss": "^4.1.14"
   },
   "devDependencies": {

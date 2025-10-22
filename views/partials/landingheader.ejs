@@ -1,0 +1,45 @@
+ <header class="bg-green-900 text-white">
+      <div class="container mx-auto flex items-center justify-between py-4 px-6">
+        <!-- Logo -->
+        <a href="/" class="text-lg font-bold flex items-center gap-2">
+        <img src="https://cdn-icons-png.flaticon.com/512/891/891462.png" class="w-6" alt="logo" />
+        BagHub
+      </a>
+
+        <!-- Navigation (hidden on small screens) -->
+        <nav class="hidden md:flex space-x-6">
+          <a href="#" class="hover:text-gray-200">Home</a>
+          <a href="#" class="hover:text-gray-200">Shop</a>
+          <a href="#" class="hover:text-gray-200">Contact Us</a>
+          <a href="#" class="hover:text-gray-200">About Us</a>
+        </nav>
+
+        <!-- Icons -->
+        <div class="flex items-center space-x-4">
+          <a href="/wishlist" class="relative hover:text-gray-300">
+            <i class="fa-regular fa-heart text-xl"></i>
+            <span class="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center">0</span>
+          </a>
+          <a href="/cart" class="relative hover:text-gray-300">
+            <i class="fa-solid fa-cart-shopping text-xl"></i>
+            <span class="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center">0</span>
+          </a>
+          <a href="/account" class="hover:text-gray-300">
+            <i class="fa-regular fa-user text-xl"></i>
+          </a>
+        </div>
+
+        <!-- Mobile Menu Button -->
+        <button class="md:hidden text-white text-2xl" id="mobile-menu-btn">
+          <i class="fa-solid fa-bars"></i>
+        </button>
+      </div>
+
+      <!-- Mobile Menu (hidden by default) -->
+      <nav class="hidden md:hidden bg-green-800 px-6 pb-4" id="mobile-menu">
+        <a href="#" class="block py-2 hover:text-gray-200">Home</a>
+        <a href="#" class="block py-2 hover:text-gray-200">Shop</a>
+        <a href="#" class="block py-2 hover:text-gray-200">Contact Us</a>
+        <a href="#" class="block py-2 hover:text-gray-200">About Us</a>
+      </nav>
+    </header>

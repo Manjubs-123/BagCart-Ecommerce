@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Verify OTP | BagHub</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.4.1/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="/css/style.css" />
+    <script src="https://cdn.tailwindcss.com"></script>
+  </head>
+
+  <body class="bg-white flex flex-col min-h-screen">
+    <!-- Navbar -->
+    <nav class="bg-[#024C46] text-white py-4">
+      <div class="max-w-7xl mx-auto flex justify-between items-center px-4">
+        <div class="flex items-center space-x-8">
+          <a href="/" class="hover:underline">Home</a>
+          <a href="/shop" class="hover:underline">Shop</a>
+          <a href="/contact" class="hover:underline">Contact Us</a>
+          <a href="/about" class="hover:underline">About Us</a>
+        </div>
+        <div class="flex items-center space-x-4 text-xl">
+          <i class="ri-shopping-cart-line"></i>
+          <i class="ri-user-line"></i>
+          <i class="ri-heart-line"></i>
+        </div>
+      </div>
+    </nav>
+
+    <!-- Verify OTP Box -->
+   <main class="flex-grow flex items-center justify-center py-10">
+  <div class="border-2 border-[#024C46] rounded-2xl p-8 w-[90%] md:w-[500px] text-center shadow-md">
+    <h1 class="text-xl font-medium mb-6 tracking-wide">Verify Your OTP</h1>
+
+    <% if (error) { %>
+      <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4 text-sm">
+        <%= error %>
+      </div>
+    <% } %>
+
+    <!-- ✅ OTP Form -->
+    <!-- <form id="otpForm" action="/user/forgotPassword/verifyOtp" method="POST"> -->
+    <form id="otpForm" action="/user/forgotOtp" method="POST">
+      <input type="hidden" name="email" value="<%= email %>" />
+
+      <!-- OTP Input Boxes -->
+      <div class="flex justify-center space-x-4 mb-4">
+        <% for(let i=0; i<6; i++) { %>
+          <input
+            type="text"
+            maxlength="1"
+            class="otp-input w-12 h-12 border border-gray-400 rounded-lg text-center text-lg focus:ring-2 focus:ring-[#024C46]"
+          />
+        <% } %>
+      </div>
+
+      <!-- Resend + Timer -->
+      <div class="flex justify-between items-center text-sm text-gray-600 mb-6">
+        <p>Didn’t get the OTP?
+          <button type="button" id="resendOtp" class="text-[#024C46] font-semibold hover:underline">
+            Resend OTP
+          </button>
+        </p>
+        <span id="timer">01:00</span>
+      </div>
+
+      <!-- Submit -->
+      <button type="submit" class="w-full bg-black text-white py-3 rounded-lg font-semibold hover:bg-gray-800 transition">
+        Submit
+      </button>
+    </form>
+  </div>
+</main>
+
+
+    <!-- Footer -->
+    <footer class="bg-[#024C46] text-white py-10 mt-auto">
+      <div class="max-w-7xl mx-auto px-6 grid md:grid-cols-5 gap-6 text-sm">
+        <div>
+          <h2 class="font-bold text-lg mb-2">SHOP</h2>
+          <p><a href="#">Indoor Plants</a></p>
+          <p><a href="#">Outdoor Plants</a></p>
+        </div>
+        <div>
+          <h2 class="font-bold text-lg mb-2">SUPPORT</h2>
+          <p><a href="#">Order Status</a></p>
+          <p><a href="#">Product Support</a></p>
+          <p><a href="#">Shipping & Return Policy</a></p>
+          <p><a href="#">Complaint Registration</a></p>
+        </div>
+        <div>
+          <h2 class="font-bold text-lg mb-2">About Us</h2>
+          <p><a href="#">Contact Us</a></p>
+          <p><a href="#">Privacy Policy</a></p>
+          <p><a href="#">Terms of Use</a></p>
+          <p><a href="#">FAQ</a></p>
+        </div>
+        <div>
+          <h2 class="font-bold text-lg mb-2">Contact</h2>
+          <p>Email: baghub@gmail.com</p>
+          <p>Phone: +91 8888888888</p>
+        </div>
+        <div>
+          <h2 class="font-bold text-lg mb-2">Connect with us</h2>
+          <div class="flex space-x-4 text-xl">
+            <i class="ri-instagram-line"></i>
+            <i class="ri-facebook-box-line"></i>
+            <i class="ri-twitter-x-line"></i>
+          </div>
+        </div>
+      </div>
+      <p class="text-center mt-8 text-xs opacity-80">
+        © 2025 BagHub. All Rights Reserved.
+      </p>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <script src="/js/verifyOtp.js"></script>
+  </body>
+</html>
+<script>
+  let timerDisplay = document.getElementById("timer");
+  let resendButton = document.getElementById("resendOtp");
+  let time = 60;
+  let countdown;
+
+  function startTimer() {
+    countdown = setInterval(() => {
+      const minutes = Math.floor(time / 60);
+      const seconds = time % 60;
+      timerDisplay.textContent = `${minutes}:${seconds < 10 ? "0" + seconds : seconds}`;
+      time--;
+      if (time < 0) {
+        clearInterval(countdown);
+        resendButton.disabled = false;
+        resendButton.classList.remove("text-gray-400");
+        resendButton.classList.add("text-[#024C46]");
+      }
+    }, 1000);
+  }
+
+  // start countdown when page loads
+  resendButton.disabled = true;
+  resendButton.classList.add("text-gray-400");
+  startTimer();
+
+  resendButton.addEventListener("click", async () => {
+    resendButton.disabled = true;
+    resendButton.classList.add("text-gray-400");
+
+    try {
+      const response = await axios.post("/user/resend-otp", { email: "<%= email %>" });
+      if (response.data.success) {
+        alert("OTP resent successfully!");
+        time = 60;
+        startTimer();
+      }
+    } catch (err) {
+      console.error("Error resending OTP:", err);
+    }
+  });
+</script>

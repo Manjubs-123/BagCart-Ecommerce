@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Verify OTP | BagHub</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="flex justify-center items-center min-h-screen bg-gray-50">
+  <div class="bg-white p-8 rounded-xl shadow-lg w-full max-w-md">
+    <h2 class="text-2xl font-bold text-center text-emerald-800 mb-6">Verify Your OTP</h2>
+
+    <% if (typeof error !== "undefined" && error) { %>
+      <div class="bg-red-100 text-red-700 p-3 mb-4 rounded text-sm text-center">
+        <%= error %>
+      </div>
+    <% } %>
+
+    <form action="/user/verifyOtp" method="POST" class="space-y-4">
+      <input type="hidden" name="email" value="<%= email %>" />
+      <div>
+        <label class="block text-sm font-medium mb-1">Enter OTP</label>
+        <input
+          name="otp"
+          type="text"
+          placeholder="Enter the 6-digit OTP"
+          class="w-full border px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-700"
+          required
+        />
+      </div>
+      <button
+        type="submit"
+        class="w-full bg-emerald-800 text-white py-2 rounded-lg hover:bg-emerald-700 transition"
+      >
+        Verify OTP
+      </button>
+    </form>
+  </div>
+</body>
+</html>
