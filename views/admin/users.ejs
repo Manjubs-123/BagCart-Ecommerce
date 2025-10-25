@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Users | Admin</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+</head>
+<body class="flex">
+
+  <%- include('../partials/sidebar') %>
+
+  <main class="flex-1 p-8 ml-64">
+    <h2 class="text-2xl font-bold mb-6">User Management (<%= total %>)</h2>
+
+    <form action="/admin/users" method="get" class="flex items-center mb-6 gap-3">
+        <input 
+            type="text" 
+            name="q" 
+            value="<%= q || '' %>" 
+            placeholder="Search by Name or Email..."
+            class="border border-gray-300 rounded-md px-3 py-2 w-64 focus:outline-none focus:ring-2 focus:ring-emerald-700"
+        />
+        <button type="submit" class="bg-emerald-800 text-white px-4 py-2 rounded hover:bg-emerald-900">
+            Search
+        </button>
+        <a href="/admin/users" class="bg-gray-400 text-white px-4 py-2 rounded hover:bg-gray-500">
+            Clear
+        </a>
+    </form>
+
+
+    <table class="w-full text-left border-collapse bg-white shadow rounded-lg">
+      <thead class="bg-gray-100">
+        <tr>
+          <th class="p-3 border-b">Name</th>
+          <th class="p-3 border-b">Email</th>
+          <th class="p-3 border-b">Status</th>
+          <th class="p-3 border-b">Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% users.forEach(user => { %>
+          <tr class="border-b hover:bg-gray-50">
+            <td class="p-3"><%= user.name %></td>
+            <td class="p-3"><%= user.email %></td>
+            <td class="p-3">
+                <span class="font-medium <%= user.isBlocked ? 'text-red-600' : 'text-green-600' %>">
+                    <%= user.isBlocked ? 'Blocked' : 'Active' %>
+                </span>
+            </td>
+            <td class="p-3">
+                <button 
+                    type="button" 
+                    onclick="confirmToggle('<%= user._id %>', <%= user.isBlocked %>)"
+                    class="px-4 py-2 rounded text-white <%= user.isBlocked ? 'bg-green-500 hover:bg-green-600' : 'bg-red-500 hover:bg-red-600' %>">
+                    <%= user.isBlocked ? 'Unblock' : 'Block' %>
+                </button>
+            </td>
+          </tr>
+        <% }) %>
+      </tbody>
+    </table>
+
+    <div class="flex justify-center items-center gap-2 mt-6">
+        <% if (page > 1) { %>
+            <a href="/admin/users?page=<%= page - 1 %>&limit=<%= limit %><%= q ? '&q=' + q : '' %>"
+                class="px-3 py-1 rounded bg-gray-200 hover:bg-gray-300">Previous</a>
+        <% } %>
+
+        <% for (let i = 1; i <= pages; i++) { %>
+            <a href="/admin/users?page=<%= i %>&limit=<%= limit %><%= q ? '&q=' + q : '' %>"
+                class="px-3 py-1 rounded <%= i === page ? 'bg-emerald-800 text-white' : 'bg-gray-200 hover:bg-gray-300' %>">
+                <%= i %>
+            </a>
+        <% } %>
+
+        <% if (page < pages) { %>
+            <a href="/admin/users?page=<%= page + 1 %>&limit=<%= limit %><%= q ? '&q=' + q : '' %>"
+                class="px-3 py-1 rounded bg-gray-200 hover:bg-gray-300">Next</a>
+        <% } %>
+    </div>
+  </main>
+
+<script>
+    // SweetAlert2 function for Block/Unblock
+    function confirmToggle(userId, isBlocked) {
+        const action = isBlocked ? 'unblock' : 'block';
+        const buttonColor = isBlocked ? '#22c55e' : '#ef4444'; // Green for unblock, Red for block
+
+        Swal.fire({
+            title: `Are you sure?`,
+            text: `You are about to ${action} this user.`,
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: buttonColor,
+            cancelButtonColor: '#3085d6',
+            confirmButtonText: `Yes, ${action} them!`
+        }).then((result) => {
+            if (result.isConfirmed) {
+                // Perform the AJAX request to toggle the status
+                fetch(`/admin/users/toggle-block/${userId}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        Swal.fire({
+                            title: 'Success!',
+                            text: data.message,
+                            icon: 'success',
+                            timer: 1500,
+                            showConfirmButton: false
+                        }).then(() => {
+                            window.location.reload(); // Reload the page to see the status update
+                        });
+                    } else {
+                        Swal.fire('Error', data.message, 'error');
+                    }
+                })
+                .catch(error => {
+                    console.error('Fetch error:', error);
+                    Swal.fire('Error', 'Failed to communicate with server.', 'error');
+                });
+            }
+        });
+    }
+</script>
+
+</body>
+</html>

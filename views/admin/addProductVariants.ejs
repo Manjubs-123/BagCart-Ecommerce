@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Add Product Variant</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+</head>
+
+<body class="bg-gray-100">
+  <div class="max-w-3xl mx-auto bg-white shadow-lg rounded-xl p-8 mt-10">
+    <h1 class="text-2xl font-bold mb-6 text-center text-gray-800">Add Product Variant</h1>
+
+    <form id="variantForm" enctype="multipart/form-data">
+      <!-- Colour -->
+      <div class="mb-4">
+        <label class="block text-gray-700 font-semibold mb-1">Colour</label>
+        <input type="text" name="colour" id="colour" class="w-full border rounded-lg p-2 focus:ring-2 focus:ring-indigo-400" required>
+      </div>
+
+      <!-- Price -->
+      <div class="mb-4">
+        <label class="block text-gray-700 font-semibold mb-1">Price</label>
+        <input type="number" name="price" id="price" class="w-full border rounded-lg p-2 focus:ring-2 focus:ring-indigo-400" required>
+      </div>
+
+      <!-- Stock -->
+      <div class="mb-4">
+        <label class="block text-gray-700 font-semibold mb-1">Stock</label>
+        <input type="number" name="stock" id="stock" class="w-full border rounded-lg p-2 focus:ring-2 focus:ring-indigo-400" required>
+      </div>
+
+      <!-- Image Upload -->
+      <div class="mb-4">
+        <label class="block text-gray-700 font-semibold mb-2">Upload Images (Min 3)</label>
+        <input type="file" id="images" name="images" accept="image/*" multiple class="w-full mb-3" required />
+
+        <!-- Preview Grid -->
+        <div id="previewContainer" class="grid grid-cols-3 gap-3">
+          <div class="border-2 border-dashed rounded-lg h-32 flex items-center justify-center text-gray-400">Preview 1</div>
+          <div class="border-2 border-dashed rounded-lg h-32 flex items-center justify-center text-gray-400">Preview 2</div>
+          <div class="border-2 border-dashed rounded-lg h-32 flex items-center justify-center text-gray-400">Preview 3</div>
+        </div>
+      </div>
+
+      <div class="flex justify-center mt-6">
+        <button type="submit" class="bg-indigo-600 text-white px-6 py-2 rounded-lg hover:bg-indigo-700 transition">
+          Save Variant
+        </button>
+      </div>
+    </form>
+  </div>
+
+  <script>
+    // ✅ Preview images before upload
+    const imagesInput = document.getElementById("images");
+    const previewContainer = document.getElementById("previewContainer");
+
+    imagesInput.addEventListener("change", () => {
+      const files = Array.from(imagesInput.files);
+      previewContainer.innerHTML = ""; // Clear existing previews
+
+      if (files.length === 0) {
+        previewContainer.innerHTML = `<div class="text-gray-400 col-span-3 text-center">No images selected</div>`;
+        return;
+      }
+
+      files.slice(0, 3).forEach((file, index) => {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          const img = document.createElement("img");
+          img.src = e.target.result;
+          img.className = "h-32 w-full object-cover rounded-lg border shadow-sm";
+          previewContainer.appendChild(img);
+        };
+        reader.readAsDataURL(file);
+      });
+    });
+
+    // ✅ Submit form with Axios + validation
+    document.getElementById("variantForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+
+      const colour = document.getElementById("colour").value.trim();
+      const price = document.getElementById("price").value.trim();
+      const stock = document.getElementById("stock").value.trim();
+      const files = imagesInput.files;
+
+      if (!colour || !price || !stock) {
+        return Swal.fire("Missing fields", "Please fill all required fields.", "warning");
+      }
+
+      if (files.length < 3) {
+        return Swal.fire("Need more images", "Please upload at least 3 images.", "warning");
+      }
+
+      const formData = new FormData();
+      formData.append("colour", colour);
+      formData.append("price", price);
+      formData.append("stock", stock);
+      for (let i = 0; i < files.length; i++) {
+        formData.append("images", files[i]);
+      }
+
+      try {
+        const response = await axios.post("/admin/products/save", formData, {
+          headers: { "Content-Type": "multipart/form-data" },
+        });
+
+        await Swal.fire({
+          icon: "success",
+          title: "Variant Added!",
+          text: "Product and variant saved successfully.",
+          timer: 2000,
+          showConfirmButton: false
+        });
+
+        window.location.href = "/admin/products";
+
+      } catch (error) {
+        console.error("Upload error:", error);
+        Swal.fire({
+          icon: "error",
+          title: "Upload Failed",
+          text: error.response?.data || "Server error while uploading images.",
+        });
+      }
+    });
+  </script>
+</body>
+</html>

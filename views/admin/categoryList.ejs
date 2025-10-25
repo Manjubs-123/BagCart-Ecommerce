@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Categories | Admin</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+</head>
+<body class="bg-gray-50 text-gray-900 flex min-h-screen">
+
+  <!-- Sidebar -->
+  <%- include('../partials/sidebar') %>
+
+  <!-- Main Content -->
+  <main class="ml-64 flex-1 p-8">
+    <div class="flex justify-between items-center mb-6">
+      <h1 class="text-2xl font-semibold">Categories</h1>
+      <button 
+        onclick="window.location.href='/admin/category/addCategory'"
+        class="bg-emerald-800 text-white px-5 py-2 rounded hover:bg-emerald-900 transition">
+        + Add New Category
+      </button>
+    </div>
+
+    <!-- Search Bar -->
+    <form action="/admin/category" method="get" class="flex items-center mb-6 gap-3">
+  <input 
+    type="text" 
+    name="q" 
+    value="<%= q || '' %>" 
+    placeholder="Search Category..."
+    class="border border-gray-300 rounded-md px-3 py-2 w-64 focus:outline-none focus:ring-2 focus:ring-emerald-700"
+  />
+  <button type="submit" class="bg-emerald-800 text-white px-4 py-2 rounded hover:bg-emerald-900">
+    Search
+  </button>
+  <a href="/admin/category" class="bg-gray-400 text-white px-4 py-2 rounded hover:bg-gray-500">
+    Clear
+  </a>
+</form>
+
+
+    <!-- Table -->
+    
+    <div class="overflow-x-auto rounded-xl shadow-sm border border-gray-200">
+    <table class="min-w-full text-left text-gray-700">
+        <thead class="bg-gray-100 text-sm font-semibold">
+            <tr>
+                <th class="px-6 py-3">#</th>
+                <th class="px-6 py-3">Name</th>
+                <th class="px-6 py-3">Description</th>
+                <th class="px-6 py-3">Status</th>
+                <th class="px-6 py-3 text-center">Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            <% if (categories && categories.length > 0) { %>
+            <% categories.forEach((cat, index) => { %>
+            <tr class="border-t">
+                <td class="px-6 py-3"><%= (page-1)*limit + index + 1 %></td>
+                <td class="px-6 py-3"><%= cat.name %></td>
+                <td class="px-6 py-3"><%= cat.description || '-' %></td>
+                <td class="px-6 py-3 text-green-600 font-medium">
+                    <% if(cat.isDeleted) { %>
+                        Inactive (Deleted)
+                    <% } else { %>
+                        <%= cat.isActive ? 'Active' : 'Blocked' %>
+                    <% } %>
+                </td>
+               <td class="px-6 py-3 flex gap-3 justify-center">
+    <!-- Edit -->
+    <a href="/admin/category/edit/<%= cat._id %>" 
+       class="bg-emerald-800 text-white px-4 py-1 rounded hover:bg-emerald-900">
+       Edit
+    </a>
+
+
+    <button
+        onclick="toggleCategoryStatus('<%= cat._id %>', <%= JSON.stringify(cat.isActive || true) %>)"
+    
+    class="<%= cat.isActive ? 'bg-red-500' : 'bg-green-500' %> text-white px-4 py-1 rounded hover:opacity-80"
+    <%= cat.isDeleted ? 'disabled' : '' %> >
+    <%= cat.isActive ? 'Block' : 'Unblock' %>
+    </button>
+</td>
+
+            </tr>
+            <% }) %>
+            <% } else { %>
+            <tr>
+                <td colspan="5" class="text-center py-4 text-gray-500">No categories found.</td>
+            </tr>
+            <% } %>
+        </tbody>
+    </table>
+</div>
+
+
+    <!-- Pagination -->
+<div class="flex justify-center items-center gap-2 mt-6">
+  <% if (page > 1) { %>
+    <a href="/admin/category?page=<%= page - 1 %>&limit=<%= limit %><%= q ? '&q=' + q : '' %>"
+      class="px-3 py-1 rounded bg-gray-200 hover:bg-gray-300">Previous</a>
+  <% } %>
+
+  <% for (let i = 1; i <= pages; i++) { %>
+    <a href="/admin/category?page=<%= i %>&limit=<%= limit %><%= q ? '&q=' + q : '' %>"
+      class="px-3 py-1 rounded <%= i === page ? 'bg-emerald-800 text-white' : 'bg-gray-200 hover:bg-gray-300' %>">
+      <%= i %>
+    </a>
+  <% } %>
+
+  <% if (page < pages) { %>
+    <a href="/admin/category?page=<%= page + 1 %>&limit=<%= limit %><%= q ? '&q=' + q : '' %>"
+      class="px-3 py-1 rounded bg-gray-200 hover:bg-gray-300">Next</a>
+  <% } %>
+</div>
+
+    
+  </main>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script>
+    // Simple client-side search
+    document.getElementById('searchBtn').addEventListener('click', function() {
+      const searchValue = document.getElementById('searchInput').value.toLowerCase();
+      const rows = document.querySelectorAll('#categoryTableBody tr');
+      rows.forEach(row => {
+        const name = row.querySelector('td:nth-child(2)');
+        if (name && name.textContent.toLowerCase().includes(searchValue)) {
+          row.style.display = '';
+        } else {
+          row.style.display = 'none';
+        }
+      });
+    });
+
+    // Clear search
+    document.getElementById('clearBtn').addEventListener('click', function() {
+      document.getElementById('searchInput').value = '';
+      document.querySelectorAll('#categoryTableBody tr').forEach(row => row.style.display = '');
+    });
+
+    // Toggle block/unblock status (uses isActive)
+function toggleCategoryStatus(id, isActive) {
+    // The isActive parameter is now a guaranteed boolean due to JSON.stringify in EJS.
+    
+    const action = isActive ? "block" : "unblock";
+    const buttonColor = isActive ? '#ef4444' : '#22c55e'; // Red for block, Green for unblock
+
+    Swal.fire({
+      title: `Are you sure you want to ${action} this category?`,
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: buttonColor, // Use dynamic color
+      cancelButtonColor: "#3085d6",
+      confirmButtonText: `Yes, ${action}!`
+    }).then((result) => {
+      if (result.isConfirmed) {
+        // The controller handles the status toggle and returns JSON
+        fetch(`/admin/category/toggleStatus?id=${id}`, { method: "POST" })
+          .then(res => res.json())
+          .then(data => {
+            Swal.fire({
+              title: data.message,
+              icon: "success",
+              timer: 1200,
+              showConfirmButton: false
+            }).then(() => location.reload()); // RELOAD forces the new state to render
+          }).catch(() => Swal.fire("Error", "Failed to toggle status.", "error"));
+      }
+    });
+}
+
+</script>
+<script>
+  const params = new URLSearchParams(window.location.search);
+  if (params.get("updated") === "true") {
+    Swal.fire({
+      icon: "success",
+      title: "Category updated successfully!",
+      showConfirmButton: false,
+      timer: 1500
+    });
+  }
+</script>
+
+
+
+</body>
+</html>

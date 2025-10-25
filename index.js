@@ -1,14 +1,19 @@
-import dotenv from "dotenv";
-dotenv.config(); 
-import express from 'express'
-import path from 'path';
-
-import { fileURLToPath } from 'url';
+import express from 'express';
 import session  from 'express-session';
 import passport from 'passport';
+import dotenv from "dotenv";
+dotenv.config(); 
+import path from 'path';
+import { fileURLToPath } from 'url';
 import mongoose from 'mongoose';
 import userRoutes from "./routes/userRoutes.js"
-// import "./config/passport.js";
+import userAuthRoutes from "./routes/authRoutes.js"
+import "./config/passport.js"
+import adminRoutes from "./routes/adminRoutes.js";
+import usersRoutes from "./routes/admin/usersRoutes.js";
+import categoryRoutes from "./routes/admin/categoryRoutes.js";
+import productRoutes from './routes/admin/productRoutes.js';
+
 
 
 const app = express()
@@ -32,8 +37,8 @@ app.use(session({
     saveUninitialized:false
 }));
 
-// app.use(passport.initialize());
-// app.use(passport.session());
+app.use(passport.initialize());
+app.use(passport.session());
 
 
 
@@ -52,6 +57,11 @@ const bags = [
 
 //Routes
 app.use("/user",userRoutes);
+app.use("/auth",userAuthRoutes);
+app.use("/admin",adminRoutes);
+app.use("/admin/users",usersRoutes);
+app.use("/admin/category",categoryRoutes);
+app.use("/admin/products",productRoutes);
 
 // app.get("/",(req,res)=>{
 //     const user=req.session.user||null;

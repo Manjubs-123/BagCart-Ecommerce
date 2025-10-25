@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin Dashboard | BagHub</title>
+
+  <!-- Favicon -->
+  <link rel="icon" href="/images/favicon.png" type="image/png">
+
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- FontAwesome -->
+  <script src="https://kit.fontawesome.com/a2e0da32f7.js" crossorigin="anonymous"></script>
+</head>
+<body class="bg-gray-100 flex font-sans">
+
+  <!-- Sidebar -->
+  <%- include('../partials/sidebar') %>
+
+  <!-- Main Content -->
+  <main class="flex-1 p-8 ml-64">
+    <!-- Dashboard Header -->
+    <div class="flex justify-between items-center mb-8">
+      <h2 class="text-2xl font-semibold text-gray-700">Dashboard</h2>
+
+    </div>
+
+    <!-- Stats -->
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-8">
+      <div class="bg-white rounded-lg shadow p-6">
+        <p class="text-gray-500 text-sm">Total Sales (This Month)</p>
+        <h3 class="text-2xl font-bold mt-2">₹4,235</h3>
+        <div class="mt-3 bg-blue-100 h-20 rounded"></div>
+      </div>
+      <div class="bg-white rounded-lg shadow p-6">
+        <p class="text-gray-500 text-sm">Customers (This Month)</p>
+        <h3 class="text-2xl font-bold mt-2">2,571</h3>
+        <div class="mt-3 bg-green-100 h-20 rounded"></div>
+      </div>
+      <div class="bg-white rounded-lg shadow p-6">
+        <p class="text-gray-500 text-sm">Orders</p>
+        <h3 class="text-2xl font-bold mt-2">734</h3>
+        <p class="text-xs text-gray-400 mt-1">Monthly Goal: 1,000 (266 left)</p>
+        <div class="w-full bg-gray-200 rounded-full h-2 mt-2">
+          <div class="bg-blue-500 h-2 rounded-full" style="width: 73%;"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Best Selling -->
+    <div class="bg-white rounded-lg shadow p-6 mb-8">
+      <h3 class="text-lg font-semibold mb-4">Best Selling (This Month)</h3>
+      <p class="text-gray-600 mb-2">Total Sales — ₹2,400</p>
+      <div class="space-y-2">
+        <div class="flex justify-between text-sm">
+          <span>American Tourister</span>
+          <span>₹940 Sales</span>
+        </div>
+        <div class="flex justify-between text-sm">
+          <span>Odisisya</span>
+          <span>₹790 Sales</span>
+        </div>
+        <div class="flex justify-between text-sm">
+          <span>Urban Bags</span>
+          <span>₹740 Sales</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Recent Orders -->
+    <div class="bg-white rounded-lg shadow p-6">
+      <div class="flex justify-between items-center mb-4">
+        <h3 class="text-lg font-semibold">Recent Orders</h3>
+        <button class="text-sm text-[#004D40] font-medium">View All</button>
+      </div>
+      <table class="w-full text-sm text-left border-collapse">
+        <thead class="bg-gray-100 text-gray-600 uppercase text-xs">
+          <tr>
+            <th class="p-3">Item</th>
+            <th class="p-3">Date</th>
+            <th class="p-3">Total</th>
+            <th class="p-3">Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr class="border-b hover:bg-gray-50">
+            <td class="p-3">American Tourister</td>
+            <td class="p-3">20 Mar, 2023</td>
+            <td class="p-3">₹75.00</td>
+            <td class="p-3 text-yellow-600">Processing</td>
+          </tr>
+          <tr class="border-b hover:bg-gray-50">
+            <td class="p-3">Laptop</td>
+            <td class="p-3">19 Mar, 2023</td>
+            <td class="p-3">₹22.00</td>
+            <td class="p-3 text-yellow-600">Processing</td>
+          </tr>
+          <tr class="border-b hover:bg-gray-50">
+            <td class="p-3">Genuine</td>
+            <td class="p-3">7 Feb, 2023</td>
+            <td class="p-3">₹57.00</td>
+            <td class="p-3 text-green-600">Completed</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </main>
+
+</body>
+</html>

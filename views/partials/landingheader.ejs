@@ -15,19 +15,45 @@
         </nav>
 
         <!-- Icons -->
-        <div class="flex items-center space-x-4">
-          <a href="/wishlist" class="relative hover:text-gray-300">
-            <i class="fa-regular fa-heart text-xl"></i>
-            <span class="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center">0</span>
-          </a>
-          <a href="/cart" class="relative hover:text-gray-300">
-            <i class="fa-solid fa-cart-shopping text-xl"></i>
-            <span class="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center">0</span>
-          </a>
-          <a href="/account" class="hover:text-gray-300">
-            <i class="fa-regular fa-user text-xl"></i>
-          </a>
-        </div>
+      <div class="flex items-center space-x-4 relative group">
+  <!-- Wishlist -->
+  <a href="/wishlist" class="relative hover:text-gray-300">
+    <i class="fa-regular fa-heart text-xl"></i>
+    <span class="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center">0</span>
+  </a>
+
+  <!-- Cart -->
+  <a href="/cart" class="relative hover:text-gray-300">
+    <i class="fa-solid fa-cart-shopping text-xl"></i>
+    <span class="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center">0</span>
+  </a>
+
+  <!-- User Dropdown -->
+  <div class="relative">
+    <button class="hover:text-gray-300 focus:outline-none">
+      <i class="fa-regular fa-user text-xl"></i>
+    </button>
+
+    <!-- Dropdown Menu -->
+    <div
+      class="hidden absolute right-0 mt-2 w-40 bg-white border border-gray-200 rounded-lg shadow-lg group-hover:block"
+    >
+      <a
+        href="/account"
+        class="block px-4 py-2 text-gray-700 hover:bg-gray-100"
+      >
+        My Account
+      </a>
+      <a
+  href="/user/logout"
+  class="block px-4 py-2 text-gray-700 hover:bg-gray-100"
+>
+  Logout
+</a>
+
+    </div>
+  </div>
+</div>
 
         <!-- Mobile Menu Button -->
         <button class="md:hidden text-white text-2xl" id="mobile-menu-btn">

@@ -9,6 +9,7 @@ import {
   postForgotVerifyOtp,
   renderForgotVerifyOtp,
 } from "../controllers/user/authForgotController.js";
+import { logoutUser } from "../controllers/user/userController.js";
 const router = express.Router();
 
 
@@ -35,6 +36,9 @@ router.post("/forgotOtp",postForgotVerifyOtp);
 
 router.get("/resetPassword",renderResetPassword);
 router.post("/resetPassword",postResetPassword);
+
+router.get("/logout",logoutUser);
+
 
 
 export default router;

@@ -6,7 +6,6 @@
     <title>Login | BagHub</title>
     
     <!-- Tailwind CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.4.1/dist/tailwind.min.css" rel="stylesheet" />
     <script src="https://cdn.tailwindcss.com"></script>
 
     <!-- Favicon -->
@@ -18,47 +17,54 @@
 
   <body class="bg-white font-mono min-h-screen flex flex-col">
 
-    <!-- ✅ Navbar -->
+    <!-- Navbar -->
     <nav class="shadow-md bg-white">
       <%- include('../partials/landingheader') %>
     </nav>
 
-    <!-- ✅ Centered Login Box -->
+    <!-- Centered Login Box -->
     <main class="flex flex-1 items-center justify-center py-10">
-      <div class="border-2 border-black rounded-3xl p-10 w-80 sm:w-96 text-center shadow-lg bg-white">
-        <h1 class="text-2xl mb-6 font-semibold">Login</h1>
+      <div class="border-2 border-gray-300 rounded-3xl p-10 w-80 sm:w-96 text-center shadow-lg bg-white">
+        <h1 class="text-2xl mb-6 font-semibold text-gray-800">Login</h1>
 
+        <!-- Error Message -->
         <% if (error) { %>
-            <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4 text-sm" role="alert">
-                <span class="block sm:inline"><%= error %></span>
-            </div>
+          <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4 text-sm" role="alert">
+            <span class="block sm:inline"><%= error %></span>
+          </div>
         <% } %>
 
-        <!-- Email -->
-        <form action="/user/login" method="POST">
-          <div class="mb-4">
-            <input
-              type="email"
-              name="email"
-              placeholder="Email"
-              required
-              class="w-full bg-gray-100 text-sm rounded-md py-2 px-3 focus:outline-none focus:ring-2 focus:ring-black"
-            />
-          </div>
+        <!-- Login Form -->
+        <form action="/user/login" method="POST" class="space-y-4">
+          <!-- Email -->
+          <input
+            type="email"
+            name="email"
+            placeholder="Email"
+            required
+            class="w-full bg-gray-100 text-sm rounded-md py-2 px-3 focus:outline-none focus:ring-2 focus:ring-black"
+          />
 
           <!-- Password -->
-          <div class="mb-3">
-            <input
-              type="password"
-              name="password"
-              placeholder="Password"
-              required
-              class="w-full bg-gray-100 text-sm rounded-md py-2 px-3 focus:outline-none focus:ring-2 focus:ring-black"
-            />
-          </div>
+          <input
+            type="password"
+            name="password"
+            placeholder="Password"
+            required
+            class="w-full bg-gray-100 text-sm rounded-md py-2 px-3 focus:outline-none focus:ring-2 focus:ring-black"
+          />
+
+          <!-- Google Login Button -->
+          <a
+            href="/auth/google"
+            class="flex items-center justify-center gap-2 w-full border border-gray-300 rounded-md py-2 px-3 hover:bg-gray-100 transition-all text-gray-700 font-medium"
+          >
+            <img src="https://www.svgrepo.com/show/355037/google.svg" alt="Google" class="w-5 h-5" />
+            Login with Google
+          </a>
 
           <!-- Links -->
-          <div class="flex justify-between text-xs mb-6 text-gray-600">
+          <div class="flex justify-between text-xs text-gray-600">
             <a href="/user/signup" class="hover:underline">Signup</a>
             <a href="/user/forgotPassword" class="hover:underline">Forgot Password?</a>
           </div>
@@ -74,7 +80,7 @@
       </div>
     </main>
 
-    <!-- ✅ Footer -->
+    <!-- Footer -->
     <footer class="mt-auto">
       <%- include('../partials/footer') %>
     </footer>

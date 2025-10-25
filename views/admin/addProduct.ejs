@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Add Product | Admin</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="flex">
+    <%- include('../partials/sidebar') %>
+    <main class="flex-1 p-8 ml-64 bg-gray-50">
+        <h2 class="text-2xl font-bold mb-8">Add New Products</h2>
+
+        <div class="bg-white p-6 rounded-lg shadow-md max-w-2xl">
+            <form action="/admin/products/add" method="POST">
+                
+                <div class="mb-4">
+                    <label for="productName" class="block text-sm font-medium text-gray-700">productName</label>
+                    <input type="text" id="productName" name="name" required
+                        class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-emerald-500 focus:border-emerald-500">
+                </div>
+
+                <div class="mb-4">
+                    <label for="brand" class="block text-sm font-medium text-gray-700">Brand</label>
+                    <input type="text" id="brand" name="brand" required
+                        class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-emerald-500 focus:border-emerald-500">
+                </div>
+
+                <div class="mb-4">
+                    <label for="category" class="block text-sm font-medium text-gray-700">Category</label>
+                    <select id="category" name="category" required
+                        class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-emerald-500 focus:border-emerald-500">
+                        <option value="">Select a Category</option>
+                        <% categories.forEach(cat => { %>
+                            <option value="<%= cat._id %>"><%= cat.name %></option>
+                        <% }); %>
+                    </select>
+                </div>
+
+                <div class="mb-6">
+                    <label for="description" class="block text-sm font-medium text-gray-700">Description</label>
+                    <textarea id="description" name="description" rows="3"
+                        class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-emerald-500 focus:border-emerald-500"></textarea>
+                </div>
+
+                <div class="flex justify-end">
+                    <button type="submit"
+                        class="bg-emerald-800 text-white px-6 py-2 rounded hover:bg-emerald-900 transition">
+                        Add Variants
+                    </button>
+                </div>
+            </form>
+        </div>
+    </main>
+</body>
+</html>
