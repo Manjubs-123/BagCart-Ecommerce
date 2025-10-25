@@ -17,7 +17,7 @@ api_secret:process.env.CLOUD_API_SECRET,
 const storage=new CloudinaryStorage({
     cloudinary:cloudinary,
     params:{
-        folder:"BagHub-Products",
+        folder:"products",
         allowed_formats:["jpg","png","jpeg"],
         transformation:[{ width:600,height:600,crop:"fill"}],
 

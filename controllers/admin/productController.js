@@ -3,6 +3,7 @@ import Category from "../../models/category.js";
 import sharp from "sharp";
 import fs from "fs";
 import path from "path";
+import { v2 as cloudinary } from "cloudinary";
   
 
 // Show product list
@@ -64,6 +65,7 @@ export const renderAddVariants = async (req, res) => {
 };
 // Save Product + First Variant (now commit to DB)
 
+
 export const saveProduct = async (req, res) => {
   try {
     const tempProduct = req.session.tempProduct;
@@ -78,28 +80,43 @@ export const saveProduct = async (req, res) => {
       return res.status(400).send("Please upload at least 3 images");
     }
 
-    // -------------------------------
-    // Ensure upload folder exists
-    // -------------------------------
-    const uploadDir = path.join("public", "uploads", "products");
-    if (!fs.existsSync(uploadDir)) {
-      fs.mkdirSync(uploadDir, { recursive: true });
-    }
+    console.log(req.files, "req.files is coming");
 
-    console.log(req.files,"req.files is coming")
     // -------------------------------
-    // Process & resize images
+    // Process, resize & upload images
     // -------------------------------
     const imageUrls = [];
+
     for (const file of req.files) {
-      const outputPath = path.join(uploadDir, `${Date.now()}-${file.originalname}`);
-      console.log(outputPath,"outputPath")
-      await sharp(file.path).resize(600, 600).toFile(outputPath);
-      fs.unlinkSync(file.path); // delete temp file
-      imageUrls.push(outputPath.replace("public/", ""));
+      // Resize image locally first
+      const tempOutputPath = path.join("public", "temp", `${Date.now()}-${file.originalname}`);
+
+      // Ensure temp folder exists
+      const tempDir = path.dirname(tempOutputPath);
+      if (!fs.existsSync(tempDir)) {
+        fs.mkdirSync(tempDir, { recursive: true });
+      }
+
+      await sharp(file.path).resize(600, 600).toFile(tempOutputPath);
+
+      // Delete the multer temp file
+      fs.unlinkSync(file.path);
+
+      // Upload resized image to Cloudinary
+      const result = await cloudinary.uploader.upload(tempOutputPath, {
+        folder: "products",
+      });
+console.log(result,"result")
+      // Delete the resized local copy
+      fs.unlinkSync(tempOutputPath);
+
+      // Push the Cloudinary secure URL
+      imageUrls.push(result.secure_url);
     }
 
-    // Construct variant object
+    // -------------------------------
+    // Construct product variant object
+    // -------------------------------
     const variant = {
       colour,
       price,
@@ -107,24 +124,30 @@ export const saveProduct = async (req, res) => {
       images: imageUrls,
     };
 
-    // Create Product finally in DB
+    // -------------------------------
+    // Create final product in MongoDB
+    // -------------------------------
     const newProduct = new Product({
       name: tempProduct.name,
       brand: tempProduct.brand,
       category: tempProduct.category,
       description: tempProduct.description,
       variants: [variant],
+      isListed: true,
+      isBlocked: false,
     });
 
     await newProduct.save();
 
-    // Clear temp session
+    // -------------------------------
+    // Clear temporary session data
+    // -------------------------------
     req.session.tempProduct = null;
 
     res.redirect("/admin/products");
   } catch (err) {
-    console.error("Error saving product:", err);
-    res.status(500).send("Server Error");
+    console.error("❌ Error saving product:", err);
+    res.status(500).send("Server Error: " + err.message);
   }
 };
 
