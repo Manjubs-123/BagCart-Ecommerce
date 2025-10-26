@@ -10,22 +10,99 @@
   <div class="bg-white p-10 rounded-lg shadow-lg w-96 text-center">
     <h1 class="text-2xl font-bold mb-4 text-emerald-900">Admin Login</h1>
 
-    <% if (error) { %>
-      <p class="text-red-600 text-sm mb-4"><%= error %></p>
-    <% } %>
+    <!-- General error message -->
+    <p id="generalError" class="text-red-600 text-sm mb-4 hidden"></p>
 
-    <form action="/admin/login" method="POST" class="space-y-4">
-      <input type="email" name="email" placeholder="Email"
-        class="w-full border rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-800" required />
+    <form id="loginForm" action="/admin/login" method="POST" class="space-y-4">
+      <div class="text-left">
+        <input 
+          type="email" 
+          id="email" 
+          name="email" 
+          placeholder="Email"
+          class="w-full border rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-800" 
+        />
+        <p id="emailError" class="text-red-600 text-xs mt-1 hidden">Please enter a valid email address.</p>
+      </div>
 
-      <input type="password" name="password" placeholder="Password"
-        class="w-full border rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-800" required />
+      <div class="text-left">
+        <input 
+          type="password" 
+          id="password" 
+          name="password" 
+          placeholder="Password"
+          class="w-full border rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-800" 
+        />
+        <p id="passwordError" class="text-red-600 text-xs mt-1 hidden">Password cannot be empty.</p>
+      </div>
 
-      <button type="submit"
+      <button 
+        type="submit"
         class="w-full bg-emerald-900 text-white rounded py-2 font-semibold hover:bg-emerald-800">
         Login
       </button>
     </form>
   </div>
+
+  <script>
+    const form = document.getElementById("loginForm");
+    const emailInput = document.getElementById("email");
+    const passwordInput = document.getElementById("password");
+    const emailError = document.getElementById("emailError");
+    const passwordError = document.getElementById("passwordError");
+    const generalError = document.getElementById("generalError");
+
+    // Email regex for basic validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+    function validateEmail() {
+      if (!emailInput.value.trim()) {
+        emailError.textContent = "Email cannot be empty.";
+        emailError.classList.remove("hidden");
+        emailInput.classList.add("border-red-500");
+        return false;
+      } else if (!emailRegex.test(emailInput.value)) {
+        emailError.textContent = "Please enter a valid email address.";
+        emailError.classList.remove("hidden");
+        emailInput.classList.add("border-red-500");
+        return false;
+      } else {
+        emailError.classList.add("hidden");
+        emailInput.classList.remove("border-red-500");
+        return true;
+      }
+    }
+
+    function validatePassword() {
+      if (!passwordInput.value.trim()) {
+        passwordError.textContent = "Password cannot be empty.";
+        passwordError.classList.remove("hidden");
+        passwordInput.classList.add("border-red-500");
+        return false;
+      } else {
+        passwordError.classList.add("hidden");
+        passwordInput.classList.remove("border-red-500");
+        return true;
+      }
+    }
+
+    // Real-time validation
+    emailInput.addEventListener("input", validateEmail);
+    passwordInput.addEventListener("input", validatePassword);
+
+    // Form submission
+    form.addEventListener("submit", function(event) {
+      const isEmailValid = validateEmail();
+      const isPasswordValid = validatePassword();
+
+      if (!isEmailValid || !isPasswordValid) {
+        generalError.textContent = "Please fix the errors in the form.";
+        generalError.classList.remove("hidden");
+        event.preventDefault(); // prevent form submission
+      } else {
+        generalError.classList.add("hidden");
+      }
+    });
+  </script>
 </body>
 </html>
