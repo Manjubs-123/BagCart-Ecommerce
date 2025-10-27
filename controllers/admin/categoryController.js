@@ -9,10 +9,7 @@ export const listCategories = async (req, res) => {
 
     const filter = { isDeleted: false };
     if (q) {
-      filter.$or = [
-        { name: { $regex: q, $options: "i" } },
-        { description: { $regex: q, $options: "i" } },
-      ];
+      filter.name={$regex:q,$options:"i"}
     }
 
     const total = await Category.countDocuments(filter);
@@ -43,20 +40,31 @@ export const renderAddCategory = async (req, res) => {
 };
 
 // Add new category
+
+
 export const addCategory = async (req, res) => {
   try {
     const { name, description } = req.body;
-    console.log(req.body,"req coming from add category")
-    if (!name || name.trim() === "") return res.status(400).send("Name required");
 
-    const existing = await Category.findOne({ name: name.trim(), isDeleted: false });
-    if (existing) return res.status(409).send("Category already exists");
+    if (!name || name.trim() === "") {
+      return res.redirect("/admin/category/addCategory?error=Name is required");
+    }
+
+    const existing = await Category.findOne({ 
+      name: name.trim(), 
+      isDeleted: false 
+    });
+
+    if (existing) {
+      return res.redirect("/admin/category/addCategory?error=Category already exists");
+    }
 
     await Category.create({ name: name.trim(), description });
-    res.redirect("/admin/category");
+    res.redirect("/admin/category?success=Category added successfully");
+    
   } catch (err) {
     console.error(err);
-    res.status(500).send("Server Error");
+    res.redirect("/admin/category/addCategory?error=Server error, please try again");
   }
 };
 

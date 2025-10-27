@@ -81,6 +81,7 @@
   onclick="toggleCategoryStatus('<%= cat._id %>', <%= cat.isActive ? 'true' : 'false' %>)"
   class="<%= cat.isActive ? 'bg-red-500' : 'bg-green-500' %> text-white px-4 py-1 rounded hover:opacity-80"
   <%= cat.isDeleted ? 'disabled' : '' %> >
+  
   <%= cat.isActive ? 'Block' : 'Unblock' %>
 </button>
 
