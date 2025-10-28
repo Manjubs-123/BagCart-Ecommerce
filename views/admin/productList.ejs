@@ -13,10 +13,11 @@
     <main class="flex-1 p-8 ml-64 bg-gray-50">
         <div class="flex justify-between items-center mb-6">
             <h2 class="text-2xl font-bold">Products Detail</h2>
-            <a href="/admin/products/add" 
-                class="bg-emerald-800 text-white px-5 py-2 rounded hover:bg-emerald-900 transition">
-                Add New Product
-            </a>
+            <a href="/admin/products/add"
+    class="bg-emerald-800 text-white px-5 py-2 rounded hover:bg-emerald-900 transition">
+    Add New Product
+</a>
+
         </div>
 
         <form action="/admin/products" method="get" class="flex items-center mb-6 max-w-xs">
@@ -53,33 +54,35 @@
                 </thead>
                 <tbody>
                     <% products.forEach(product => { %>
-                        <% // Iterate over variants to list all rows %>
-                                                    <tr class="border-t hover:bg-gray-50">
-                                <td class="px-6 py-3"><%= product.productName %></td>
-                                <td class="px-6 py-3"><%= product.brand %></td>
-                                <td class="px-6 py-3"><%= product.category.name %></td>
-                                <td class="px-6 py-3">
-                                    <span class="font-medium <%= product.isActive ? 'text-green-600' : 'text-red-600' %>">
-                                        <%= product.isActive ? 'Active' : 'Blocked' %>
-                                    </span>
-                                </td>
-                                <td class="px-6 py-3 flex gap-2 justify-center">
-                                    <a href="/admin/products/edit/<%= product._id %>"
-                                        class="bg-emerald-800 text-white px-4 py-1 rounded hover:bg-emerald-900">
-                                        Edit
-                                    </a>
-                                    <button
-                                        onclick="confirmSoftDelete('<%= product._id %>')"
-                                        class="bg-red-700 text-white px-4 py-1 rounded hover:bg-red-800">
-                                        Remove
-                                    </button>
-                                     <button
-                                        onclick="toggleProductStatus('<%= product._id %>', <%= product.isActive %>)"
-                                        class="<%= product.isActive ? 'bg-red-500' : 'bg-green-500' %> text-white px-4 py-1 rounded hover:opacity-80">
-                                        <%= product.isActive ? 'Block' : 'Unblock' %>
-                                    </button>
-                                </td>
-                            </tr>
+                        <tr class="border-t hover:bg-gray-50">
+                            <td class="px-6 py-3"><%= product.name %></td>
+                            <td class="px-6 py-3"><%= product.brand %></td>
+                            <td class="px-6 py-3"><%= product.category ? product.category.name : '-' %></td>
+                            <td class="px-6 py-3">
+                                <% const price = (product.variants && product.variants.length) ? product.variants[0].price : '-'; %>
+                                <%= price %>
+                            </td>
+                            <td class="px-6 py-3">
+                                <% const stock = (product.variants || []).reduce((s, v) => s + (v.stock || 0), 0); %>
+                                <%= stock %>
+                            </td>
+                            <td class="px-6 py-3">
+                                <span class="font-medium <%= product.isDeleted ? 'text-red-600' : 'text-green-600' %>">
+                                    <%= product.isDeleted ? 'Deleted' : 'Active' %>
+                                </span>
+                            </td>
+                            <td class="px-6 py-3 flex gap-2 justify-center">
+                                <a href="/admin/products/edit/<%= product._id %>"
+                                    class="bg-emerald-800 text-white px-4 py-1 rounded hover:bg-emerald-900">
+                                    Edit
+                                </a>
+                                <button
+                                    onclick="confirmSoftDelete('<%= product._id %>')"
+                                    class="bg-red-700 text-white px-4 py-1 rounded hover:bg-red-800">
+                                    Remove
+                                </button>
+                            </td>
+                        </tr>
                     <% }) %>
                 </tbody>
             </table>

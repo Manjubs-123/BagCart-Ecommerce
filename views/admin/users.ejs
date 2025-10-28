@@ -52,7 +52,7 @@
             <td class="p-3">
                 <button 
                     type="button" 
-                    onclick="confirmToggle('<%= user._id %>', <%= user.isBlocked %>)"
+                    onclick="confirmToggle('<%= user._id %>', '<%= user.isBlocked ? 'true' : 'false' %>')"
                     class="px-4 py-2 rounded text-white <%= user.isBlocked ? 'bg-green-500 hover:bg-green-600' : 'bg-red-500 hover:bg-red-600' %>">
                     <%= user.isBlocked ? 'Unblock' : 'Block' %>
                 </button>
@@ -85,6 +85,8 @@
 <script>
     // SweetAlert2 function for Block/Unblock
     function confirmToggle(userId, isBlocked) {
+        // Coerce isBlocked (may be passed as string) to boolean
+        isBlocked = (isBlocked === true || isBlocked === 'true');
         const action = isBlocked ? 'unblock' : 'block';
         const buttonColor = isBlocked ? '#22c55e' : '#ef4444'; // Green for unblock, Red for block
 
@@ -101,12 +103,30 @@
                 // Perform the AJAX request to toggle the status
                 fetch(`/admin/users/toggle-block/${userId}`, {
                     method: 'POST',
+                    credentials: 'same-origin', // include session cookie for express-session
                     headers: {
-                        'Content-Type': 'application/json'
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
                     }
                 })
-                .then(response => response.json())
-                .then(data => {
+                .then(async response => {
+                    // If server redirected to login or returned non-JSON, handle gracefully
+                    if (response.status === 401) {
+                        Swal.fire('Unauthorized', 'Please login as admin.', 'warning').then(() => {
+                            window.location.href = '/admin';
+                        });
+                        return { success: false, message: 'Unauthorized' };
+                    }
+
+                    // Try to parse JSON, fall back if it fails
+                    let data;
+                    try {
+                        data = await response.json();
+                    } catch (err) {
+                        console.error('Failed to parse JSON response', err);
+                        return { success: false, message: 'Unexpected server response' };
+                    }
+
                     if (data.success) {
                         Swal.fire({
                             title: 'Success!',

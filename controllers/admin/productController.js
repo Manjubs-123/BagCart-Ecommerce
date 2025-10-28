@@ -1,168 +1,454 @@
 import Product from "../../models/productModel.js";
 import Category from "../../models/category.js";
-import sharp from "sharp";
-import fs from "fs";
-import path from "path";
-import { v2 as cloudinary } from "cloudinary";
+import { cloudinary } from "../../config/cloudinary.js";
+import fs from 'fs/promises';
   
-
-// Show product list
-export const listProducts = async (req, res) => {
+// Get all products (excluding soft deleted)
+export const getProducts = async (req, res) => {
   try {
-    const products = await Product.find({ isDeleted: false }).populate("category");
-    res.render("admin/productList", { products, q: req.query.q || "" });
-  } catch (err) {
-    console.error(err);
-    res.status(500).send("Server Error");
-  }
-};
+    const { page = 1, limit = 10, search = '', category = '' } = req.query;
 
-// Render Add Product Page
-export const renderAddProduct = async (req, res) => {
-  try {
-    const categories = await Category.find({ isDeleted: false });
-    res.render("admin/addProduct", { categories });
-  } catch (err) {
-    console.error(err);
-    res.status(500).send("Server Error");
-  }
-};
+    const query = { isDeleted: false };
 
-// Capture product details temporarily (don’t save in DB)
-export const addProduct = async (req, res) => {
-  try {
-    const { name, brand, category, description } = req.body;
-
-    if (!name || !brand || !category) {
-      return res.status(400).send("All fields are required");
+    if (search) {
+      query.$or = [
+        { name: { $regex: search, $options: 'i' } },
+        { brand: { $regex: search, $options: 'i' } }
+      ];
     }
 
-    // Temporarily store product data in session
-    req.session.tempProduct = { name, brand, category, description };
-    console.log("Temp Product stored in session:", req.session.tempProduct);
-
-    // Redirect to add variant page
-    res.redirect("/admin/products/variants");
-  } catch (err) {
-    console.error(err);
-    res.status(500).send("Server Error");
-  }
-};
-
-//Render Add Variant Page
-export const renderAddVariants = async (req, res) => {
-  try {
-    const tempProduct = req.session.tempProduct;
-    if (!tempProduct) {
-      return res.redirect("/admin/products/add");
+    if (category) {
+      query.category = category;
     }
 
-    res.render("admin/addProductVariants", { product: tempProduct });
-  } catch (err) {
-    console.error(err);
-    res.status(500).send("Server Error");
-  }
-};
-// Save Product + First Variant (now commit to DB)
+    const skip = (page - 1) * limit;
 
+    const [products, total] = await Promise.all([
+      Product.find(query)
+        .populate('category')
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(parseInt(limit)),
+      Product.countDocuments(query)
+    ]);
 
-export const saveProduct = async (req, res) => {
-  try {
-    const tempProduct = req.session.tempProduct;
-
-    if (!tempProduct) {
-      return res.redirect("/admin/products/add");
-    }
-
-    const { colour, price, stock } = req.body;
-
-    if (!req.files || req.files.length < 3) {
-      return res.status(400).send("Please upload at least 3 images");
-    }
-
-    console.log(req.files, "req.files is coming");
-
-    // -------------------------------
-    // Process, resize & upload images
-    // -------------------------------
-    const imageUrls = [];
-
-    for (const file of req.files) {
-      // Resize image locally first
-      const tempOutputPath = path.join("public", "temp", `${Date.now()}-${file.originalname}`);
-
-      // Ensure temp folder exists
-      const tempDir = path.dirname(tempOutputPath);
-      if (!fs.existsSync(tempDir)) {
-        fs.mkdirSync(tempDir, { recursive: true });
+    // 👇 Render EJS view instead of returning JSON
+    res.render("admin/productList", {
+      products,
+      q: search,
+      pagination: {
+        total,
+        page: parseInt(page),
+        pages: Math.ceil(total / limit)
       }
-
-      await sharp(file.path).resize(600, 600).toFile(tempOutputPath);
-
-      // Delete the multer temp file
-      fs.unlinkSync(file.path);
-
-      // Upload resized image to Cloudinary
-      const result = await cloudinary.uploader.upload(tempOutputPath, {
-        folder: "products",
-      });
-console.log(result,"result")
-      // Delete the resized local copy
-      fs.unlinkSync(tempOutputPath);
-
-      // Push the Cloudinary secure URL
-      imageUrls.push(result.secure_url);
-    }
-
-    // -------------------------------
-    // Construct product variant object
-    // -------------------------------
-    const variant = {
-      colour,
-      price,
-      stock,
-      images: imageUrls,
-    };
-
-    // -------------------------------
-    // Create final product in MongoDB
-    // -------------------------------
-    const newProduct = new Product({
-      name: tempProduct.name,
-      brand: tempProduct.brand,
-      category: tempProduct.category,
-      description: tempProduct.description,
-      variants: [variant],
-      isListed: true,
-      isBlocked: false,
     });
 
-    await newProduct.save();
-
-    // -------------------------------
-    // Clear temporary session data
-    // -------------------------------
-    req.session.tempProduct = null;
-
-    res.redirect("/admin/products");
-  } catch (err) {
-    console.error("❌ Error saving product:", err);
-    res.status(500).send("Server Error: " + err.message);
+  } catch (error) {
+    console.error('Get Products Error:', error);
+    res.status(500).send("Failed to load products");
   }
 };
 
 
-// Optional: Soft Delete Product
-export const softDeleteProduct = async (req, res) => {
+// Get single product by ID
+export const getProductById = async (req, res) => {
   try {
-    const product = await Product.findById(req.params.id);
-    if (!product) return res.status(404).send("Product not found");
+    const { id } = req.params;
+    
+    const product = await Product.findOne({ 
+      _id: id, 
+      isDeleted: false 
+    }).populate('category');
+    
+    if (!product) {
+      return res.status(404).json({ 
+        success: false, 
+        message: 'Product not found' 
+      });
+    }
+    
+    res.json({ success: true, product });
+  } catch (error) {
+    console.error('Get Product Error:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Failed to fetch product',
+      error: error.message 
+    });
+  }
+};
 
-    product.isDeleted = !product.isDeleted;
+// Get active categories (not blocked)
+export const getActiveCategories = async (req, res) => {
+  try {
+    const categories = await Category.find({ isBlocked: false })
+      .select('name description')
+      .sort({ name: 1 });
+      
+    res.json({ success: true, categories });
+  } catch (error) {
+    console.error('Get Categories Error:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Failed to fetch categories',
+      error: error.message 
+    });
+  }
+};
+
+// Add new product
+export const addProduct = async (req, res) => {
+  try {
+    const { name, description, brand, category, variants } = req.body;
+
+    // Validate basic information
+    if (!name?.trim()) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Product name is required' 
+      });
+    }
+
+    if (!description?.trim()) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Description is required' 
+      });
+    }
+
+    if (!brand?.trim()) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Brand is required' 
+      });
+    }
+
+    if (!category) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Category is required' 
+      });
+    }
+
+    // Check if category exists and is not blocked
+    const categoryDoc = await Category.findById(category);
+    if (!categoryDoc) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Category not found' 
+      });
+    }
+    
+    if (categoryDoc.isBlocked) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'This category is blocked and cannot be used' 
+      });
+    }
+
+    // Validate variants
+    if (!variants || !Array.isArray(variants) || variants.length === 0) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'At least one variant is required' 
+      });
+    }
+
+    // Validate each variant
+    for (let i = 0; i < variants.length; i++) {
+      const variant = variants[i];
+      
+      if (!variant.color?.trim()) {
+        return res.status(400).json({ 
+          success: false, 
+          message: `Variant ${i + 1}: Color is required` 
+        });
+      }
+
+      const price = parseFloat(variant.price);
+      if (isNaN(price) || price < 0) {
+        return res.status(400).json({ 
+          success: false, 
+          message: `Variant ${i + 1}: Price must be a positive number` 
+        });
+      }
+
+      const stock = parseInt(variant.stock);
+      if (isNaN(stock) || stock < 0 || !Number.isInteger(stock)) {
+        return res.status(400).json({ 
+          success: false, 
+          message: `Variant ${i + 1}: Stock must be a positive integer` 
+        });
+      }
+
+      if (!variant.images || !Array.isArray(variant.images) || variant.images.length < 3) {
+        return res.status(400).json({ 
+          success: false, 
+          message: `Variant ${i + 1}: At least 3 images are required` 
+        });
+      }
+
+      // Validate image objects
+      for (let j = 0; j < variant.images.length; j++) {
+        if (!variant.images[j].url || !variant.images[j].publicId) {
+          return res.status(400).json({ 
+            success: false, 
+            message: `Variant ${i + 1}, Image ${j + 1}: Invalid image data` 
+          });
+        }
+      }
+    }
+
+    // Create product
+    const product = new Product({
+      name: name.trim(),
+      description: description.trim(),
+      brand: brand.trim(),
+      category,
+      variants: variants.map(v => ({
+        color: v.color.trim(),
+        price: parseFloat(v.price),
+        stock: parseInt(v.stock),
+        images: v.images
+      }))
+    });
+
     await product.save();
-    res.redirect("/admin/products");
-  } catch (err) {
-    console.error(err);
-    res.status(500).send("Server Error");
+    await product.populate('category');
+
+    res.status(201).json({ 
+      success: true, 
+      message: 'Product added successfully', 
+      product 
+    });
+  } catch (error) {
+    console.error('Add Product Error:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Failed to add product',
+      error: error.message 
+    });
+  }
+};
+
+// Update product
+export const updateProduct = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { name, description, brand, category, variants } = req.body;
+
+    const product = await Product.findOne({ _id: id, isDeleted: false });
+    
+    if (!product) {
+      return res.status(404).json({ 
+        success: false, 
+        message: 'Product not found' 
+      });
+    }
+
+    // Validate category if provided
+    if (category) {
+      const categoryDoc = await Category.findById(category);
+      if (!categoryDoc) {
+        return res.status(400).json({ 
+          success: false, 
+          message: 'Category not found' 
+        });
+      }
+      
+      if (categoryDoc.isBlocked) {
+        return res.status(400).json({ 
+          success: false, 
+          message: 'This category is blocked and cannot be used' 
+        });
+      }
+    }
+
+    // Validate variants if provided
+    if (variants) {
+      if (!Array.isArray(variants) || variants.length === 0) {
+        return res.status(400).json({ 
+          success: false, 
+          message: 'At least one variant is required' 
+        });
+      }
+
+      for (let i = 0; i < variants.length; i++) {
+        const variant = variants[i];
+        
+        if (variant.color && !variant.color.trim()) {
+          return res.status(400).json({ 
+            success: false, 
+            message: `Variant ${i + 1}: Color cannot be empty` 
+          });
+        }
+
+        if (variant.price !== undefined) {
+          const price = parseFloat(variant.price);
+          if (isNaN(price) || price < 0) {
+            return res.status(400).json({ 
+              success: false, 
+              message: `Variant ${i + 1}: Price must be a positive number` 
+            });
+          }
+        }
+
+        if (variant.stock !== undefined) {
+          const stock = parseInt(variant.stock);
+          if (isNaN(stock) || stock < 0 || !Number.isInteger(stock)) {
+            return res.status(400).json({ 
+              success: false, 
+              message: `Variant ${i + 1}: Stock must be a positive integer` 
+            });
+          }
+        }
+
+        if (variant.images && variant.images.length < 3) {
+          return res.status(400).json({ 
+            success: false, 
+            message: `Variant ${i + 1}: At least 3 images are required` 
+          });
+        }
+      }
+    }
+
+    // Update fields
+    if (name?.trim()) product.name = name.trim();
+    if (description?.trim()) product.description = description.trim();
+    if (brand?.trim()) product.brand = brand.trim();
+    if (category) product.category = category;
+    if (variants) {
+      product.variants = variants.map(v => ({
+        color: v.color?.trim() || v.color,
+        price: v.price !== undefined ? parseFloat(v.price) : v.price,
+        stock: v.stock !== undefined ? parseInt(v.stock) : v.stock,
+        images: v.images || []
+      }));
+    }
+
+    await product.save();
+    await product.populate('category');
+
+    res.json({ 
+      success: true, 
+      message: 'Product updated successfully', 
+      product 
+    });
+  } catch (error) {
+    console.error('Update Product Error:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Failed to update product',
+      error: error.message 
+    });
+  }
+};
+
+// Soft delete product
+export const deleteProduct = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const product = await Product.findOne({ _id: id, isDeleted: false });
+    
+    if (!product) {
+      return res.status(404).json({ 
+        success: false, 
+        message: 'Product not found' 
+      });
+    }
+
+    product.isDeleted = true;
+    await product.save();
+
+    res.json({ 
+      success: true, 
+      message: 'Product deleted successfully' 
+    });
+  } catch (error) {
+    console.error('Delete Product Error:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Failed to delete product',
+      error: error.message 
+    });
+  }
+};
+
+// Upload image to Cloudinary
+export const uploadImage = async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'No image file provided' 
+      });
+    }
+
+    // Upload to Cloudinary
+    const result = await cloudinary.uploader.upload(req.file.path, {
+      folder: 'ecommerce/products',
+      transformation: [
+        { width: 800, height: 800, crop: 'fill', gravity: 'auto' },
+        { quality: 'auto:good' },
+        { fetch_format: 'auto' }
+      ]
+    });
+
+    // Delete temporary file
+    await fs.unlink(req.file.path);
+
+    res.json({
+      success: true,
+      message: 'Image uploaded successfully',
+      image: {
+        url: result.secure_url,
+        publicId: result.public_id
+      }
+    });
+  } catch (error) {
+    // Clean up file if upload fails
+    if (req.file?.path) {
+      try {
+        await fs.unlink(req.file.path);
+      } catch (unlinkError) {
+        console.error('Error deleting temp file:', unlinkError);
+      }
+    }
+    
+    console.error('Upload Image Error:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Failed to upload image',
+      error: error.message 
+    });
+  }
+};
+
+// Delete image from Cloudinary
+export const deleteImage = async (req, res) => {
+  try {
+    const { publicId } = req.body;
+    
+    if (!publicId) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Public ID is required' 
+      });
+    }
+
+    await cloudinary.uploader.destroy(publicId);
+
+    res.json({
+      success: true,
+      message: 'Image deleted successfully'
+    });
+  } catch (error) {
+    console.error('Delete Image Error:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Failed to delete image',
+      error: error.message 
+    });
   }
 };
