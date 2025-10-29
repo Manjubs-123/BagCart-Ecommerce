@@ -2,6 +2,26 @@ import Product from "../../models/productModel.js";
 import Category from "../../models/category.js";
 import { cloudinary } from "../../config/cloudinary.js";
 import fs from 'fs/promises';
+
+// Render Add Product page
+export const renderAddProduct = async (req, res) => {
+  try {
+    const categories = await Category.find({ isDeleted: false }).sort({ name: 1 }).lean();
+    // Simple color list - adjust as needed
+    const colors = [
+      'Black','Blue','Brown','Gray','Red','Green','Yellow','White','Pink','Purple','Orange'
+    ];
+
+    return res.render('admin/addProduct', {
+      title: 'Add Product',
+      categories,
+      colors
+    });
+  } catch (error) {
+    console.error('Render Add Product Error:', error);
+    return res.status(500).send('Failed to render add product page');
+  }
+};
   
 // Get all products (excluding soft deleted)
 export const getProducts = async (req, res) => {
@@ -23,14 +43,17 @@ export const getProducts = async (req, res) => {
 
     const skip = (page - 1) * limit;
 
-    const [products, total] = await Promise.all([
+    const [rawProducts, total] = await Promise.all([
       Product.find(query)
-        .populate('category')
+        .populate({ path: 'category', match: { isActive: true, isDeleted: false } })
         .sort({ createdAt: -1 })
         .skip(skip)
         .limit(parseInt(limit)),
       Product.countDocuments(query)
     ]);
+
+    // Filter out products whose category was filtered out by populate (blocked/deleted categories)
+    const products = rawProducts.filter(p => p.category != null);
 
     // 👇 Render EJS view instead of returning JSON
     res.render("admin/productList", {
@@ -56,7 +79,7 @@ export const getProductById = async (req, res) => {
     const { id } = req.params;
     
     const product = await Product.findOne({ 
-      _id: id, 
+      _id: id,  
       isDeleted: false 
     }).populate('category');
     
@@ -81,9 +104,10 @@ export const getProductById = async (req, res) => {
 // Get active categories (not blocked)
 export const getActiveCategories = async (req, res) => {
   try {
-    const categories = await Category.find({ isBlocked: false })
+    const categories = await Category.find({ isActive: true, isDeleted: false })
       .select('name description')
-      .sort({ name: 1 });
+      .sort({ name: 1 })
+      .lean();
       
     res.json({ success: true, categories });
   } catch (error) {
@@ -96,7 +120,6 @@ export const getActiveCategories = async (req, res) => {
   }
 };
 
-// Add new product
 export const addProduct = async (req, res) => {
   try {
     const { name, description, brand, category, variants } = req.body;
@@ -232,6 +255,8 @@ export const addProduct = async (req, res) => {
 };
 
 // Update product
+
+
 export const updateProduct = async (req, res) => {
   try {
     const { id } = req.params;

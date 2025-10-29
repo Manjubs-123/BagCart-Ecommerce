@@ -32,8 +32,10 @@ import {
   updateProduct, 
   deleteProduct,
   uploadImage,
-  deleteImage
+  deleteImage,
+  renderAddProduct
 } from '../../controllers/admin/productController.js';
+import { isAdminAuthenticated } from '../../middlewares/adminAuth.js';
 import { upload } from "../../config/cloudinary.js";
 
 
@@ -41,14 +43,16 @@ import { upload } from "../../config/cloudinary.js";
 const router = express.Router();
 
 // Product routes (rooted) - mounted at /admin/products in index.js
-router.get('/', getProducts);
-router.get('/:id', getProductById);
-router.post('/', addProduct);
-router.put('/:id', updateProduct);
-router.delete('/:id', deleteProduct);
+router.get('/', isAdminAuthenticated, getProducts);
+// Render Add Product page BEFORE the dynamic :id route so 'add' isn't treated as an id
+router.get('/add', isAdminAuthenticated, renderAddProduct);
+router.get('/:id', isAdminAuthenticated, getProductById);
+router.post('/', isAdminAuthenticated, addProduct);
+router.put('/:id', isAdminAuthenticated, updateProduct);
+router.delete('/:id', isAdminAuthenticated, deleteProduct);
 
 // Soft-delete via POST to match frontend calls
-router.post('/delete/:id', deleteProduct);
+router.post('/delete/:id', isAdminAuthenticated, deleteProduct);
 
 // Category routes
 router.get('/categories/active', getActiveCategories);

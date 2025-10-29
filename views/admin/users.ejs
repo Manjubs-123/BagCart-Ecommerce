@@ -52,7 +52,7 @@
             <td class="p-3">
                 <button 
                     type="button" 
-                    onclick="confirmToggle('<%= user._id %>', '<%= user.isBlocked ? 'true' : 'false' %>')"
+                    onclick="confirmToggle('<%= user._id %>', '<%= user.isBlocked %>')"
                     class="px-4 py-2 rounded text-white <%= user.isBlocked ? 'bg-green-500 hover:bg-green-600' : 'bg-red-500 hover:bg-red-600' %>">
                     <%= user.isBlocked ? 'Unblock' : 'Block' %>
                 </button>

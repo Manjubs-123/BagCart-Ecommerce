@@ -13,6 +13,7 @@ import adminRoutes from "./routes/adminRoutes.js";
 import usersRoutes from "./routes/admin/usersRoutes.js";
 import categoryRoutes from "./routes/admin/categoryRoutes.js";
 import productRoutes from './routes/admin/productRoutes.js';
+import connectDB from './config/DB.js';
 
 
 
@@ -22,8 +23,9 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 //Middleware
-app.use(express.json())
-app.use(express.urlencoded({ extended: true }))
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ limit: '50mb', extended: true }));
+
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'ejs')
 app.use(express.static(path.join(__dirname, 'public')));
@@ -40,12 +42,7 @@ app.use(session({
 app.use(passport.initialize());
 app.use(passport.session());
 
-
-
-//MongoDB connect
-mongoose.connect(process.env.MONGO_URI)
-.then(()=>console.log("MongoDB Connected"))
-.catch(err=>console.log(err));
+connectDB()
 
 const bags = [
     { id: 1, name: "Travel Backpack", price: 1999, image: "/images/bag1.jpg" },
@@ -76,7 +73,7 @@ app.get("/", (req, res) => {
 
 const PORT = 3000
 
-app.listen(PORT, () => {
-    console.log("The server is running on port ", PORT)
-})
- 
+// The server is started in the bootstrap function above
+ app.listen(PORT, () => {
+    console.log(`The server is running on port ${PORT}`);
+});
