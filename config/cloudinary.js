@@ -7,7 +7,7 @@ dotenv.config();
 
 //Cloudinary configuration
 
-cloudinary.config({
+cloudinary.config({ 
 cloud_name:process.env.CLOUD_NAME,
 api_key:process.env.CLOUD_API_KEY,
 api_secret:process.env.CLOUD_API_SECRET,
@@ -19,8 +19,6 @@ const storage=new CloudinaryStorage({
     params:{
         folder:"products",
         allowed_formats:["jpg","png","jpeg"],
-        transformation:[{ width:600,height:600,crop:"fill"}],
-
     },
 });
 

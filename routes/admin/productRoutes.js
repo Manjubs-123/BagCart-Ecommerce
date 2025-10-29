@@ -35,9 +35,8 @@ import {
   deleteImage,
   renderAddProduct
 } from '../../controllers/admin/productController.js';
-import { isAdminAuthenticated } from '../../middlewares/adminAuth.js';
+import { isAdminAuthenticated } from '../../middlewares/adminAuth.js';  
 import { upload } from "../../config/cloudinary.js";
-
 
 
 const router = express.Router();
@@ -47,7 +46,7 @@ router.get('/', isAdminAuthenticated, getProducts);
 // Render Add Product page BEFORE the dynamic :id route so 'add' isn't treated as an id
 router.get('/add', isAdminAuthenticated, renderAddProduct);
 router.get('/:id', isAdminAuthenticated, getProductById);
-router.post('/', isAdminAuthenticated, addProduct);
+router.post('/add', isAdminAuthenticated,upload.array('images', 20) , addProduct);
 router.put('/:id', isAdminAuthenticated, updateProduct);
 router.delete('/:id', isAdminAuthenticated, deleteProduct);
 

@@ -515,130 +515,112 @@
             });
         }
 
-        document.getElementById('productForm').addEventListener('submit', async (e) => {
-            e.preventDefault();
+        document.getElementById("productForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
 
-            const name = document.getElementById('name').value.trim();
-            const description = document.getElementById('description').value.trim();
-            const brand = document.getElementById('brand').value.trim();
-            const category = document.getElementById('category').value;
+      const name = document.getElementById("name").value.trim();
+      const description = document.getElementById("description").value.trim();
+      const brand = document.getElementById("brand").value.trim();
+      const category = document.getElementById("category").value;
 
-            if (!name || !description || !brand || !category) {
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Validation Error',
-                    text: 'Please fill all required fields in Basic Information'
-                });
-                return;
-            }
-
-            const validVariants = variants.filter(v => v !== null);
-
-            if (validVariants.length === 0) {
-                Swal.fire({
-                    icon: 'error',
-                    title: 'No Variants',
-                    text: 'Please add at least one product variant'
-                });
-                return;
-            }
-
-            for (let i = 0; i < validVariants.length; i++) {
-                const variant = validVariants[i];
-                
-                if (!variant.color) {
-                    Swal.fire({
-                        icon: 'error',
-                        title: 'Validation Error',
-                        text: `Variant ${i + 1}: Color is required`
-                    });
-                    return;
-                }
-
-                const price = parseFloat(variant.price);
-                if (isNaN(price) || price <= 0) {
-                    Swal.fire({
-                        icon: 'error',
-                        title: 'Validation Error',
-                        text: `Variant ${i + 1}: Price must be a positive number`
-                    });
-                    return;
-                }
-
-                                const stock = parseInt(variant.stock);
-                if (isNaN(stock) || stock < 0) {
-                    Swal.fire({
-                        icon: 'error',
-                        title: 'Validation Error',
-                        text: `Variant ${i + 1}: Stock must be a non-negative integer`
-                    });
-                    return;
-                }
-
-                if (!variant.images || variant.images.length < 3) {
-                    Swal.fire({
-                        icon: 'error',
-                        title: 'Validation Error',
-                        text: `Variant ${i + 1}: Please upload at least 3 images`
-                    });
-                    return;
-                }
-            }
-
-            const formData = {
-                name,
-                description,
-                brand,
-                category,
-                variants: validVariants
-            };
-
-            try {
-                Swal.fire({
-                    title: 'Saving Product...',
-                    text: 'Please wait while we upload images',
-                    allowOutsideClick: false,
-                    didOpen: () => Swal.showLoading()
-                });
-
-                const response = await fetch('/admin/products/add', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify(formData)
-                });
-                
-                
-                const result = await response.json();
-
-                if (response.ok) {
-                    Swal.fire({
-                        icon: 'success',
-                        title: 'Product Added!',
-                        text: 'Your product has been successfully created',
-                        showConfirmButton: false,
-                        timer: 2000
-                    }).then(() => {
-                        window.location.href = '/admin/products';
-                    });
-                } else {
-                    Swal.fire({
-                        icon: 'error',
-                        title: 'Error!',
-                        text: result.message || 'Something went wrong while saving the product'
-                    });
-                }
-
-            } catch (error) {
-                console.error('Error submitting form:', error);
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Network Error',
-                    text: 'Unable to save product. Please try again.'
-                });
-            }
+      if (!name || !description || !brand || !category) {
+        Swal.fire({
+          icon: "error",
+          title: "Validation Error",
+          text: "Please fill all required fields in Basic Information",
         });
+        return;
+      }
+
+      const validVariants = variants.filter((v) => v !== null);
+      if (validVariants.length === 0) {
+        Swal.fire({ 
+          icon: "error",
+          title: "No Variants",
+          text: "Please add at least one product variant",
+        });
+        return;
+      }
+
+      for (let i = 0; i < validVariants.length; i++) {
+        const v = validVariants[i];
+        if (!v.color || !v.price || !v.stock || !v.images || v.images.length < 3) {
+          Swal.fire({
+            icon: "error",
+            title: "Validation Error",
+            text: `Variant ${i + 1} is missing required fields or images (min 3)`,
+          });
+          return;
+        }
+      }
+
+      // ✅ Build FormData instead of JSON
+      const formData = new FormData();
+      formData.append("name", name);
+      formData.append("description", description);
+      formData.append("brand", brand);
+      formData.append("category", category);
+
+      validVariants.forEach((variant, vIndex) => {
+        formData.append(`variants[${vIndex}][color]`, variant.color);
+        formData.append(`variants[${vIndex}][price]`, variant.price);
+        formData.append(`variants[${vIndex}][stock]`, variant.stock);
+
+        variant.images.forEach((imgBase64, imgIndex) => {
+          const byteString = atob(imgBase64.split(",")[1]);
+          const mimeString = imgBase64.split(",")[0].split(":")[1].split(";")[0];
+          const ab = new ArrayBuffer(byteString.length);
+          const ia = new Uint8Array(ab);
+          for (let i = 0; i < byteString.length; i++) {
+            ia[i] = byteString.charCodeAt(i);
+          }
+          const blob = new Blob([ab], { type: mimeString });
+          formData.append("images", blob, `variant${vIndex}_img${imgIndex}.jpg`);
+        });     
+      });
+
+      try {
+        Swal.fire({
+          title: "Saving Product...",
+          text: "Uploading images, please wait...",
+          allowOutsideClick: false,
+          didOpen: () => Swal.showLoading(),
+        });
+
+        // ✅ Send as multipart/form-data (no headers!)
+        const response = await fetch("/admin/products/add", {
+          method: "POST",
+          body: formData,
+        });
+
+        const result = await response.json();
+
+        if (response.ok) {
+          Swal.fire({
+            icon: "success",
+            title: "Product Added!",
+            text: "Your product has been successfully created",
+            showConfirmButton: false,
+            timer: 2000,
+          }).then(() => {
+            window.location.href = "/admin/products";
+          });
+        } else {
+          Swal.fire({
+            icon: "error",
+            title: "Error!",
+            text: result.message || "Something went wrong while saving the product",
+          });
+        }
+      } catch (error) {
+        console.error("Error submitting form:", error);
+        Swal.fire({
+          icon: "error",
+          title: "Network Error",
+          text: "Unable to save product. Please try again.",
+        });
+      }
+    });
     </script>
 </body>
 </html>
