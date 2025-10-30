@@ -1,28 +1,4 @@
-// import express from "express";
-// import multer from "multer";
 
-// const router = express.Router();
-
-// const upload = multer({ dest: "uploads/" }); // ✅ only one declaration
-
-// import {
-//   listProducts,
-//   renderAddProduct,
-//   addProduct,
-//   renderAddVariants,
-//   saveProduct,
-//   softDeleteProduct,
-// } from "../../controllers/admin/productController.js";
-
-// router.get("/", listProducts);
-// router.get("/add", renderAddProduct);
-// router.post("/add", addProduct);
-// router.get("/variants", renderAddVariants);
-// console.log("reached router in routes")
-// router.post("/save",upload.array("images", 5), saveProduct);
-// router.post("/delete/:id", softDeleteProduct);
-
-// export default router;
 import express from 'express';
 import { 
   getProducts, 
@@ -33,7 +9,8 @@ import {
   deleteProduct,
   uploadImage,
   deleteImage,
-  renderAddProduct
+  renderAddProduct,
+  renderEditProduct
 } from '../../controllers/admin/productController.js';
 import { isAdminAuthenticated } from '../../middlewares/adminAuth.js';  
 import { upload } from "../../config/cloudinary.js";
@@ -47,7 +24,15 @@ router.get('/', isAdminAuthenticated, getProducts);
 router.get('/add', isAdminAuthenticated, renderAddProduct);
 router.get('/:id', isAdminAuthenticated, getProductById);
 router.post('/add', isAdminAuthenticated,upload.array('images', 20) , addProduct);
-router.put('/:id', isAdminAuthenticated, updateProduct);
+
+
+// Show the Edit Product page (GET)
+
+router.get('/edit/:id', isAdminAuthenticated, renderEditProduct);
+
+// Handle Edit Product form submission (POST or PUT)
+router.post('/edit/:id', isAdminAuthenticated, upload.array('images', 20), updateProduct);
+
 router.delete('/:id', isAdminAuthenticated, deleteProduct);
 
 // Soft-delete via POST to match frontend calls

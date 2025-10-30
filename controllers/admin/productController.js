@@ -120,141 +120,7 @@ export const getActiveCategories = async (req, res) => {
   }
 };
 
-// export const addProduct = async (req, res) => {
-//   try {
-//     const { name, description, brand, category, variants } = req.body;
 
-//     // Validate basic information
-//     if (!name?.trim()) {
-//       return res.status(400).json({ 
-//         success: false, 
-//         message: 'Product name is required' 
-//       });
-//     }
-
-//     if (!description?.trim()) {
-//       return res.status(400).json({ 
-//         success: false, 
-//         message: 'Description is required' 
-//       });
-//     }
-
-//     if (!brand?.trim()) {
-//       return res.status(400).json({ 
-//         success: false, 
-//         message: 'Brand is required' 
-//       });
-//     }
-
-//     if (!category) {
-//       return res.status(400).json({ 
-//         success: false, 
-//         message: 'Category is required' 
-//       });
-//     }
-
-//     // Check if category exists and is not blocked
-//     const categoryDoc = await Category.findById(category);
-//     if (!categoryDoc) {
-//       return res.status(400).json({ 
-//         success: false, 
-//         message: 'Category not found' 
-//       });
-//     }
-    
-//     if (categoryDoc.isBlocked) {
-//       return res.status(400).json({ 
-//         success: false, 
-//         message: 'This category is blocked and cannot be used' 
-//       });
-//     }
-
-//     // Validate variants
-//     if (!variants || !Array.isArray(variants) || variants.length === 0) {
-//       return res.status(400).json({ 
-//         success: false, 
-//         message: 'At least one variant is required' 
-//       });
-//     }
-
-//     // Validate each variant
-//     for (let i = 0; i < variants.length; i++) {
-//       const variant = variants[i];
-      
-//       if (!variant.color?.trim()) {
-//         return res.status(400).json({ 
-//           success: false, 
-//           message: `Variant ${i + 1}: Color is required` 
-//         });
-//       }
-
-//       const price = parseFloat(variant.price);
-//       if (isNaN(price) || price < 0) {
-//         return res.status(400).json({ 
-//           success: false, 
-//           message: `Variant ${i + 1}: Price must be a positive number` 
-//         });
-//       }
-
-//       const stock = parseInt(variant.stock);
-//       if (isNaN(stock) || stock < 0 || !Number.isInteger(stock)) {
-//         return res.status(400).json({ 
-//           success: false,   
-//           message: `Variant ${i + 1}: Stock must be a positive integer` 
-//         });
-//       }
-
-//       if (!variant.images || !Array.isArray(variant.images) || variant.images.length < 3) {
-//         return res.status(400).json({ 
-//           success: false, 
-//           message: `Variant ${i + 1}: At least 3 images are required` 
-//         });
-//       }
-
-//       // Validate image objects
-//       for (let j = 0; j < variant.images.length; j++) {
-//         if (!variant.images[j].url || !variant.images[j].publicId) {
-//           return res.status(400).json({ 
-//             success: false, 
-//             message: `Variant ${i + 1}, Image ${j + 1}: Invalid image data` 
-//           });
-//         }
-//       }
-//     }
-
-//     // Create product
-//     const product = new Product({
-//       name: name.trim(),
-//       description: description.trim(),
-//       brand: brand.trim(),
-//       category,
-//       variants: variants.map(v => ({
-//         color: v.color.trim(),
-//         price: parseFloat(v.price),
-//         stock: parseInt(v.stock),
-//         images: v.images
-//       }))
-//     });
-
-//     await product.save();
-//     await product.populate('category');
-
-//     res.status(201).json({ 
-//       success: true, 
-//       message: 'Product added successfully', 
-//       product 
-//     });
-//   } catch (error) {
-//     console.error('Add Product Error:', error);
-//     res.status(500).json({ 
-//       success: false, 
-//       message: 'Failed to add product',
-//       error: error.message 
-//     });
-//   }
-// };
-
-// Update product
 
 export const addProduct = async (req, res) => {
   try {
@@ -322,6 +188,38 @@ export const addProduct = async (req, res) => {
     });
   }
 };
+
+
+// Render Edit Product Page
+export const renderEditProduct = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const product = await Product.findOne({ _id: id, isDeleted: false })
+      .populate('category')
+      .lean();
+
+    if (!product) {
+      return res.status(404).send("Product not found");
+    }
+
+    const categories = await Category.find({ isDeleted: false }).sort({ name: 1 }).lean();
+
+    const colors = [
+      'Black', 'Blue', 'Brown', 'Gray', 'Red', 'Green', 'Yellow', 'White', 'Pink', 'Purple', 'Orange'
+    ];
+
+    return res.render("admin/editProduct", {
+      title: "Edit Product",
+      product,
+      categories,
+      colors
+    });
+  } catch (error) {
+    console.error("Render Edit Product Error:", error);
+    return res.status(500).send("Failed to render edit product page");
+  }
+};
+
 
 
 export const updateProduct = async (req, res) => {
