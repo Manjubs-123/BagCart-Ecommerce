@@ -51,3 +51,5 @@ router.delete('/delete-image', deleteImage);
 
 router.post('/toggle-status/:id', isAdminAuthenticated, toggleProductStatus);
 export default router;
+
+

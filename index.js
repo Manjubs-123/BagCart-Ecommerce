@@ -14,7 +14,7 @@ import usersRoutes from "./routes/admin/usersRoutes.js";
 import categoryRoutes from "./routes/admin/categoryRoutes.js";
 import productRoutes from './routes/admin/productRoutes.js';
 import connectDB from './config/DB.js';
-
+import shopRoutes from "./routes/shopRoute.js";
 
 
 const app = express()
@@ -71,6 +71,8 @@ app.use("/admin",adminRoutes);
 app.use("/admin/users",usersRoutes);
 app.use("/admin/category",categoryRoutes);
 app.use("/admin/products",productRoutes);
+app.use("/shop", shopRoutes);
+
 
 // app.get("/",(req,res)=>{
 //     const user=req.session.user||null;

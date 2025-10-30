@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Our Collection - BagHub</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .dropdown-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease-out;
+        }
+        .dropdown-content.active {
+            max-height: 500px;
+        }
+        .heart-icon:hover {
+            color: #ef4444;
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <!-- Header -->
+    <header class="bg-teal-800 text-white shadow-md">
+        <div class="container mx-auto px-4 py-4">
+            <div class="flex items-center justify-between">
+                <nav class="flex items-center space-x-6">
+                    <a href="/" class="hover:text-teal-200">Home</a>
+                    <a href="/shop" class="hover:text-teal-200 font-semibold">Shop</a>
+                    <a href="/contact" class="hover:text-teal-200">Contact Us</a>
+                    <a href="/about" class="hover:text-teal-200">About Us</a>
+                </nav>
+                
+                <div class="flex items-center space-x-2">
+                    <i class="fas fa-shopping-bag text-2xl"></i>
+                    <span class="text-2xl font-bold">BagHub</span>
+                </div>
+                
+                <div class="flex items-center space-x-6">
+                    <a href="/cart" class="hover:text-teal-200">
+                        <i class="fas fa-shopping-cart text-xl"></i>
+                    </a>
+                    <a href="/profile" class="hover:text-teal-200">
+                        <i class="fas fa-user text-xl"></i>
+                    </a>
+                    <a href="/wishlist" class="hover:text-teal-200">
+                        <i class="fas fa-heart text-xl"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <div class="container mx-auto px-4 py-8">
+        <div class="flex flex-col lg:flex-row gap-6">
+            <!-- Sidebar Filters -->
+            <aside class="lg:w-64 w-full">
+                <div class="bg-white rounded-lg shadow-md p-6 sticky top-4">
+                    <h2 class="text-xl font-bold mb-4 pb-2 border-b">Categories</h2>
+                    
+                    <!-- Shop For Category Dropdown -->
+                     <!-- 🏷️ Category Filter -->
+<div class="mb-6">
+  <button onclick="toggleDropdown('category-dropdown')" class="flex items-center justify-between w-full text-left font-semibold mb-2">
+    <span>Shop For Category</span>
+    <i class="fas fa-chevron-down transition-transform" id="category-icon"></i>
+  </button>
+  <div id="category-dropdown" class="dropdown-content active">
+    <% if (categories && categories.length) { %>
+      <div class="space-y-2">
+        <% categories.forEach(cat => { %>
+          <label class="flex items-center gap-2 cursor-pointer hover:bg-gray-50 p-1 rounded">
+            <input
+              type="checkbox"
+              name="category"
+              value="<%= cat._id %>"
+              <%= selectedCategories && selectedCategories.includes(String(cat._id)) ? 'checked' : '' %>
+              class="filter-checkbox h-4 w-4 text-teal-600"
+            >
+            <span class="text-sm"><%= cat.name %></span>
+          </label>
+        <% }) %>
+      </div>
+    <% } else { %>
+      <p class="text-gray-500 text-sm">No categories available</p>
+    <% } %>
+  </div>
+</div>
+
+
+
+
+                    <!-- Colors Dropdown -->
+                    <!-- Colors Dropdown -->
+<div class="bg-white p-4 rounded shadow mt-4 mb-6">
+  <h3 class="font-semibold mb-3">Colors</h3>
+  <div class="flex flex-wrap gap-2">
+    <% if (colors && colors.length) { %>
+      <% colors.forEach(color => { %>
+        <label class="flex items-center gap-2 cursor-pointer hover:bg-gray-50 p-1 rounded">
+          <input type="checkbox" name="color" value="<%= color %>" class="filter-checkbox h-4 w-4 text-teal-600" />
+          <span class="w-5 h-5 rounded-full border" style="background-color:<%= color %>"></span>
+          <span class="text-sm"><%= color %></span>
+        </label>
+      <% }) %>
+    <% } else { %>
+      <p class="text-gray-500 text-sm">No colors available</p>
+    <% } %>
+  </div>
+</div>
+
+
+
+                    <!-- Brand Dropdown -->
+                    <div class="mb-6">
+                        <button onclick="toggleDropdown('brand-dropdown')" class="flex items-center justify-between w-full text-left font-semibold mb-2">
+                            <span>BRAND</span>
+                            <i class="fas fa-chevron-down transition-transform" id="brand-icon"></i>
+                        </button>
+                        <div id="brand-dropdown" class="dropdown-content active">
+                            <% const allBrands = [...new Set(products.filter(p => !p.isBlocked).map(p => p.brand).filter(Boolean))]; %>
+                            <% allBrands.forEach(brand => { %>
+                                <label class="flex items-center space-x-2 mb-2 cursor-pointer hover:bg-gray-50 p-1 rounded">
+                                    <input type="checkbox" name="brand" value="<%= brand %>" class="filter-checkbox w-4 h-4 text-teal-600">
+                                    <span class="text-sm"><%= brand %></span>
+                                </label>
+                            <% }) %>
+                        </div>
+                    </div>
+
+                    <!-- Price Range -->
+                    <div class="mb-6">
+                        <h3 class="font-semibold mb-3">Price</h3>
+                        <div class="flex items-center space-x-2 mb-2">
+                            <input 
+  type="number" 
+  id="minPrice" 
+  placeholder="Min" 
+  class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm" 
+  min="0"
+/>
+<span>-</span>
+<input 
+  type="number" 
+  id="maxPrice" 
+  placeholder="Max" 
+  class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm" 
+  min="0"
+/>
+
+                        </div>
+                    </div>
+
+                    <!-- Filter Button -->
+                    <button onclick="applyFilters()" class="w-full bg-teal-800 text-white py-2 rounded-lg hover:bg-teal-700 transition duration-300">
+                        Filter
+                    </button>
+                </div>
+            </aside>
+
+            <!-- Main Content -->
+            <main class="flex-1">
+                <!-- Header Section -->
+                <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+                    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                        <h1 class="text-3xl font-bold text-gray-800">Our Collection</h1>
+                        
+                        <div class="flex items-center gap-4">
+                            <!-- Sort Dropdown -->
+                            <select id="sortSelect" onchange="applyFilters()" class="px-4 py-2 bg-teal-800 text-white rounded-lg cursor-pointer hover:bg-teal-700 transition">
+                                <option value="">Sort</option>
+                                <option value="price-low">Price: Low to High</option>
+                                <option value="price-high">Price: High to Low</option>
+                                <option value="name-asc">Name: A to Z</option>
+                                <option value="name-desc">Name: Z to A</option>
+                                <option value="popularity">Popularity</option>
+                                <option value="rating">Average Rating</option>
+                                <option value="new">New Arrivals</option>
+                                <option value="featured">Featured</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <!-- Search Bar -->
+                    <div class="mt-4 relative">
+                        <input type="text" id="searchInput" placeholder="Search An Item" class="w-full px-4 py-3 pr-12 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500">
+                        <button onclick="applyFilters()" class="absolute right-3 top-1/2 transform -translate-y-1/2 bg-gray-200 p-2 rounded-full hover:bg-gray-300">
+                            <i class="fas fa-search text-gray-600"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Products Grid -->
+                <div id="productsGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
+  <% if (products && products.length > 0) { %>
+    <% products.forEach(product => { %>
+      <% if (!product.isBlocked) { %>
+        <div class="product-card bg-white rounded-lg shadow-md overflow-hidden hover:shadow-xl transition duration-300"
+             data-category="<%= product.category?._id || '' %>"
+             data-brand="<%= product.brand || '' %>"
+             data-colors="<%= product.variants.map(v => v.color).join(',') %>"
+             data-price="<%= product.variants?.[0]?.price || 0 %>"
+             data-name="<%= (product.name || '').toLowerCase() %>"
+             data-created="<%= product.createdAt %>"
+             data-featured="<%= product.isFeatured ? 'true' : 'false' %>">
+
+          <a href="/product/<%= product._id %>" class="block">
+            <div class="relative">
+  <% 
+    let mainImage = '/images/placeholder.jpg';
+    if (product.variants && product.variants.length > 0 && product.variants[0].images.length > 0) {
+      mainImage = product.variants[0].images[0].url;
+    }
+  %>
+
+  <img 
+ 
+
+    src="<%= mainImage %>" 
+    alt="<%= product.name %>" 
+    class="w-full h-64 object-cover rounded-lg border border-gray-200" 
+  />
+
+  <% if (product.isFeatured) { %>
+    <span class="absolute top-2 left-2 bg-yellow-500 text-white px-2 py-1 rounded text-xs font-semibold">
+      Featured
+    </span>
+  <% } %>
+</div>
+
+
+            <div class="p-4">
+              <h3 class="font-semibold text-lg mb-2 text-gray-800 truncate"><%= product.name %></h3>
+              <p class="text-sm text-gray-500 mb-1"><%= product.brand %></p>
+              <p class="text-teal-800 font-bold text-xl mb-2">₹<%= product.variants?.[0]?.price || 0 %></p>
+
+              <!-- Color swatches -->
+              <div class="flex gap-2 mb-2">
+                <% product.variants.forEach(v => { %>
+                  <span class="w-5 h-5 rounded-full border" style="background-color:<%= v.color.toLowerCase() %>"></span>
+                <% }) %>
+              </div>
+
+              <button onclick="toggleWishlist(event, '<%= product._id %>')" class="heart-icon text-gray-400 hover:text-red-500 transition">
+                <i class="far fa-heart text-xl"></i>
+              </button>
+            </div>
+          </a>
+        </div>
+      <% } %>
+    <% }) %>
+  <% } else { %>
+    <div class="col-span-3 text-center py-12">
+      <p class="text-gray-500 text-lg">No products found</p>
+    </div>
+  <% } %>
+</div>
+
+
+                <!-- Results Info & Load More -->
+                <div class="text-center">
+                    <p class="text-gray-600 mb-4" id="resultsInfo">Showing <span id="currentCount">0</span> of <span id="totalCount">0</span> item(s)</p>
+                    <button id="loadMoreBtn" onclick="loadMore()" class="bg-teal-800 text-white px-8 py-3 rounded-lg hover:bg-teal-700 transition duration-300 inline-flex items-center">
+                        Load More
+                        <i class="fas fa-chevron-right ml-2"></i>
+                    </button>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="bg-teal-900 text-white mt-12">
+        <div class="container mx-auto px-4 py-8">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
+                <div>
+                    <h3 class="text-lg font-bold mb-4">SHOP</h3>
+                    <ul class="space-y-2">
+                        <li><a href="#" class="hover:text-teal-300">Indoor Plants</a></li>
+                        <li><a href="#" class="hover:text-teal-300">Outdoor Plants</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h3 class="text-lg font-bold mb-4">SUPPORT</h3>
+                    <ul class="space-y-2">
+                        <li><a href="#" class="hover:text-teal-300">Order Status</a></li>
+                        <li><a href="#" class="hover:text-teal-300">Product Support</a></li>
+                        <li><a href="#" class="hover:text-teal-300">Shipping & Return Policy</a></li>
+                        <li><a href="#" class="hover:text-teal-300">Complaint Registration</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h3 class="text-lg font-bold mb-4">About Us</h3>
+                    <ul class="space-y-2">
+                        <li><a href="#" class="hover:text-teal-300">Contact Us</a></li>
+                        <li><a href="#" class="hover:text-teal-300">Privacy Policy</a></li>
+                        <li><a href="#" class="hover:text-teal-300">Terms of use</a></li>
+                        <li><a href="#" class="hover:text-teal-300">FAQ</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h3 class="text-lg font-bold mb-4">Contact</h3>
+                    <p class="mb-2">Email: baghub@gmail.com</p>
+                    <p class="mb-4">Phone: +91 8888888888</p>
+                    <h3 class="text-lg font-bold mb-2">Connect with us</h3>
+                    <div class="flex space-x-4">
+                        <a href="#" class="hover:text-teal-300"><i class="fab fa-instagram text-2xl"></i></a>
+                        <a href="#" class="hover:text-teal-300"><i class="fab fa-facebook text-2xl"></i></a>
+                        <a href="#" class="hover:text-teal-300"><i class="fab fa-twitter text-2xl"></i></a>
+                    </div>
+                </div>
+            </div>
+            <div class="border-t border-teal-800 mt-8 pt-6 text-center">
+                <p>&copy; 2025 bagHub - All Rights Reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        let currentlyShown = 12;
+        const loadMoreIncrement = 12;
+
+        // Toggle dropdown functionality
+        function toggleDropdown(id) {
+            const dropdown = document.getElementById(id);
+            const icon = document.getElementById(id.replace('-dropdown', '-icon'));
+            dropdown.classList.toggle('active');
+            icon.classList.toggle('rotate-180');
+        }
+
+        // Apply filters function
+        function applyFilters() {
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            const minPrice = parseFloat(document.getElementById('minPrice').value) || 0;
+            const maxPrice = parseFloat(document.getElementById('maxPrice').value) || Infinity;
+            const sortValue = document.getElementById('sortSelect').value;
+
+            // Get selected filters
+            const selectedCategories = Array.from(document.querySelectorAll('input[name="category"]:checked')).map(cb => cb.value);
+            const selectedColors = Array.from(document.querySelectorAll('input[name="color"]:checked')).map(cb => cb.value);
+            const selectedBrands = Array.from(document.querySelectorAll('input[name="brand"]:checked')).map(cb => cb.value);
+
+            // Get all product cards
+            let products = Array.from(document.querySelectorAll('.product-card'));
+
+            // Filter products
+            products.forEach(product => {
+                const productName = product.getAttribute('data-name');
+                const productPrice = parseFloat(product.getAttribute('data-price'));
+                const productCategory = product.getAttribute('data-category');
+                const productBrand = product.getAttribute('data-brand');
+                const productColors = product.getAttribute('data-colors').split(',').filter(c => c);
+
+                let show = true;
+
+                // Search filter
+                if (searchTerm && !productName.includes(searchTerm)) {
+                    show = false;
+                }
+
+                // Price filter
+                if (productPrice < minPrice || productPrice > maxPrice) {
+                    show = false;
+                }
+
+                // Category filter
+                if (selectedCategories.length > 0 && !selectedCategories.includes(productCategory)) {
+                    show = false;
+                }
+
+                // Brand filter
+                if (selectedBrands.length > 0 && !selectedBrands.includes(productBrand)) {
+                    show = false;
+                }
+
+                // Color filter
+                if (selectedColors.length > 0) {
+                    const hasMatchingColor = selectedColors.some(color => productColors.includes(color));
+                    if (!hasMatchingColor) {
+                        show = false;
+                    }
+                }
+
+                product.style.display = show ? 'block' : 'none';
+            });
+
+            // Get visible products for sorting
+            const visibleProducts = products.filter(p => p.style.display !== 'none');
+
+            // Sort products
+            if (sortValue) {
+                visibleProducts.sort((a, b) => {
+                    switch(sortValue) {
+                        case 'price-low':
+                            return parseFloat(a.getAttribute('data-price')) - parseFloat(b.getAttribute('data-price'));
+                        case 'price-high':
+                            return parseFloat(b.getAttribute('data-price')) - parseFloat(a.getAttribute('data-price'));
+                        case 'name-asc':
+                            return a.getAttribute('data-name').localeCompare(b.getAttribute('data-name'));
+                        case 'name-desc':
+                            return b.getAttribute('data-name').localeCompare(a.getAttribute('data-name'));
+                        case 'popularity':
+                            return parseFloat(b.getAttribute('data-popularity')) - parseFloat(a.getAttribute('data-popularity'));
+                        case 'rating':
+                            return parseFloat(b.getAttribute('data-rating')) - parseFloat(a.getAttribute('data-rating'));
+                        case 'new':
+                            return new Date(b.getAttribute('data-created')) - new Date(a.getAttribute('data-created'));
+                        case 'featured':
+                            return (b.getAttribute('data-featured') === 'true' ? 1 : 0) - (a.getAttribute('data-featured') === 'true' ? 1 : 0);
+                        default:
+                            return 0;
+                    }
+                });
+
+                // Re-append sorted products
+                const grid = document.getElementById('productsGrid');
+                visibleProducts.forEach(product => {
+                    grid.appendChild(product);
+                });
+            }
+
+            // Update results count
+            updateResultsCount();
+            
+            // Reset load more
+            currentlyShown = loadMoreIncrement;
+            applyLoadMore();
+        }
+
+        // Load more functionality
+        function loadMore() {
+            currentlyShown += loadMoreIncrement;
+            applyLoadMore();
+        }
+
+        function applyLoadMore() {
+            const visibleProducts = Array.from(document.querySelectorAll('.product-card')).filter(p => p.style.display !== 'none');
+            
+            visibleProducts.forEach((product, index) => {
+                if (index < currentlyShown) {
+                    product.style.display = 'block';
+                } else {
+                    product.style.display = 'none';
+                }
+            });
+
+            // Hide load more button if all products are shown
+            const loadMoreBtn = document.getElementById('loadMoreBtn');
+            if (currentlyShown >= visibleProducts.length) {
+                loadMoreBtn.style.display = 'none';
+            } else {
+                loadMoreBtn.style.display = 'inline-flex';
+            }
+
+            updateResultsCount();
+        }
+
+        function updateResultsCount() {
+            const allProducts = document.querySelectorAll('.product-card');
+            const visibleProducts = Array.from(allProducts).filter(p => {
+                const computedStyle = window.getComputedStyle(p);
+                return computedStyle.display !== 'none';
+            });
+            
+            const showing = Math.min(currentlyShown, visibleProducts.length);
+            
+            document.getElementById('currentCount').textContent = showing;
+            document.getElementById('totalCount').textContent = visibleProducts.length;
+        }
+
+        // Toggle wishlist
+        function toggleWishlist(event, productId) {
+            event.preventDefault();
+            event.stopPropagation();
+            
+            const icon = event.currentTarget.querySelector('i');
+            
+            if (icon.classList.contains('far')) {
+                icon.classList.remove('far');
+                icon.classList.add('fas');
+                icon.style.color = '#ef4444';
+                
+                // Add to wishlist via AJAX
+                fetch('/wishlist/add', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ productId: productId })
+                }).catch(err => console.error('Error:', err));
+            } else {
+                icon.classList.remove('fas');
+                icon.classList.add('far');
+                icon.style.color = '';
+                
+                // Remove from wishlist via AJAX
+                fetch('/wishlist/remove', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ productId: productId })
+                }).catch(err => console.error('Error:', err));
+            }
+        }
+
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            updateResultsCount();
+            applyLoadMore();
+            
+            // Add enter key support for search
+            document.getElementById('searchInput').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    applyFilters();
+                }
+            });
+        });
+    </script>
+</body>
+</html>

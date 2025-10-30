@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= product.productName %> - BagHub</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50">
+    <!-- Navigation Bar -->
+    <nav class="bg-teal-900 text-white">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <div class="flex items-center space-x-8">
+                    <div class="flex items-center space-x-2">
+                        <svg class="w-8 h-8" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M7 4V3h10v1h4v2h-1v15a2 2 0 01-2 2H6a2 2 0 01-2-2V6H3V4h4zm2 2H6v15h12V6h-9z"/>
+                        </svg>
+                        <span class="text-xl font-bold">BagHub</span>
+                    </div>
+                    <div class="hidden md:flex space-x-6">
+                        <a href="/" class="hover:text-gray-300">Home</a>
+                        <a href="/shop" class="hover:text-gray-300">Shop</a>
+                        <a href="#" class="hover:text-gray-300">Contact Us</a>
+                        <a href="#" class="hover:text-gray-300">About Us</a>
+                    </div>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <button class="hover:text-gray-300">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"/>
+                        </svg>
+                    </button>
+                    <button class="hover:text-gray-300">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+                        </svg>
+                    </button>
+                    <button class="hover:text-gray-300">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Product Details Section -->
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12">
+            <!-- Product Images Gallery -->
+            <div class="flex flex-col gap-4">
+                <!-- Main Image -->
+                <div class="bg-white rounded-lg overflow-hidden flex items-center justify-center h-96 md:h-[500px]">
+                    <img id="mainImage" src="<%= product.productImage && product.productImage[0] ? product.productImage[0] : '/default-product.jpg' %>"
+                         alt="<%= product.productName %>" class="w-full h-full object-contain p-4">
+                </div>
+
+                <!-- Thumbnail Images -->
+                <% if (product.productImage && product.productImage.length > 0) { %>
+                    <div class="grid grid-cols-3 md:grid-cols-4 gap-4">
+                        <% product.productImage.forEach((image, index) => { %>
+                            <button onclick="changeMainImage(this)"
+                                    class="bg-white rounded-lg overflow-hidden border-2 border-transparent hover:border-teal-900 transition-all h-24">
+                                <img src="<%= image %>" alt="Product thumbnail <%= index + 1 %>" class="w-full h-full object-contain p-2">
+                            </button>
+                        <% }); %>
+                    </div>
+                <% } %>
+
+                <!-- Product Info Box (Mobile) -->
+                <div class="md:hidden bg-white rounded-lg p-4 space-y-3">
+                    <h2 class="text-2xl font-bold text-gray-900"><%= product.productName %></h2>
+                    <div class="flex items-center gap-2">
+                        <span class="text-xl font-semibold text-gray-900">₹<%= product.salePrice %></span>
+                        <% if (product.regularPrice) { %>
+                            <span class="text-lg text-gray-500 line-through">₹<%= product.regularPrice %></span>
+                            <% let discount = Math.round(((product.regularPrice - product.salePrice) / product.regularPrice) * 100); %>
+                            <span class="text-green-600 font-semibold"><%= discount %>% off</span>
+                        <% } %>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Product Information -->
+            <div class="flex flex-col gap-6">
+                <!-- Product Details (Desktop) -->
+                <div class="hidden md:block">
+                    <h1 class="text-3xl md:text-4xl font-bold text-gray-900 mb-4"><%= product.productName %></h1>
+
+                    <!-- Price Section -->
+                    <div class="flex items-center gap-4 mb-6">
+                        <span class="text-3xl font-bold text-gray-900">₹<%= product.salePrice %></span>
+                        <% if (product.regularPrice) { %>
+                            <span class="text-xl text-gray-500 line-through">₹<%= product.regularPrice %></span>
+                            <% let discount = Math.round(((product.regularPrice - product.salePrice) / product.regularPrice) * 100); %>
+                            <span class="text-lg text-green-600 font-semibold"><%= discount %>% off</span>
+                        <% } %>
+                    </div>
+
+                    <!-- Rating -->
+                    <% if (product.rating) { %>
+                        <div class="flex items-center gap-2 mb-6">
+                            <div class="flex items-center">
+                                <% for (let i = 0; i < 5; i++) { %>
+                                    <svg class="w-5 h-5 <%= i < Math.floor(product.rating) ? 'text-yellow-400' : 'text-gray-300' %>" fill="currentColor" viewBox="0 0 20 20">
+                                        <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
+                                    </svg>
+                                <% } %>
+                            </div>
+                            <span class="text-sm text-gray-600"><%= product.rating.toFixed(1) %> | <%= product.reviews || 0 %> reviews</span>
+                        </div>
+                    <% } %>
+                </div>
+
+                <!-- Product Details List -->
+                <div class="bg-white rounded-lg p-6">
+                    <h3 class="text-lg font-bold text-gray-900 mb-4">Product Details</h3>
+                    <ul class="space-y-3">
+                        <% if (product.description) { %>
+                            <li class="text-gray-700 flex items-start gap-2">
+                                <span class="text-teal-900 mt-1">•</span>
+                                <span><%= product.description %></span>
+                            </li>
+                        <% } %>
+                        <% if (product.productFeatures && Array.isArray(product.productFeatures)) { %>
+                            <% product.productFeatures.forEach(feature => { %>
+                                <li class="text-gray-700 flex items-start gap-2">
+                                    <span class="text-teal-900 mt-1">•</span>
+                                    <span><%= feature %></span>
+                                </li>
+                            <% }); %>
+                        <% } %>
+                    </ul>
+                </div>
+
+                <!-- Quantity and Color Selection -->
+                <div class="bg-white rounded-lg p-6 space-y-6">
+                    <!-- Quantity -->
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-900 mb-3">Qty</label>
+                        <div class="flex items-center gap-4">
+                            <div class="flex items-center border-2 border-gray-300 rounded-lg">
+                                <button onclick="decreaseQty()" class="px-4 py-2 text-gray-600 hover:text-gray-900">−</button>
+                                <input id="quantity" type="number" value="1" min="1" max="<%= product.stock || 100 %>"
+                                       class="w-16 text-center border-0 outline-none bg-white" readonly>
+                                <button onclick="increaseQty()" class="px-4 py-2 text-gray-600 hover:text-gray-900">+</button>
+                            </div>
+                            <span class="text-sm text-gray-600">
+                                <% if (product.stock > 0) { %>
+                                    In stock (<%= product.stock %> available)
+                                <% } else { %>
+                                    <span class="text-red-600 font-semibold">Out of stock</span>
+                                <% } %>
+                            </span>
+                        </div>
+                    </div>
+
+                    <!-- Color Selection -->
+                    <% if (product.colors && product.colors.length > 0) { %>
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-900 mb-3">Select Color</label>
+                            <select id="colorSelect" class="w-full md:w-48 px-4 py-3 border-2 border-gray-300 rounded-lg bg-white text-gray-900 font-semibold cursor-pointer hover:border-teal-900 transition-colors">
+                                <% product.colors.forEach(color => { %>
+                                    <option value="<%= color %>"><%= color %></option>
+                                <% }); %>
+                            </select>
+                        </div>
+                    <% } %>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="flex flex-col sm:flex-row gap-4">
+                    <button onclick="buyNow()"
+                            class="flex-1 bg-teal-900 text-white py-3 rounded-full font-semibold hover:bg-teal-800 transition-colors text-lg">
+                        Buy Now
+                    </button>
+                    <button onclick="addToCart()"
+                            class="flex-1 border-2 border-teal-900 text-teal-900 py-3 rounded-full font-semibold hover:bg-teal-50 transition-colors text-lg">
+                        Add To Cart
+                    </button>
+                </div>
+
+                <!-- Additional Info -->
+                <div class="bg-gray-100 rounded-lg p-4 text-sm text-gray-700 space-y-2">
+                    <p><strong>SKU:</strong> <%= product.sku || 'N/A' %></p>
+                    <p><strong>Category:</strong> <%= product.category?.name || 'Uncategorized' %></p>
+                    <% if (product.material) { %>
+                        <p><strong>Material:</strong> <%= product.material %></p>
+                    <% } %>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Similar Products Section -->
+    <section class="bg-white py-12 md:py-16 border-t border-gray-200">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <h2 class="text-2xl md:text-3xl font-bold text-gray-900 mb-8">Similar Collection</h2>
+
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
+                <% if (similarProducts && similarProducts.length > 0) { %>
+                    <% similarProducts.slice(0, 4).forEach(item => { %>
+                        <div class="bg-white rounded-lg overflow-hidden hover:shadow-lg transition-shadow">
+                            <div class="relative aspect-square bg-gray-100 overflow-hidden group">
+                                <img src="<%= item.productImage && item.productImage[0] ? item.productImage[0] : '/default-product.jpg' %>"
+                                     alt="<%= item.productName %>" class="w-full h-full object-contain p-3 group-hover:scale-110 transition-transform">
+                                <button onclick="addToWishlist('<%= item._id %>')"
+                                        class="absolute top-3 right-3 bg-white rounded-full p-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                    <svg class="w-5 h-5 text-gray-400 hover:text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/>
+                                    </svg>
+                                </button>
+                            </div>
+                            <div class="p-3 md:p-4">
+                                <h3 class="text-sm md:text-base font-semibold text-gray-900 truncate"><%= item.productName %></h3>
+                                <div class="mt-2 flex items-center gap-2">
+                                    <span class="text-sm md:text-base font-bold text-gray-900">₹<%= item.salePrice %></span>
+                                    <% if (item.regularPrice) { %>
+                                        <span class="text-xs md:text-sm text-gray-500 line-through">₹<%= item.regularPrice %></span>
+                                    <% } %>
+                                </div>
+                            </div>
+                        </div>
+                    <% }); %>
+                <% } %>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="bg-teal-900 text-gray-300 py-12">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-8 mb-8">
+                <div>
+                    <div class="flex items-center space-x-2 mb-4">
+                        <svg class="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M7 4V3h10v1h4v2h-1v15a2 2 0 01-2 2H6a2 2 0 01-2-2V6H3V4h4zm2 2H6v15h12V6h-9z"/>
+                        </svg>
+                        <span class="text-lg font-bold text-white">BagHub</span>
+                    </div>
+                </div>
+                <div>
+                    <h4 class="text-white font-semibold mb-4">Shop</h4>
+                    <ul class="space-y-2 text-sm">
+                        <li><a href="#" class="hover:text-white">Indoor Plants</a></li>
+                        <li><a href="#" class="hover:text-white">Outdoor Plants</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 class="text-white font-semibold mb-4">Support</h4>
+                    <ul class="space-y-2 text-sm">
+                        <li><a href="#" class="hover:text-white">Order Status</a></li>
+                        <li><a href="#" class="hover:text-white">Product Support</a></li>
+                        <li><a href="#" class="hover:text-white">Shipping & Return Policy</a></li>
+                        <li><a href="#" class="hover:text-white">Complaint Registration</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 class="text-white font-semibold mb-4">About Us</h4>
+                    <ul class="space-y-2 text-sm">
+                        <li><a href="#" class="hover:text-white">Contact Us</a></li>
+                        <li><a href="#" class="hover:text-white">Privacy Policy</a></li>
+                        <li><a href="#" class="hover:text-white">Terms of use</a></li>
+                        <li><a href="#" class="hover:text-white">FAQ</a></li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Contact & Social -->
+            <div class="grid grid-cols-2 md:grid-cols-3 gap-6 border-t border-teal-800 pt-8 mb-8">
+                <div>
+                    <h4 class="text-white font-semibold mb-2">Contact</h4>
+                    <p class="text-sm">Email: <a href="mailto:baghub@gmail.com" class="hover:text-white">baghub@gmail.com</a></p>
+                    <p class="text-sm">Phone: <a href="tel:+918888888888" class="hover:text-white">+91 8888888888</a></p>
+                </div>
+                <div>
+                    <h4 class="text-white font-semibold mb-2">About Us</h4>
+                    <p class="text-sm">High-quality bags for every occasion.</p>
+                </div>
+                <div class="col-span-2 md:col-span-1">
+                    <h4 class="text-white font-semibold mb-4">Connect with us</h4>
+                    <div class="flex space-x-4">
+                        <a href="#" class="hover:text-white">
+                            <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm3.5-9c.83 0 1.5-.67 1.5-1.5S16.33 8 15.5 8 14 8.67 14 9.5s.67 1.5 1.5 1.5zm-7 0c.83 0 1.5-.67 1.5-1.5S9.33 8 8.5 8 7 8.67 7 9.5 7.67 11 8.5 11zm3.5 6.5c2.33 0 4.31-1.46 5.11-3.5H6.89c.8 2.04 2.78 3.5 5.11 3.5z"/>
+                            </svg>
+                        </a>
+                        <a href="#" class="hover:text-white">
+                            <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M12 0c-6.627 0-12 5.373-12 12s5.373 12 12 12 12-5.373 12-12-5.373-12-12-12zm0 2c5.523 0 10 4.477 10 10s-4.477 10-10 10-10-4.477-10-10 4.477-10 10-10zm3.5 8c.828 0 1.5-.672 1.5-1.5s-.672-1.5-1.5-1.5-1.5.672-1.5 1.5.672 1.5 1.5 1.5zm-7 0c.828 0 1.5-.672 1.5-1.5s-.672-1.5-1.5-1.5-1.5.672-1.5 1.5.672 1.5 1.5 1.5zm3.5 7c2.33 0 4.31-1.46 5.11-3.5h-10.22c.8 2.04 2.78 3.5 5.11 3.5z"/>
+                            </svg>
+                        </a>
+                        <a href="#" class="hover:text-white">
+                            <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M23 3a10.9 10.9 0 01-3.14 1.53 4.48 4.48 0 00-7.86 3v1A10.66 10.66 0 013 4s-4 9 5 13a11.64 11.64 0 01-7 2s9 5 20 5a9.5 9.5 0 00-9-5.5c4.75 2.25 7-7 7-7a4.5 4.5 0 01-.08-.83A7.72 7.72 0 0023 3z"/>
+                            </svg>
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <div class="border-t border-teal-800 pt-8 text-center text-sm">
+                <p>&copy; 2025 baghub . All Rights Reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        function changeMainImage(element) {
+            const mainImage = document.getElementById('mainImage');
+            const imgSrc = element.querySelector('img').src;
+            mainImage.src = imgSrc;
+        }
+
+        function increaseQty() {
+            const qtyInput = document.getElementById('quantity');
+            qtyInput.value = parseInt(qtyInput.value) + 1;
+        }
+
+        function decreaseQty() {
+            const qtyInput = document.getElementById('quantity');
+            if (parseInt(qtyInput.value) > 1) {
+                qtyInput.value = parseInt(qtyInput.value) - 1;
+            }
+        }
+
+        function addToCart() {
+            const quantity = document.getElementById('quantity').value;
+            const color = document.getElementById('colorSelect')?.value || 'N/A';
+            const productId = '<%= product._id %>';
+
+            alert(`Added ${quantity} item(s) to cart - Color: ${color}`);
+        }
+
+        function buyNow() {
+            const quantity = document.getElementById('quantity').value;
+            const color = document.getElementById('colorSelect')?.value || 'N/A';
+            alert(`Proceeding to checkout with ${quantity} item(s) - Color: ${color}`);
+        }
+
+        function addToWishlist(productId) {
+            alert('Added to wishlist!');
+        }
+    </script>
+</body>
+</html>

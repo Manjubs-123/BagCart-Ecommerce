@@ -102,6 +102,8 @@ export const getProducts = async (req, res) => {
 
     // Filter out products whose category was filtered out by populate (blocked/deleted categories)
     const products = rawProducts.filter(p => p.category != null);
+        // 🧠 DEBUG LOG: check if Cloudinary URLs are stored correctly
+    console.log("✅ Product image check:", products[0]?.variants?.[0]?.images);
 
     // 👇 Render EJS view instead of returning JSON
     res.render("admin/productList", {
@@ -170,6 +172,8 @@ export const getActiveCategories = async (req, res) => {
 
 
 
+
+
 export const addProduct = async (req, res) => {
   try {
     console.log("Incoming body:", req.body);
@@ -177,65 +181,73 @@ export const addProduct = async (req, res) => {
 
     let { name, description, brand, category, variants } = req.body;
 
-    // Parse variants if sent as a JSON string (common in FormData)
+    // 🧠 Parse or normalize variants
     if (typeof variants === "string") {
       try {
         variants = JSON.parse(variants);
       } catch (err) {
-        console.error("Failed to parse variants JSON:", err);
+        console.error("❌ Failed to parse variants JSON:", err);
         variants = [];
       }
     }
 
-    // If variants not provided, try reconstructing manually
-    if (!variants || !Array.isArray(variants) || variants.length === 0) {
-      const variantKeys = Object.keys(req.body).filter(k => k.startsWith("variants["));
-      const variantIndexes = [...new Set(variantKeys.map(k => k.match(/variants\[(\d+)\]/)?.[1]))];
-      variants = [];
-
-      for (const i of variantIndexes) {
-        const color = req.body[`variants[${i}][color]`];
-        const price = req.body[`variants[${i}][price]`];
-        const stock = req.body[`variants[${i}][stock]`];
+    // 🧠 Handle images for each variant (CLOUDINARY mapped to schema)
+    if (Array.isArray(variants) && req.files?.length) {
+      variants = variants.map((variant, index) => {
+        // Find matching images for this variant using file name pattern
         const images = req.files
-          .filter(f => f.originalname.startsWith(`variant${i}_`))
-          .map(f => f.path);
+          .filter(f => f.originalname.startsWith(`variant${index}_`))
+          .map(f => ({
+            url: f.path,        // Cloudinary image URL
+            publicId: f.filename // Cloudinary public ID
+          }));
 
-        if (color && price && stock && images.length > 0) {
-          variants.push({ color, price, stock, images });
-        }
-      }
+        return {
+          color: variant.color?.trim(),
+          price: parseFloat(variant.price),
+          stock: parseInt(variant.stock),
+          images
+        };
+      });
     }
 
+    console.log("✅ Prepared variants before save:", JSON.stringify(variants, null, 2));
+
+    // 🧩 Validation
     if (!name || !description || !brand || !category)
       return res.status(400).json({ message: "Missing required fields" });
 
     if (!variants || variants.length === 0)
       return res.status(400).json({ message: "At least one variant is required" });
 
-    // Create product
+    // ✅ Create and save product
     const newProduct = new Product({
-      name,
-      description,
-      brand,
+      name: name.trim(),
+      description: description.trim(),
+      brand: brand.trim(),
       category,
-      variants
+      variants,
+      isActive: true,
+      isDeleted: false
     });
 
     await newProduct.save();
+
+    console.log("✅ Saved product variant images:", newProduct.variants[0]?.images);
 
     res.status(201).json({
       message: "Product added successfully",
       product: newProduct
     });
   } catch (error) {
-    console.error("Add product error:", error);
+    console.error("❌ Add product error:", error);
     res.status(500).json({
       message: "Failed to add product",
       error: error.message
     });
   }
 };
+
 
 
 // Render Edit Product Page
@@ -413,55 +425,6 @@ export const deleteProduct = async (req, res) => {
   }
 };
 
-// Upload image to Cloudinary
-// export const uploadImage = async (req, res) => {
-//   try {
-//     if (!req.file) {
-//       return res.status(400).json({ 
-//         success: false, 
-//         message: 'No image file provided' 
-//       });
-//     }
-
-//     // Upload to Cloudinary
-//     const result = await cloudinary.uploader.upload(req.file.path, {
-//       folder: 'ecommerce/products',
-//       transformation: [
-//         { width: 800, height: 800, crop: 'fill', gravity: 'auto' },
-//         { quality: 'auto:good' },
-//         { fetch_format: 'auto' }
-//       ]
-//     });
-
-//     // Delete temporary file
-//     await fs.unlink(req.file.path);
-
-//     res.json({
-//       success: true,
-//       message: 'Image uploaded successfully',
-//       image: {
-//         url: result.secure_url,
-//         publicId: result.public_id
-//       }
-//     });
-//   } catch (error) {
-//     // Clean up file if upload fails
-//     if (req.file?.path) {
-//       try {
-//         await fs.unlink(req.file.path);
-//       } catch (unlinkError) {
-//         console.error('Error deleting temp file:', unlinkError);
-//       }
-//     }
-    
-//     console.error('Upload Image Error:', error);
-//     res.status(500).json({ 
-//       success: false, 
-//       message: 'Failed to upload image',
-//       error: error.message 
-//     });
-//   }
-// };
 
 export const uploadImage = async (req, res) => {
   try {
