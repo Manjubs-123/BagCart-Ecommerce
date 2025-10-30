@@ -31,13 +31,25 @@ app.set('view engine', 'ejs')
 app.use(express.static(path.join(__dirname, 'public')));
 
 
-
+app.use((req, res, next) => {
+  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, private');
+  next();
+});
 //sessions 
-app.use(session({
-    secret:process.env.SESSION_SECRET,
-    resave:false,
-    saveUninitialized:false
-}));
+// ✅ Setup express-session correctly
+app.use(
+  session({
+    secret: process.env.SESSION_SECRET || "supersecretkey",
+    resave: false,
+    saveUninitialized: false,
+    cookie: {
+      secure: false, // ❗ false if you're using HTTP (localhost)
+      httpOnly: true,
+      sameSite: "lax",
+      maxAge: 24 * 60 * 60 * 1000, // 1 day
+    },
+  })
+);
 
 app.use(passport.initialize());
 app.use(passport.session());
