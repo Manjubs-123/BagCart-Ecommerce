@@ -10,7 +10,9 @@ import {
   uploadImage,
   deleteImage,
   renderAddProduct,
-  renderEditProduct
+  renderEditProduct,
+  toggleProductStatus,
+  listProducts
 } from '../../controllers/admin/productController.js';
 import { isAdminAuthenticated } from '../../middlewares/adminAuth.js';  
 import { upload } from "../../config/cloudinary.js";
@@ -18,6 +20,8 @@ import { upload } from "../../config/cloudinary.js";
 
 const router = express.Router();
 
+
+router.get('/', isAdminAuthenticated, listProducts);
 // Product routes (rooted) - mounted at /admin/products in index.js
 router.get('/', isAdminAuthenticated, getProducts);
 // Render Add Product page BEFORE the dynamic :id route so 'add' isn't treated as an id
@@ -45,4 +49,5 @@ router.get('/categories/active', getActiveCategories);
 router.post('/upload-image', upload.single('image'), uploadImage);
 router.delete('/delete-image', deleteImage);
 
+router.post('/toggle-status/:id', isAdminAuthenticated, toggleProductStatus);
 export default router;

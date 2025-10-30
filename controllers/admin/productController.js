@@ -3,6 +3,54 @@ import Category from "../../models/category.js";
 import { cloudinary } from "../../config/cloudinary.js";
 import fs from 'fs/promises';
 
+
+// List products (with search and pagination)
+export const listProducts = async (req, res) => {
+  try {
+    // --- Pagination & search setup ---
+    const page = Math.max(1, parseInt(req.query.page || "1", 10));
+    const limit = Math.max(1, parseInt(req.query.limit || "10", 10));
+    const q = (req.query.q || "").trim();
+
+    const filter = { isDeleted: false };
+
+    // --- Search filter ---
+    if (q) {
+      filter.$or = [
+        { name: { $regex: q, $options: "i" } },
+        { brand: { $regex: q, $options: "i" } },
+      ];
+    }
+
+    // --- Pagination logic ---
+    const totalProducts = await Product.countDocuments(filter);
+    const totalPages = Math.max(1, Math.ceil(totalProducts / limit));
+    const skip = (page - 1) * limit;
+
+    // --- Fetch paginated products ---
+    const products = await Product.find(filter)
+      .populate("category", "name")
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit)
+      .lean();
+
+    // --- Render EJS with all needed data ---
+    res.render("admin/productList", {
+      title: "Product List",
+      products,
+      q,
+      page,
+      totalPages,
+      limit
+    });
+  } catch (error) {
+    console.error("Error loading products:", error);
+    res.status(500).send("Server Error");
+  }
+};
+
+
 // Render Add Product page
 export const renderAddProduct = async (req, res) => {
   try {
@@ -457,5 +505,29 @@ export const deleteImage = async (req, res) => {
       message: 'Failed to delete image',
       error: error.message 
     });
+  }
+};
+
+// Toggle product active status (block/unblock)
+export const toggleProductStatus = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const product = await Product.findById(id);
+    if (!product || product.isDeleted) {
+      return res.status(404).json({ success: false, message: "Product not found" });
+    }
+
+    product.isActive = !product.isActive;
+    await product.save();
+
+    res.json({
+      success: true,
+      message: `Product has been ${product.isActive ? "unblocked (active)" : "blocked (inactive)"} successfully.`,
+      isActive: product.isActive
+    });
+  } catch (error) {
+    console.error("Toggle Product Status Error:", error);
+    res.status(500).json({ success: false, message: "Failed to toggle product status" });
   }
 };

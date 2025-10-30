@@ -20,24 +20,24 @@
 
         </div>
 
-        <form action="/admin/products" method="get" class="flex items-center mb-6 max-w-xs">
-            
-            <input 
-                type="text" 
-                name="q" 
-                value="<%= q || '' %>" 
-                placeholder="Search product"
-                class="border border-gray-300 rounded-l-md px-3 py-2 w-full focus:outline-none focus:ring-2 focus:ring-emerald-700"
-            />
-            <button type="submit" class="bg-emerald-800 text-white px-4 py-2 rounded-r-md hover:bg-emerald-900">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                    <path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.69l4.34 4.34a1 1 0 01-1.42 1.42l-4.34-4.34A6 6 0 012 8z" clip-rule="evenodd" />
-                </svg>
-            </button>
-            <a href="/admin/products" class="bg-gray-400 text-white px-4 py-2 rounded ml-2 hover:bg-gray-500">
-                Clear
-            </a>
-        </form>
+        <!-- Search Bar -->
+    <form action="/admin/products" method="get" class="flex items-center mb-6 gap-3">
+  <input 
+    type="text" 
+    name="q" 
+    value="<%= q || '' %>" 
+    placeholder="Search Products..."
+    class="border border-gray-300 rounded-md px-3 py-2 w-64 focus:outline-none focus:ring-2 focus:ring-emerald-700"
+  />
+  <button type="submit" class="bg-emerald-800 text-white px-4 py-2 rounded hover:bg-emerald-900">
+    Search
+  </button>
+  <a href="/admin/products" class="bg-gray-400 text-white px-4 py-2 rounded hover:bg-gray-500">
+    Clear
+  </a>
+</form>
+
+
 
         <div class="overflow-x-auto rounded-xl shadow-sm border border-gray-200">
             <table class="min-w-full text-left text-gray-700">
@@ -67,97 +67,111 @@
                                 <%= stock %>
                             </td>
                             <td class="px-6 py-3">
-                                <span class="font-medium <%= product.isDeleted ? 'text-red-600' : 'text-green-600' %>">
-                                    <%= product.isDeleted ? 'Deleted' : 'Active' %>
-                                </span>
-                            </td>
-                            <td class="px-6 py-3 flex gap-2 justify-center">
-                                <a href="/admin/products/edit/<%= product._id %>"
-                                    class="bg-emerald-800 text-white px-4 py-1 rounded hover:bg-emerald-900">
-                                    Edit
-                                </a>
-                                <button
-                                    onclick="confirmSoftDelete('<%= product._id %>')"
-                                    class="bg-red-700 text-white px-4 py-1 rounded hover:bg-red-800">
-                                    Remove
-                                </button>
-                            </td>
+  <span class="font-medium <%= product.isDeleted ? 'text-gray-500' : (product.isActive ? 'text-green-600' : 'text-red-600') %>">
+    <%= product.isDeleted ? 'Deleted' : (product.isActive ? 'Active' : 'Inactive') %>
+  </span>
+</td>
+
+<td class="px-6 py-3 flex gap-2 justify-center">
+  <a href="/admin/products/edit/<%= product._id %>"
+    class="bg-emerald-800 text-white px-4 py-1 rounded hover:bg-emerald-900">
+    Edit
+  </a>
+
+  <% if (!product.isDeleted) { %>
+    <button
+      onclick="toggleProductStatus('<%= product._id %>', <%= product.isActive %>)"
+      class="<%= product.isActive ? 'bg-yellow-600 hover:bg-yellow-700' : 'bg-green-600 hover:bg-green-700' %> text-white px-4 py-1 rounded">
+      <%= product.isActive ? 'Block' : 'Unblock' %>
+    </button>
+  <% } %>
+
+
+</td>
+
+                        
                         </tr>
                     <% }) %>
                 </tbody>
             </table>
         </div>
+    <!-- Pagination -->
+<% if (totalPages > 1) { %>
+  <div class="flex justify-center items-center gap-2 mt-6">
+    <% if (page > 1) { %>
+      <a 
+        href="?page=<%= page - 1 %>&q=<%= q || '' %>" 
+        class="px-3 py-1 border rounded bg-gray-200 hover:bg-gray-300">Previous</a>
+    <% } %>
 
-        <div class="flex justify-center items-center gap-2 mt-6">
-            </div>
+    <% for (let i = 1; i <= totalPages; i++) { %>
+      <a 
+        href="?page=<%= i %>&q=<%= q || '' %>" 
+        class="px-3 py-1 border rounded <%= i === page ? 'bg-emerald-700 text-white' : 'bg-gray-100 hover:bg-gray-200' %>">
+        <%= i %>
+      </a>
+    <% } %>
+
+    <% if (page < totalPages) { %>
+      <a 
+        href="?page=<%= page + 1 %>&q=<%= q || '' %>" 
+        class="px-3 py-1 border rounded bg-gray-200 hover:bg-gray-300">Next</a>
+    <% } %>
+  </div>
+<% } %>
 
     </main>
 
-<script>
-    // ------------------------------------
-    // 1. TOGGLE STATUS (Block/Unblock)
-    // ------------------------------------
-    function toggleProductStatus(id, isActive) {
-        const action = isActive ? 'block' : 'unblock';
-        
-        Swal.fire({
-            title: `Are you sure you want to ${action} this product?`,
-            icon: 'warning',
-            showCancelButton: true,
-            confirmButtonColor: '#3085d6',
-            cancelButtonColor: '#d33',
-            confirmButtonText: `Yes, ${action}!`
-        }).then((result) => {
-            if (result.isConfirmed) {
-                fetch(`/admin/products/toggle-status/${id}`, { method: 'POST' })
-                    .then(res => res.json())
-                    .then(data => {
-                        Swal.fire({
-                            title: data.message,
-                            icon: 'success',
-                            timer: 1200,
-                            showConfirmButton: false
-                        }).then(() => location.reload());
-                    })
-                    .catch(error => {
-                        Swal.fire('Error', 'Failed to toggle status.', 'error');
-                    });
-            }
-        });
-    }
 
-    // ------------------------------------
-    // 2. SOFT DELETE (Sets isDeleted: true)
-    // ------------------------------------
-    function confirmSoftDelete(id) {
-        Swal.fire({
-            title: "Are you sure?",
-            text: "This product will be permanently soft-deleted (removed from active view).",
-            icon: "warning",
-            showCancelButton: true,
-            confirmButtonColor: "#d33",
-            cancelButtonColor: "#3085d6",
-            confirmButtonText: "Yes, remove it!"
-        }).then((result) => {
-            if (result.isConfirmed) {
-                fetch(`/admin/products/delete/${id}`, { method: "POST" })
-                    .then(res => res.json())
-                    .then(data => {
-                        Swal.fire({
-                            title: data.message,
-                            icon: "success",
-                            timer: 1500,
-                            showConfirmButton: false
-                        }).then(() => {
-                            window.location.reload();
-                        });
-                    })
-                    .catch(error => {
-                        Swal.fire('Error', 'Failed to soft delete product.', 'error');
+    <!-- // ------------------------------------
+    // 1. TOGGLE STATUS (Block/Unblock)
+    // ------------------------------------ -->
+   <script>
+function toggleProductStatus(id, isActive) {
+    const action = isActive ? 'block' : 'unblock';
+
+    Swal.fire({
+        title: `Are you sure you want to ${action} this product?`,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#3085d6',
+        cancelButtonColor: '#d33',
+        confirmButtonText: `Yes, ${action}!`
+    }).then((result) => {
+        if (result.isConfirmed) {
+            // ✅ Disable all buttons to prevent double-clicks
+            document.querySelectorAll('button').forEach(btn => btn.disabled = true);
+
+            fetch(`/admin/products/toggle-status/${id}`, { method: 'POST' })
+                .then(async res => {
+                    const data = await res.json();
+
+                    if (!res.ok) throw new Error(data.message || 'Request failed');
+
+                    Swal.fire({
+                        title: data.message,
+                        icon: 'success',
+                        timer: 1500,
+                        showConfirmButton: false
                     });
-            }
-        });
-    }
+
+                    // ✅ Wait for SweetAlert to close before reload
+                    setTimeout(() => location.reload(), 1500);
+                })
+                .catch(error => {
+                    console.error("Toggle error:", error);
+                    Swal.fire('Error', error.message || 'Failed to toggle product status', 'error');
+                })
+                .finally(() => {
+                    // ✅ Re-enable buttons after the fetch completes
+                    document.querySelectorAll('button').forEach(btn => btn.disabled = false);
+                });
+        }
+    });
+}
+
+
+
 </script>
 
 </body>

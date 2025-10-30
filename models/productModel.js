@@ -62,6 +62,10 @@ const productSchema = new mongoose.Schema({
       message: 'At least one variant is required'
     }
   },
+  isActive: {
+    type: Boolean,
+    default: true
+  },
   isDeleted: {
     type: Boolean,
     default: false
