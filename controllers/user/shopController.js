@@ -5,7 +5,7 @@ export const getShopPage = async (req, res) => {
   try {
     const { search = "", page = 1, limit = 12, category: categoryFilter } = req.query;
 
-    // 🟢 1. Fetch only active categories
+    //  Fetch only active categories
     const categories = await Category.find({
       isDeleted: false,
       isActive: true,
@@ -13,10 +13,10 @@ export const getShopPage = async (req, res) => {
       .sort({ name: 1 })
       .lean();
 
-    // 🟢 2. Build base filter
+    //  Build base filter
     const filter = { isDeleted: false, isActive: true };
 
-    // 🔍 Search filter (by product name, brand, description)
+    // Search filter (by product name, brand, description)
     if (search && search.trim()) {
       filter.$or = [
         { name: { $regex: search.trim(), $options: "i" } },
@@ -25,7 +25,7 @@ export const getShopPage = async (req, res) => {
       ];
     }
 
-    // 🏷️ Category filter
+    // Category filter
     if (categoryFilter) {
       const catArray = Array.isArray(categoryFilter)
         ? categoryFilter
@@ -33,12 +33,12 @@ export const getShopPage = async (req, res) => {
       filter.category = { $in: catArray };
     }
 
-    // 🟢 3. Pagination setup
+    // Pagination setup
     const pageNum = Math.max(1, parseInt(page));
     const limitNum = Math.max(1, parseInt(limit));
     const skip = (pageNum - 1) * limitNum;
 
-    // 🟢 4. Fetch products and populate category
+    //  Fetch products and populate category
     let products = await Product.find(filter)
       .populate({
         path: "category",
@@ -49,13 +49,13 @@ export const getShopPage = async (req, res) => {
       .limit(limitNum)
       .lean();
 
-    // 🧹 Remove products without valid category
+    // Remove products without valid category
     products = products.filter((p) => p.category);
 
-     // 🧠 DEBUG: check if Cloudinary image URLs are stored correctly
-    console.log("🟢 Products fetched for user side:", products[0]?.variants?.[0]?.images);
+     // DEBUG: check if Cloudinary image URLs are stored correctly
+    console.log("Products fetched for user side:", products[0]?.variants?.[0]?.images);
 
-    // 🟢 5. Extract unique colors from variants
+    //  Extract unique colors from variants
     const allColors = [
       ...new Set(
         products.flatMap((p) =>
@@ -68,18 +68,18 @@ export const getShopPage = async (req, res) => {
       ),
     ];
 
-    // 🟢 6. Pagination totals
+    //  Pagination totals
     const totalCount = await Product.countDocuments(filter);
     const totalPages = Math.ceil(totalCount / limitNum) || 1;
 
-    // 🟢 7. Pass selected categories for UI highlight
+    //  Pass selected categories for UI highlight
     const selectedCategories = Array.isArray(req.query.category)
       ? req.query.category.map(String)
       : req.query.category
       ? [String(req.query.category)]
       : [];
 
-    // 🟢 8. Render EJS with all required data
+    // Render EJS with all required data
     res.render("user/shop", {
       title: "Shop - BagHub",
       products,
@@ -101,9 +101,7 @@ export const getShopPage = async (req, res) => {
   }
 };
 
-
-
-// 🎯 Filter Products (AJAX)
+// Filter Products (AJAX)
 export const filterProducts = async (req, res) => {
   try {
     const { search, categories, colors, minPrice, maxPrice, sort } = req.body;
@@ -120,12 +118,12 @@ export const filterProducts = async (req, res) => {
       ];
     }
 
-    // 🎨 Filter by variant color
+    // Filter by variant color
     if (colors?.length) {
       filter["variants.color"] = { $in: colors };
     }
 
-    // 💰 Price filter via variant price range
+    // Price filter via variant price range
     const priceFilter = {};
     if (minPrice) priceFilter.$gte = parseFloat(minPrice);
     if (maxPrice) priceFilter.$lte = parseFloat(maxPrice);
@@ -137,7 +135,7 @@ export const filterProducts = async (req, res) => {
       .populate("category")
       .lean();
 
-    // 🔽 Sort
+    //  Sort
     if (sort) {
       switch (sort) {
         case "price-low":
@@ -165,5 +163,76 @@ export const filterProducts = async (req, res) => {
   }
 };
 
+
+// export const getProductDetails = async (req, res) => {
+//  try {
+//     const productId = req.params.id;
+
+//     const product = await Product.findById(productId)
+//       .populate("category")
+//       .lean();
+
+//     if (!product || product.isBlocked) {
+//       return res.redirect("/shop");
+//     }
+
+//     const relatedProducts = await Product.find({
+//       category: product.category._id,
+//       _id: { $ne: productId },
+//       isBlocked: false,
+//     })
+//       .limit(4)
+//       .lean();
+
+//     res.render("user/productDetails", {
+//       title: product.name,
+//       product,
+//       relatedProducts,
+//     });
+//   } catch (error) {
+//     console.error("❌ Product detail page error:", error);
+//     res.redirect("/shop");
+//   }
+// };
+
+export const getProductDetails = async (req, res) => {
+  try {
+    const productId = req.params.id;
+
+    const product = await Product.findById(productId)
+      .populate("category")
+      .lean();
+
+    if (!product || product.isBlocked) {
+      return res.redirect("/shop");
+    }
+
+    // ✅ collect all variant images into a single array
+    const allProductImages = product.variants
+      ? product.variants.flatMap(v =>
+          v.images.map(img => img.url)
+        )
+      : [];
+
+    // ✅ fetch related products (same category)
+    const relatedProducts = await Product.find({
+      category: product.category._id,
+      _id: { $ne: productId },
+      isBlocked: false,
+    })
+      .limit(4)
+      .lean();
+    // ✅ render page with all data
+   res.render("user/productDetails", {
+  title: product.name,
+  product,
+  allProductImages: product.images,
+  relatedProducts, // ✅ add this line
+});
+  } catch (error) {
+    console.error("❌ Product detail page error:", error);
+    res.redirect("/shop");
+  }
+};
 
 

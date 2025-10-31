@@ -31,6 +31,7 @@ app.set('view engine', 'ejs')
 app.use(express.static(path.join(__dirname, 'public')));
 
 
+
 app.use((req, res, next) => {
   res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, private');
   next();
@@ -57,7 +58,7 @@ app.use(passport.session());
 connectDB()
 
 const bags = [
-    { id: 1, name: "Travel Backpack", price: 1999, image: "/images/bag1.jpg" },
+    { id: 1, name: "Travel Backpack", price: 1999, image: "/images/img.jpg" },
     { id: 2, name: "Ofiice Laptop Bag", price: 2499, image: "/images/bag2.jpg" },
     { id: 3, name: "Hiking Rucksack", price: 2799, image: "/images/bag3.jpg" },
     
@@ -71,18 +72,19 @@ app.use("/admin",adminRoutes);
 app.use("/admin/users",usersRoutes);
 app.use("/admin/category",categoryRoutes);
 app.use("/admin/products",productRoutes);
-app.use("/shop", shopRoutes);
+app.use("/", shopRoutes);
 
 
+app.get("/test", (req, res) => {
+  res.sendFile(path.join(__dirname, "public/images/img1.png"));
+});
 // app.get("/",(req,res)=>{
 //     const user=req.session.user||null;
 //     res.render("index",{user,bags});
 // });
-app.get("/", (req, res) => {
-  const user = req.session.user || null;
-  res.render("index", { user, bags });
-});
-
+app.get('/', (req, res) => {
+  res.render('user/landing');
+})
 
 
 const PORT = 3000
