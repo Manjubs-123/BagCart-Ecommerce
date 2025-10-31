@@ -56,7 +56,7 @@ dotenv.config();
     res.render("user/forgotOtp",{email,error:null});
 
  };
-// ✅ Verify OTP
+// Verify OTP
 export const postForgotVerifyOtp = async (req, res) => {
   const { email, otp } = req.body;
   const user = await User.findOne({ email });
@@ -69,7 +69,7 @@ export const postForgotVerifyOtp = async (req, res) => {
     return res.render("user/forgotOtp", { email, error: "OTP invalid or expired." });
   }
 
-  // ✅ OTP correct - redirect to reset password
+  // OTP correct - redirect to reset password
   user.resetotp = null;
   user.otpExpiry = null;
   await user.save();
@@ -77,14 +77,14 @@ export const postForgotVerifyOtp = async (req, res) => {
   res.redirect(`/user/resetPassword?email=${email}`);
 };
 
-// ✅ Render Reset Password Page
+// Render Reset Password Page
 export const renderResetPassword = (req, res) => {
   const { email } = req.query;
   // Always render with error: null if first time loading
   res.render("user/resetPassword", { email, error: null });
 };
 
-// ✅ Handle Reset Password Form Submission
+// Handle Reset Password Form Submission
 export const postResetPassword = async (req, res) => {
   const { email, newPassword, confirmPassword } = req.body;
 
@@ -100,7 +100,7 @@ export const postResetPassword = async (req, res) => {
     }
 
     if (newPassword !== confirmPassword) {
-      // ❗ Re-render same page WITH error message
+      //  Re-render same page WITH error message
       return res.render("user/resetPassword", {
         email,
         error: "Passwords do not match.",
@@ -113,7 +113,7 @@ export const postResetPassword = async (req, res) => {
       { $set: { password: hashed, resetotp: null, otpExpiry: null } }
     );
 
-    // ✅ Redirect to login page after successful reset
+    // Redirect to login page after successful reset
     return res.redirect("/user/login");
   } catch (error) {
     console.error("Password reset error:", error);

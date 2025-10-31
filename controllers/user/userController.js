@@ -5,7 +5,7 @@ import mongoose from "mongoose";
 import dotenv from "dotenv";
 dotenv.config();
 
-// ✅ Configure email transporter using Gmail SMTP
+//  Configure email transporter using Gmail SMTP
 const transporter = nodemailer.createTransport({
     host: "smtp.gmail.com",
     port: 465,
@@ -16,12 +16,12 @@ const transporter = nodemailer.createTransport({
     },
 });
 
-// ✅ Render Signup Page
+//  Render Signup Page
 export const getsignup = (req, res) => {
     res.render("user/signup", { error: null });
 };
 
-// ✅ Handle Signup Submission
+// Handle Signup Submission
 export const signupUser = async (req, res) => {
     try {
         // Check DB connection
@@ -101,18 +101,18 @@ export const signupUser = async (req, res) => {
             `,
         });
 
-        console.log(`✅ OTP sent to ${email}: ${otp}`);
+        console.log(` OTP sent to ${email}: ${otp}`);
 
         res.redirect(`/user/verifyOtp?email=${email}`);
     } catch (err) {
-        console.error("❌ Signup failed:", err);
+        console.error(" Signup failed:", err);
         res.status(500).render("user/signup", {
             error: "Something went wrong. Please try again later.",
         });
     }
 };
 
-// ✅ Render OTP Page
+// Render OTP Page
 export const getVerifyOtp = (req, res) => {
     const { email } = req.query;
     if (!email) {
@@ -131,7 +131,7 @@ export const showLandingPage = (req, res) => {
 };
 
 
-// ✅ Verify OTP Submission
+// Verify OTP Submission
 export const postVerifyOtp = async (req, res) => {
     try {
         const { email, otp } = req.body;
@@ -157,10 +157,22 @@ export const postVerifyOtp = async (req, res) => {
 
         res.render("user/landing", { email, error: null });
     } catch (err) {
-        console.error("❌ OTP Verification error:", err);
+        console.error("OTP Verification error:", err);
         res.status(500).render("user/verifyOtp", {
             email: req.body.email || "",
             error: "Something went wrong. Please try again later.",
         });
     }
 };
+
+// userController.js
+export const logoutUser = (req, res) => {
+  req.session.destroy((err) => {
+    if (err) {
+      console.log("Session destroy error:", err);
+      return res.redirect("/"); // fallback if error occurs
+    }
+    res.redirect("/user/login"); // correct absolute path
+  });
+};
+

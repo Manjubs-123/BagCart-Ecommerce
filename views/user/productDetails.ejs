@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= product.productName %> - BagHub</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50">
+   <%- include('../partials/landingheader') %>
+
+    <!-- Product Details Section -->
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12">
+            <!-- Product Images Gallery -->
+          <!-- Product Images Gallery -->
+<div class="flex flex-col gap-4">
+    <!-- Main Image -->
+    <div class="bg-white rounded-lg overflow-hidden flex items-center justify-center h-96 md:h-[500px]">
+        <img id="mainImage"
+             src="<%= allProductImages && allProductImages.length > 0 ? allProductImages[0] : '/images/image 73.png' %>"
+             alt="<%= product.productName %>"
+             class="w-full h-full object-contain p-4 transition-transform duration-300 hover:scale-105">
+    </div>
+
+    <!-- Thumbnail Images -->
+    <% if (allProductImages && allProductImages.length > 1) { %>
+        <div class="grid grid-cols-3 md:grid-cols-4 gap-4">
+            <% allProductImages.forEach((image, index) => { %>
+                <button onclick="changeMainImageSrc('<%= image %>')"
+                        class="bg-white rounded-lg overflow-hidden border-2 border-transparent hover:border-teal-900 transition-all h-24">
+                    <img src="<%= image %>" alt="Product thumbnail <%= index + 1 %>" class="w-full h-full object-contain p-2">
+                </button>
+            <% }); %>
+        </div>
+    <% } %>
+</div>
+
+
+            <!-- Product Information -->
+            <div class="flex flex-col gap-6">
+                <!-- Product Details (Desktop) -->
+                <div class="hidden md:block">
+                    <h1 class="text-3xl md:text-4xl font-bold text-gray-900 mb-4"><%= product.productName %></h1>
+
+                    <!-- Price Section -->
+                    <div class="flex items-center gap-4 mb-6">
+                        <span class="text-3xl font-bold text-gray-900">₹<%= product.salePrice %></span>
+                        <% if (product.regularPrice) { %>
+                            <span class="text-xl text-gray-500 line-through">₹<%= product.regularPrice %></span>
+                            <% let discount = Math.round(((product.regularPrice - product.salePrice) / product.regularPrice) * 100); %>
+                            <span class="text-lg text-green-600 font-semibold"><%= discount %>% off</span>
+                        <% } %>
+                    </div>
+
+                    <!-- Rating -->
+                    <% if (product.rating) { %>
+                        <div class="flex items-center gap-2 mb-6">
+                            <div class="flex items-center">
+                                <% for (let i = 0; i < 5; i++) { %>
+                                    <svg class="w-5 h-5 <%= i < Math.floor(product.rating) ? 'text-yellow-400' : 'text-gray-300' %>" fill="currentColor" viewBox="0 0 20 20">
+                                        <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
+                                    </svg>
+                                <% } %>
+                            </div>
+                            <span class="text-sm text-gray-600"><%= product.rating.toFixed(1) %> | <%= product.reviews || 0 %> reviews</span>
+                        </div>
+                    <% } %>
+                </div>
+
+                <!-- Product Details List -->
+                <div class="bg-white rounded-lg p-6">
+                    <h3 class="text-lg font-bold text-gray-900 mb-4">Product Details</h3>
+                    <ul class="space-y-3">
+                        <% if (product.description) { %>
+                            <li class="text-gray-700 flex items-start gap-2">
+                                <span class="text-teal-900 mt-1">•</span>
+                                <span><%= product.description %></span>
+                            </li>
+                        <% } %>
+                        <% if (product.productFeatures && Array.isArray(product.productFeatures)) { %>
+                            <% product.productFeatures.forEach(feature => { %>
+                                <li class="text-gray-700 flex items-start gap-2">
+                                    <span class="text-teal-900 mt-1">•</span>
+                                    <span><%= feature %></span>
+                                </li>
+                            <% }); %>
+                        <% } %>
+                    </ul>
+                </div>
+
+                <!-- Quantity and Color Selection -->
+                <div class="bg-white rounded-lg p-6 space-y-6">
+                    <!-- Quantity -->
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-900 mb-3">Qty</label>
+                        <div class="flex items-center gap-4">
+                            <div class="flex items-center border-2 border-gray-300 rounded-lg">
+                                <button onclick="decreaseQty()" class="px-4 py-2 text-gray-600 hover:text-gray-900">−</button>
+                                <input id="quantity" type="number" value="1" min="1" max="<%= product.stock || 100 %>"
+                                       class="w-16 text-center border-0 outline-none bg-white" readonly>
+                                <button onclick="increaseQty()" class="px-4 py-2 text-gray-600 hover:text-gray-900">+</button>
+                            </div>
+                            <span class="text-sm text-gray-600">
+                                <% if (product.stock > 0) { %>
+                                    In stock (<%= product.stock %> available)
+                                <% } else { %>
+                                    <span class="text-red-600 font-semibold">Out of stock</span>
+                                <% } %>
+                            </span>
+                        </div>
+                    </div>
+
+                    <!-- Color Selection -->
+                    <% if (product.colors && product.colors.length > 0) { %>
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-900 mb-3">Select Color</label>
+                            <select id="colorSelect" class="w-full md:w-48 px-4 py-3 border-2 border-gray-300 rounded-lg bg-white text-gray-900 font-semibold cursor-pointer hover:border-teal-900 transition-colors">
+                                <% product.colors.forEach(color => { %>
+                                    <option value="<%= color %>"><%= color %></option>
+                                <% }); %>
+                            </select>
+                        </div>
+                    <% } %>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="flex flex-col sm:flex-row gap-4">
+                    <button onclick="buyNow()"
+                            class="flex-1 bg-teal-900 text-white py-3 rounded-full font-semibold hover:bg-teal-800 transition-colors text-lg">
+                        Buy Now
+                    </button>
+                    <button onclick="addToCart()"
+                            class="flex-1 border-2 border-teal-900 text-teal-900 py-3 rounded-full font-semibold hover:bg-teal-50 transition-colors text-lg">
+                        Add To Cart
+                    </button>
+                </div>
+
+                <!-- Additional Info -->
+                <div class="bg-gray-100 rounded-lg p-4 text-sm text-gray-700 space-y-2">
+                    <p><strong>SKU:</strong> <%= product.sku || 'N/A' %></p>
+                    <p><strong>Category:</strong> <%= product.category?.name || 'Uncategorized' %></p>
+                    <% if (product.material) { %>
+                        <p><strong>Material:</strong> <%= product.material %></p>
+                    <% } %>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Similar Products Section -->
+    <section class="bg-white py-12 md:py-16 border-t border-gray-200">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <h2 class="text-2xl md:text-3xl font-bold text-gray-900 mb-8">Similar Collection</h2>
+
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
+                <% if (relatedProducts && relatedProducts.length > 0) { %>
+  <% relatedProducts.slice(0, 4).forEach(item => { %>
+
+                        <div class="bg-white rounded-lg overflow-hidden hover:shadow-lg transition-shadow">
+                            <div class="relative aspect-square bg-gray-100 overflow-hidden group">
+                                <img src="<%= item.productImage && item.productImage[0] ? item.productImage[0] : '/default-product.jpg' %>"
+                                     alt="<%= item.productName %>" class="w-full h-full object-contain p-3 group-hover:scale-110 transition-transform">
+                                <button onclick="addToWishlist('<%= item._id %>')"
+                                        class="absolute top-3 right-3 bg-white rounded-full p-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                    <svg class="w-5 h-5 text-gray-400 hover:text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/>
+                                    </svg>
+                                </button>
+                            </div>
+                            <div class="p-3 md:p-4">
+                                <h3 class="text-sm md:text-base font-semibold text-gray-900 truncate"><%= item.productName %></h3>
+                                <div class="mt-2 flex items-center gap-2">
+                                    <span class="text-sm md:text-base font-bold text-gray-900">₹<%= item.salePrice %></span>
+                                    <% if (item.regularPrice) { %>
+                                        <span class="text-xs md:text-sm text-gray-500 line-through">₹<%= item.regularPrice %></span>
+                                    <% } %>
+                                </div>
+                            </div>
+                        </div>
+                    <% }); %>
+                <% } %>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+       
+<%-include('../partials/footer')%>
+
+  
+
+    <script>
+          function changeMainImageSrc(imgUrl) {
+    const mainImage = document.getElementById('mainImage');
+    mainImage.src = imgUrl;
+}
+
+        function increaseQty() {
+            const qtyInput = document.getElementById('quantity');
+            qtyInput.value = parseInt(qtyInput.value) + 1;
+        }
+
+        function decreaseQty() {
+            const qtyInput = document.getElementById('quantity');
+            if (parseInt(qtyInput.value) > 1) {
+                qtyInput.value = parseInt(qtyInput.value) - 1;
+            }
+        }
+
+        function addToCart() {
+            const quantity = document.getElementById('quantity').value;
+            const color = document.getElementById('colorSelect')?.value || 'N/A';
+            const productId = '<%= product._id %>';
+
+            alert(`Added ${quantity} item(s) to cart - Color: ${color}`);
+        }
+
+        function buyNow() {
+            const quantity = document.getElementById('quantity').value;
+            const color = document.getElementById('colorSelect')?.value || 'N/A';
+            alert(`Proceeding to checkout with ${quantity} item(s) - Color: ${color}`);
+        }
+
+        function addToWishlist(productId) {
+            alert('Added to wishlist!');
+        }
+    </script>
+</body>
+</html>

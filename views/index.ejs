@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
   <head>
@@ -8,93 +7,180 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
   </head>
+
   <body class="font-sans bg-gray-50 text-gray-900">
     <!-- HEADER -->
-  <%- include('partials/header')%>
+    <%- include('partials/header') %>
+
     <!-- HERO SECTION -->
     <section class="bg-emerald-800 text-white">
-      <div class="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between px-6 py-16">
-        <div class="max-w-xl">
-          <h1 class="text-3xl md:text-4xl font-bold mb-4">
+      <div
+        class="max-w-7xl mx-auto flex flex-col-reverse md:flex-row items-center justify-between px-6 py-16 gap-10"
+      >
+        <!-- Text Section -->
+        <div class="max-w-lg text-center md:text-left">
+          <h1 class="text-3xl md:text-5xl font-extrabold leading-tight mb-4">
             Adventure Awaits with <br />
             Premium Backpacks
           </h1>
-          <p class="text-gray-100 mb-6 text-sm md:text-base">
-            Discover our collection of durable, stylish, and functional backpacks designed for every journey.
-            From urban commutes to mountain adventures.
+          <p class="text-gray-100 mb-6 text-sm md:text-base leading-relaxed">
+            Discover our collection of durable, stylish, and functional
+            backpacks designed for every journey — from urban commutes to
+            mountain adventures.
           </p>
-          <a href="#" class="bg-black text-white px-5 py-2 rounded-lg hover:bg-gray-700 transition">Know more</a>
+          <a
+            href="#"
+            class="bg-black text-white px-6 py-3 rounded-lg hover:bg-gray-700 transition inline-block"
+            >Know more</a
+          >
         </div>
-        <div class="mt-10 md:mt-0">
+
+        <!-- Image Section -->
+        <div class="flex justify-center md:justify-end">
           <img
             src="https://rukminim2.flixcart.com/image/832/832/xif0q/backpack/f/v/n/-original-imagx25zuz7cy9nz.jpeg?q=70"
             alt="backpack"
-            class="w-64 rounded-lg shadow-lg"
+            class="w-64 md:w-80 rounded-xl shadow-lg"
           />
         </div>
       </div>
     </section>
 
     <!-- FEATURED PRODUCTS -->
-    <section class="py-12 bg-white">
+    <section class="py-16 bg-white">
       <div class="max-w-7xl mx-auto px-4 text-center">
-        <h2 class="text-2xl font-semibold mb-8">Featured Products</h2>
-        <div id="featured-products" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+        <h2 class="text-3xl font-semibold mb-10">Featured Products</h2>
+
+        <div
+          class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8"
+        >
           <% const featured = [
-            { name: "Skybags Klik Daypack", img: "https://rukminim2.flixcart.com/image/612/612/l4x2rgw0/backpack/4/x/x/-original-imagfpzvsy7jypzj.jpeg?q=70", price: "₹999" },
-            { name: "Safari Omega Spacious", img: "https://rukminim2.flixcart.com/image/612/612/xif0q/backpack/u/1/9/-original-imaghrhvbz3tw4zv.jpeg?q=70", price: "₹1799" },
-            { name: "Gear Vintage2", img: "https://rukminim2.flixcart.com/image/612/612/l4n2oi80/backpack/m/3/f/blue-backpack-gear-original-imagfgrqhxkyf2g9.jpeg?q=70", price: "₹1395" }
-          ]; %>
+            { name: "Skybags Klik Daypack", img:
+            "https://rukminim2.flixcart.com/image/612/612/l4x2rgw0/backpack/4/x/x/-original-imagfpzvsy7jypzj.jpeg?q=70",
+            price: "₹999" }, { name: "Safari Omega Spacious", img:
+            "https://rukminim2.flixcart.com/image/612/612/xif0q/backpack/u/1/9/-original-imaghrhvbz3tw4zv.jpeg?q=70",
+            price: "₹1799" }, { name: "Gear Vintage2", img:
+            "https://rukminim2.flixcart.com/image/612/612/l4n2oi80/backpack/m/3/f/blue-backpack-gear-original-imagfgrqhxkyf2g9.jpeg?q=70",
+            price: "₹1395" } ]; %>
 
           <% featured.forEach(item => { %>
-            <div class="bg-gray-50 border rounded-lg p-4 hover:shadow-lg transition">
-              <img src="<%= item.img %>" alt="<%= item.name %>" class="rounded-md w-full h-64 object-cover mb-3" />
-              <h3 class="font-semibold text-lg"><%= item.name %></h3>
-              <p class="text-gray-700"><%= item.price %></p>
-            </div>
+          <div
+            class="bg-gray-50 border rounded-xl p-4 hover:shadow-xl transition-transform transform hover:-translate-y-1"
+          >
+            <img
+              src="<%= item.img %>"
+              alt="<%= item.name %>"
+              class="rounded-lg w-full h-64 object-cover mb-4"
+            />
+            <h3 class="font-semibold text-lg mb-1"><%= item.name %></h3>
+            <p class="text-gray-700"><%= item.price %></p>
+          </div>
           <% }); %>
         </div>
-        <button class="mt-6 bg-emerald-800 text-white px-4 py-2 rounded hover:bg-emerald-700">See more →</button>
+
+        <button
+          class="mt-10 bg-emerald-800 text-white px-6 py-3 rounded-lg hover:bg-emerald-700 transition"
+        >
+          See more →
+        </button>
       </div>
     </section>
 
     <!-- SHOP YOUR FAVOURITES -->
-    <section class="py-12 bg-gray-50">
+    <section class="py-16 bg-gray-50">
       <div class="max-w-7xl mx-auto px-4 text-center">
-        <h2 class="text-2xl font-semibold mb-8">Shop Your Favourites</h2>
-        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-          <img src="https://rukminim2.flixcart.com/image/612/612/xif0q/backpack/u/1/9/-original-imaghrhvbz3tw4zv.jpeg?q=70" class="rounded-lg" alt="bag" />
-          <img src="https://rukminim2.flixcart.com/image/612/612/xif0q/backpack/8/i/d/-original-imagqz2hcz6g5scu.jpeg?q=70" class="rounded-lg" alt="bag" />
-          <img src="https://rukminim2.flixcart.com/image/612/612/xif0q/backpack/d/g/m/-original-imagqz2hcz6g5scu.jpeg?q=70" class="rounded-lg" alt="bag" />
+        <h2 class="text-3xl font-semibold mb-10">Shop Your Favourites</h2>
+
+        <div
+          class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 md:gap-10"
+        >
+          <img
+            src="https://rukminim2.flixcart.com/image/612/612/xif0q/backpack/u/1/9/-original-imaghrhvbz3tw4zv.jpeg?q=70"
+            class="rounded-xl w-full object-cover"
+            alt="bag"
+          />
+          <img
+            src="https://rukminim2.flixcart.com/image/612/612/xif0q/backpack/8/i/d/-original-imagqz2hcz6g5scu.jpeg?q=70"
+            class="rounded-xl w-full object-cover"
+            alt="bag"
+          />
+          <img
+            src="https://rukminim2.flixcart.com/image/612/612/xif0q/backpack/d/g/m/-original-imagqz2hcz6g5scu.jpeg?q=70"
+            class="rounded-xl w-full object-cover"
+            alt="bag"
+          />
         </div>
       </div>
     </section>
 
     <!-- HAND PICKED -->
-    <section class="py-12 bg-white text-center">
-      <h2 class="text-2xl font-semibold mb-4">Hand Picked</h2>
-      <p class="text-sm text-gray-600 mb-8">Discover our hand-picked collection featuring quality, style, and timeless appeal.</p>
-      <div class="max-w-5xl mx-auto grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 px-4">
-        <img src="https://rukminim2.flixcart.com/image/612/612/xif0q/backpack/z/j/v/-original-imaghxdupxgcg6qk.jpeg?q=70" class="rounded-lg" alt="bag" />
-        <img src="https://rukminim2.flixcart.com/image/612/612/xif0q/backpack/l/a/t/-original-imaghxdupxgcg6qk.jpeg?q=70" class="rounded-lg" alt="bag" />
-        <img src="https://rukminim2.flixcart.com/image/612/612/xif0q/backpack/u/1/9/-original-imaghrhvbz3tw4zv.jpeg?q=70" class="rounded-lg" alt="bag" />
+    <section class="py-16 bg-white text-center">
+      <h2 class="text-3xl font-semibold mb-4">Hand Picked</h2>
+      <p class="text-sm text-gray-600 mb-10">
+        Discover our hand-picked collection featuring quality, style, and
+        timeless appeal.
+      </p>
+
+      <div
+        class="max-w-6xl mx-auto grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-8 px-4"
+      >
+        <img
+          src="https://rukminim2.flixcart.com/image/612/612/xif0q/backpack/z/j/v/-original-imaghxdupxgcg6qk.jpeg?q=70"
+          class="rounded-xl w-full object-cover"
+          alt="bag"
+        />
+        <img
+          src="https://rukminim2.flixcart.com/image/612/612/xif0q/backpack/l/a/t/-original-imaghxdupxgcg6qk.jpeg?q=70"
+          class="rounded-xl w-full object-cover"
+          alt="bag"
+        />
+        <img
+          src="https://rukminim2.flixcart.com/image/612/612/xif0q/backpack/u/1/9/-original-imaghrhvbz3tw4zv.jpeg?q=70"
+          class="rounded-xl w-full object-cover"
+          alt="bag"
+        />
       </div>
     </section>
 
     <!-- TRENDING NOW -->
-    <section class="py-12 bg-gray-50 text-center">
-      <h2 class="text-2xl font-semibold mb-8">Trending Now</h2>
-      <div class="max-w-6xl mx-auto grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 px-4">
-        <img src="https://rukminim2.flixcart.com/image/612/612/xif0q/backpack/f/v/n/-original-imagx25zuz7cy9nz.jpeg?q=70" class="rounded-lg" alt="bag" />
-        <img src="https://rukminim2.flixcart.com/image/612/612/xif0q/backpack/u/1/9/-original-imaghrhvbz3tw4zv.jpeg?q=70" class="rounded-lg" alt="bag" />
-        <img src="https://rukminim2.flixcart.com/image/612/612/l4n2oi80/backpack/m/3/f/blue-backpack-gear-original-imagfgrqhxkyf2g9.jpeg?q=70" class="rounded-lg" alt="bag" />
-        <img src="https://rukminim2.flixcart.com/image/612/612/xif0q/backpack/d/g/m/-original-imagqz2hcz6g5scu.jpeg?q=70" class="rounded-lg" alt="bag" />
+    <section class="py-16 bg-gray-50 text-center">
+      <h2 class="text-3xl font-semibold mb-10">Trending Now</h2>
+
+      <div
+        class="max-w-7xl mx-auto grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8 px-4"
+      >
+        <img
+          src="https://rukminim2.flixcart.com/image/612/612/xif0q/backpack/f/v/n/-original-imagx25zuz7cy9nz.jpeg?q=70"
+          class="rounded-xl w-full object-cover"
+          alt="bag"
+        />
+        <img
+          src="https://rukminim2.flixcart.com/image/612/612/xif0q/backpack/u/1/9/-original-imaghrhvbz3tw4zv.jpeg?q=70"
+          class="rounded-xl w-full object-cover"
+          alt="bag"
+        />
+        <img
+          src="https://rukminim2.flixcart.com/image/612/612/l4n2oi80/backpack/m/3/f/blue-backpack-gear-original-imagfgrqhxkyf2g9.jpeg?q=70"
+          class="rounded-xl w-full object-cover"
+          alt="bag"
+        />
+        <img
+          src="https://rukminim2.flixcart.com/image/612/612/xif0q/backpack/d/g/m/-original-imagqz2hcz6g5scu.jpeg?q=70"
+          class="rounded-xl w-full object-cover"
+          alt="bag"
+        />
       </div>
-      <button class="mt-6 bg-emerald-800 text-white px-4 py-2 rounded hover:bg-emerald-700">See more →</button>
+
+      <button
+        class="mt-10 bg-emerald-800 text-white px-6 py-3 rounded-lg hover:bg-emerald-700 transition"
+      >
+        See more →
+      </button>
     </section>
 
     <!-- FOOTER -->
-<%-include('partials/footer')%>
+    <%- include('partials/footer') %>
+
     <!-- AXIOS SAMPLE -->
     <script>
       async function loadProducts() {

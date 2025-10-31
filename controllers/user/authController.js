@@ -12,7 +12,7 @@ export const loginUser = async (req, res) => {
   
 
   try {
-    // 1️⃣ Check if email exists
+    //  Check if email exists
     const user = await User.findOne({ email });
     if (!user) {
       return res.render("user/login", {
@@ -20,14 +20,14 @@ export const loginUser = async (req, res) => {
       });
     }
 
-    // 2️⃣ Check if email is verified
+    //  Check if email is verified
     if (!user.isVerified) {
       return res.render("user/login", {
         error: "Please verify your email before logging in.",
       });
     }
 
-    // 3️⃣ Compare password
+    //  Compare password
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
       return res.render("user/login", {
@@ -35,7 +35,7 @@ export const loginUser = async (req, res) => {
       });
     }
 
-    // 4️⃣ Success: create session and redirect
+    //  Success: create session and redirect
     req.session.user = {
       id: user._id,
       name: user.name,
