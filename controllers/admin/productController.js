@@ -262,6 +262,7 @@ export const renderEditProduct = async (req, res) => {
       return res.status(404).send("Product not found");
     }
 
+    
     const categories = await Category.find({ isDeleted: false }).sort({ name: 1 }).lean();
 
     const colors = [
@@ -278,6 +279,8 @@ export const renderEditProduct = async (req, res) => {
     console.error("Render Edit Product Error:", error);
     return res.status(500).send("Failed to render edit product page");
   }
+
+
 };
 
 
@@ -295,6 +298,9 @@ export const updateProduct = async (req, res) => {
         message: 'Product not found' 
       });
     }
+      if(product.stock>100){
+    console.log("It is not validate ")
+  }
 
     // Validate category if provided
     if (category) {
