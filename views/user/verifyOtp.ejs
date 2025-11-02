@@ -4,36 +4,195 @@
   <meta charset="UTF-8" />
   <title>Verify OTP | BagHub</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 </head>
-<body class="flex justify-center items-center min-h-screen bg-gray-50">
-  <div class="bg-white p-8 rounded-xl shadow-lg w-full max-w-md">
-    <h2 class="text-2xl font-bold text-center text-emerald-800 mb-6">Verify Your OTP</h2>
+
+<body class="flex justify-center items-center min-h-screen bg-gray-50 font-mono">
+  <div class="bg-white p-8 rounded-3xl shadow-lg w-full max-w-md mx-4 border border-gray-200">
+    <h2 class="text-2xl font-semibold text-center text-emerald-800 mb-6">Verify Your OTP</h2>
 
     <% if (typeof error !== "undefined" && error) { %>
-      <div class="bg-red-100 text-red-700 p-3 mb-4 rounded text-sm text-center">
+      <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4 text-sm text-center">
         <%= error %>
       </div>
     <% } %>
 
-    <form action="/user/verifyOtp" method="POST" class="space-y-4">
+    <form id="otpForm" action="/user/verifyOtp" method="POST" class="space-y-5" novalidate>
       <input type="hidden" name="email" value="<%= email %>" />
+
+      <!-- OTP Input -->
       <div>
-        <label class="block text-sm font-medium mb-1">Enter OTP</label>
+        <label class="block text-sm font-medium mb-1 text-gray-700">Enter OTP</label>
         <input
+          id="otp"
           name="otp"
+          inputmode="numeric"
+          pattern="[0-9]*"
           type="text"
-          placeholder="Enter the 6-digit OTP"
-          class="w-full border px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-700"
+          maxlength="6"
+          placeholder="Enter 6-digit OTP"
+          class="w-full bg-gray-100 border border-gray-300 px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-700 text-center tracking-widest text-lg"
           required
         />
+        <p id="otpError" class="text-red-600 text-xs mt-1 hidden">Please enter a valid 6-digit OTP.</p>
       </div>
+
+      <!-- Verify Button -->
       <button
         type="submit"
-        class="w-full bg-emerald-800 text-white py-2 rounded-lg hover:bg-emerald-700 transition"
+        id="verifyBtn"
+        class="w-full bg-emerald-800 text-white py-2 rounded-full hover:bg-emerald-700 transition-all"
       >
         Verify OTP
       </button>
     </form>
+
+    <!-- Resend OTP Section -->
+    <div class="text-center mt-4">
+      <button
+        id="resendBtn"
+        class="text-sm font-medium text-emerald-800 hover:text-emerald-700 disabled:text-gray-400"
+        disabled
+      >
+        Resend OTP in <span id="countdown"><%= typeof cooldown !== 'undefined' ? cooldown : 60 %></span>s
+      </button>
+    </div>
   </div>
+
+  <script>
+    // Elements
+    const otpInput = document.getElementById('otp');
+    const otpError = document.getElementById('otpError');
+    const form = document.getElementById('otpForm');
+    const verifyBtn = document.getElementById('verifyBtn');
+    const resendBtn = document.getElementById('resendBtn');
+    const countdownSpan = document.getElementById('countdown');
+
+    // Initial cooldown (from server if provided)
+    let timeLeft = Number(<%= typeof cooldown !== 'undefined' ? cooldown : 60 %>);
+
+    // Helpers
+    const isOtpValid = (val) => /^[0-9]{6}$/.test(String(val).trim());
+
+    function showOtpError(msg) {
+      otpError.textContent = msg;
+      otpError.classList.remove('hidden');
+      otpInput.classList.add('border-red-400');
+      otpInput.focus();
+      verifyBtn.disabled = true;
+    }
+
+    function hideOtpError() {
+      otpError.classList.add('hidden');
+      otpInput.classList.remove('border-red-400');
+      verifyBtn.disabled = false;
+    }
+
+    // Real-time input: toggle error/enable
+    otpInput.addEventListener('input', () => {
+      const v = otpInput.value.trim();
+      if (v === '') {
+        // empty -> disable verify and hide error
+        otpError.classList.add('hidden');
+        otpInput.classList.remove('border-red-400');
+        verifyBtn.disabled = true;
+        return;
+      }
+      if (!isOtpValid(v)) {
+        otpError.classList.remove('hidden');
+        otpError.textContent = 'Please enter a valid 6-digit OTP.';
+        otpInput.classList.add('border-red-400');
+        verifyBtn.disabled = true;
+      } else {
+        hideOtpError();
+        otpInput.classList.remove('border-red-400');
+        otpInput.classList.add('border-green-400');
+        verifyBtn.disabled = false;
+      }
+    });
+
+    // Prevent submit when invalid or empty
+    form.addEventListener('submit', (e) => {
+      const v = otpInput.value.trim();
+      if (!isOtpValid(v)) {
+        e.preventDefault();
+        if (v === '') showOtpError('OTP is required.');
+        else showOtpError('Please enter a valid 6-digit OTP.');
+        return;
+      }
+      // If valid, allow submit (form will post to server)
+    });
+
+    // Initial verify button state
+    verifyBtn.disabled = true;
+
+    // Countdown timer (frontend) — uses timeLeft from server ideally
+    function startCountdown(initial) {
+      timeLeft = initial;
+      countdownSpan.textContent = timeLeft;
+      resendBtn.disabled = true;
+      const tick = () => {
+        if (timeLeft > 0) {
+          timeLeft--;
+          countdownSpan.textContent = timeLeft;
+          setTimeout(tick, 1000);
+        } else {
+          resendBtn.disabled = false;
+          resendBtn.textContent = 'Resend OTP';
+        }
+      };
+      setTimeout(tick, 1000);
+    }
+
+    startCountdown(timeLeft);
+
+    // Resend handler
+    resendBtn.addEventListener('click', async () => {
+      resendBtn.disabled = true;
+      resendBtn.textContent = 'Sending...';
+      // Invalidate UI state for previous OTP until server confirms
+      otpInput.value = '';
+      verifyBtn.disabled = true;
+      otpInput.classList.remove('border-green-400', 'border-red-400');
+      otpError.classList.add('hidden');
+
+      try {
+        const resp = await fetch(`/user/resendOtp?email=<%= email %>`, { method: 'GET' });
+        if (!resp.ok) throw new Error('resend failed');
+
+        // Server should handle invalidation of old OTP and set a new expiry
+        // Start a fresh countdown (server should ideally return new cooldown; we assume 60 here)
+        const NEW_COOLDOWN = 60;
+        countdownSpan.textContent = NEW_COOLDOWN;
+        resendBtn.innerHTML = `Resend OTP in <span id="countdown">${NEW_COOLDOWN}</span>s`;
+        // rebind countdownSpan reference inside DOM
+        const newCountdownSpan = document.getElementById('countdown');
+        // start client-side countdown from NEW_COOLDOWN
+        let c = NEW_COOLDOWN;
+        const interval = setInterval(() => {
+          c--;
+          if (newCountdownSpan) newCountdownSpan.textContent = c;
+          if (c <= 0) {
+            clearInterval(interval);
+            resendBtn.textContent = 'Resend OTP';
+            resendBtn.disabled = false;
+          }
+        }, 1000);
+
+      } catch (err) {
+        resendBtn.textContent = 'Error! Try again';
+        resendBtn.disabled = false;
+        console.error(err);
+      }
+    });
+
+    // Accessibility: pressing Enter in the OTP input triggers submit (handled above)
+    otpInput.addEventListener('keydown', (ev) => {
+      if (ev.key === 'Enter') {
+        ev.preventDefault();
+        form.requestSubmit();
+      }
+    });
+  </script>
 </body>
 </html>

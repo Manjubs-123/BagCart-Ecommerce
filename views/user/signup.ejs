@@ -1,6 +1,3 @@
-
-
-
 <!DOCTYPE html>
 <html lang="en">
   <head>
@@ -15,17 +12,19 @@
     <%- include('../partials/header') %>
 
     <!-- Signup Section -->
-    <section class="flex justify-center items-center min-h-screen bg-gray-50">
+    <section class="flex justify-center items-center min-h-screen bg-gray-50 px-4">
       <div class="w-full max-w-md bg-white p-8 rounded-xl shadow-lg border">
         <h2 class="text-2xl font-bold mb-6 text-center text-emerald-800">Create Account</h2>
 
-         <!-- Error message display block -->
-  <div id="errorMessage" class="bg-red-100 text-red-700 p-3 mb-4 rounded text-sm text-center <%= typeof error === 'undefined' || !error ? 'hidden' : '' %>">
-    <%= typeof error !== 'undefined' ? error : '' %>
-  </div>
+        <!-- Error message -->
+        <div
+          id="errorMessage"
+          class="bg-red-100 text-red-700 p-3 mb-4 rounded text-sm text-center hidden"
+        ></div>
 
         <!-- Signup Form -->
         <form id="signupForm" action="/user/signup" method="POST" class="space-y-4">
+          <!-- Name -->
           <div>
             <label for="name" class="block text-sm font-medium mb-1">Full Name</label>
             <input
@@ -33,12 +32,15 @@
               name="name"
               type="text"
               placeholder="Enter your full name"
-              class="w-full border px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-700"
+              class="w-full border px-3 py-2 rounded-lg focus:outline-none focus:ring-2"
               required
             />
-            <p id="nameError" class="text-red-600 text-sm mt-1 hidden">Name must be at least 6 characters long and contain only letters.</p>
+            <p id="nameError" class="text-red-600 text-sm mt-1 hidden">
+              Name must be at least 6 characters long and contain only letters.
+            </p>
           </div>
 
+          <!-- Email -->
           <div>
             <label for="email" class="block text-sm font-medium mb-1">Email</label>
             <input
@@ -46,12 +48,15 @@
               name="email"
               type="email"
               placeholder="Enter your email"
-              class="w-full border px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-700"
+              class="w-full border px-3 py-2 rounded-lg focus:outline-none focus:ring-2"
               required
             />
-            <p id="emailError" class="text-red-600 text-sm mt-1 hidden">Please enter a valid Gmail address.</p>
+            <p id="emailError" class="text-red-600 text-sm mt-1 hidden">
+              Please enter a valid Gmail address.
+            </p>
           </div>
 
+          <!-- Password -->
           <div>
             <label for="password" class="block text-sm font-medium mb-1">Password</label>
             <input
@@ -59,12 +64,15 @@
               name="password"
               type="password"
               placeholder="Enter a strong password"
-              class="w-full border px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-700"
+              class="w-full border px-3 py-2 rounded-lg focus:outline-none focus:ring-2"
               required
             />
-            <p id="passwordError" class="text-red-600 text-sm mt-1 hidden">Password must have 6+ characters, 1 uppercase, 1 number, and 1 special character.</p>
+            <p id="passwordError" class="text-red-600 text-sm mt-1 hidden">
+              Password must have 6+ characters, 1 uppercase, 1 number, and 1 special character.
+            </p>
           </div>
 
+          <!-- Confirm Password -->
           <div>
             <label for="confirmPassword" class="block text-sm font-medium mb-1">Confirm Password</label>
             <input
@@ -72,12 +80,15 @@
               name="confirmPassword"
               type="password"
               placeholder="Confirm your password"
-              class="w-full border px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-700"
+              class="w-full border px-3 py-2 rounded-lg focus:outline-none focus:ring-2"
               required
             />
-            <p id="confirmError" class="text-red-600 text-sm mt-1 hidden">Passwords do not match.</p>
+            <p id="confirmError" class="text-red-600 text-sm mt-1 hidden">
+              Passwords do not match.
+            </p>
           </div>
 
+          <!-- Submit -->
           <button
             type="submit"
             class="w-full bg-emerald-800 text-white py-2 rounded-lg hover:bg-emerald-700 transition"
@@ -114,97 +125,120 @@
     <!-- Footer -->
     <%- include('../partials/footer') %>
 
-    <!-- Enhanced Client-side Validation Script -->
+    <!-- Real-time + Blur Validation Script -->
     <script>
       const form = document.getElementById("signupForm");
-      const nameInput = document.getElementById("name");
-      const emailInput = document.getElementById("email");
-      const passwordInput = document.getElementById("password");
-      const confirmInput = document.getElementById("confirmPassword");
-      const nameError = document.getElementById("nameError");
-      const emailError = document.getElementById("emailError");
-      const passwordError = document.getElementById("passwordError");
-      const confirmError = document.getElementById("confirmError");
+      const fields = {
+        name: document.getElementById("name"),
+        email: document.getElementById("email"),
+        password: document.getElementById("password"),
+        confirm: document.getElementById("confirmPassword"),
+      };
+
+      const errors = {
+        name: document.getElementById("nameError"),
+        email: document.getElementById("emailError"),
+        password: document.getElementById("passwordError"),
+        confirm: document.getElementById("confirmError"),
+      };
+
       const errorMessage = document.getElementById("errorMessage");
 
-      // Validation rules
-      const nameRegex = /^[a-zA-Z\s]+$/;
-      const emailRegex = /^[a-zA-Z0-9._-]+@gmail\.com$/;
-      const passwordRegex = /^(?=.*[A-Z])(?=.*[0-9])(?=.*[!@#$%^&*()_+{}:"<>?~]).{6,}$/;
+      const regex = {
+        name: /^[a-zA-Z\s]{6,}$/,
+        email: /^[a-zA-Z0-9._%+-]+@gmail\.com$/,
+        password: /^(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+{}:"<>?~]).{6,}$/,
+      };
 
-      let debounceTimeout;
+      const messages = {
+        name: "Name must be at least 6 letters long.",
+        email: "Please enter a valid Gmail address.",
+        password: "Password must have 6+ chars, 1 uppercase, 1 number, and 1 special char.",
+        confirm: "Passwords do not match.",
+      };
 
-      // Real-time field validation
-      function validateField(input, errorElement, validationFn, errorMessage) {
-        clearTimeout(debounceTimeout);
-        debounceTimeout = setTimeout(() => {
-          const isValid = validationFn(input.value);
-          if (!isValid && input.value) {
-            errorElement.classList.remove("hidden");
-            input.classList.add("border-red-500");
-            input.classList.remove("border-emerald-500");
-          } else {
-            errorElement.classList.add("hidden");
-            input.classList.remove("border-red-500");
-            if (input.value) {
-              input.classList.add("border-emerald-500");
-            }
-          }
-        }, 300);
+      function setValidationState(input, errorEl, valid, msg = "") {
+        if (valid) {
+          errorEl.classList.add("hidden");
+          input.classList.remove("border-red-500");
+          input.classList.add("border-green-500");
+        } else {
+          errorEl.textContent = msg;
+          errorEl.classList.remove("hidden");
+          input.classList.add("border-red-500");
+          input.classList.remove("border-green-500");
+        }
       }
 
-      // Validation functions
-      const validateName = (name) => name.trim().length >= 6 && nameRegex.test(name);
-      const validateEmail = (email) => emailRegex.test(email);
-      const validatePassword = (password) => passwordRegex.test(password);
-      const validateConfirmPassword = () => passwordInput.value === confirmInput.value;
+      function validateField(fieldName) {
+        const input = fields[fieldName];
+        const value = input.value.trim();
+        let valid = false;
 
-      // Add input listeners
-      nameInput.addEventListener("input", () => {
-        validateField(nameInput, nameError, validateName);
+        switch (fieldName) {
+          case "name":
+            valid = regex.name.test(value);
+            break;
+          case "email":
+            valid = regex.email.test(value);
+            break;
+          case "password":
+            valid = regex.password.test(value);
+            break;
+          case "confirm":
+            valid = value === fields.password.value && value !== "";
+            break;
+        }
+
+        setValidationState(input, errors[fieldName], valid, messages[fieldName]);
+        return valid;
+      }
+
+      // Add real-time + blur validation for all fields
+      Object.keys(fields).forEach((field) => {
+        const input = fields[field];
+        input.addEventListener("input", () => validateField(field));
+        input.addEventListener("blur", () => validateField(field));
       });
 
-      emailInput.addEventListener("input", () => {
-        validateField(emailInput, emailError, validateEmail);
-      });
-
-      passwordInput.addEventListener("input", () => {
-        validateField(passwordInput, passwordError, validatePassword);
-        if (confirmInput.value) {
-          validateField(confirmInput, confirmError, validateConfirmPassword);
+      // If user skips a field and jumps to next, mark previous invalid
+      Object.keys(fields).forEach((field, i, arr) => {
+        const next = arr[i + 1];
+        if (next) {
+          fields[next].addEventListener("focus", () => {
+            validateField(field);
+          });
         }
       });
 
-      confirmInput.addEventListener("input", () => {
-        validateField(confirmInput, confirmError, validateConfirmPassword);
-      });
-
-      // Form submission
-      form.addEventListener("submit", async (e) => {
+      // On form submit
+      form.addEventListener("submit", (e) => {
         e.preventDefault();
-        
-        // Clear any previous error message
-        errorMessage.classList.add("hidden");
-        
-        // Validate all fields
-        const isNameValid = validateName(nameInput.value);
-        const isEmailValid = validateEmail(emailInput.value);
-        const isPasswordValid = validatePassword(passwordInput.value);
-        const isConfirmValid = validateConfirmPassword();
+        let allValid = true;
 
-        if (!isNameValid || !isEmailValid || !isPasswordValid || !isConfirmValid) {
-          errorMessage.textContent = "Please fix the errors in the form.";
+        Object.keys(fields).forEach((field) => {
+          const valid = validateField(field);
+          if (!valid) allValid = false;
+        });
+
+        if (!allValid) {
+          errorMessage.textContent = "Please fix the highlighted errors before submitting.";
           errorMessage.classList.remove("hidden");
           return;
         }
 
-        try {
-          form.submit();
-        } catch (error) {
-          errorMessage.textContent = error.response?.data?.error || "Something went wrong. Please try again.";
-          errorMessage.classList.remove("hidden");
-        }
+        errorMessage.classList.add("hidden");
+        form.submit();
       });
     </script>
+    <script>
+  if (window.history && window.history.replaceState) {
+    window.history.pushState(null, null, window.location.href);
+    window.onpopstate = function () {
+      window.history.go(1);
+    };
+  }
+</script>
+
   </body>
 </html>

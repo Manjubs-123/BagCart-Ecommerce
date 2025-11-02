@@ -5,3 +5,4 @@ export const isAdminAuthenticated=(req,res,next)=>{
         return res.redirect("/admin")
     }
 };
+

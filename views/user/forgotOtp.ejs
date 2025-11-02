@@ -5,158 +5,188 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Verify OTP | BagHub</title>
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.4.1/dist/tailwind.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="/css/style.css" />
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- SweetAlert2 -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
   </head>
 
   <body class="bg-white flex flex-col min-h-screen">
     <!-- Navbar -->
     <nav class="bg-[#024C46] text-white py-4">
       <div class="max-w-7xl mx-auto flex justify-between items-center px-4">
-        <div class="flex items-center space-x-8">
+        <div class="flex items-center space-x-8 text-sm md:text-base">
           <a href="/" class="hover:underline">Home</a>
           <a href="/shop" class="hover:underline">Shop</a>
           <a href="/contact" class="hover:underline">Contact Us</a>
           <a href="/about" class="hover:underline">About Us</a>
         </div>
-        <div class="flex items-center space-x-4 text-xl">
-          <i class="ri-shopping-cart-line"></i>
-          <i class="ri-user-line"></i>
-          <i class="ri-heart-line"></i>
-        </div>
       </div>
     </nav>
 
-    <!-- Verify OTP Box -->
-   <main class="flex-grow flex items-center justify-center py-10">
-  <div class="border-2 border-[#024C46] rounded-2xl p-8 w-[90%] md:w-[500px] text-center shadow-md">
-    <h1 class="text-xl font-medium mb-6 tracking-wide">Verify Your OTP</h1>
+    <!-- Verify OTP Section -->
+    <main class="flex-grow flex items-center justify-center py-10 px-4">
+      <div class="border-2 border-[#024C46] rounded-2xl p-8 w-full max-w-md text-center shadow-lg">
+        <h1 class="text-2xl font-semibold mb-6 text-[#024C46]">Verify Your OTP</h1>
 
-    <% if (error) { %>
-      <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4 text-sm">
-        <%= error %>
-      </div>
-    <% } %>
-
-    <!-- ✅ OTP Form -->
-    <!-- <form id="otpForm" action="/user/forgotPassword/verifyOtp" method="POST"> -->
-    <form id="otpForm" action="/user/forgotOtp" method="POST">
-      <input type="hidden" name="email" value="<%= email %>" />
-
-      <!-- OTP Input Boxes -->
-      <div class="flex justify-center space-x-4 mb-4">
-        <% for(let i=0; i<6; i++) { %>
-          <input
-            type="text"
-            maxlength="1"
-            class="otp-input w-12 h-12 border border-gray-400 rounded-lg text-center text-lg focus:ring-2 focus:ring-[#024C46]"
-          />
+        <% if (error) { %>
+          <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4 text-sm">
+            <%= error %>
+          </div>
         <% } %>
-      </div>
 
-      <!-- Resend + Timer -->
-      <div class="flex justify-between items-center text-sm text-gray-600 mb-6">
-        <p>Didn’t get the OTP?
-          <button type="button" id="resendOtp" class="text-[#024C46] font-semibold hover:underline">
-            Resend OTP
+        <form id="otpForm" action="/user/verifyOtp" method="POST" class="space-y-5">
+          <input type="hidden" name="email" id="emailField" value="<%= email %>" />
+
+          <!-- OTP Input Boxes -->
+          <div class="flex justify-center space-x-3 mb-2">
+            <% for(let i=0; i<6; i++) { %>
+              <input
+                type="text"
+                maxlength="1"
+                class="otp-input w-12 h-12 border border-gray-400 rounded-lg text-center text-lg focus:ring-2 focus:ring-[#024C46] outline-none"
+              />
+            <% } %>
+          </div>
+
+          <!-- Resend OTP & Timer -->
+          <div class="flex justify-between items-center text-sm text-gray-600 mb-4">
+            <p>
+              Didn’t get the OTP?
+              <button
+                type="button"
+                id="resendOtp"
+                class="text-gray-400 font-semibold cursor-not-allowed"
+                disabled
+              >
+                Resend OTP
+              </button>
+            </p>
+            <span id="timer" class="font-semibold text-[#024C46]">01:00</span>
+          </div>
+
+          <!-- Submit -->
+          <button
+            type="submit"
+            class="w-full bg-[#024C46] text-white py-3 rounded-lg font-semibold hover:bg-[#03665F] transition"
+          >
+            Verify OTP
           </button>
-        </p>
-        <span id="timer">01:00</span>
+        </form>
       </div>
-
-      <!-- Submit -->
-      <button type="submit" class="w-full bg-black text-white py-3 rounded-lg font-semibold hover:bg-gray-800 transition">
-        Submit
-      </button>
-    </form>
-  </div>
-</main>
-
+    </main>
 
     <!-- Footer -->
-    <footer class="bg-[#024C46] text-white py-10 mt-auto">
-      <div class="max-w-7xl mx-auto px-6 grid md:grid-cols-5 gap-6 text-sm">
-        <div>
-          <h2 class="font-bold text-lg mb-2">SHOP</h2>
-          <p><a href="#">Indoor Plants</a></p>
-          <p><a href="#">Outdoor Plants</a></p>
-        </div>
-        <div>
-          <h2 class="font-bold text-lg mb-2">SUPPORT</h2>
-          <p><a href="#">Order Status</a></p>
-          <p><a href="#">Product Support</a></p>
-          <p><a href="#">Shipping & Return Policy</a></p>
-          <p><a href="#">Complaint Registration</a></p>
-        </div>
-        <div>
-          <h2 class="font-bold text-lg mb-2">About Us</h2>
-          <p><a href="#">Contact Us</a></p>
-          <p><a href="#">Privacy Policy</a></p>
-          <p><a href="#">Terms of Use</a></p>
-          <p><a href="#">FAQ</a></p>
-        </div>
-        <div>
-          <h2 class="font-bold text-lg mb-2">Contact</h2>
-          <p>Email: baghub@gmail.com</p>
-          <p>Phone: +91 8888888888</p>
-        </div>
-        <div>
-          <h2 class="font-bold text-lg mb-2">Connect with us</h2>
-          <div class="flex space-x-4 text-xl">
-            <i class="ri-instagram-line"></i>
-            <i class="ri-facebook-box-line"></i>
-            <i class="ri-twitter-x-line"></i>
-          </div>
-        </div>
-      </div>
-      <p class="text-center mt-8 text-xs opacity-80">
-        © 2025 BagHub. All Rights Reserved.
-      </p>
+    <footer class="bg-[#024C46] text-white py-6 mt-auto text-center text-sm">
+      © 2025 BagHub. All Rights Reserved.
     </footer>
 
     <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
-    <script src="/js/verifyOtp.js"></script>
+
+    <script>
+      const resendButton = document.getElementById("resendOtp");
+      const timerDisplay = document.getElementById("timer");
+      const otpInputs = document.querySelectorAll(".otp-input");
+      const email = document.getElementById("emailField").value;
+      const form = document.getElementById("otpForm");
+
+      let time = 60;
+      let countdown;
+
+      // Start countdown
+      function startTimer() {
+        clearInterval(countdown);
+        resendButton.disabled = true;
+        resendButton.classList.add("text-gray-400", "cursor-not-allowed");
+        resendButton.classList.remove("text-[#024C46]", "cursor-pointer");
+
+        time = 60;
+        countdown = setInterval(() => {
+          const minutes = Math.floor(time / 60);
+          const seconds = time % 60;
+          timerDisplay.textContent = `${minutes}:${seconds < 10 ? "0" + seconds : seconds}`;
+          time--;
+
+          if (time < 0) {
+            clearInterval(countdown);
+            resendButton.disabled = false;
+            resendButton.classList.remove("text-gray-400", "cursor-not-allowed");
+            resendButton.classList.add("text-[#024C46]", "cursor-pointer");
+            timerDisplay.textContent = "00:00";
+          }
+        }, 1000);
+      }
+
+      // Auto-focus next input
+      otpInputs.forEach((input, index) => {
+        input.addEventListener("input", (e) => {
+          if (e.target.value && index < otpInputs.length - 1) {
+            otpInputs[index + 1].focus();
+          }
+        });
+      });
+
+      // Validate OTP before submit
+      form.addEventListener("submit", (e) => {
+        const otp = Array.from(otpInputs).map(i => i.value).join("");
+        if (otp.length < 6) {
+          e.preventDefault();
+          Swal.fire({
+            icon: "warning",
+            title: "Incomplete OTP",
+            text: "Please enter all 6 digits of your OTP.",
+            confirmButtonColor: "#024C46"
+          });
+        } else if (!email) {
+          e.preventDefault();
+          Swal.fire({
+            icon: "error",
+            title: "Email Missing",
+            text: "Your email is missing. Please restart the process.",
+            confirmButtonColor: "#024C46"
+          });
+        }
+      });
+
+      // Handle resend OTP
+      resendButton.addEventListener("click", async () => {
+        try {
+          resendButton.disabled = true;
+          resendButton.classList.add("text-gray-400", "cursor-not-allowed");
+          timerDisplay.textContent = "Sending...";
+
+          const response = await axios.post("/user/resend-otp", { email });
+
+          if (response.data.success) {
+            Swal.fire({
+              icon: "success",
+              title: "OTP Resent",
+              text: "A new OTP has been sent to your email. The previous OTP is now invalid.",
+              confirmButtonColor: "#024C46"
+            });
+            startTimer(); // restart timer after resend
+          } else {
+            Swal.fire({
+              icon: "error",
+              title: "Failed",
+              text: response.data.message || "Failed to resend OTP. Try again later.",
+              confirmButtonColor: "#024C46"
+            });
+            resendButton.disabled = false;
+          }
+        } catch (error) {
+          console.error("Resend OTP error:", error);
+          Swal.fire({
+            icon: "error",
+            title: "Error",
+            text: "Something went wrong while resending OTP.",
+            confirmButtonColor: "#024C46"
+          });
+          resendButton.disabled = false;
+        }
+      });
+
+      // Start timer on load
+      startTimer();
+    </script>
   </body>
 </html>
-<script>
-  let timerDisplay = document.getElementById("timer");
-  let resendButton = document.getElementById("resendOtp");
-  let time = 60;
-  let countdown;
-
-  function startTimer() {
-    countdown = setInterval(() => {
-      const minutes = Math.floor(time / 60);
-      const seconds = time % 60;
-      timerDisplay.textContent = `${minutes}:${seconds < 10 ? "0" + seconds : seconds}`;
-      time--;
-      if (time < 0) {
-        clearInterval(countdown);
-        resendButton.disabled = false;
-        resendButton.classList.remove("text-gray-400");
-        resendButton.classList.add("text-[#024C46]");
-      }
-    }, 1000);
-  }
-
-  // start countdown when page loads
-  resendButton.disabled = true;
-  resendButton.classList.add("text-gray-400");
-  startTimer();
-
-  resendButton.addEventListener("click", async () => {
-    resendButton.disabled = true;
-    resendButton.classList.add("text-gray-400");
-
-    try {
-      const response = await axios.post("/user/resend-otp", { email: "<%= email %>" });
-      if (response.data.success) {
-        alert("OTP resent successfully!");
-        time = 60;
-        startTimer();
-      }
-    } catch (err) {
-      console.error("Error resending OTP:", err);
-    }
-  });
-</script>
