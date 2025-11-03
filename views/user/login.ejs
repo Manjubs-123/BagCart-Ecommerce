@@ -3,104 +3,222 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <title>Login | BagHub</title>
+    <title>Login | BagHub - Premium Backpacks</title>
 
-    <!-- Tailwind -->
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-
-    <!-- Favicon -->
-    <link rel="icon" type="image/png" href="/images/favicon.png" />
 
     <!-- Font Awesome -->
     <script src="https://kit.fontawesome.com/a2e0da32f7.js" crossorigin="anonymous"></script>
+
+    <style>
+      :root {
+        --primary: #1a56db;
+        --primary-dark: #1e429f;
+        --secondary: #047857;
+        --accent: #f59e0b;
+        --light: #f8fafc;
+        --dark: #1e293b;
+      }
+
+      .gradient-bg {
+        background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+      }
+
+      .btn-primary {
+        background-color: var(--primary);
+        transition: all 0.3s ease;
+      }
+
+      .btn-primary:hover {
+        background-color: var(--primary-dark);
+        transform: translateY(-2px);
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+      }
+
+      .card-hover {
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+      }
+
+      .card-hover:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+      }
+
+      .input-focus:focus {
+        border-color: var(--primary);
+        box-shadow: 0 0 0 3px rgba(26, 86, 219, 0.1);
+      }
+    </style>
   </head>
 
-  <body class="bg-gray-50 font-sans min-h-screen flex flex-col">
+  <body class="bg-gray-50 min-h-screen flex flex-col">
     <!-- Header -->
-    <nav class="shadow-md bg-green-900 text-white">
-      <%- include('../partials/landingheader') %>
-    </nav>
-
-    <!-- Login Section -->
-    <main class="flex flex-1 items-center justify-center p-4 sm:p-10">
-      <div class="w-full max-w-md bg-white border border-gray-200 rounded-2xl shadow-xl p-8 sm:p-10">
-        <h1 class="text-3xl font-bold text-center text-emerald-800 mb-6">Login</h1>
-
-        <!-- Global Error Message -->
-        <div id="errorMessage" class="bg-red-100 text-red-700 p-3 rounded text-sm text-center hidden mb-4" role="alert"></div>
-
-        <!-- Login Form -->
-        <form id="loginForm" action="/user/login" method="POST" class="space-y-6" novalidate>
-          <!-- Email -->
-          <div>
-            <label for="email" class="block text-sm font-medium mb-1">Email</label>
-            <input
-              id="email"
-              name="email"
-              type="email"
-              inputmode="email"
-              autocomplete="email"
-              placeholder="Enter your Gmail address"
-              required
-              aria-required="true"
-              aria-invalid="false"
-              class="w-full border px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-700 transition"
-            />
-            <p id="emailError" class="text-red-600 text-sm mt-1 hidden" role="status"></p>
+    <header class="sticky top-0 z-50 bg-white shadow-sm">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex justify-between items-center py-4">
+          <!-- Logo -->
+          <div class="flex items-center">
+            <a href="/" class="flex items-center space-x-2">
+              <div class="w-10 h-10 rounded-full bg-gradient-to-r from-blue-600 to-emerald-600 flex items-center justify-center">
+                <span class="text-white font-bold text-lg">BH</span>
+              </div>
+              <span class="text-xl font-bold text-gray-900">BagHub</span>
+            </a>
           </div>
-
-          <!-- Password -->
-          <div>
-            <label for="password" class="block text-sm font-medium mb-1">Password</label>
-            <div class="relative">
-              <input
-                id="password"
-                name="password"
-                type="password"
-                autocomplete="current-password"
-                placeholder="Enter your password"
-                required
-                aria-required="true"
-                aria-invalid="false"
-                class="w-full border px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-700 pr-10 transition"
-              />
-              <button
-                type="button"
-                id="togglePassword"
-                class="absolute right-3 top-2.5 text-gray-500 hover:text-gray-700"
-                aria-label="Show or hide password"
-              >
-                <i class="fa-regular fa-eye"></i>
-              </button>
-            </div>
-            <p id="passwordError" class="text-red-600 text-sm mt-1 hidden" role="status"></p>
-          </div>
-
-          <!-- Google Login -->
-          <a href="/auth/google" class="flex items-center justify-center gap-2 w-full border border-gray-300 py-2 rounded-lg hover:bg-gray-100 transition text-gray-700 font-medium">
-            <img src="https://www.svgrepo.com/show/355037/google.svg" alt="Google" class="w-5 h-5" />
-            Login with Google
+          
+          <!-- Back to Home -->
+          <a href="/" class="text-gray-700 hover:text-blue-600 font-medium transition-colors flex items-center">
+            <i class="fas fa-arrow-left mr-2"></i>
+            Back to Home
           </a>
+        </div>
+      </div>
+    </header>
 
-          <!-- Links -->
-          <div class="flex justify-between text-sm text-gray-600">
-            <a href="/user/signup" class="hover:text-emerald-700 hover:underline">Create Account</a>
-            <a href="/user/forgotPassword" class="hover:text-emerald-700 hover:underline">Forgot Password?</a>
+    <!-- Main Content -->
+    <main class="flex-1 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+      <div class="max-w-md w-full space-y-8">
+        <!-- Header Section -->
+        <div class="text-center">
+          <h1 class="text-3xl font-bold text-gray-900 mb-2">Welcome Back</h1>
+          <p class="text-gray-600">Sign in to your BagHub account</p>
+        </div>
+
+        <!-- Login Card -->
+        <div class="card-hover bg-white rounded-2xl shadow-xl p-8">
+          <!-- Global Error Message -->
+          <div id="errorMessage" class="bg-red-50 border border-red-200 text-red-700 p-4 rounded-lg text-sm text-center hidden mb-6" role="alert">
+            <div class="flex items-center">
+              <i class="fas fa-exclamation-circle mr-2"></i>
+              <span id="errorText"></span>
+            </div>
           </div>
 
-          <!-- Submit Button -->
-          <button type="submit" id="submitBtn" class="w-full bg-emerald-800 text-white py-2 rounded-lg hover:bg-emerald-700 transition">
-            Login
-          </button>
-        </form>
+          <!-- Login Form -->
+          <form id="loginForm" action="/user/login" method="POST" class="space-y-6" novalidate>
+            <!-- Email Field -->
+            <div>
+              <label for="email" class="block text-sm font-medium text-gray-700 mb-2">Email Address</label>
+              <div class="relative">
+                <input
+                  id="email"
+                  name="email"
+                  type="email"
+                  inputmode="email"
+                  autocomplete="email"
+                  placeholder="Enter your Gmail address"
+                  required
+                  aria-required="true"
+                  aria-invalid="false"
+                  class="w-full px-4 py-3 border border-gray-300 rounded-lg input-focus focus:outline-none transition duration-200 pr-10"
+                />
+                <div class="absolute inset-y-0 right-0 flex items-center pr-3">
+                  <i class="fas fa-envelope text-gray-400"></i>
+                </div>
+              </div>
+              <p id="emailError" class="text-red-600 text-sm mt-2 hidden flex items-center" role="status">
+                <i class="fas fa-exclamation-circle mr-1 text-xs"></i>
+                <span></span>
+              </p>
+            </div>
+
+            <!-- Password Field -->
+            <div>
+              <label for="password" class="block text-sm font-medium text-gray-700 mb-2">Password</label>
+              <div class="relative">
+                <input
+                  id="password"
+                  name="password"
+                  type="password"
+                  autocomplete="current-password"
+                  placeholder="Enter your password"
+                  required
+                  aria-required="true"
+                  aria-invalid="false"
+                  class="w-full px-4 py-3 border border-gray-300 rounded-lg input-focus focus:outline-none transition duration-200 pr-10"
+                />
+                <button
+                  type="button"
+                  id="togglePassword"
+                  class="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-gray-600 transition"
+                  aria-label="Show or hide password"
+                >
+                  <i class="fa-regular fa-eye"></i>
+                </button>
+              </div>
+              <p id="passwordError" class="text-red-600 text-sm mt-2 hidden flex items-center" role="status">
+                <i class="fas fa-exclamation-circle mr-1 text-xs"></i>
+                <span></span>
+              </p>
+            </div>
+
+            <!-- Remember Me & Forgot Password -->
+            <div class="flex items-center justify-between">
+              <div class="flex items-center">
+                <input
+                  id="remember"
+                  name="remember"
+                  type="checkbox"
+                  class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                />
+                <label for="remember" class="ml-2 block text-sm text-gray-700">Remember me</label>
+              </div>
+              <a href="/user/forgotPassword" class="text-sm text-blue-600 hover:text-blue-500 transition">
+                Forgot password?
+              </a>
+            </div>
+
+            <!-- Submit Button -->
+            <button
+              type="submit"
+              id="submitBtn"
+              class="w-full btn-primary text-white py-3 px-4 rounded-lg font-semibold shadow-lg transition duration-200 flex items-center justify-center"
+            >
+              <i class="fas fa-sign-in-alt mr-2"></i>
+              Sign In
+            </button>
+
+            <!-- Divider -->
+            <div class="relative flex items-center my-6">
+              <div class="flex-grow border-t border-gray-300"></div>
+              <span class="flex-shrink mx-4 text-gray-500 text-sm">Or continue with</span>
+              <div class="flex-grow border-t border-gray-300"></div>
+            </div>
+
+            <!-- Google Login -->
+            <a
+              href="/auth/google"
+              class="w-full flex items-center justify-center gap-3 border border-gray-300 py-3 px-4 rounded-lg hover:bg-gray-50 transition duration-200 text-gray-700 font-medium"
+            >
+              <img src="https://www.svgrepo.com/show/355037/google.svg" alt="Google" class="w-5 h-5" />
+              Sign in with Google
+            </a>
+          </form>
+
+          <!-- Sign Up Link -->
+          <div class="mt-6 text-center">
+            <p class="text-gray-600">
+              Don't have an account?
+              <a href="/user/signup" class="text-blue-600 hover:text-blue-500 font-medium transition">
+                Create account
+              </a>
+            </p>
+          </div>
+        </div>
+
+        <!-- Security Notice -->
+        <div class="text-center text-sm text-gray-500 mt-6">
+          <p class="flex items-center justify-center">
+            <i class="fas fa-shield-alt mr-2 text-green-500"></i>
+            Your login information is securely encrypted
+          </p>
+        </div>
       </div>
     </main>
 
-    <!-- Footer -->
-    <footer class="mt-auto">
-      <%- include('../partials/footer') %>
-    </footer>
-
+    <!-- Footer --><%- include('../partials/footer') %>
     <!-- Validation Script -->
     <script>
       (function () {
@@ -111,38 +229,44 @@
         const emailError = document.getElementById('emailError');
         const passwordError = document.getElementById('passwordError');
         const errorMessage = document.getElementById('errorMessage');
+        const errorText = document.getElementById('errorText');
         const togglePassword = document.getElementById('togglePassword');
+        const submitBtn = document.getElementById('submitBtn');
 
         // Patterns
-        const emailPattern = /^[a-zA-Z0-9._%+-]+@gmail\.com$/; // require gmail as before
+        const emailPattern = /^[a-zA-Z0-9._%+-]+@gmail\.com$/;
         const passwordPattern = /^(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*(),.?":{}|<>]).{6,}$/;
 
-        // Track touched fields (user focused then blurred)
+        // Track touched fields
         const touched = { email: false, password: false };
 
         // Utility: set field state
         function setFieldValid(el) {
-          el.classList.remove('border-red-500');
+          el.classList.remove('border-red-500', 'border-red-300');
           el.classList.add('border-green-500');
           el.setAttribute('aria-invalid', 'false');
         }
+        
         function setFieldInvalid(el) {
-          el.classList.remove('border-green-500');
+          el.classList.remove('border-green-500', 'border-gray-300');
           el.classList.add('border-red-500');
           el.setAttribute('aria-invalid', 'true');
         }
+        
         function clearFieldState(el) {
-          el.classList.remove('border-green-500', 'border-red-500');
+          el.classList.remove('border-green-500', 'border-red-500', 'border-red-300');
+          el.classList.add('border-gray-300');
           el.setAttribute('aria-invalid', 'false');
         }
 
-        // Validation logic - returns { valid: boolean, message: string }
+        // Validation logic
         function validateEmailValue(value) {
           const v = (value || '').trim();
           if (!v) return { valid: false, message: 'Email is required.' };
           if (!emailPattern.test(v)) return { valid: false, message: 'Please enter a valid Gmail address.' };
           return { valid: true, message: '' };
         }
+        
         function validatePasswordValue(value) {
           const v = value || '';
           if (!v) return { valid: false, message: 'Password is required.' };
@@ -150,30 +274,28 @@
           if (!/[A-Z]/.test(v)) return { valid: false, message: 'Password must include one uppercase letter.' };
           if (!/\d/.test(v)) return { valid: false, message: 'Password must include one number.' };
           if (!/[!@#$%^&*(),.?":{}|<>]/.test(v)) return { valid: false, message: 'Password must include one special character.' };
-          if (!passwordPattern.test(v)) return { valid: true, message: '' };
           return { valid: true, message: '' };
         }
 
         // Show error UI for a field
         function showErrorForField(fieldEl, errorEl, message) {
-          errorEl.textContent = message;
+          errorEl.querySelector('span').textContent = message;
           errorEl.classList.remove('hidden');
           setFieldInvalid(fieldEl);
         }
 
         function hideErrorForField(fieldEl, errorEl) {
-          errorEl.textContent = '';
+          errorEl.querySelector('span').textContent = '';
           errorEl.classList.add('hidden');
           setFieldValid(fieldEl);
         }
 
-        // On input: live validation (but don't show error until touched or invalid while typing)
+        // Input event handlers
         email.addEventListener('input', () => {
           const res = validateEmailValue(email.value);
           if (res.valid) {
             hideErrorForField(email, emailError);
           } else {
-            // if user already touched or typed and it's non-empty show message
             if (touched.email || email.value.trim().length > 0) {
               showErrorForField(email, emailError, res.message);
             } else {
@@ -181,7 +303,6 @@
               emailError.classList.add('hidden');
             }
           }
-          // clear global error when fields change
           errorMessage.classList.add('hidden');
         });
 
@@ -200,7 +321,7 @@
           errorMessage.classList.add('hidden');
         });
 
-        // On blur: mark touched and show error immediately if invalid
+        // Blur event handlers
         email.addEventListener('blur', () => {
           touched.email = true;
           const res = validateEmailValue(email.value);
@@ -221,36 +342,24 @@
           }
         });
 
-        // If user focuses next field while previous is invalid, blur handler above will show error.
-        // But also support pointer/mouse navigation: when any control receives focus, check previous siblings.
-        document.querySelectorAll('#loginForm input').forEach((inputEl) => {
-          inputEl.addEventListener('focus', (e) => {
-            // If focus moved to this input from another field, validate previously touched fields
-            // Validate email if focusing password
-            if (e.target.id === 'password') {
-              if (!touched.email) {
-                // user moved from email to password without touching email (tabbed or clicked)
-                touched.email = true;
-                const res = validateEmailValue(email.value);
-                if (!res.valid) showErrorForField(email, emailError, res.message);
-                else hideErrorForField(email, emailError);
-              }
-            }
-          });
-        });
-
         // Toggle password visibility
         togglePassword.addEventListener('click', () => {
           const isPwd = password.type === 'password';
           password.type = isPwd ? 'text' : 'password';
-          togglePassword.innerHTML = isPwd ? '<i class="fa-regular fa-eye-slash"></i>' : '<i class="fa-regular fa-eye"></i>';
+          togglePassword.innerHTML = isPwd 
+            ? '<i class="fa-regular fa-eye-slash"></i>' 
+            : '<i class="fa-regular fa-eye"></i>';
         });
 
-        // On submit: validate everything, focus first invalid field
+        // Form submission
         form.addEventListener('submit', function (e) {
           e.preventDefault();
 
-          // mark both as touched
+          // Show loading state
+          submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Signing In...';
+          submitBtn.disabled = true;
+
+          // Mark fields as touched
           touched.email = true;
           touched.password = true;
 
@@ -270,41 +379,42 @@
           }
 
           if (!emailRes.valid || !passRes.valid) {
-            // show global message and focus first invalid
-            errorMessage.textContent = 'Please fix the highlighted errors before submitting.';
+            errorText.textContent = 'Please fix the highlighted errors before submitting.';
             errorMessage.classList.remove('hidden');
-            // focus first invalid in order: email, password
+            
+            // Reset button state
+            submitBtn.innerHTML = '<i class="fas fa-sign-in-alt mr-2"></i> Sign In';
+            submitBtn.disabled = false;
+            
+            // Focus first invalid field
             if (!emailRes.valid) email.focus();
             else if (!passRes.valid) password.focus();
             return;
           }
 
-          // All good — submit
+          // All valid - submit form
           errorMessage.classList.add('hidden');
-          form.submit();
+          
+          // Simulate API call delay
+          setTimeout(() => {
+            form.submit();
+          }, 1000);
         });
 
-        // optional: enable Enter key submission on password if valid
-        password.addEventListener('keydown', (ev) => {
-          if (ev.key === 'Enter') {
-            ev.preventDefault();
-            form.dispatchEvent(new Event('submit', { cancelable: true }));
-          }
-        });
-
-        // initial state: clear borders
+        // Initial state
         clearFieldState(email);
         clearFieldState(password);
       })();
     </script>
-    <script>
-  if (window.history && window.history.replaceState) {
-    window.history.pushState(null, null, window.location.href);
-    window.onpopstate = function () {
-      window.history.go(1);
-    };
-  }
-</script>
 
+    <script>
+      // Prevent back navigation
+      if (window.history && window.history.replaceState) {
+        window.history.pushState(null, null, window.location.href);
+        window.onpopstate = function () {
+          window.history.go(1);
+        };
+      }
+    </script>
   </body>
 </html>

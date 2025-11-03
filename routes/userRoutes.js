@@ -41,39 +41,6 @@
 
 
 
-// // export default router;
-
-// import express from "express";
-// import {
-//   getSignup,
-//   signupUser,
-//   getVerifyOtp,
-//   postVerifyOtp,
-//   showHomePage,
-//   getLogin,
-//   loginUser,
-//   logoutUser,
-// } from "../controllers/user/userController.js";
-// import { isUserLoggedIn,
-//   isUserLoggedOut,
-//   checkBlockedUser,} from "../middlewares/userAuth.js";
-
-// const router = express.Router();
-
-// router.get("/signup", isUserLoggedOut, getSignup);
-// router.post("/signup", signupUser);
-
-// router.get("/verifyOtp", getVerifyOtp);
-// router.post("/verifyOtp", postVerifyOtp);
-
-// router.get("/login", isUserLoggedOut, getLogin);
-// router.post("/login", loginUser);
-
-// router.get("/home", isUserLoggedIn, checkBlockedUser, isUserLoggedOut,showHomePage)
-// router.get("/logout", isUserLoggedIn,logoutUser);
-
-// export default router;
-
 
 
 import express from "express";
@@ -87,9 +54,10 @@ import {
   showHomePage,
   logoutUser,
 } from "../controllers/user/userController.js";
-
+import { renderForgotPassword, postForgotPassword, renderForgotVerifyOtp, postForgotVerifyOtp, renderResetPassword, postResetPassword } from "../controllers/user/authForgotController.js"; 
 import { isUserLoggedIn, isUserLoggedOut, checkBlockedUser } from "../middlewares/userAuth.js";
 import { noCache }  from "../middlewares/cacheMiddleware.js";
+import { render } from "ejs";
 
 const router = express.Router();
 
@@ -105,6 +73,9 @@ router.post("/verifyOtp", postVerifyOtp);
 // Login
 router.get("/login", isUserLoggedOut, getLogin);
 router.post("/login", loginUser);
+
+//forgetpassword
+router.get("/forgotPassword",renderForgotPassword);
 
 // Home
 router.get("/home", isUserLoggedIn, checkBlockedUser, showHomePage);

@@ -147,18 +147,19 @@
 //   console.log("Server running on port 3000")
 // );
 
-
+import dotenv from "dotenv";
+dotenv.config();
 import express from "express";
 import session from "express-session";
-import dotenv from "dotenv";
 import path from "path";
+import passport from "./config/passport.js";
 import { fileURLToPath } from "url";
 import MongoStore from "connect-mongo";
 import connectDB from "./config/DB.js";
 import userRoutes from "./routes/userRoutes.js";
 import {noCache} from "./middlewares/cacheMiddleware.js"
+import authRoutes from "./routes/authRoutes.js";
 
-dotenv.config();
 const app = express();
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -193,10 +194,21 @@ app.use(
 
 app.use(noCache);
 
+//passport middleware
+app.use(passport.initialize());
+app.use(passport.session());
+
+
+app.use((req, res, next) => {
+  res.locals.currentPage = ''; // Default value (so header never crashes)
+  next();
+});
+
 app.use("/user", userRoutes);
+app.use("/auth",authRoutes);
 
 app.get('/', (req, res) => {
-  res.render('index');
+  res.render('index',{currentPage:'home'});
 })
 
 // ✅ 8. 404 Page
