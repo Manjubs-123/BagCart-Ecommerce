@@ -49,6 +49,7 @@ import {
   signupUser,
   getVerifyOtp,
   postVerifyOtp,
+  resendOtp,
   getLogin,
   loginUser,
   showHomePage,
@@ -57,7 +58,7 @@ import {
 import { renderForgotPassword, postForgotPassword, renderForgotVerifyOtp, postForgotVerifyOtp, renderResetPassword, postResetPassword } from "../controllers/user/authForgotController.js"; 
 import { isUserLoggedIn, isUserLoggedOut, checkBlockedUser } from "../middlewares/userAuth.js";
 import { noCache }  from "../middlewares/cacheMiddleware.js";
-import { render } from "ejs";
+
 
 const router = express.Router();
 
@@ -70,12 +71,16 @@ router.post("/signup", signupUser);
 router.get("/verifyOtp", getVerifyOtp);
 router.post("/verifyOtp", postVerifyOtp);
 
+router.get("/resendOtp", resendOtp);
+
+
 // Login
 router.get("/login", isUserLoggedOut, getLogin);
 router.post("/login", loginUser);
 
 //forgetpassword
 router.get("/forgotPassword",renderForgotPassword);
+ router.post("/forgotPassword",postForgotPassword);
 
 // Home
 router.get("/home", isUserLoggedIn, checkBlockedUser, showHomePage);

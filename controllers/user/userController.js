@@ -1,4 +1,5 @@
 import User from "../../models/userModel.js";
+import { sendOtpMail } from "../../utils/sendMail.js";
 import bcrypt from "bcryptjs";
 import nodemailer from "nodemailer";
 import mongoose from "mongoose";
@@ -93,13 +94,40 @@ res.redirect("/user/verifyOtp");
   }
 };
 
+
+
+
+
 // ✅ Render OTP Verification Page
+// export const getVerifyOtp = (req, res) => {
+//   const email = req.session.pendingEmail;
+
+//   if (!email) return res.redirect("/user/signup"); // if session lost or expired
+//   res.render("user/verifyOtp", { email, error: null });
+// };
+
 export const getVerifyOtp = (req, res) => {
   const email = req.session.pendingEmail;
 
   if (!email) return res.redirect("/user/signup"); // if session lost or expired
-  res.render("user/verifyOtp", { email, error: null });
+
+  // Add constants here 👇
+  const RESEND_COOLDOWN = 60; // seconds before user can resend OTP
+  const OTP_EXPIRY_MINUTES = 2; // OTP valid time (in minutes)
+
+  // Optional: if you store cooldown info in session, reuse it
+  const cooldown = req.session.cooldown || 0;
+
+  // Render page with all required variables
+  res.render("user/verifyOtp", {
+    email,
+    error: null,
+    cooldown,
+    RESEND_COOLDOWN,     // ✅ EJS now gets this
+    OTP_EXPIRY_MINUTES,  // ✅ EJS now gets this too
+  });
 };
+
 
 
 // ✅ Verify OTP (Stored in Session)
@@ -165,11 +193,68 @@ export const postVerifyOtp = async (req, res) => {
     delete req.session.otp;
     delete req.session.otpExpires;
     delete req.session.pendingEmail;
+    delete req.session.cooldown;
+
 
     res.redirect("/user/home");
   } catch (err) {
     console.error("❌ OTP Verification Error:", err);
     res.status(500).render("user/verifyOtp", { email: req.session.pendingEmail || "", error: "Something went wrong." });
+  }
+};
+
+
+export const resendOtp = async (req, res) => {
+  try {
+    const email = req.session.pendingEmail;
+    if (!email) return res.redirect("/user/signup");
+
+    const now = Date.now();
+    const cooldown = req.session.cooldown || 0;
+
+    // Prevent resend spam
+    if (now < cooldown) {
+      const remaining = Math.ceil((cooldown - now) / 1000);
+      return res.render("user/verifyOtp", {
+        email,
+        error: `Please wait ${remaining}s before resending OTP.`,
+        cooldown: remaining,
+        RESEND_COOLDOWN: 60,
+        OTP_EXPIRY_MINUTES: 2,
+      });
+    }
+
+    // New OTP
+    const newOtp = Math.floor(100000 + Math.random() * 900000).toString();
+    req.session.otp = newOtp;
+    req.session.otpExpires = now + 5 * 60 * 1000;
+    req.session.cooldown = now + 60 * 1000;
+
+    await transporter.sendMail({
+      from: process.env.EMAIL_USER,
+      to: email,
+      subject: "New OTP for BagCart Verification",
+      html: `<p>Your new OTP is <b>${newOtp}</b>. It will expire in 5 minutes.</p>`,
+    });
+
+    console.log(`🔄 Resent OTP to ${email}: ${newOtp}`);
+
+    res.render("user/verifyOtp", {
+      email,
+      error: null,
+      cooldown: 60,
+      RESEND_COOLDOWN: 60,
+      OTP_EXPIRY_MINUTES: 2,
+    });
+  } catch (err) {
+    console.error("❌ Resend OTP Error:", err);
+    res.render("user/verifyOtp", {
+      email: req.session.pendingEmail || "",
+      error: "Failed to resend OTP. Please try again.",
+      cooldown: 0,
+      RESEND_COOLDOWN: 60,
+      OTP_EXPIRY_MINUTES: 2,
+    });
   }
 };
 
