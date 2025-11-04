@@ -95,17 +95,6 @@ res.redirect("/user/verifyOtp");
 };
 
 
-
-
-
-// ✅ Render OTP Verification Page
-// export const getVerifyOtp = (req, res) => {
-//   const email = req.session.pendingEmail;
-
-//   if (!email) return res.redirect("/user/signup"); // if session lost or expired
-//   res.render("user/verifyOtp", { email, error: null });
-// };
-
 export const getVerifyOtp = (req, res) => {
   const email = req.session.pendingEmail;
 
@@ -127,44 +116,6 @@ export const getVerifyOtp = (req, res) => {
     OTP_EXPIRY_MINUTES,  // ✅ EJS now gets this too
   });
 };
-
-
-
-// ✅ Verify OTP (Stored in Session)
-// export const postVerifyOtp = async (req, res) => {
-//   try {
-//     const { otp } = req.body;
-//     const { email, otp: storedOtp, otpExpires } = req.session;
-
-//     if (!storedOtp || Date.now() > otpExpires) {
-//       return res.render("user/verifyOtp", { email, error: "OTP expired. Please sign up again." });
-//     }
-
-//     if (otp !== storedOtp) {
-//       return res.render("user/verifyOtp", { email, error: "Invalid OTP. Please try again." });
-//     }
-
-//     const user = await User.findOne({ email });
-//     if (!user) return res.render("user/signup", { error: "User not found. Please sign up again." });
-
-//     // ✅ Mark verified
-//     user.isVerified = true;
-//     await user.save();
-
-//     // ✅ Create login session
-//     req.session.isLoggedIn = true;
-//     req.session.user = { id: user._id, name: user.name, email: user.email };
-
-//     // Clean OTP from session
-//     delete req.session.otp;
-//     delete req.session.otpExpires;
-
-//     res.redirect("/user/home");
-//   } catch (err) {
-//     console.error("❌ OTP Verification Error:", err);
-//     res.status(500).render("user/verifyOtp", { email: req.session.email || "", error: "Something went wrong." });
-//   }
-// };
 
 export const postVerifyOtp = async (req, res) => {
   try {
@@ -289,6 +240,7 @@ export const loginUser = async (req, res) => {
 // ✅ Show Landing Page (Home)
 export const showHomePage = (req, res) => {
   const user = req.session.user;
+  console.log(user)
   res.render("user/landing", { title: "BagHub - Explore Backpacks", user });
 };
 

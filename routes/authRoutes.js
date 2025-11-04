@@ -43,8 +43,11 @@ router.get(
   passport.authenticate("google", { failureRedirect: "/user/login" }),
   (req, res) => {
     // Successful login
-    res.redirect("/");
+    res.redirect("/user/home");
   }
 );
 
 export default router;
+
+
+

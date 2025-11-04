@@ -265,9 +265,9 @@
       const expiryCountdown = document.getElementById('expiryCountdown');
 // ✅ OTP Configuration (using values from server)
 const OTP_LENGTH = 6;
-let RESEND_COOLDOWN = <%= typeof RESEND_COOLDOWN !== 'undefined' ? RESEND_COOLDOWN : 60 %>;
-let OTP_EXPIRY_MINUTES = <%= typeof OTP_EXPIRY_MINUTES !== 'undefined' ? OTP_EXPIRY_MINUTES : 5 %>;
-let timeLeft = Number(<%= typeof cooldown !== 'undefined' ? cooldown : RESEND_COOLDOWN %>);
+let RESEND_COOLDOWN = <%= JSON.stringify(typeof RESEND_COOLDOWN !== 'undefined' ? RESEND_COOLDOWN : 60) %>;
+let OTP_EXPIRY_MINUTES = <%= JSON.stringify(typeof OTP_EXPIRY_MINUTES !== 'undefined' ? OTP_EXPIRY_MINUTES : 5) %>;
+let timeLeft = Number(<%= typeof cooldown !== 'undefined' ? JSON.stringify(cooldown) : 'RESEND_COOLDOWN' %>);
 
 
       let otpExpiryTime = Date.now() + (OTP_EXPIRY_MINUTES * 60 * 1000);

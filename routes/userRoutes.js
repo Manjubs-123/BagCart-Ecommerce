@@ -64,7 +64,7 @@ const router = express.Router();
 
 router.use(noCache);
 // Signup
-router.get("/signup", isUserLoggedOut, getSignup);
+router.get("/signup", isUserLoggedOut,getSignup);
 router.post("/signup", signupUser);
 
 // OTP
@@ -82,8 +82,14 @@ router.post("/login", loginUser);
 router.get("/forgotPassword",renderForgotPassword);
  router.post("/forgotPassword",postForgotPassword);
 
+router.get("/forgotOtp",renderForgotVerifyOtp);
+router.post("/forgotOtp",postForgotVerifyOtp);
+
+router.get("/resetPassword",renderResetPassword);
+router.post("/resetPassword",postResetPassword);
+
 // Home
-router.get("/home", isUserLoggedIn, checkBlockedUser, showHomePage);
+router.get("/home", showHomePage);
 
 // Logout
 router.get("/logout", isUserLoggedIn, logoutUser);
