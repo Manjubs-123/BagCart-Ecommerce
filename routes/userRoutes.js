@@ -82,9 +82,12 @@ router.post("/login", loginUser);
 router.get("/forgotPassword",renderForgotPassword);
  router.post("/forgotPassword",postForgotPassword);
 
+
+ //OTP verify
 router.get("/forgotOtp",renderForgotVerifyOtp);
 router.post("/forgotOtp",postForgotVerifyOtp);
 
+//Reset
 router.get("/resetPassword",renderResetPassword);
 router.post("/resetPassword",postResetPassword);
 

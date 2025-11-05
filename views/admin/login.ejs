@@ -5,103 +5,303 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Admin Login | BagHub</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://kit.fontawesome.com/a2e0da32f7.js" crossorigin="anonymous"></script>
+  
+  <style>
+    .gradient-bg {
+      background: linear-gradient(135deg, #1a56db 0%, #047857 100%);
+    }
+    
+    .glass-effect {
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+    
+    .input-glow:focus {
+      box-shadow: 0 0 0 3px rgba(26, 86, 219, 0.1);
+      border-color: #1a56db;
+    }
+    
+    .btn-primary {
+      background: linear-gradient(135deg, #1a56db 0%, #047857 100%);
+      transition: all 0.3s ease;
+    }
+    
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 25px -5px rgba(26, 86, 219, 0.4);
+    }
+    
+    .error-shake {
+      animation: shake 0.5s ease-in-out;
+    }
+    
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      25% { transform: translateX(-5px); }
+      75% { transform: translateX(5px); }
+    }
+    
+    .floating-label {
+      transition: all 0.2s ease;
+    }
+    
+    .input-filled + .floating-label,
+    .input-focused + .floating-label {
+      transform: translateY(-180%) scale(0.9);
+      color: #1a56db;
+      font-weight: 500;
+    }
+  </style>
 </head>
-<body class="bg-emerald-900 flex items-center justify-center min-h-screen">
-  <div class="bg-white p-10 rounded-lg shadow-lg w-96 text-center">
-    <h1 class="text-2xl font-bold mb-4 text-emerald-900">Admin Login</h1>
 
-    <!-- General error message -->
-    <p id="generalError" class="text-red-600 text-sm mb-4 hidden"></p>
+<body class="gradient-bg min-h-screen flex items-center justify-center p-4">
+  <div class="w-full max-w-md">
+    <!-- Logo Header -->
+    <div class="text-center mb-8">
+      <div class="flex items-center justify-center space-x-3 mb-4">
+        <!-- <div class="w-12 h-12 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center">
+          <i class="fas fa-shield-alt text-white text-xl"></i>
+        </div> -->
+        <h1 class="text-2xl font-bold text-white">BagHub Admin</h1>
+      </div>
+      <p class="text-white/80 text-sm">Secure Admin Portal</p>
+    </div>
 
-    <form id="loginForm" action="/admin/login" method="POST" class="space-y-4">
-      <div class="text-left">
-        <input 
-          type="email" 
-          id="email" 
-          name="email" 
-          placeholder="Email"
-          class="w-full border rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-800" 
-        />
-        <p id="emailError" class="text-red-600 text-xs mt-1 hidden">Please enter a valid email address.</p>
+    <!-- Login Card -->
+    <div class="glass-effect rounded-3xl p-8 shadow-2xl">
+      <!-- Header -->
+      <div class="text-center mb-8">
+        <div class="w-16 h-16 bg-gradient-to-br from-blue-100 to-emerald-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+          <i class="fas fa-lock text-2xl text-[#1a56db]"></i>
+        </div>
+        <h2 class="text-2xl font-bold text-gray-800 mb-2">Admin Access</h2>
+        <p class="text-gray-600 text-sm">Enter your credentials to continue</p>
       </div>
 
-      <div class="text-left">
-        <input 
-          type="password" 
-          id="password" 
-          name="password" 
-          placeholder="Password"
-          class="w-full border rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-800" 
-        />
-        <p id="passwordError" class="text-red-600 text-xs mt-1 hidden">Password cannot be empty.</p>
+      <!-- General Error Message -->
+      <div id="generalError" class="bg-red-50 border-l-4 border-red-500 p-4 rounded-lg mb-6 hidden" role="alert">
+        <div class="flex items-center">
+          <i class="fas fa-exclamation-circle text-red-500 mr-3"></i>
+          <span id="generalErrorText" class="text-red-700 text-sm"></span>
+        </div>
       </div>
 
-      <button 
-        type="submit"
-        class="w-full bg-emerald-900 text-white rounded py-2 font-semibold hover:bg-emerald-800">
-        Login
-      </button>
-    </form>
+      <!-- Login Form -->
+      <form id="loginForm" action="/admin/login" method="POST" class="space-y-6" novalidate>
+        <!-- Email Field -->
+        <div class="relative">
+          <input 
+            type="email" 
+            id="email" 
+            name="email" 
+            class="w-full px-4 py-4 bg-gray-50/50 border border-gray-300 rounded-2xl input-glow focus:outline-none transition-all duration-200 input-focused"
+            autocomplete="off"
+            required
+          />
+          <label for="email" class="floating-label absolute left-4 top-4 text-gray-500 pointer-events-none">
+            <i class="fas fa-envelope mr-2"></i>Admin Email
+          </label>
+          <div class="absolute inset-y-0 right-0 flex items-center pr-3">
+            <i class="fas fa-envelope text-gray-400"></i>
+          </div>
+          <p id="emailError" class="text-red-600 text-sm mt-2 hidden flex items-center" role="status">
+            <i class="fas fa-exclamation-circle mr-1 text-xs"></i>
+            <span>Please enter a valid admin email address.</span>
+          </p>
+        </div>
+
+        <!-- Password Field -->
+        <div class="relative">
+          <input 
+            type="password" 
+            id="password" 
+            name="password" 
+            class="w-full px-4 py-4 bg-gray-50/50 border border-gray-300 rounded-2xl input-glow focus:outline-none transition-all duration-200 input-focused pr-12"
+            autocomplete="current-password"
+            required
+          />
+          <label for="password" class="floating-label absolute left-4 top-4 text-gray-500 pointer-events-none">
+            <i class="fas fa-lock mr-2"></i>Password
+          </label>
+          <button type="button" id="togglePassword" class="absolute right-3 top-4 text-gray-400 hover:text-gray-600 transition">
+            <i class="far fa-eye"></i>
+          </button>
+          <p id="passwordError" class="text-red-600 text-sm mt-2 hidden flex items-center" role="status">
+            <i class="fas fa-exclamation-circle mr-1 text-xs"></i>
+            <span>Password cannot be empty.</span>
+          </p>
+        </div>
+
+        <!-- Submit Button -->
+        <button 
+          type="submit"
+          class="w-full btn-primary text-white py-4 rounded-2xl font-semibold shadow-lg transition-all duration-200 flex items-center justify-center"
+        >
+          <i class="fas fa-sign-in-alt mr-2"></i>
+          Access Admin Panel
+        </button>
+      </form>
+
+      <!-- Security Notice -->
+      <div class="text-center mt-6 pt-6 border-t border-gray-200">
+        <p class="text-xs text-gray-500 flex items-center justify-center">
+          <i class="fas fa-shield-alt mr-2 text-green-500"></i>
+          Restricted access - authorized personnel only
+        </p>
+      </div>
+    </div>
+
+    <!-- Additional Security Info -->
+    <div class="text-center mt-6">
+      <p class="text-white/60 text-xs">
+        <i class="fas fa-info-circle mr-1"></i>
+        Ensure you're on a secure connection before proceeding
+      </p>
+    </div>
   </div>
 
   <script>
-    const form = document.getElementById("loginForm");
-    const emailInput = document.getElementById("email");
-    const passwordInput = document.getElementById("password");
-    const emailError = document.getElementById("emailError");
-    const passwordError = document.getElementById("passwordError");
-    const generalError = document.getElementById("generalError");
+    document.addEventListener('DOMContentLoaded', function() {
+      const form = document.getElementById('loginForm');
+      const emailInput = document.getElementById('email');
+      const passwordInput = document.getElementById('password');
+      const emailError = document.getElementById('emailError');
+      const passwordError = document.getElementById('passwordError');
+      const generalError = document.getElementById('generalError');
+      const generalErrorText = document.getElementById('generalErrorText');
+      const togglePassword = document.getElementById('togglePassword');
 
-    // Email regex for basic validation
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      // Email regex for validation
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-    function validateEmail() {
-      if (!emailInput.value.trim()) {
-        emailError.textContent = "Email cannot be empty.";
-        emailError.classList.remove("hidden");
-        emailInput.classList.add("border-red-500");
-        return false;
-      } else if (!emailRegex.test(emailInput.value)) {
-        emailError.textContent = "Please enter a valid email address.";
-        emailError.classList.remove("hidden");
-        emailInput.classList.add("border-red-500");
-        return false;
-      } else {
-        emailError.classList.add("hidden");
-        emailInput.classList.remove("border-red-500");
-        return true;
+      // Update floating labels
+      function updateFloatingLabel(input) {
+        if (input.value) {
+          input.classList.add('input-filled');
+        } else {
+          input.classList.remove('input-filled');
+        }
       }
-    }
 
-    function validatePassword() {
-      if (!passwordInput.value.trim()) {
-        passwordError.textContent = "Password cannot be empty.";
-        passwordError.classList.remove("hidden");
-        passwordInput.classList.add("border-red-500");
-        return false;
-      } else {
-        passwordError.classList.add("hidden");
-        passwordInput.classList.remove("border-red-500");
-        return true;
+      // Validate email
+      function validateEmail() {
+        const email = emailInput.value.trim();
+        
+        if (!email) {
+          emailError.querySelector('span').textContent = 'Admin email is required.';
+          emailError.classList.remove('hidden');
+          emailInput.classList.add('border-red-500', 'error-shake');
+          return false;
+        } else if (!emailRegex.test(email)) {
+          emailError.querySelector('span').textContent = 'Please enter a valid admin email address.';
+          emailError.classList.remove('hidden');
+          emailInput.classList.add('border-red-500', 'error-shake');
+          return false;
+        } else {
+          emailError.classList.add('hidden');
+          emailInput.classList.remove('border-red-500', 'error-shake');
+          return true;
+        }
       }
-    }
 
-    // Real-time validation
-    emailInput.addEventListener("input", validateEmail);
-    passwordInput.addEventListener("input", validatePassword);
-
-    // Form submission
-    form.addEventListener("submit", function(event) {
-      const isEmailValid = validateEmail();
-      const isPasswordValid = validatePassword();
-
-      if (!isEmailValid || !isPasswordValid) {
-        generalError.textContent = "Please fix the errors in the form.";
-        generalError.classList.remove("hidden");
-        event.preventDefault(); // prevent form submission
-      } else {
-        generalError.classList.add("hidden");
+      // Validate password
+      function validatePassword() {
+        const password = passwordInput.value.trim();
+        
+        if (!password) {
+          passwordError.classList.remove('hidden');
+          passwordInput.classList.add('border-red-500', 'error-shake');
+          return false;
+        } else {
+          passwordError.classList.add('hidden');
+          passwordInput.classList.remove('border-red-500', 'error-shake');
+          return true;
+        }
       }
+
+      // Remove shake animation
+      function removeShakeAnimation(input) {
+        setTimeout(() => {
+          input.classList.remove('error-shake');
+        }, 500);
+      }
+
+      // Event listeners for real-time validation
+      emailInput.addEventListener('input', function() {
+        updateFloatingLabel(this);
+        validateEmail();
+        generalError.classList.add('hidden');
+      });
+
+      passwordInput.addEventListener('input', function() {
+        updateFloatingLabel(this);
+        validatePassword();
+        generalError.classList.add('hidden');
+      });
+
+      // Focus events
+      emailInput.addEventListener('focus', function() {
+        this.classList.add('input-focused');
+      });
+
+      emailInput.addEventListener('blur', function() {
+        this.classList.remove('input-focused');
+        validateEmail();
+      });
+
+      passwordInput.addEventListener('focus', function() {
+        this.classList.add('input-focused');
+      });
+
+      passwordInput.addEventListener('blur', function() {
+        this.classList.remove('input-focused');
+        validatePassword();
+      });
+
+      // Toggle password visibility
+      togglePassword.addEventListener('click', function() {
+        const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+        passwordInput.setAttribute('type', type);
+        this.innerHTML = type === 'password' ? '<i class="far fa-eye"></i>' : '<i class="far fa-eye-slash"></i>';
+      });
+
+      // Form submission
+      form.addEventListener('submit', function(event) {
+        const isEmailValid = validateEmail();
+        const isPasswordValid = validatePassword();
+
+        if (!isEmailValid || !isPasswordValid) {
+          event.preventDefault();
+          generalErrorText.textContent = 'Please fix the errors above before proceeding.';
+          generalError.classList.remove('hidden');
+          
+          // Scroll to first error
+          if (!isEmailValid) {
+            emailInput.focus();
+          } else if (!isPasswordValid) {
+            passwordInput.focus();
+          }
+        } else {
+          // Show loading state
+          const submitBtn = form.querySelector('button[type="submit"]');
+          submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Authenticating...';
+          submitBtn.disabled = true;
+          
+          // Form will submit normally
+          generalError.classList.add('hidden');
+        }
+      });
+
+      // Initialize floating labels
+      updateFloatingLabel(emailInput);
+      updateFloatingLabel(passwordInput);
+
+      // Auto-focus email field
+      setTimeout(() => {
+        emailInput.focus();
+      }, 500);
     });
   </script>
 </body>

@@ -53,7 +53,7 @@ export const loginUser = async (req, res) => {
 };
 
 
-// ✅ Step 1: Send OTP
+// Step 1: Send OTP
 export const sendOtp = async (req, res) => {
   try {
     const { email } = req.body;
@@ -81,7 +81,7 @@ export const sendOtp = async (req, res) => {
   }
 };
 
-// ✅ Step 2: Verify OTP
+// Step 2: Verify OTP
 export const verifyOtp = async (req, res) => {
   try {
     const { otp } = req.body;
@@ -93,14 +93,14 @@ export const verifyOtp = async (req, res) => {
     if (otp !== storedOtp)
       return res.render("verify-otp", { error: "Invalid OTP. Try again." });
 
-    // ✅ OTP matched — verify user
+    // OTP matched — verify user
     const user = await User.findOne({ email });
     if (user) {
       user.isVerified = true;
       await user.save();
     }
 
-    // ✅ Create session
+    // Create session
     req.session.isLoggedIn = true;
     req.session.user = { id: user._id, name: user.name, email: user.email };
 
@@ -115,7 +115,7 @@ export const verifyOtp = async (req, res) => {
   }
 };
 
-// ✅ Step 3: Logout
+//  Step 3: Logout
 export const logoutUser = (req, res) => {
   req.session.destroy((err) => {
     if (err) console.error(err);

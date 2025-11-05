@@ -207,14 +207,14 @@ export const getProductDetails = async (req, res) => {
       return res.redirect("/shop");
     }
 
-    // ✅ collect all variant images into a single array
+    //  collect all variant images into a single array
     const allProductImages = product.variants
       ? product.variants.flatMap(v =>
           v.images.map(img => img.url)
         )
       : [];
 
-    // ✅ fetch related products (same category)
+    //  fetch related products (same category)
     const relatedProducts = await Product.find({
       category: product.category._id,
       _id: { $ne: productId },
@@ -222,15 +222,15 @@ export const getProductDetails = async (req, res) => {
     })
       .limit(4)
       .lean();
-    // ✅ render page with all data
+    //  render page with all data
    res.render("user/productDetails", {
   title: product.name,
   product,
   allProductImages: product.images,
-  relatedProducts, // ✅ add this line
+  relatedProducts, // add this line
 });
   } catch (error) {
-    console.error("❌ Product detail page error:", error);
+    console.error("Product detail page error:", error);
     res.redirect("/shop");
   }
 };

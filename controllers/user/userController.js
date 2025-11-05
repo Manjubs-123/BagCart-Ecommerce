@@ -6,7 +6,7 @@ import mongoose from "mongoose";
 import dotenv from "dotenv";
 dotenv.config();
 
-// ✅ Email setup (Gmail SMTP)
+// Email setup (Gmail SMTP)
 const transporter = nodemailer.createTransport({
   host: "smtp.gmail.com",
   port: 465,
@@ -17,12 +17,12 @@ const transporter = nodemailer.createTransport({
   },
 });
 
-// ✅ Render Signup Page
+// Render Signup Page
 export const getSignup = (req, res) => {
   res.render("user/signup", { error: null });
 };
 
-// ✅ Handle Signup Submission
+// Handle Signup Submission
 export const signupUser = async (req, res) => {
   try {
     if (mongoose.connection.readyState !== 1) {
@@ -85,14 +85,14 @@ export const signupUser = async (req, res) => {
              <p>Your OTP is <b>${otp}</b>. It will expire in 5 minutes.</p>`,
     });
 
-    console.log(`✅ OTP sent to ${email}: ${otp}`);
+    console.log(` OTP sent to ${email}: ${otp}`);
     req.session.pendingEmail = email; // store securely in session
 res.redirect("/user/verifyOtp");
   } catch (err) {
-    console.error("❌ Signup error:", err);
+    console.error(" Signup error:", err);
     res.status(500).render("user/signup", { error: "Something went wrong. Please try again later." });
   }
-};
+}; 
 
 
 export const getVerifyOtp = (req, res) => {
@@ -100,7 +100,7 @@ export const getVerifyOtp = (req, res) => {
 
   if (!email) return res.redirect("/user/signup"); // if session lost or expired
 
-  // Add constants here 👇
+  // Add constants here 
   const RESEND_COOLDOWN = 60; // seconds before user can resend OTP
   const OTP_EXPIRY_MINUTES = 2; // OTP valid time (in minutes)
 
@@ -112,8 +112,8 @@ export const getVerifyOtp = (req, res) => {
     email,
     error: null,
     cooldown,
-    RESEND_COOLDOWN,     // ✅ EJS now gets this
-    OTP_EXPIRY_MINUTES,  // ✅ EJS now gets this too
+    RESEND_COOLDOWN,     // EJS now gets this
+    OTP_EXPIRY_MINUTES,  // EJS now gets this too
   });
 };
 
@@ -149,7 +149,7 @@ export const postVerifyOtp = async (req, res) => {
 
     res.redirect("/user/home");
   } catch (err) {
-    console.error("❌ OTP Verification Error:", err);
+    console.error("OTP Verification Error:", err);
     res.status(500).render("user/verifyOtp", { email: req.session.pendingEmail || "", error: "Something went wrong." });
   }
 };
@@ -198,7 +198,7 @@ export const resendOtp = async (req, res) => {
       OTP_EXPIRY_MINUTES: 2,
     });
   } catch (err) {
-    console.error("❌ Resend OTP Error:", err);
+    console.error("Resend OTP Error:", err);
     res.render("user/verifyOtp", {
       email: req.session.pendingEmail || "",
       error: "Failed to resend OTP. Please try again.",
@@ -210,12 +210,12 @@ export const resendOtp = async (req, res) => {
 };
 
 
-// ✅ Login Page
+//  Login Page
 export const getLogin = (req, res) => {
   res.render("user/login", { error: null });
 };
 
-// ✅ Handle Login (with block check)
+//  Handle Login (with block check)
 export const loginUser = async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -237,14 +237,14 @@ export const loginUser = async (req, res) => {
   }
 };
 
-// ✅ Show Landing Page (Home)
+//  Show Landing Page (Home)
 export const showHomePage = (req, res) => {
   const user = req.session.user;
   console.log(user)
   res.render("user/landing", { title: "BagHub - Explore Backpacks", user });
 };
 
-// ✅ Logout User
+//  Logout User
 export const logoutUser = (req, res) => {
   req.session.destroy((err) => {
     if (err) {

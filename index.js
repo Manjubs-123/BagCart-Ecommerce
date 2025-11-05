@@ -147,34 +147,114 @@
 //   console.log("Server running on port 3000")
 // );
 
+// import dotenv from "dotenv";
+// dotenv.config();
+// import express from "express";
+// import session from "express-session";
+// import path from "path";
+// import passport from "./config/passport.js";
+// import { fileURLToPath } from "url";
+// import MongoStore from "connect-mongo";
+// import connectDB from "./config/DB.js";
+// import userRoutes from "./routes/userRoutes.js";
+// import {noCache} from "./middlewares/cacheMiddleware.js"
+// import authRoutes from "./routes/authRoutes.js";
+// import adminRoutes from "./routes/adminRoutes.js";  
+
+// const app = express();
+// const __dirname = path.dirname(fileURLToPath(import.meta.url));
+
+
+// // ✅ Connect DB BEFORE routes
+// connectDB();
+
+// app.set("view engine", "ejs");
+// app.set("views",path.join(__dirname, "views"));
+// app.use(express.static(path.join(__dirname, "public"))); 
+
+
+// app.use(express.urlencoded({ extended: true }));
+// app.use(express.json());
+
+// app.use(
+//   session({
+//     secret: process.env.SESSION_SECRET || "supersecretkey",
+//     resave: false,
+//     saveUninitialized: false,
+//     store: MongoStore.create({
+//       mongoUrl: process.env.MONGO_URI,
+//       ttl: 24 * 60 * 60, // 1 day
+//     }),
+//     cookie: {
+//       httpOnly: true,
+//       secure: false, // true if using HTTPS
+//       maxAge: 24 * 60 * 60 * 1000, // 1 day
+//     },
+//   })
+// );
+
+// app.use(noCache);
+
+// //passport middleware
+// app.use(passport.initialize());
+// app.use(passport.session());
+
+
+// app.use((req, res, next) => {
+//   res.locals.currentPage = ''; // Default value (so header never crashes)
+//   next();
+// });
+
+// app.use("/user", userRoutes);
+// app.use("/auth",authRoutes);
+//  app.use("/admin",adminRoutes);
+
+
+// app.get('/', (req, res) => {
+//   res.render('index',{currentPage:'home'});
+// })
+
+// // ✅ 8. 404 Page
+// app.use((req, res) => {
+//   res.status(404).render("404", { title: "Page Not Found" });
+// });
+
+
+// const PORT = process.env.PORT || 3000;
+// app.listen(PORT, () => console.log(`✅ Server running on port ${PORT}`));
+
 import dotenv from "dotenv";
 dotenv.config();
 import express from "express";
 import session from "express-session";
 import path from "path";
-import passport from "./config/passport.js";
 import { fileURLToPath } from "url";
 import MongoStore from "connect-mongo";
+import passport from "./config/passport.js";
 import connectDB from "./config/DB.js";
+
 import userRoutes from "./routes/userRoutes.js";
-import {noCache} from "./middlewares/cacheMiddleware.js"
 import authRoutes from "./routes/authRoutes.js";
+import adminRoutes from "./routes/adminRoutes.js";
+import { noCache } from "./middlewares/cacheMiddleware.js";
+import categoryRoutes from "./routes/admin/categoryRoutes.js";
+import productRoutes from "./routes/admin/productRoutes.js";
+import usersRoutes from "./routes/admin/usersRoutes.js";
 
 const app = express();
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
-
-// ✅ Connect DB BEFORE routes
+// Connect DB
 connectDB();
 
 app.set("view engine", "ejs");
-app.set("views",path.join(__dirname, "views"));
-app.use(express.static(path.join(__dirname, "public"))); 
-
+app.set("views", path.join(__dirname, "views"));
+app.use(express.static(path.join(__dirname, "public")));
 
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 
+// Session
 app.use(
   session({
     secret: process.env.SESSION_SECRET || "supersecretkey",
@@ -182,40 +262,42 @@ app.use(
     saveUninitialized: false,
     store: MongoStore.create({
       mongoUrl: process.env.MONGO_URI,
-      ttl: 24 * 60 * 60, // 1 day
+      ttl: 24 * 60 * 60,
     }),
     cookie: {
       httpOnly: true,
-      secure: false, // true if using HTTPS
-      maxAge: 24 * 60 * 60 * 1000, // 1 day
+      secure: false,
+      maxAge: 24 * 60 * 60 * 1000,
     },
   })
 );
 
 app.use(noCache);
-
-//passport middleware
 app.use(passport.initialize());
 app.use(passport.session());
 
-
+// ✅ Make currentPath available everywhere
 app.use((req, res, next) => {
-  res.locals.currentPage = ''; // Default value (so header never crashes)
+  res.locals.currentPath = req.path;
   next();
 });
 
+// Routes
+app.use("/admin", adminRoutes);
 app.use("/user", userRoutes);
-app.use("/auth",authRoutes);
+app.use("/auth", authRoutes);
+app.use("/admin/category", categoryRoutes);
+app.use("/admin/products", productRoutes);
+app.use("/admin/users", usersRoutes); 
 
-app.get('/', (req, res) => {
-  res.render('index',{currentPage:'home'});
-})
+app.get("/", (req, res) => {
+  res.render("index", { currentPage: "home" });
+});
 
-// ✅ 8. 404 Page
+// 404
 app.use((req, res) => {
   res.status(404).render("404", { title: "Page Not Found" });
 });
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`✅ Server running on port ${PORT}`));
-
