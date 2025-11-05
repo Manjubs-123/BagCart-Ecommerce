@@ -1,71 +1,176 @@
- <header class="bg-green-900 text-white">
-      <div class="container mx-auto flex items-center justify-between py-4 px-6">
-        <!-- Logo -->
-        <a href="/" class="text-lg font-bold flex items-center gap-2">
-        <img src="https://cdn-icons-png.flaticon.com/512/891/891462.png" class="w-6" alt="logo" />
-        BagHub
-      </a>
-
-        <!-- Navigation (hidden on small screens) -->
-        <nav class="hidden md:flex space-x-6">
-          <a href="#" class="hover:text-gray-200">Home</a>
-          <a href="#" class="hover:text-gray-200">Shop</a>
-          <a href="#" class="hover:text-gray-200">Contact Us</a>
-          <a href="#" class="hover:text-gray-200">About Us</a>
-        </nav>
-
-        <!-- Icons -->
-      <div class="flex items-center space-x-4 relative group">
-  <!-- Wishlist -->
-  <a href="/wishlist" class="relative hover:text-gray-300">
-    <i class="fa-regular fa-heart text-xl"></i>
-    <span class="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center">0</span>
-  </a>
-
-  <!-- Cart -->
-  <a href="/cart" class="relative hover:text-gray-300">
-    <i class="fa-solid fa-cart-shopping text-xl"></i>
-    <span class="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center">0</span>
-  </a>
-
-  <!-- User Dropdown -->
-  <div class="relative">
-    <button class="hover:text-gray-300 focus:outline-none">
-      <i class="fa-regular fa-user text-xl"></i>
-    </button>
-
-    <!-- Dropdown Menu -->
-    <div
-      class="hidden absolute right-0 mt-2 w-40 bg-white border border-gray-200 rounded-lg shadow-lg group-hover:block"
-    >
-      <a
-        href="/account"
-        class="block px-4 py-2 text-gray-700 hover:bg-gray-100"
-      >
-        My Account
-      </a>
-      <a
-  href="/user/logout"
-  class="block px-4 py-2 text-gray-700 hover:bg-gray-100"
->
-  Logout
-</a>
-
-    </div>
-  </div>
-</div>
-
-        <!-- Mobile Menu Button -->
-        <button class="md:hidden text-white text-2xl" id="mobile-menu-btn">
-          <i class="fa-solid fa-bars"></i>
-        </button>
+<!-- views/partials/header.ejs -->
+<header class="sticky top-0 z-50 bg-white shadow-sm border-b border-gray-200">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="flex justify-between items-center py-4">
+      <!-- Logo -->
+      <div class="flex items-center">
+        <a href="/" class="flex items-center space-x-3">
+          <div class="w-10 h-10 rounded-full bg-gradient-to-r from-blue-600 to-emerald-600 flex items-center justify-center shadow-md">
+            <i class="fas fa-shopping-bag text-white text-lg"></i>
+          </div>
+          <span class="text-xl font-bold text-gray-900">BagHub</span>
+        </a>
       </div>
 
-      <!-- Mobile Menu (hidden by default) -->
-      <nav class="hidden md:hidden bg-green-800 px-6 pb-4" id="mobile-menu">
-        <a href="#" class="block py-2 hover:text-gray-200">Home</a>
-        <a href="#" class="block py-2 hover:text-gray-200">Shop</a>
-        <a href="#" class="block py-2 hover:text-gray-200">Contact Us</a>
-        <a href="#" class="block py-2 hover:text-gray-200">About Us</a>
+      <!-- Desktop Navigation -->
+      <nav class="hidden lg:flex items-center space-x-8">
+        <a href="/" class="text-gray-700 hover:text-blue-600 font-medium transition-colors duration-200">Home</a>
+        <a href="/shop" class="text-gray-700 hover:text-blue-600 font-medium transition-colors duration-200">Shop</a>
+        <a href="/categories" class="text-gray-700 hover:text-blue-600 font-medium transition-colors duration-200">Categories</a>
+        <a href="/about" class="text-gray-700 hover:text-blue-600 font-medium transition-colors duration-200">About Us</a>
       </nav>
-    </header>
+
+      <!-- User Actions -->
+      <div class="flex items-center space-x-4">
+        <!-- Search Button
+        <button class="text-gray-600 hover:text-blue-600 transition-colors duration-200 p-2 rounded-lg hover:bg-gray-100">
+          <i class="fas fa-search text-lg"></i>
+        </button> -->
+
+        <!-- Wishlist -->
+        <a href="/wishlist" class="relative text-gray-600 hover:text-blue-600 transition-colors duration-200 p-2 rounded-lg hover:bg-gray-100">
+          <i class="fas fa-heart text-lg"></i>
+          <span class="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-semibold shadow-sm">
+            <%= typeof user !== 'undefined' && user.wishlistCount ? user.wishlistCount : 0 %>
+          </span>
+        </a>
+
+        <!-- Cart -->
+        <a href="/cart" class="relative text-gray-600 hover:text-blue-600 transition-colors duration-200 p-2 rounded-lg hover:bg-gray-100">
+          <i class="fas fa-shopping-cart text-lg"></i>
+          <span class="absolute -top-1 -right-1 bg-blue-600 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-semibold shadow-sm">
+            <%= typeof user !== 'undefined' && user.cartCount ? user.cartCount : 0 %>
+          </span>
+        </a>
+
+        <!-- User Profile Dropdown -->
+        <div class="relative group">
+          <button class="flex items-center space-x-2 text-gray-700 hover:text-blue-600 transition-colors duration-200 p-2 rounded-lg hover:bg-gray-100">
+            <div class="w-8 h-8 bg-gradient-to-r from-blue-500 to-emerald-500 rounded-full flex items-center justify-center shadow-sm">
+              <% if (typeof user !== 'undefined' && user) { %>
+                <span class="text-white text-sm font-semibold">
+                  <%= user.name ? user.name.charAt(0).toUpperCase() : 'U' %>
+                </span>
+              <% } else { %>
+                <i class="fas fa-user text-white text-sm"></i>
+              <% } %>
+            </div>
+            <span class="hidden md:block text-sm font-medium">
+              <% if (typeof user !== 'undefined' && user) { %>
+                <%= user.name || 'User' %>
+              <% } else { %>
+                Account
+              <% } %>
+            </span>
+            <i class="fas fa-chevron-down text-xs text-gray-400"></i>
+          </button>
+
+          <!-- Dropdown Menu -->
+          <div class="absolute right-0 mt-2 w-56 bg-white rounded-xl shadow-lg border border-gray-200 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 transform translate-y-2 group-hover:translate-y-0 z-50">
+            <div class="p-2">
+              <% if (typeof user !== 'undefined' && user) { %>
+                <!-- Logged-in User Menu -->
+                <div class="px-4 py-3 border-b border-gray-100">
+                  <p class="text-sm font-semibold text-gray-900"><%= user.name || 'User' %></p>
+                  <p class="text-xs text-gray-500 truncate"><%= user.email || '' %></p>
+                </div>
+                <a href="/profile" class="flex items-center px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 rounded-lg transition-colors duration-200">
+                  <i class="fas fa-user-circle mr-3 text-gray-400"></i>
+                  <span>My Profile</span>
+                </a>
+                <a href="/orders" class="flex items-center px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 rounded-lg transition-colors duration-200">
+                  <i class="fas fa-shopping-bag mr-3 text-gray-400"></i>
+                  <span>My Orders</span>
+                </a>
+                <a href="/wishlist" class="flex items-center px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 rounded-lg transition-colors duration-200">
+                  <i class="fas fa-heart mr-3 text-gray-400"></i>
+                  <span>Wishlist</span>
+                  <span class="ml-auto bg-red-100 text-red-600 text-xs px-2 py-1 rounded-full">
+                    <%= user.wishlistCount || 0 %>
+                  </span>
+                </a>
+                <div class="border-t border-gray-100 my-1"></div>
+                <a href="/user/logout" class="flex items-center px-4 py-3 text-red-600 hover:bg-red-50 rounded-lg transition-colors duration-200">
+                  <i class="fas fa-sign-out-alt mr-3"></i>
+                  <span>Logout</span>
+                </a>
+              <% } else { %>
+                <!-- Logged-out User Menu -->
+                <a href="/user/login" class="flex items-center px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 rounded-lg transition-colors duration-200">
+                  <i class="fas fa-sign-in-alt mr-3 text-gray-400"></i>
+                  <span>Login</span>
+                </a>
+                <a href="/user/signup" class="flex items-center px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 rounded-lg transition-colors duration-200">
+                  <i class="fas fa-user-plus mr-3 text-gray-400"></i>
+                  <span>Sign Up</span>
+                </a>
+              <% } %>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Mobile Menu Button -->
+      <button class="lg:hidden text-gray-600 hover:text-blue-600 transition-colors duration-200 p-2 rounded-lg hover:bg-gray-100" id="mobile-menu-btn">
+        <i class="fas fa-bars text-xl"></i>
+      </button>
+    </div>
+
+    <!-- Mobile Menu -->
+    <div class="hidden lg:hidden border-t border-gray-200 pt-4 pb-4" id="mobile-menu">
+      <div class="space-y-2">
+        <a href="/" class="block py-2 px-4 text-gray-700 hover:bg-blue-50 hover:text-blue-600 rounded-lg transition-colors duration-200 font-medium">Home</a>
+        <a href="/shop" class="block py-2 px-4 text-gray-700 hover:bg-blue-50 hover:text-blue-600 rounded-lg transition-colors duration-200 font-medium">Shop</a>
+        <a href="/categories" class="block py-2 px-4 text-gray-700 hover:bg-blue-50 hover:text-blue-600 rounded-lg transition-colors duration-200 font-medium">Categories</a>
+        <a href="/deals" class="block py-2 px-4 text-gray-700 hover:bg-blue-50 hover:text-blue-600 rounded-lg transition-colors duration-200 font-medium">Deals</a>
+        <a href="/about" class="block py-2 px-4 text-gray-700 hover:bg-blue-50 hover:text-blue-600 rounded-lg transition-colors duration-200 font-medium">About Us</a>
+        
+        <!-- Mobile Auth Links -->
+        <% if (typeof user === 'undefined' || !user) { %>
+          <div class="border-t border-gray-200 mt-4 pt-4">
+            <a href="/user/login" class="block py-2 px-4 text-gray-700 hover:bg-blue-50 hover:text-blue-600 rounded-lg transition-colors duration-200 font-medium">Login</a>
+            <a href="/user/signup" class="block py-2 px-4 bg-blue-600 text-white hover:bg-blue-700 rounded-lg transition-colors duration-200 font-medium text-center mt-2">Sign Up</a>
+          </div>
+        <% } %>
+      </div>
+    </div>
+  </div>
+</header>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    const mobileBtn = document.getElementById('mobile-menu-btn');
+    const mobileMenu = document.getElementById('mobile-menu');
+
+    if (mobileBtn && mobileMenu) {
+      mobileBtn.addEventListener('click', () => {
+        mobileMenu.classList.toggle('hidden');
+        // Toggle icon between bars and times
+        const icon = mobileBtn.querySelector('i');
+        if (mobileMenu.classList.contains('hidden')) {
+          icon.className = 'fas fa-bars text-xl';
+        } else {
+          icon.className = 'fas fa-times text-xl';
+        }
+      });
+
+      // Close mobile menu when clicking outside
+      document.addEventListener('click', (e) => {
+        if (!mobileBtn.contains(e.target) && !mobileMenu.contains(e.target)) {
+          mobileMenu.classList.add('hidden');
+          const icon = mobileBtn.querySelector('i');
+          icon.className = 'fas fa-bars text-xl';
+        }
+      });
+    }
+
+    // Close dropdowns when clicking outside
+    document.addEventListener('click', (e) => {
+      if (!e.target.closest('.group')) {
+        document.querySelectorAll('.group .absolute').forEach(dropdown => {
+          dropdown.classList.add('opacity-0', 'invisible');
+        });
+      }
+    });
+  });
+</script>

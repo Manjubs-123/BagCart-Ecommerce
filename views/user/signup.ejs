@@ -1,210 +1,639 @@
-
-
-
 <!DOCTYPE html>
 <html lang="en">
   <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Signup | BagHub</title>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Sign Up | BagHub - Premium Backpacks</title>
+
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Font Awesome -->
+    <script src="https://kit.fontawesome.com/a2e0da32f7.js" crossorigin="anonymous"></script>
+
+    <style>
+      :root {
+        --primary: #1a56db;
+        --primary-dark: #1e429f;
+        --secondary: #047857;
+        --accent: #f59e0b;
+        --light: #f8fafc;
+        --dark: #1e293b;
+      }
+
+      .gradient-bg {
+        background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+      }
+
+      .btn-primary {
+        background-color: var(--primary);
+        transition: all 0.3s ease;
+      }
+
+      .btn-primary:hover {
+        background-color: var(--primary-dark);
+        transform: translateY(-2px);
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+      }
+
+      .card-hover {
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+      }
+
+      .card-hover:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+      }
+
+      .input-focus:focus {
+        border-color: var(--primary);
+        box-shadow: 0 0 0 3px rgba(26, 86, 219, 0.1);
+      }
+    </style>
   </head>
 
-  <body class="bg-gray-50 text-gray-900 font-sans">
+  <body class="bg-gray-50 min-h-screen flex flex-col">
     <!-- Header -->
-    <%- include('../partials/header') %>
-
-    <!-- Signup Section -->
-    <section class="flex justify-center items-center min-h-screen bg-gray-50">
-      <div class="w-full max-w-md bg-white p-8 rounded-xl shadow-lg border">
-        <h2 class="text-2xl font-bold mb-6 text-center text-emerald-800">Create Account</h2>
-
-         <!-- Error message display block -->
-  <div id="errorMessage" class="bg-red-100 text-red-700 p-3 mb-4 rounded text-sm text-center <%= typeof error === 'undefined' || !error ? 'hidden' : '' %>">
-    <%= typeof error !== 'undefined' ? error : '' %>
-  </div>
-
-        <!-- Signup Form -->
-        <form id="signupForm" action="/user/signup" method="POST" class="space-y-4">
-          <div>
-            <label for="name" class="block text-sm font-medium mb-1">Full Name</label>
-            <input
-              id="name"
-              name="name"
-              type="text"
-              placeholder="Enter your full name"
-              class="w-full border px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-700"
-              required
-            />
-            <p id="nameError" class="text-red-600 text-sm mt-1 hidden">Name must be at least 6 characters long and contain only letters.</p>
+    <header class="sticky top-0 z-50 bg-white shadow-sm">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex justify-between items-center py-4">
+          <!-- Logo -->
+          <div class="flex items-center">
+            <a href="/" class="flex items-center space-x-2">
+              <div class="w-10 h-10 rounded-full bg-gradient-to-r from-blue-600 to-emerald-600 flex items-center justify-center">
+                <span class="text-white font-bold text-lg">BH</span>
+              </div>
+              <span class="text-xl font-bold text-gray-900">BagHub</span>
+            </a>
           </div>
-
-          <div>
-            <label for="email" class="block text-sm font-medium mb-1">Email</label>
-            <input
-              id="email"
-              name="email"
-              type="email"
-              placeholder="Enter your email"
-              class="w-full border px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-700"
-              required
-            />
-            <p id="emailError" class="text-red-600 text-sm mt-1 hidden">Please enter a valid Gmail address.</p>
-          </div>
-
-          <div>
-            <label for="password" class="block text-sm font-medium mb-1">Password</label>
-            <input
-              id="password"
-              name="password"
-              type="password"
-              placeholder="Enter a strong password"
-              class="w-full border px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-700"
-              required
-            />
-            <p id="passwordError" class="text-red-600 text-sm mt-1 hidden">Password must have 6+ characters, 1 uppercase, 1 number, and 1 special character.</p>
-          </div>
-
-          <div>
-            <label for="confirmPassword" class="block text-sm font-medium mb-1">Confirm Password</label>
-            <input
-              id="confirmPassword"
-              name="confirmPassword"
-              type="password"
-              placeholder="Confirm your password"
-              class="w-full border px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-700"
-              required
-            />
-            <p id="confirmError" class="text-red-600 text-sm mt-1 hidden">Passwords do not match.</p>
-          </div>
-
-          <button
-            type="submit"
-            class="w-full bg-emerald-800 text-white py-2 rounded-lg hover:bg-emerald-700 transition"
-          >
-            Sign Up
-          </button>
-        </form>
-
-        <!-- Google Signup -->
-        <div class="text-center mt-4">
-          <p class="text-gray-600 text-sm mb-2">or sign up with</p>
-          <a
-            href="/auth/google"
-            class="flex items-center justify-center gap-2 w-full border py-2 rounded-lg hover:bg-gray-100 transition"
-          >
-            <img
-              src="https://www.svgrepo.com/show/355037/google.svg"
-              alt="Google"
-              class="w-5 h-5"
-            />
-            <span>Sign up with Google</span>
+          
+          <!-- Back to Home -->
+          <a href="/" class="text-gray-700 hover:text-blue-600 font-medium transition-colors flex items-center">
+            <i class="fas fa-arrow-left mr-2"></i>
+            Back to Home
           </a>
         </div>
+      </div>
+    </header>
 
-        <div class="text-center mt-6">
-          <p class="text-sm text-gray-700">
-            Already have an account?
-            <a href="/user/login" class="text-emerald-700 hover:underline font-semibold">Login</a>
+    <!-- Main Content -->
+    <main class="flex-1 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+      <div class="max-w-md w-full space-y-8">
+        <!-- Header Section -->
+        <div class="text-center">
+          <h1 class="text-3xl font-bold text-gray-900 mb-2">Create Account</h1>
+          <p class="text-gray-600">Join thousands of happy BagHub customers</p>
+        </div>
+
+        <!-- Signup Card -->
+        <div class="card-hover bg-white rounded-2xl shadow-xl p-8">
+          <!-- Global Error Message -->
+          <div id="errorMessage" class="bg-red-50 border border-red-200 text-red-700 p-4 rounded-lg text-sm text-center hidden mb-6" role="alert">
+            <div class="flex items-center">
+              <i class="fas fa-exclamation-circle mr-2"></i>
+              <span id="errorText"></span>
+            </div>
+          </div>
+
+          <!-- Signup Form -->
+          <form id="signupForm" action="/user/signup" method="POST" class="space-y-6" novalidate>
+            <!-- Name Field -->
+            <div>
+              <label for="name" class="block text-sm font-medium text-gray-700 mb-2">Full Name</label>
+              <div class="relative">
+                <input
+                  id="name"
+                  name="name"
+                  type="text"
+                  autocomplete="name"
+                  placeholder="Enter your full name"
+                  required
+                  aria-required="true"
+                  aria-invalid="false"
+                  class="w-full px-4 py-3 border border-gray-300 rounded-lg input-focus focus:outline-none transition duration-200 pr-10"
+                />
+                <div class="absolute inset-y-0 right-0 flex items-center pr-3">
+                  <i class="fas fa-user text-gray-400"></i>
+                </div>
+              </div>
+              <p id="nameError" class="text-red-600 text-sm mt-2 hidden flex items-center" role="status">
+                <i class="fas fa-exclamation-circle mr-1 text-xs"></i>
+                <span>Name must be at least 6 characters long and contain only letters.</span>
+              </p>
+            </div>
+
+            <!-- Email Field -->
+            <div>
+              <label for="email" class="block text-sm font-medium text-gray-700 mb-2">Email Address</label>
+              <div class="relative">
+                <input
+                  id="email"
+                  name="email"
+                  type="email"
+                  inputmode="email"
+                  autocomplete="email"
+                  placeholder="Enter your Gmail address"
+                  required
+                  aria-required="true"
+                  aria-invalid="false"
+                  class="w-full px-4 py-3 border border-gray-300 rounded-lg input-focus focus:outline-none transition duration-200 pr-10"
+                />
+                <div class="absolute inset-y-0 right-0 flex items-center pr-3">
+                  <i class="fas fa-envelope text-gray-400"></i>
+                </div>
+              </div>
+              <p id="emailError" class="text-red-600 text-sm mt-2 hidden flex items-center" role="status">
+                <i class="fas fa-exclamation-circle mr-1 text-xs"></i>
+                <span>Please enter a valid Gmail address.</span>
+              </p>
+            </div>
+
+            <!-- Password Field -->
+            <div>
+              <label for="password" class="block text-sm font-medium text-gray-700 mb-2">Password</label>
+              <div class="relative">
+                <input
+                  id="password"
+                  name="password"
+                  type="password"
+                  autocomplete="new-password"
+                  placeholder="Create a strong password"
+                  required
+                  aria-required="true"
+                  aria-invalid="false"
+                  class="w-full px-4 py-3 border border-gray-300 rounded-lg input-focus focus:outline-none transition duration-200 pr-10"
+                />
+                <button
+                  type="button"
+                  id="togglePassword"
+                  class="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-gray-600 transition"
+                  aria-label="Show or hide password"
+                >
+                  <i class="fa-regular fa-eye"></i>
+                </button>
+              </div>
+              <p id="passwordError" class="text-red-600 text-sm mt-2 hidden flex items-center" role="status">
+                <i class="fas fa-exclamation-circle mr-1 text-xs"></i>
+                <span>Password must have 6+ characters, 1 uppercase, 1 number, and 1 special character.</span>
+              </p>
+            </div>
+
+            <!-- Confirm Password Field -->
+            <div>
+              <label for="confirmPassword" class="block text-sm font-medium text-gray-700 mb-2">Confirm Password</label>
+              <div class="relative">
+                <input
+                  id="confirmPassword"
+                  name="confirmPassword"
+                  type="password"
+                  autocomplete="new-password"
+                  placeholder="Confirm your password"
+                  required
+                  aria-required="true"
+                  aria-invalid="false"
+                  class="w-full px-4 py-3 border border-gray-300 rounded-lg input-focus focus:outline-none transition duration-200 pr-10"
+                />
+                <button
+                  type="button"
+                  id="toggleConfirmPassword"
+                  class="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-gray-600 transition"
+                  aria-label="Show or hide password"
+                >
+                  <i class="fa-regular fa-eye"></i>
+                </button>
+              </div>
+              <p id="confirmError" class="text-red-600 text-sm mt-2 hidden flex items-center" role="status">
+                <i class="fas fa-exclamation-circle mr-1 text-xs"></i>
+                <span>Passwords do not match.</span>
+              </p>
+            </div>
+
+            <!-- Terms and Conditions -->
+            <div class="flex items-start">
+              <input
+                id="terms"
+                name="terms"
+                type="checkbox"
+                required
+                class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded mt-1"
+              />
+              <label for="terms" class="ml-2 block text-sm text-gray-700">
+                I agree to the 
+                <a href="#" class="text-blue-600 hover:text-blue-500 transition">Terms of Service</a> 
+                and 
+                <a href="#" class="text-blue-600 hover:text-blue-500 transition">Privacy Policy</a>
+              </label>
+            </div>
+
+            <!-- Submit Button -->
+            <button
+              type="submit"
+              id="submitBtn"
+              class="w-full btn-primary text-white py-3 px-4 rounded-lg font-semibold shadow-lg transition duration-200 flex items-center justify-center"
+            >
+              <i class="fas fa-user-plus mr-2"></i>
+              Create Account
+            </button>
+
+            <!-- Divider -->
+            <div class="relative flex items-center my-6">
+              <div class="flex-grow border-t border-gray-300"></div>
+              <span class="flex-shrink mx-4 text-gray-500 text-sm">Or continue with</span>
+              <div class="flex-grow border-t border-gray-300"></div>
+            </div>
+
+            <!-- Google Signup -->
+            <a
+              href="/auth/google"
+              class="w-full flex items-center justify-center gap-3 border border-gray-300 py-3 px-4 rounded-lg hover:bg-gray-50 transition duration-200 text-gray-700 font-medium"
+            >
+              <img src="https://www.svgrepo.com/show/355037/google.svg" alt="Google" class="w-5 h-5" />
+              Sign up with Google
+            </a>
+          </form>
+
+          <!-- Login Link -->
+          <div class="mt-6 text-center">
+            <p class="text-gray-600">
+              Already have an account?
+              <a href="/user/login" class="text-blue-600 hover:text-blue-500 font-medium transition">
+                Sign in
+              </a>
+            </p>
+          </div>
+        </div>
+
+        <!-- Security Notice -->
+        <div class="text-center text-sm text-gray-500 mt-6">
+          <p class="flex items-center justify-center">
+            <i class="fas fa-shield-alt mr-2 text-green-500"></i>
+            Your information is securely encrypted
           </p>
         </div>
       </div>
-    </section>
+    </main>
 
     <!-- Footer -->
-    <%- include('../partials/footer') %>
+    <footer class="bg-gray-800 text-white py-8">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
+          <div>
+            <h3 class="text-lg font-bold mb-4 text-white">BagHub</h3>
+            <p class="text-gray-400">Your one-stop shop for premium backpacks and bags. Quality, style, and convenience.</p>
+          </div>
+          <div>
+            <h4 class="text-lg font-semibold mb-4">Quick Links</h4>
+            <ul class="space-y-2 text-gray-400">
+              <li><a href="#" class="hover:text-white transition">Home</a></li>
+              <li><a href="#" class="hover:text-white transition">Products</a></li>
+              <li><a href="#" class="hover:text-white transition">Categories</a></li>
+              <li><a href="#" class="hover:text-white transition">Deals</a></li>
+            </ul>
+          </div>
+          <div>
+            <h4 class="text-lg font-semibold mb-4">Customer Service</h4>
+            <ul class="space-y-2 text-gray-400">
+              <li><a href="#" class="hover:text-white transition">Contact Us</a></li>
+              <li><a href="#" class="hover:text-white transition">Shipping Policy</a></li>
+              <li><a href="#" class="hover:text-white transition">Returns & Refunds</a></li>
+              <li><a href="#" class="hover:text-white transition">FAQ</a></li>
+            </ul>
+          </div>
+          <div>
+            <h4 class="text-lg font-semibold mb-4">Stay Connected</h4>
+            <div class="flex space-x-4">
+              <a href="#" class="text-gray-400 hover:text-white transition"><i class="fab fa-facebook-f"></i></a>
+              <a href="#" class="text-gray-400 hover:text-white transition"><i class="fab fa-twitter"></i></a>
+              <a href="#" class="text-gray-400 hover:text-white transition"><i class="fab fa-instagram"></i></a>
+              <a href="#" class="text-gray-400 hover:text-white transition"><i class="fab fa-pinterest"></i></a>
+            </div>
+          </div>
+        </div>
+        <div class="border-t border-gray-700 mt-8 pt-6 text-center text-gray-400">
+          <p>&copy; 2023 BagHub. All rights reserved.</p>
+        </div>
+      </div>
+    </footer>
 
-    <!-- Enhanced Client-side Validation Script -->
+    <!-- Validation Script -->
     <script>
-      const form = document.getElementById("signupForm");
-      const nameInput = document.getElementById("name");
-      const emailInput = document.getElementById("email");
-      const passwordInput = document.getElementById("password");
-      const confirmInput = document.getElementById("confirmPassword");
-      const nameError = document.getElementById("nameError");
-      const emailError = document.getElementById("emailError");
-      const passwordError = document.getElementById("passwordError");
-      const confirmError = document.getElementById("confirmError");
-      const errorMessage = document.getElementById("errorMessage");
+      (function () {
+        // DOM refs
+        const form = document.getElementById('signupForm');
+        const name = document.getElementById('name');
+        const email = document.getElementById('email');
+        const password = document.getElementById('password');
+        const confirmPassword = document.getElementById('confirmPassword');
+        const nameError = document.getElementById('nameError');
+        const emailError = document.getElementById('emailError');
+        const passwordError = document.getElementById('passwordError');
+        const confirmError = document.getElementById('confirmError');
+        const errorMessage = document.getElementById('errorMessage');
+        const errorText = document.getElementById('errorText');
+        const togglePassword = document.getElementById('togglePassword');
+        const toggleConfirmPassword = document.getElementById('toggleConfirmPassword');
+        const submitBtn = document.getElementById('submitBtn');
+        const termsCheckbox = document.getElementById('terms');
 
-      // Validation rules
-      const nameRegex = /^[a-zA-Z\s]+$/;
-      const emailRegex = /^[a-zA-Z0-9._-]+@gmail\.com$/;
-      const passwordRegex = /^(?=.*[A-Z])(?=.*[0-9])(?=.*[!@#$%^&*()_+{}:"<>?~]).{6,}$/;
+        // Patterns
+        const namePattern = /^[a-zA-Z\s]{6,}$/;
+        const emailPattern = /^[a-zA-Z0-9._%+-]+@gmail\.com$/;
+        const passwordPattern = /^(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*(),.?":{}|<>]).{6,}$/;
 
-      let debounceTimeout;
+        // Track touched fields
+        const touched = { 
+          name: false, 
+          email: false, 
+          password: false, 
+          confirmPassword: false 
+        };
 
-      // Real-time field validation
-      function validateField(input, errorElement, validationFn, errorMessage) {
-        clearTimeout(debounceTimeout);
-        debounceTimeout = setTimeout(() => {
-          const isValid = validationFn(input.value);
-          if (!isValid && input.value) {
-            errorElement.classList.remove("hidden");
-            input.classList.add("border-red-500");
-            input.classList.remove("border-emerald-500");
+        // Utility: set field state
+        function setFieldValid(el) {
+          el.classList.remove('border-red-500', 'border-red-300');
+          el.classList.add('border-green-500');
+          el.setAttribute('aria-invalid', 'false');
+        }
+        
+        function setFieldInvalid(el) {
+          el.classList.remove('border-green-500', 'border-gray-300');
+          el.classList.add('border-red-500');
+          el.setAttribute('aria-invalid', 'true');
+        }
+        
+        function clearFieldState(el) {
+          el.classList.remove('border-green-500', 'border-red-500', 'border-red-300');
+          el.classList.add('border-gray-300');
+          el.setAttribute('aria-invalid', 'false');
+        }
+
+        // Validation logic
+        function validateNameValue(value) {
+          const v = (value || '').trim();
+          if (!v) return { valid: false, message: 'Name is required.' };
+          if (!namePattern.test(v)) return { valid: false, message: 'Name must be at least 6 characters long and contain only letters.' };
+          return { valid: true, message: '' };
+        }
+        
+        function validateEmailValue(value) {
+          const v = (value || '').trim();
+          if (!v) return { valid: false, message: 'Email is required.' };
+          if (!emailPattern.test(v)) return { valid: false, message: 'Please enter a valid Gmail address.' };
+          return { valid: true, message: '' };
+        }
+        
+        function validatePasswordValue(value) {
+          const v = value || '';
+          if (!v) return { valid: false, message: 'Password is required.' };
+          if (v.length < 6) return { valid: false, message: 'Password must be at least 6 characters.' };
+          if (!/[A-Z]/.test(v)) return { valid: false, message: 'Password must include one uppercase letter.' };
+          if (!/\d/.test(v)) return { valid: false, message: 'Password must include one number.' };
+          if (!/[!@#$%^&*(),.?":{}|<>]/.test(v)) return { valid: false, message: 'Password must include one special character.' };
+          return { valid: true, message: '' };
+        }
+
+        function validateConfirmPasswordValue(value) {
+          const v = value || '';
+          if (!v) return { valid: false, message: 'Please confirm your password.' };
+          if (v !== password.value) return { valid: false, message: 'Passwords do not match.' };
+          return { valid: true, message: '' };
+        }
+
+        // Show error UI for a field
+        function showErrorForField(fieldEl, errorEl, message) {
+          errorEl.querySelector('span').textContent = message;
+          errorEl.classList.remove('hidden');
+          setFieldInvalid(fieldEl);
+        }
+
+        function hideErrorForField(fieldEl, errorEl) {
+          errorEl.querySelector('span').textContent = '';
+          errorEl.classList.add('hidden');
+          setFieldValid(fieldEl);
+        }
+
+        // Input event handlers
+        name.addEventListener('input', () => {
+          const res = validateNameValue(name.value);
+          if (res.valid) {
+            hideErrorForField(name, nameError);
           } else {
-            errorElement.classList.add("hidden");
-            input.classList.remove("border-red-500");
-            if (input.value) {
-              input.classList.add("border-emerald-500");
+            if (touched.name || name.value.trim().length > 0) {
+              showErrorForField(name, nameError, res.message);
+            } else {
+              clearFieldState(name);
+              nameError.classList.add('hidden');
             }
           }
-        }, 300);
+          errorMessage.classList.add('hidden');
+        });
+
+        email.addEventListener('input', () => {
+          const res = validateEmailValue(email.value);
+          if (res.valid) {
+            hideErrorForField(email, emailError);
+          } else {
+            if (touched.email || email.value.trim().length > 0) {
+              showErrorForField(email, emailError, res.message);
+            } else {
+              clearFieldState(email);
+              emailError.classList.add('hidden');
+            }
+          }
+          errorMessage.classList.add('hidden');
+        });
+
+        password.addEventListener('input', () => {
+          const res = validatePasswordValue(password.value);
+          if (res.valid) {
+            hideErrorForField(password, passwordError);
+          } else {
+            if (touched.password || password.value.length > 0) {
+              showErrorForField(password, passwordError, res.message);
+            } else {
+              clearFieldState(password);
+              passwordError.classList.add('hidden');
+            }
+          }
+          
+          // Also validate confirm password when password changes
+          if (confirmPassword.value) {
+            const confirmRes = validateConfirmPasswordValue(confirmPassword.value);
+            if (confirmRes.valid) {
+              hideErrorForField(confirmPassword, confirmError);
+            } else {
+              showErrorForField(confirmPassword, confirmError, confirmRes.message);
+            }
+          }
+          
+          errorMessage.classList.add('hidden');
+        });
+
+        confirmPassword.addEventListener('input', () => {
+          const res = validateConfirmPasswordValue(confirmPassword.value);
+          if (res.valid) {
+            hideErrorForField(confirmPassword, confirmError);
+          } else {
+            if (touched.confirmPassword || confirmPassword.value.length > 0) {
+              showErrorForField(confirmPassword, confirmError, res.message);
+            } else {
+              clearFieldState(confirmPassword);
+              confirmError.classList.add('hidden');
+            }
+          }
+          errorMessage.classList.add('hidden');
+        });
+
+        // Blur event handlers
+        name.addEventListener('blur', () => {
+          touched.name = true;
+          const res = validateNameValue(name.value);
+          if (!res.valid) {
+            showErrorForField(name, nameError, res.message);
+          } else {
+            hideErrorForField(name, nameError);
+          }
+        });
+
+        email.addEventListener('blur', () => {
+          touched.email = true;
+          const res = validateEmailValue(email.value);
+          if (!res.valid) {
+            showErrorForField(email, emailError, res.message);
+          } else {
+            hideErrorForField(email, emailError);
+          }
+        });
+
+        password.addEventListener('blur', () => {
+          touched.password = true;
+          const res = validatePasswordValue(password.value);
+          if (!res.valid) {
+            showErrorForField(password, passwordError, res.message);
+          } else {
+            hideErrorForField(password, passwordError);
+          }
+        });
+
+        confirmPassword.addEventListener('blur', () => {
+          touched.confirmPassword = true;
+          const res = validateConfirmPasswordValue(confirmPassword.value);
+          if (!res.valid) {
+            showErrorForField(confirmPassword, confirmError, res.message);
+          } else {
+            hideErrorForField(confirmPassword, confirmError);
+          }
+        });
+
+        // Toggle password visibility
+        togglePassword.addEventListener('click', () => {
+          const isPwd = password.type === 'password';
+          password.type = isPwd ? 'text' : 'password';
+          togglePassword.innerHTML = isPwd 
+            ? '<i class="fa-regular fa-eye-slash"></i>' 
+            : '<i class="fa-regular fa-eye"></i>';
+        });
+
+        toggleConfirmPassword.addEventListener('click', () => {
+          const isPwd = confirmPassword.type === 'password';
+          confirmPassword.type = isPwd ? 'text' : 'password';
+          toggleConfirmPassword.innerHTML = isPwd 
+            ? '<i class="fa-regular fa-eye-slash"></i>' 
+            : '<i class="fa-regular fa-eye"></i>';
+        });
+
+        // Form submission
+        form.addEventListener('submit', function (e) {
+          e.preventDefault();
+
+          // Show loading state
+          submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Creating Account...';
+          submitBtn.disabled = true;
+
+          // Mark fields as touched
+          touched.name = true;
+          touched.email = true;
+          touched.password = true;
+          touched.confirmPassword = true;
+
+          const nameRes = validateNameValue(name.value);
+          const emailRes = validateEmailValue(email.value);
+          const passRes = validatePasswordValue(password.value);
+          const confirmRes = validateConfirmPasswordValue(confirmPassword.value);
+          const termsValid = termsCheckbox.checked;
+
+          // Validate all fields
+          if (!nameRes.valid) {
+            showErrorForField(name, nameError, nameRes.message);
+          } else {
+            hideErrorForField(name, nameError);
+          }
+
+          if (!emailRes.valid) {
+            showErrorForField(email, emailError, emailRes.message);
+          } else {
+            hideErrorForField(email, emailError);
+          }
+
+          if (!passRes.valid) {
+            showErrorForField(password, passwordError, passRes.message);
+          } else {
+            hideErrorForField(password, passwordError);
+          }
+
+          if (!confirmRes.valid) {
+            showErrorForField(confirmPassword, confirmError, confirmRes.message);
+          } else {
+            hideErrorForField(confirmPassword, confirmError);
+          }
+
+          // Check if any validation failed
+          if (!nameRes.valid || !emailRes.valid || !passRes.valid || !confirmRes.valid || !termsValid) {
+            if (!termsValid) {
+              errorText.textContent = 'You must agree to the Terms of Service and Privacy Policy.';
+            } else {
+              errorText.textContent = 'Please fix the highlighted errors before submitting.';
+            }
+            errorMessage.classList.remove('hidden');
+            
+            // Reset button state
+            submitBtn.innerHTML = '<i class="fas fa-user-plus mr-2"></i> Create Account';
+            submitBtn.disabled = false;
+            
+            // Focus first invalid field
+            if (!nameRes.valid) name.focus();
+            else if (!emailRes.valid) email.focus();
+            else if (!passRes.valid) password.focus();
+            else if (!confirmRes.valid) confirmPassword.focus();
+            return;
+          }
+
+          // All valid - submit form
+          errorMessage.classList.add('hidden');
+          
+          // Simulate API call delay
+          setTimeout(() => {
+            form.submit();
+          }, 1000);
+        });
+
+        // Initial state
+        clearFieldState(name);
+        clearFieldState(email);
+        clearFieldState(password);
+        clearFieldState(confirmPassword);
+      })();
+    </script>
+
+    <script>
+      // Prevent back navigation
+      if (window.history && window.history.replaceState) {
+        window.history.pushState(null, null, window.location.href);
+        window.onpopstate = function () {
+          window.history.go(1);
+        };
       }
-
-      // Validation functions
-      const validateName = (name) => name.trim().length >= 6 && nameRegex.test(name);
-      const validateEmail = (email) => emailRegex.test(email);
-      const validatePassword = (password) => passwordRegex.test(password);
-      const validateConfirmPassword = () => passwordInput.value === confirmInput.value;
-
-      // Add input listeners
-      nameInput.addEventListener("input", () => {
-        validateField(nameInput, nameError, validateName);
-      });
-
-      emailInput.addEventListener("input", () => {
-        validateField(emailInput, emailError, validateEmail);
-      });
-
-      passwordInput.addEventListener("input", () => {
-        validateField(passwordInput, passwordError, validatePassword);
-        if (confirmInput.value) {
-          validateField(confirmInput, confirmError, validateConfirmPassword);
-        }
-      });
-
-      confirmInput.addEventListener("input", () => {
-        validateField(confirmInput, confirmError, validateConfirmPassword);
-      });
-
-      // Form submission
-      form.addEventListener("submit", async (e) => {
-        e.preventDefault();
-        
-        // Clear any previous error message
-        errorMessage.classList.add("hidden");
-        
-        // Validate all fields
-        const isNameValid = validateName(nameInput.value);
-        const isEmailValid = validateEmail(emailInput.value);
-        const isPasswordValid = validatePassword(passwordInput.value);
-        const isConfirmValid = validateConfirmPassword();
-
-        if (!isNameValid || !isEmailValid || !isPasswordValid || !isConfirmValid) {
-          errorMessage.textContent = "Please fix the errors in the form.";
-          errorMessage.classList.remove("hidden");
-          return;
-        }
-
-        try {
-          form.submit();
-        } catch (error) {
-          errorMessage.textContent = error.response?.data?.error || "Something went wrong. Please try again.";
-          errorMessage.classList.remove("hidden");
-        }
-      });
     </script>
   </body>
 </html>

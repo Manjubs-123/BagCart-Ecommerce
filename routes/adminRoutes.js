@@ -7,6 +7,6 @@ const router=express.Router();
 router.get("/",renderAdminLogin);
 router.post("/login",postAdminLogin);
 router.get("/dashboard",isAdminAuthenticated,renderAdminDashboard);
-router.get("/logout",adminLogout);
+router.get("/logout",isAdminAuthenticated,adminLogout);
 
 export default router;

@@ -1,88 +1,420 @@
 <!DOCTYPE html>
 <html lang="en">
   <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Login | BagHub</title>
-    
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Login | BagHub - Premium Backpacks</title>
+
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
 
-    <!-- Favicon -->
-    <link rel="icon" type="image/png" href="/images/favicon.png" />
-
-    <!-- Font Awesome for icons -->
+    <!-- Font Awesome -->
     <script src="https://kit.fontawesome.com/a2e0da32f7.js" crossorigin="anonymous"></script>
+
+    <style>
+      :root {
+        --primary: #1a56db;
+        --primary-dark: #1e429f;
+        --secondary: #047857;
+        --accent: #f59e0b;
+        --light: #f8fafc;
+        --dark: #1e293b;
+      }
+
+      .gradient-bg {
+        background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+      }
+
+      .btn-primary {
+        background-color: var(--primary);
+        transition: all 0.3s ease;
+      }
+
+      .btn-primary:hover {
+        background-color: var(--primary-dark);
+        transform: translateY(-2px);
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+      }
+
+      .card-hover {
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+      }
+
+      .card-hover:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+      }
+
+      .input-focus:focus {
+        border-color: var(--primary);
+        box-shadow: 0 0 0 3px rgba(26, 86, 219, 0.1);
+      }
+    </style>
   </head>
 
-  <body class="bg-white font-mono min-h-screen flex flex-col">
-
-    <!-- Navbar -->
-    <nav class="shadow-md bg-white">
-      <%- include('../partials/landingheader') %>
-    </nav>
-
-    <!-- Centered Login Box -->
-    <main class="flex flex-1 items-center justify-center py-10">
-      <div class="border-2 border-gray-300 rounded-3xl p-10 w-80 sm:w-96 text-center shadow-lg bg-white">
-        <h1 class="text-2xl mb-6 font-semibold text-gray-800">Login</h1>
-
-        <!-- Error Message -->
-        <% if (error) { %>
-          <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4 text-sm" role="alert">
-            <span class="block sm:inline"><%= error %></span>
+  <body class="bg-gray-50 min-h-screen flex flex-col">
+    <!-- Header -->
+    <header class="sticky top-0 z-50 bg-white shadow-sm">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex justify-between items-center py-4">
+          <!-- Logo -->
+          <div class="flex items-center">
+            <a href="/" class="flex items-center space-x-2">
+              <div class="w-10 h-10 rounded-full bg-gradient-to-r from-blue-600 to-emerald-600 flex items-center justify-center">
+                <span class="text-white font-bold text-lg">BH</span>
+              </div>
+              <span class="text-xl font-bold text-gray-900">BagHub</span>
+            </a>
           </div>
-        <% } %>
-
-        <!-- Login Form -->
-        <form action="/user/login" method="POST" class="space-y-4">
-          <!-- Email -->
-          <input
-            type="email"
-            name="email"
-            placeholder="Email"
-            required
-            class="w-full bg-gray-100 text-sm rounded-md py-2 px-3 focus:outline-none focus:ring-2 focus:ring-black"
-          />
-
-          <!-- Password -->
-          <input
-            type="password"
-            name="password"
-            placeholder="Password"
-            required
-            class="w-full bg-gray-100 text-sm rounded-md py-2 px-3 focus:outline-none focus:ring-2 focus:ring-black"
-          />
-
-          <!-- Google Login Button -->
-          <a
-            href="/auth/google"
-            class="flex items-center justify-center gap-2 w-full border border-gray-300 rounded-md py-2 px-3 hover:bg-gray-100 transition-all text-gray-700 font-medium"
-          >
-            <img src="https://www.svgrepo.com/show/355037/google.svg" alt="Google" class="w-5 h-5" />
-            Login with Google
+          
+          <!-- Back to Home -->
+          <a href="/" class="text-gray-700 hover:text-blue-600 font-medium transition-colors flex items-center">
+            <i class="fas fa-arrow-left mr-2"></i>
+            Back to Home
           </a>
+        </div>
+      </div>
+    </header>
 
-          <!-- Links -->
-          <div class="flex justify-between text-xs text-gray-600">
-            <a href="/user/signup" class="hover:underline">Signup</a>
-            <a href="/user/forgotPassword" class="hover:underline">Forgot Password?</a>
+    <!-- Main Content -->
+    <main class="flex-1 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+      <div class="max-w-md w-full space-y-8">
+        <!-- Header Section -->
+        <div class="text-center">
+          <h1 class="text-3xl font-bold text-gray-900 mb-2">Welcome Back</h1>
+          <p class="text-gray-600">Sign in to your BagHub account</p>
+        </div>
+
+        <!-- Login Card -->
+        <div class="card-hover bg-white rounded-2xl shadow-xl p-8">
+          <!-- Global Error Message -->
+          <div id="errorMessage" class="bg-red-50 border border-red-200 text-red-700 p-4 rounded-lg text-sm text-center hidden mb-6" role="alert">
+            <div class="flex items-center">
+              <i class="fas fa-exclamation-circle mr-2"></i>
+              <span id="errorText"></span>
+            </div>
           </div>
 
-          <!-- Login Button -->
-          <button
-            type="submit"
-            class="bg-black text-white px-6 py-2 rounded-full hover:bg-gray-800 transition-all w-full"
-          >
-            Login
-          </button>
-        </form>
+          <!-- Login Form -->
+          <form id="loginForm" action="/user/login" method="POST" class="space-y-6" novalidate>
+            <!-- Email Field -->
+            <div>
+              <label for="email" class="block text-sm font-medium text-gray-700 mb-2">Email Address</label>
+              <div class="relative">
+                <input
+                  id="email"
+                  name="email"
+                  type="email"
+                  inputmode="email"
+                  autocomplete="email"
+                  placeholder="Enter your Gmail address"
+                  required
+                  aria-required="true"
+                  aria-invalid="false"
+                  class="w-full px-4 py-3 border border-gray-300 rounded-lg input-focus focus:outline-none transition duration-200 pr-10"
+                />
+                <div class="absolute inset-y-0 right-0 flex items-center pr-3">
+                  <i class="fas fa-envelope text-gray-400"></i>
+                </div>
+              </div>
+              <p id="emailError" class="text-red-600 text-sm mt-2 hidden flex items-center" role="status">
+                <i class="fas fa-exclamation-circle mr-1 text-xs"></i>
+                <span></span>
+              </p>
+            </div>
+
+            <!-- Password Field -->
+            <div>
+              <label for="password" class="block text-sm font-medium text-gray-700 mb-2">Password</label>
+              <div class="relative">
+                <input
+                  id="password"
+                  name="password"
+                  type="password"
+                  autocomplete="current-password"
+                  placeholder="Enter your password"
+                  required
+                  aria-required="true"
+                  aria-invalid="false"
+                  class="w-full px-4 py-3 border border-gray-300 rounded-lg input-focus focus:outline-none transition duration-200 pr-10"
+                />
+                <button
+                  type="button"
+                  id="togglePassword"
+                  class="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-gray-600 transition"
+                  aria-label="Show or hide password"
+                >
+                  <i class="fa-regular fa-eye"></i>
+                </button>
+              </div>
+              <p id="passwordError" class="text-red-600 text-sm mt-2 hidden flex items-center" role="status">
+                <i class="fas fa-exclamation-circle mr-1 text-xs"></i>
+                <span></span>
+              </p>
+            </div>
+
+            <!-- Remember Me & Forgot Password -->
+            <div class="flex items-center justify-between">
+              <div class="flex items-center">
+                <!-- <input
+                  id="remember"
+                  name="remember"
+                  type="checkbox"
+                  class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                /> -->
+                <!-- <label for="remember" class="ml-2 block text-sm text-gray-700">Remember me</label> -->
+              </div>
+              <a href="/user/forgotPassword" class="text-sm text-blue-600 hover:text-blue-500 transition">
+                Forgot password?
+              </a>
+            </div>
+
+            <!-- Submit Button -->
+            <button
+              type="submit"
+              id="submitBtn"
+              class="w-full btn-primary text-white py-3 px-4 rounded-lg font-semibold shadow-lg transition duration-200 flex items-center justify-center"
+            >
+              <i class="fas fa-sign-in-alt mr-2"></i>
+              Sign In
+            </button>
+
+            <!-- Divider -->
+            <div class="relative flex items-center my-6">
+              <div class="flex-grow border-t border-gray-300"></div>
+              <span class="flex-shrink mx-4 text-gray-500 text-sm">Or continue with</span>
+              <div class="flex-grow border-t border-gray-300"></div>
+            </div>
+
+            <!-- Google Login -->
+            <a
+              href="/auth/google"
+              class="w-full flex items-center justify-center gap-3 border border-gray-300 py-3 px-4 rounded-lg hover:bg-gray-50 transition duration-200 text-gray-700 font-medium"
+            >
+              <img src="https://www.svgrepo.com/show/355037/google.svg" alt="Google" class="w-5 h-5" />
+              Sign in with Google
+            </a>
+          </form>
+
+          <!-- Sign Up Link -->
+          <div class="mt-6 text-center">
+            <p class="text-gray-600">
+              Don't have an account?
+              <a href="/user/signup" class="text-blue-600 hover:text-blue-500 font-medium transition">
+                Create account
+              </a>
+            </p>
+          </div>
+        </div>
+
+        <!-- Security Notice -->
+        <div class="text-center text-sm text-gray-500 mt-6">
+          <p class="flex items-center justify-center">
+            <i class="fas fa-shield-alt mr-2 text-green-500"></i>
+            Your login information is securely encrypted
+          </p>
+        </div>
       </div>
     </main>
 
-    <!-- Footer -->
-    <footer class="mt-auto">
-      <%- include('../partials/footer') %>
-    </footer>
+    <!-- Footer --><%- include('../partials/footer') %>
+    <!-- Validation Script -->
+    <script>
+      (function () {
+        // DOM refs
+        const form = document.getElementById('loginForm');
+        const email = document.getElementById('email');
+        const password = document.getElementById('password');
+        const emailError = document.getElementById('emailError');
+        const passwordError = document.getElementById('passwordError');
+        const errorMessage = document.getElementById('errorMessage');
+        const errorText = document.getElementById('errorText');
+        const togglePassword = document.getElementById('togglePassword');
+        const submitBtn = document.getElementById('submitBtn');
+
+        // Patterns
+        const emailPattern = /^[a-zA-Z0-9._%+-]+@gmail\.com$/;
+        const passwordPattern = /^(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*(),.?":{}|<>]).{6,}$/;
+
+        // Track touched fields
+        const touched = { email: false, password: false };
+
+        // Utility: set field state
+        function setFieldValid(el) {
+          el.classList.remove('border-red-500', 'border-red-300');
+          el.classList.add('border-green-500');
+          el.setAttribute('aria-invalid', 'false');
+        }
+        
+        function setFieldInvalid(el) {
+          el.classList.remove('border-green-500', 'border-gray-300');
+          el.classList.add('border-red-500');
+          el.setAttribute('aria-invalid', 'true');
+        }
+        
+        function clearFieldState(el) {
+          el.classList.remove('border-green-500', 'border-red-500', 'border-red-300');
+          el.classList.add('border-gray-300');
+          el.setAttribute('aria-invalid', 'false');
+        }
+
+        // Validation logic
+        function validateEmailValue(value) {
+          const v = (value || '').trim();
+          if (!v) return { valid: false, message: 'Email is required.' };
+          if (!emailPattern.test(v)) return { valid: false, message: 'Please enter a valid Gmail address.' };
+          return { valid: true, message: '' };
+        }
+        
+        function validatePasswordValue(value) {
+          const v = value || '';
+          if (!v) return { valid: false, message: 'Password is required.' };
+          if (v.length < 6) return { valid: false, message: 'Password must be at least 6 characters.' };
+          if (!/[A-Z]/.test(v)) return { valid: false, message: 'Password must include one uppercase letter.' };
+          if (!/\d/.test(v)) return { valid: false, message: 'Password must include one number.' };
+          if (!/[!@#$%^&*(),.?":{}|<>]/.test(v)) return { valid: false, message: 'Password must include one special character.' };
+          return { valid: true, message: '' };
+        }
+
+        // Show error UI for a field
+        function showErrorForField(fieldEl, errorEl, message) {
+          errorEl.querySelector('span').textContent = message;
+          errorEl.classList.remove('hidden');
+          setFieldInvalid(fieldEl);
+        }
+
+        function hideErrorForField(fieldEl, errorEl) {
+          errorEl.querySelector('span').textContent = '';
+          errorEl.classList.add('hidden');
+          setFieldValid(fieldEl);
+        }
+
+        // Input event handlers
+        email.addEventListener('input', () => {
+          const res = validateEmailValue(email.value);
+          if (res.valid) {
+            hideErrorForField(email, emailError);
+          } else {
+            if (touched.email || email.value.trim().length > 0) {
+              showErrorForField(email, emailError, res.message);
+            } else {
+              clearFieldState(email);
+              emailError.classList.add('hidden');
+            }
+          }
+          errorMessage.classList.add('hidden');
+        });
+
+        password.addEventListener('input', () => {
+          const res = validatePasswordValue(password.value);
+          if (res.valid) {
+            hideErrorForField(password, passwordError);
+          } else {
+            if (touched.password || password.value.length > 0) {
+              showErrorForField(password, passwordError, res.message);
+            } else {
+              clearFieldState(password);
+              passwordError.classList.add('hidden');
+            }
+          }
+          errorMessage.classList.add('hidden');
+        });
+
+        // Blur event handlers
+        email.addEventListener('blur', () => {
+          touched.email = true;
+          const res = validateEmailValue(email.value);
+          if (!res.valid) {
+            showErrorForField(email, emailError, res.message);
+          } else {
+            hideErrorForField(email, emailError);
+          }
+        });
+
+        password.addEventListener('blur', () => {
+          touched.password = true;
+          const res = validatePasswordValue(password.value);
+          if (!res.valid) {
+            showErrorForField(password, passwordError, res.message);
+          } else {
+            hideErrorForField(password, passwordError);
+          }
+        });
+
+        // Toggle password visibility
+        togglePassword.addEventListener('click', () => {
+          const isPwd = password.type === 'password';
+          password.type = isPwd ? 'text' : 'password';
+          togglePassword.innerHTML = isPwd 
+            ? '<i class="fa-regular fa-eye-slash"></i>' 
+            : '<i class="fa-regular fa-eye"></i>';
+        });
+
+        // Form submission
+        form.addEventListener('submit', function (e) {
+          e.preventDefault();
+
+          // Show loading state
+          submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Signing In...';
+          submitBtn.disabled = true;
+
+          // Mark fields as touched
+          touched.email = true;
+          touched.password = true;
+
+          const emailRes = validateEmailValue(email.value);
+          const passRes = validatePasswordValue(password.value);
+
+          if (!emailRes.valid) {
+            showErrorForField(email, emailError, emailRes.message);
+          } else {
+            hideErrorForField(email, emailError);
+          }
+
+          if (!passRes.valid) {
+            showErrorForField(password, passwordError, passRes.message);
+          } else {
+            hideErrorForField(password, passwordError);
+          }
+
+          if (!emailRes.valid || !passRes.valid) {
+            errorText.textContent = 'Please fix the highlighted errors before submitting.';
+            errorMessage.classList.remove('hidden');
+            
+            // Reset button state
+            submitBtn.innerHTML = '<i class="fas fa-sign-in-alt mr-2"></i> Sign In';
+            submitBtn.disabled = false;
+            
+            // Focus first invalid field
+            if (!emailRes.valid) email.focus();
+            else if (!passRes.valid) password.focus();
+            return;
+          }
+
+          // All valid - submit form
+          errorMessage.classList.add('hidden');
+          
+          // Simulate API call delay
+          setTimeout(() => {
+            form.submit();
+          }, 1000);
+        });
+
+        // Initial state
+        clearFieldState(email);
+        clearFieldState(password);
+      })();
+    </script>
+
+    <script>
+      // Prevent back navigation
+      if (window.history && window.history.replaceState) {
+        window.history.pushState(null, null, window.location.href);
+        window.onpopstate = function () {
+          window.history.go(1);
+        };
+      }
+    </script>
   </body>
 </html>
