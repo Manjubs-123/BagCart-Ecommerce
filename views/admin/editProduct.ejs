@@ -477,7 +477,8 @@
         let currentFileIndex = 0;
         const variants = [];
         const colors = <%- JSON.stringify(colors) %>;
-        const existingProduct = <%- JSON.stringify(product) %>;
+        const existingProduct = <%- JSON.stringify(product || {}) %>;
+
         let totalImages = 0;
 
         // Validation rules
@@ -506,28 +507,61 @@
         };
 
         // Initialize with existing variants
-        function initializeExistingVariants() {
-            existingProduct.variants.forEach((variant, index) => {
-                variants.push({
-                    color: variant.color,
-                    price: variant.price,
-                    stock: variant.stock,
-                    images: variant.images.map(img => ({
-                        url: img.url,
-                        publicId: img.publicId,
-                        isExisting: true
-                    }))
-                });
-                renderVariant(index);
-                variantCount++;
+//         function initializeExistingVariants() {
+//             existingProduct.variants.forEach((variant, index) => {
+//                 variants.push({
+//                     color: variant.color,
+//                     price: variant.price,
+//                     stock: variant.stock,
+//                     images: variant.images.map(img => ({
+//                         url: img.url,
+//                         publicId: img.publicId,
+//                         isExisting: true
+//                     }))
+//                 });
+
+//                 console.log("🧩 Existing product:", existingProduct);
+// console.log("🧩 Variants found:", existingProduct.variants);
+
+//                 renderVariant(index);
+//                 variantCount++;
                 
-                // Count total images
-                totalImages += variant.images.length;
-            });
+//                 // Count total images
+//                 totalImages += variant.images.length;
+//             });
             
-            // Update total images count
-            document.getElementById('totalImagesCount').textContent = totalImages;
-        }
+//             // Update total images count
+//             document.getElementById('totalImagesCount').textContent = totalImages;
+//         }
+
+function initializeExistingVariants() {
+    if (!existingProduct || !Array.isArray(existingProduct.variants)) {
+        console.warn("⚠️ No existing variants found!");
+        return;
+    }
+
+    existingProduct.variants.forEach((variant, index) => {
+        if (!variant) return;
+        variants.push({
+            color: variant.color || '',
+            price: variant.price || 0,
+            stock: variant.stock || 0,
+            images: Array.isArray(variant.images)
+                ? variant.images.map(img => ({
+                    url: img.url,
+                    publicId: img.publicId,
+                    isExisting: true
+                }))
+                : []
+        });
+        renderVariant(index);
+        variantCount++;
+        totalImages += variant.images?.length || 0;
+    });
+
+    document.getElementById('totalImagesCount').textContent = totalImages;
+}
+
 
         function validateField(fieldName) {
             const field = document.getElementById(fieldName);

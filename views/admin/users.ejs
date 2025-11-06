@@ -1,154 +1,428 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Users | Admin</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Management | Admin - BagHub</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        .card-hover {
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+        
+        .card-hover:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+        
+        .sidebar {
+            scrollbar-width: thin;
+            scrollbar-color: rgba(255, 255, 255, 0.3) transparent;
+        }
+
+        .sidebar::-webkit-scrollbar {
+            width: 4px;
+        }
+
+        .sidebar::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .sidebar::-webkit-scrollbar-thumb {
+            background-color: rgba(255, 255, 255, 0.3);
+            border-radius: 20px;
+        }
+
+        .sidebar::-webkit-scrollbar-thumb:hover {
+            background-color: rgba(255, 255, 255, 0.5);
+        }
+
+        .nav-link-active {
+            background: rgba(255, 255, 255, 0.15);
+            border-left-color: #3b82f6;
+            padding-left: 12px;
+        }
+
+        .nav-link-active .nav-icon {
+            background: rgba(59, 130, 246, 0.3);
+        }
+
+        .nav-link-active span {
+            color: white;
+            font-weight: 600;
+        }
+        
+        .status-badge {
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+        
+        .action-btn {
+            transition: all 0.2s ease;
+        }
+        
+        .action-btn:hover {
+            transform: translateY(-1px);
+        }
+        
+        .table-row-hover:hover {
+            background: linear-gradient(90deg, #f8fafc, #f1f5f9);
+            transition: all 0.2s ease;
+        }
+        
+        .stats-card {
+            background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+            border: 1px solid #e2e8f0;
+            border-radius: 16px;
+            padding: 1.5rem;
+        }
+    </style>
 </head>
-<body class="flex">
+<body class="bg-gray-50 font-sans flex flex-col min-h-screen">
 
-  <%- include('../partials/sidebar') %>
+    <!-- Main Layout Container -->
+    <div class="flex flex-1">
+        <!-- Include Sidebar -->
+        <%- include('../partials/sidebar', { currentPage: 'users' }) %>
 
-  <main class="flex-1 p-8 ml-64">
-    <h2 class="text-2xl font-bold mb-6">User Management (<%= total %>)</h2>
+        <!-- Main Content -->
+        <main class="flex-1 p-8 ml-64 min-h-screen">
+            <!-- Page Header -->
+            <div class="flex justify-between items-center mb-8">
+                <div>
+                    <h1 class="text-3xl font-bold text-gray-800 mb-2">User Management</h1>
+                    <p class="text-gray-600">Manage customer accounts and access permissions</p>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <div class="relative">
+                        <i class="fas fa-bell text-gray-500 text-xl hover:text-blue-600 cursor-pointer transition-colors"></i>
+                        <span class="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center">3</span>
+                    </div>
+                    <div class="w-10 h-10 bg-gradient-to-r from-blue-500 to-emerald-500 rounded-full flex items-center justify-center shadow-md">
+                        <span class="text-white font-semibold text-sm">A</span>
+                    </div>
+                </div>
+            </div>
 
-    <form action="/admin/users" method="get" class="flex items-center mb-6 gap-3">
-        <input 
-            type="text" 
-            name="q" 
-            value="<%= q || '' %>" 
-            placeholder="Search by Name or Email..."
-            class="border border-gray-300 rounded-md px-3 py-2 w-64 focus:outline-none focus:ring-2 focus:ring-emerald-700"
-        />
-        <button type="submit" class="bg-emerald-800 text-white px-4 py-2 rounded hover:bg-emerald-900">
-            Search
-        </button>
-        <a href="/admin/users" class="bg-gray-400 text-white px-4 py-2 rounded hover:bg-gray-500">
-            Clear
-        </a>
-    </form>
+            <!-- Stats Cards -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                <!-- Total Users -->
+                <div class="stats-card card-hover border-l-4 border-blue-500">
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center">
+                            <i class="fas fa-users text-blue-600 text-lg"></i>
+                        </div>
+                        <span class="text-green-500 text-sm font-semibold bg-green-50 px-2 py-1 rounded-full">
+                            <i class="fas fa-arrow-up mr-1"></i>8.2%
+                        </span>
+                    </div>
+                    <h3 class="text-2xl font-bold text-gray-800 mb-1"><%= total %></h3>
+                    <p class="text-gray-600 text-sm">Total Users</p>
+                    <p class="text-gray-400 text-xs mt-2">All registered customers</p>
+                </div>
 
+                <!-- Active Users -->
+                <div class="stats-card card-hover border-l-4 border-green-500">
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center">
+                            <i class="fas fa-user-check text-green-600 text-lg"></i>
+                        </div>
+                        <span class="text-green-500 text-sm font-semibold bg-green-50 px-2 py-1 rounded-full">
+                            <i class="fas fa-arrow-up mr-1"></i>5.3%
+                        </span>
+                    </div>
+                    <h3 class="text-2xl font-bold text-gray-800 mb-1">
+                        <% 
+                            const activeUsers = users.filter(user => !user.isBlocked).length;
+                        %>
+                        <%= activeUsers %>
+                    </h3>
+                    <p class="text-gray-600 text-sm">Active Users</p>
+                    <p class="text-gray-400 text-xs mt-2">Currently accessible accounts</p>
+                </div>
 
-    <table class="w-full text-left border-collapse bg-white shadow rounded-lg">
-      <thead class="bg-gray-100">
-        <tr>
-          <th class="p-3 border-b">Name</th>
-          <th class="p-3 border-b">Email</th>
-          <th class="p-3 border-b">Status</th>
-          <th class="p-3 border-b">Action</th>
-        </tr>
-      </thead>
-      <tbody>
-        <% users.forEach(user => { %>
-          <tr class="border-b hover:bg-gray-50">
-            <td class="p-3"><%= user.name %></td>
-            <td class="p-3"><%= user.email %></td>
-            <td class="p-3">
-                <span class="font-medium <%= user.isBlocked ? 'text-red-600' : 'text-green-600' %>">
-                    <%= user.isBlocked ? 'Blocked' : 'Active' %>
-                </span>
-            </td>
-            <td class="p-3">
-                <button 
-                    type="button" 
-                    onclick="confirmToggle('<%= user._id %>', '<%= user.isBlocked %>')"
-                    class="px-4 py-2 rounded text-white <%= user.isBlocked ? 'bg-green-500 hover:bg-green-600' : 'bg-red-500 hover:bg-red-600' %>">
-                    <%= user.isBlocked ? 'Unblock' : 'Block' %>
+                <!-- Blocked Users -->
+                <div class="stats-card card-hover border-l-4 border-red-500">
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="w-12 h-12 bg-red-100 rounded-xl flex items-center justify-center">
+                            <i class="fas fa-user-slash text-red-600 text-lg"></i>
+                        </div>
+                        <span class="text-red-500 text-sm font-semibold bg-red-50 px-2 py-1 rounded-full">
+                            <i class="fas fa-arrow-down mr-1"></i>2.1%
+                        </span>
+                    </div>
+                    <h3 class="text-2xl font-bold text-gray-800 mb-1">
+                        <% 
+                            const blockedUsers = users.filter(user => user.isBlocked).length;
+                        %>
+                        <%= blockedUsers %>
+                    </h3>
+                    <p class="text-gray-600 text-sm">Blocked Users</p>
+                    <p class="text-gray-400 text-xs mt-2">Suspended accounts</p>
+                </div>
+
+                <!-- This Month -->
+                <div class="stats-card card-hover border-l-4 border-purple-500">
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center">
+                            <i class="fas fa-chart-line text-purple-600 text-lg"></i>
+                        </div>
+                        <span class="text-blue-500 text-sm font-semibold">+24</span>
+                    </div>
+                    <h3 class="text-2xl font-bold text-gray-800 mb-1">New This Month</h3>
+                    <p class="text-gray-600 text-sm">User Growth</p>
+                    <p class="text-gray-400 text-xs mt-2">24 new registrations</p>
+                </div>
+            </div>
+
+            <!-- Search and Actions Bar -->
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
+                <div class="flex flex-col md:flex-row items-start md:items-center gap-4 w-full md:w-auto">
+                    <!-- Search Bar -->
+                    <form action="/admin/users" method="get" class="flex items-center gap-3 w-full md:w-auto">
+                        <div class="relative w-full md:w-64">
+                            <input 
+                                type="text" 
+                                name="q" 
+                                value="<%= q || '' %>" 
+                                placeholder="Search users..."
+                                class="border border-gray-300 rounded-lg px-4 py-2.5 w-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent pl-10"
+                            />
+                            <i class="fas fa-search text-gray-400 absolute left-3 top-3.5"></i>
+                        </div>
+                        <button type="submit" class="bg-blue-600 text-white px-4 py-2.5 rounded-lg hover:bg-blue-700 transition-all flex items-center gap-2 action-btn">
+                            <i class="fas fa-search"></i>
+                            <span>Search</span>
+                        </button>
+                        <a href="/admin/users" class="bg-gray-500 text-white px-4 py-2.5 rounded-lg hover:bg-gray-600 transition-all flex items-center gap-2 action-btn">
+                            <i class="fas fa-times"></i>
+                            <span>Clear</span>
+                        </a>
+                    </form>
+                </div>
+                
+                <!-- Export Button -->
+                <button class="bg-gradient-to-r from-emerald-600 to-emerald-700 text-white px-5 py-2.5 rounded-lg hover:from-emerald-700 hover:to-emerald-800 transition-all flex items-center gap-2 action-btn shadow-md">
+                    <i class="fas fa-download"></i>
+                    <span>Export Users</span>
                 </button>
-            </td>
-          </tr>
-        <% }) %>
-      </tbody>
-    </table>
+            </div>
 
-    <div class="flex justify-center items-center gap-2 mt-6">
-        <% if (page > 1) { %>
-            <a href="/admin/users?page=<%= page - 1 %>&limit=<%= limit %><%= q ? '&q=' + q : '' %>"
-                class="px-3 py-1 rounded bg-gray-200 hover:bg-gray-300">Previous</a>
-        <% } %>
+            <!-- Users Table -->
+            <div class="bg-white rounded-2xl shadow-lg overflow-hidden card-hover">
+                <div class="overflow-x-auto">
+                    <table class="min-w-full text-sm">
+                        <thead>
+                            <tr class="bg-gradient-to-r from-gray-50 to-gray-100 text-gray-600 uppercase text-xs">
+                                <th class="px-6 py-4 text-left font-semibold rounded-tl-xl">User</th>
+                                <th class="px-6 py-4 text-left font-semibold">Contact</th>
+                                <th class="px-6 py-4 text-left font-semibold">Status</th>
+                                <th class="px-6 py-4 text-center font-semibold rounded-tr-xl">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-200">
+                            <% users.forEach(user => { %>
+                                <tr class="table-row-hover">
+                                    <td class="px-6 py-4">
+                                        <div class="flex items-center space-x-3">
+                                            <div class="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center shadow-md">
+                                                <span class="text-white font-semibold text-sm">
+                                                    <%= user.name.charAt(0).toUpperCase() %>
+                                                </span>
+                                            </div>
+                                            <div>
+                                                <span class="font-medium text-gray-800"><%= user.name %></span>
+                                                <p class="text-xs text-gray-500">User ID: <%= user._id.toString().slice(-8) %></p>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td class="px-6 py-4">
+                                        <div class="flex flex-col">
+                                            <span class="text-gray-800 font-medium"><%= user.email %></span>
+                                            <span class="text-gray-500 text-xs mt-1">
+                                                <i class="fas fa-phone-alt mr-1"></i>
+                                                <%= user.phone || 'Not provided' %>
+                                            </span>
+                                        </div>
+                                    </td>
+                                    <td class="px-6 py-4">
+                                        <% if (user.isBlocked) { %>
+                                            <span class="status-badge bg-red-100 text-red-800">
+                                                <i class="fas fa-ban text-red-500"></i>
+                                                Blocked
+                                            </span>
+                                        <% } else { %>
+                                            <span class="status-badge bg-green-100 text-green-800">
+                                                <i class="fas fa-check-circle text-green-500"></i>
+                                                Active
+                                            </span>
+                                        <% } %>
+                                    </td>
+                                    <td class="px-6 py-4">
+                                        <div class="flex gap-2 justify-center">
+                                            <button 
+                                                type="button" 
+                                                onclick="confirmToggle('<%= user._id %>', '<%= user.isBlocked %>')"
+                                                class="<%= user.isBlocked ? 'bg-green-600 hover:bg-green-700' : 'bg-red-600 hover:bg-red-700' %> text-white px-4 py-2 rounded-lg transition-all flex items-center gap-2 action-btn">
+                                                <% if (user.isBlocked) { %>
+                                                    <i class="fas fa-unlock text-xs"></i>
+                                                    <span>Unblock</span>
+                                                <% } else { %>
+                                                    <i class="fas fa-ban text-xs"></i>
+                                                    <span>Block</span>
+                                                <% } %>
+                                            </button>
+                                            <button class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-all flex items-center gap-2 action-btn">
+                                                <i class="fas fa-eye text-xs"></i>
+                                                <span>View</span>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            <% }) %>
+                        </tbody>
+                    </table>
+                </div>
+                
+                <!-- Empty State -->
+                <% if (users.length === 0) { %>
+                    <div class="text-center py-12">
+                        <i class="fas fa-users text-gray-300 text-5xl mb-4"></i>
+                        <h3 class="text-lg font-medium text-gray-700 mb-2">No users found</h3>
+                        <p class="text-gray-500 mb-6">Try adjusting your search criteria</p>
+                    </div>
+                <% } %>
+            </div>
 
-        <% for (let i = 1; i <= pages; i++) { %>
-            <a href="/admin/users?page=<%= i %>&limit=<%= limit %><%= q ? '&q=' + q : '' %>"
-                class="px-3 py-1 rounded <%= i === page ? 'bg-emerald-800 text-white' : 'bg-gray-200 hover:bg-gray-300' %>">
-                <%= i %>
-            </a>
-        <% } %>
+            <!-- Pagination -->
+            <% if (pages > 1) { %>
+                <div class="flex justify-center items-center gap-2 mt-8">
+                    <% if (page > 1) { %>
+                        <a href="/admin/users?page=<%= page - 1 %>&limit=<%= limit %><%= q ? '&q=' + q : '' %>" 
+                           class="px-4 py-2 border rounded-lg bg-white hover:bg-gray-50 transition-all flex items-center gap-2 action-btn">
+                            <i class="fas fa-chevron-left text-xs"></i>
+                            <span>Previous</span>
+                        </a>
+                    <% } %>
 
-        <% if (page < pages) { %>
-            <a href="/admin/users?page=<%= page + 1 %>&limit=<%= limit %><%= q ? '&q=' + q : '' %>"
-                class="px-3 py-1 rounded bg-gray-200 hover:bg-gray-300">Next</a>
-        <% } %>
+                    <% for (let i = 1; i <= pages; i++) { %>
+                        <a href="/admin/users?page=<%= i %>&limit=<%= limit %><%= q ? '&q=' + q : '' %>" 
+                           class="px-4 py-2 border rounded-lg <%= i === page ? 'bg-blue-600 text-white' : 'bg-white hover:bg-gray-50' %> transition-all action-btn">
+                            <%= i %>
+                        </a>
+                    <% } %>
+
+                    <% if (page < pages) { %>
+                        <a href="/admin/users?page=<%= page + 1 %>&limit=<%= limit %><%= q ? '&q=' + q : '' %>" 
+                           class="px-4 py-2 border rounded-lg bg-white hover:bg-gray-50 transition-all flex items-center gap-2 action-btn">
+                            <span>Next</span>
+                            <i class="fas fa-chevron-right text-xs"></i>
+                        </a>
+                    <% } %>
+                </div>
+            <% } %>
+        </main>
     </div>
-  </main>
 
-<script>
-    // SweetAlert2 function for Block/Unblock
-    function confirmToggle(userId, isBlocked) {
-        // Coerce isBlocked (may be passed as string) to boolean
-        isBlocked = (isBlocked === true || isBlocked === 'true');
-        const action = isBlocked ? 'unblock' : 'block';
-        const buttonColor = isBlocked ? '#22c55e' : '#ef4444'; // Green for unblock, Red for block
+    <script>
+        // SweetAlert2 function for Block/Unblock
+        function confirmToggle(userId, isBlocked) {
+            // Coerce isBlocked (may be passed as string) to boolean
+            isBlocked = (isBlocked === true || isBlocked === 'true');
+            const action = isBlocked ? 'unblock' : 'block';
+            const actionText = isBlocked ? 'unblocking' : 'blocking';
+            const buttonColor = isBlocked ? '#22c55e' : '#ef4444'; // Green for unblock, Red for block
+            const icon = isBlocked ? 'success' : 'warning';
 
-        Swal.fire({
-            title: `Are you sure?`,
-            text: `You are about to ${action} this user.`,
-            icon: 'warning',
-            showCancelButton: true,
-            confirmButtonColor: buttonColor,
-            cancelButtonColor: '#3085d6',
-            confirmButtonText: `Yes, ${action} them!`
-        }).then((result) => {
-            if (result.isConfirmed) {
-                // Perform the AJAX request to toggle the status
-                fetch(`/admin/users/toggle-block/${userId}`, {
-                    method: 'POST',
-                    credentials: 'same-origin', // include session cookie for express-session
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Accept': 'application/json'
-                    }
-                })
-                .then(async response => {
-                    // If server redirected to login or returned non-JSON, handle gracefully
-                    if (response.status === 401) {
-                        Swal.fire('Unauthorized', 'Please login as admin.', 'warning').then(() => {
-                            window.location.href = '/admin';
-                        });
-                        return { success: false, message: 'Unauthorized' };
-                    }
+            Swal.fire({
+                title: `Confirm ${action}`,
+                html: `You are about to <strong>${action}</strong> this user.<br>This action will ${isBlocked ? 'restore' : 'restrict'} their access to the platform.`,
+                icon: icon,
+                showCancelButton: true,
+                confirmButtonColor: buttonColor,
+                cancelButtonColor: '#6b7280',
+                confirmButtonText: `Yes, ${action} user!`,
+                cancelButtonText: 'Cancel',
+                showLoaderOnConfirm: true,
+                preConfirm: () => {
+                    return fetch(`/admin/users/toggle-block/${userId}`, {
+                        method: 'POST',
+                        credentials: 'same-origin',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Accept': 'application/json'
+                        }
+                    })
+                    .then(async response => {
+                        if (response.status === 401) {
+                            throw new Error('Unauthorized - Please login as admin');
+                        }
 
-                    // Try to parse JSON, fall back if it fails
-                    let data;
-                    try {
-                        data = await response.json();
-                    } catch (err) {
-                        console.error('Failed to parse JSON response', err);
-                        return { success: false, message: 'Unexpected server response' };
-                    }
+                        let data;
+                        try {
+                            data = await response.json();
+                        } catch (err) {
+                            throw new Error('Unexpected server response');
+                        }
 
-                    if (data.success) {
-                        Swal.fire({
-                            title: 'Success!',
-                            text: data.message,
-                            icon: 'success',
-                            timer: 1500,
-                            showConfirmButton: false
-                        }).then(() => {
-                            window.location.reload(); // Reload the page to see the status update
-                        });
-                    } else {
-                        Swal.fire('Error', data.message, 'error');
-                    }
-                })
-                .catch(error => {
-                    console.error('Fetch error:', error);
-                    Swal.fire('Error', 'Failed to communicate with server.', 'error');
-                });
+                        if (!data.success) {
+                            throw new Error(data.message || `Failed to ${action} user`);
+                        }
+
+                        return data;
+                    })
+                    .catch(error => {
+                        Swal.showValidationMessage(`Request failed: ${error.message}`);
+                    });
+                },
+                allowOutsideClick: () => !Swal.isLoading()
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    Swal.fire({
+                        title: 'Success!',
+                        text: `User has been ${action}ed successfully`,
+                        icon: 'success',
+                        timer: 1500,
+                        showConfirmButton: false
+                    }).then(() => {
+                        window.location.reload();
+                    });
+                }
+            });
+        }
+
+        // Add real-time search indicator
+        document.addEventListener('DOMContentLoaded', function() {
+            const searchInput = document.querySelector('input[name="q"]');
+            const searchForm = document.querySelector('form');
+            
+            if (searchInput && '<%= q %>') {
+                searchInput.parentElement.classList.add('ring-2', 'ring-blue-500');
             }
+            
+            // Add loading state to search
+            searchForm.addEventListener('submit', function(e) {
+                const submitBtn = this.querySelector('button[type="submit"]');
+                const originalText = submitBtn.innerHTML;
+                submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i><span>Searching...</span>';
+                submitBtn.disabled = true;
+                
+                setTimeout(() => {
+                    submitBtn.innerHTML = originalText;
+                    submitBtn.disabled = false;
+                }, 2000);
+            });
         });
-    }
-</script>
+    </script>
 
 </body>
 </html>
