@@ -436,14 +436,91 @@ export const renderEditProduct = async (req, res) => {
 /* ===========================
    🧰 UPDATE PRODUCT
    =========================== */
+// export const updateProduct = async (req, res) => {
+//   try {
+//     const { id } = req.params;
+//     let { name, description, brand, category, variants } = req.body;
+
+//     const product = await Product.findOne({ _id: id, isDeleted: false });
+//     if (!product) return res.status(404).json({ success: false, message: "Product not found" });
+
+//     if (typeof variants === "string") {
+//       try {
+//         variants = JSON.parse(variants);
+//       } catch {
+//         variants = [];
+//       }
+//     }
+
+//     if (!Array.isArray(variants) || variants.length === 0) {
+//       return res.status(400).json({ message: "At least one variant is required" });
+//     }
+
+//     // ✅ Map new images to variants
+//     if (req.files && req.files.length > 0) {
+//       variants = await Promise.all(
+//         variants.map(async (variant, index) => {
+//           const newImages = req.files
+//             .filter((f) => f.originalname.startsWith(`variant${index}_`))
+//             .map((f) => ({
+//               url: f.path,
+//               publicId: f.filename,
+//             }));
+
+//           if (newImages.length > 0 && product.variants[index]?.images?.length) {
+//             for (const oldImg of product.variants[index].images) {
+//               try {
+//                 await cloudinary.uploader.destroy(oldImg.publicId);
+//               } catch (err) {
+//                 console.warn("Failed to delete:", oldImg.publicId, err.message);
+//               }
+//             }
+//           }
+
+//           return {
+//             color: variant.color?.trim(),
+//             price: parseFloat(variant.price),
+//             stock: parseInt(variant.stock),
+//             images: newImages.length > 0 ? newImages : product.variants[index]?.images || [],
+//           };
+//         })
+//       );
+//     } else {
+//       variants = variants.map((variant, index) => ({
+//         color: variant.color?.trim(),
+//         price: parseFloat(variant.price),
+//         stock: parseInt(variant.stock),
+//         images: product.variants[index]?.images || [],
+//       }));
+//     }
+
+//     product.name = name?.trim() || product.name;
+//     product.description = description?.trim() || product.description;
+//     product.brand = brand?.trim() || product.brand;
+//     if (category) product.category = category;
+//     product.variants = variants;
+
+//     await product.save();
+//     await product.populate("category");
+
+//     res.json({ success: true, message: "Product updated successfully", product });
+//   } catch (error) {
+//     console.error("❌ Update Product Error:", error);
+//     res.status(500).json({ message: "Failed to update product", error: error.message });
+//   }
+// };
+
+
+/* ===========================
+   ✅ UPDATE PRODUCT — Fixed Version
+   =========================== */
+
 export const updateProduct = async (req, res) => {
   try {
     const { id } = req.params;
     let { name, description, brand, category, variants } = req.body;
 
-    const product = await Product.findOne({ _id: id, isDeleted: false });
-    if (!product) return res.status(404).json({ success: false, message: "Product not found" });
-
+    // Parse variants safely
     if (typeof variants === "string") {
       try {
         variants = JSON.parse(variants);
@@ -452,63 +529,104 @@ export const updateProduct = async (req, res) => {
       }
     }
 
-    if (!Array.isArray(variants) || variants.length === 0) {
-      return res.status(400).json({ message: "At least one variant is required" });
+    const product = await Product.findOne({ _id: id, isDeleted: false });
+    if (!product) {
+      return res.status(404).json({ success: false, message: "Product not found" });
     }
 
-    // ✅ Map new images to variants
-    if (req.files && req.files.length > 0) {
-      variants = await Promise.all(
-        variants.map(async (variant, index) => {
-          const newImages = req.files
-            .filter((f) => f.originalname.startsWith(`variant${index}_`))
-            .map((f) => ({
-              url: f.path,
-              publicId: f.filename,
-            }));
-
-          if (newImages.length > 0 && product.variants[index]?.images?.length) {
-            for (const oldImg of product.variants[index].images) {
-              try {
-                await cloudinary.uploader.destroy(oldImg.publicId);
-              } catch (err) {
-                console.warn("Failed to delete:", oldImg.publicId, err.message);
-              }
-            }
-          }
-
-          return {
-            color: variant.color?.trim(),
-            price: parseFloat(variant.price),
-            stock: parseInt(variant.stock),
-            images: newImages.length > 0 ? newImages : product.variants[index]?.images || [],
-          };
-        })
-      );
-    } else {
-      variants = variants.map((variant, index) => ({
-        color: variant.color?.trim(),
-        price: parseFloat(variant.price),
-        stock: parseInt(variant.stock),
-        images: product.variants[index]?.images || [],
-      }));
-    }
-
+    // ======================
+    // 1️⃣ UPDATE BASIC DETAILS
+    // ======================
     product.name = name?.trim() || product.name;
     product.description = description?.trim() || product.description;
     product.brand = brand?.trim() || product.brand;
     if (category) product.category = category;
-    product.variants = variants;
 
+    // ======================
+    // 2️⃣ UPDATE VARIANTS (Dynamic slot merge)
+    // ======================
+    const updatedVariants = [];
+
+    for (let i = 0; i < variants.length; i++) {
+      const variant = variants[i];
+      const oldVariant = product.variants[i];
+      if (!oldVariant) continue;
+
+      // ✅ Find uploaded images for this variant
+      const uploadedImages = (req.files || [])
+        .filter((file) => file.originalname.startsWith(`variant${i}_slot`))
+        .map((file) => ({
+          url: file.path,
+          publicId: file.filename,
+          slot: parseInt(file.originalname.match(/slot(\d+)/)?.[1] || 0, 10),
+        }));
+
+      // ✅ Determine image count dynamically
+      const totalSlots = Math.max(
+        oldVariant.images?.length || 0,
+        ...uploadedImages.map((img) => img.slot + 1),
+        3 // at least 3 slots always
+      );
+
+      const newImages = [];
+
+      for (let slot = 0; slot < totalSlots; slot++) {
+        const existingImg = oldVariant.images?.[slot];
+        const replacedImg = uploadedImages.find((img) => img.slot === slot);
+
+        if (replacedImg) {
+          // 🧹 Delete the old image in Cloudinary if being replaced
+          if (existingImg?.publicId) {
+            try {
+              await cloudinary.uploader.destroy(existingImg.publicId);
+              console.log(`🗑️ Deleted old image: ${existingImg.publicId}`);
+            } catch (err) {
+              console.warn("⚠️ Failed to delete old image:", err.message);
+            }
+          }
+
+          // ✅ Add the new uploaded image
+          newImages.push({
+            url: replacedImg.url,
+            publicId: replacedImg.publicId,
+          });
+        } else if (existingImg) {
+          // ✅ Keep old image
+          newImages.push(existingImg);
+        } else {
+          // ✅ Empty slot (preserve placeholder)
+          newImages.push(null);
+        }
+      }
+
+      // ✅ Final merged variant
+      updatedVariants.push({
+        color: variant.color?.trim() || oldVariant.color,
+        price: parseFloat(variant.price || oldVariant.price),
+        stock: parseInt(variant.stock || oldVariant.stock),
+        images: newImages, // don’t filter — keep slot indexes stable
+      });
+    }
+
+    product.variants = updatedVariants;
     await product.save();
     await product.populate("category");
 
-    res.json({ success: true, message: "Product updated successfully", product });
+    res.json({
+      success: true,
+      message: "✅ Product updated successfully",
+      product,
+    });
   } catch (error) {
     console.error("❌ Update Product Error:", error);
-    res.status(500).json({ message: "Failed to update product", error: error.message });
+    res.status(500).json({
+      success: false,
+      message: "Failed to update product",
+      error: error.message,
+    });
   }
 };
+
 
 
 
