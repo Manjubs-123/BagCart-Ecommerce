@@ -211,10 +211,10 @@
                 </div>
                 
                 <!-- Export Button -->
-                <button class="bg-gradient-to-r from-emerald-600 to-emerald-700 text-white px-5 py-2.5 rounded-lg hover:from-emerald-700 hover:to-emerald-800 transition-all flex items-center gap-2 action-btn shadow-md">
+                <!-- <button class="bg-gradient-to-r from-emerald-600 to-emerald-700 text-white px-5 py-2.5 rounded-lg hover:from-emerald-700 hover:to-emerald-800 transition-all flex items-center gap-2 action-btn shadow-md">
                     <i class="fas fa-download"></i>
                     <span>Export Users</span>
-                </button>
+                </button> -->
             </div>
 
             <!-- Users Table -->
@@ -248,10 +248,10 @@
                                     <td class="px-6 py-4">
                                         <div class="flex flex-col">
                                             <span class="text-gray-800 font-medium"><%= user.email %></span>
-                                            <span class="text-gray-500 text-xs mt-1">
+                                            <!-- <span class="text-gray-500 text-xs mt-1">
                                                 <i class="fas fa-phone-alt mr-1"></i>
                                                 <%= user.phone || 'Not provided' %>
-                                            </span>
+                                            </span> -->
                                         </div>
                                     </td>
                                     <td class="px-6 py-4">
@@ -269,7 +269,7 @@
                                     </td>
                                     <td class="px-6 py-4">
                                         <div class="flex gap-2 justify-center">
-                                            <button 
+                                            <!-- <button 
                                                 type="button" 
                                                 onclick="confirmToggle('<%= user._id %>', '<%= user.isBlocked %>')"
                                                 class="<%= user.isBlocked ? 'bg-green-600 hover:bg-green-700' : 'bg-red-600 hover:bg-red-700' %> text-white px-4 py-2 rounded-lg transition-all flex items-center gap-2 action-btn">
@@ -280,11 +280,25 @@
                                                     <i class="fas fa-ban text-xs"></i>
                                                     <span>Block</span>
                                                 <% } %>
-                                            </button>
-                                            <button class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-all flex items-center gap-2 action-btn">
+                                            </button> -->
+
+                                            <button
+    type="button"
+    onclick="confirmToggle('<%= user._id %>', '<%= user.isBlocked %>')"
+    class="<%= user.isBlocked ? 'bg-green-600 hover:bg-green-700' : 'bg-red-600 hover:bg-red-700' %> text-white px-4 py-2 rounded-lg transition-all">
+    <% if (user.isBlocked) { %>
+      <i class="fas fa-unlock"></i> Unblock
+    <% } else { %>
+      <i class="fas fa-ban"></i> Block
+    <% } %>
+  </button>
+                                        
+                                            <!-- <button class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-all flex items-center gap-2 action-btn">
                                                 <i class="fas fa-eye text-xs"></i>
                                                 <span>View</span>
-                                            </button>
+                                            </button> -->
+                            
+
                                         </div>
                                     </td>
                                 </tr>
@@ -335,70 +349,113 @@
 
     <script>
         // SweetAlert2 function for Block/Unblock
-        function confirmToggle(userId, isBlocked) {
-            // Coerce isBlocked (may be passed as string) to boolean
-            isBlocked = (isBlocked === true || isBlocked === 'true');
-            const action = isBlocked ? 'unblock' : 'block';
-            const actionText = isBlocked ? 'unblocking' : 'blocking';
-            const buttonColor = isBlocked ? '#22c55e' : '#ef4444'; // Green for unblock, Red for block
-            const icon = isBlocked ? 'success' : 'warning';
+        // function confirmToggle(userId, isBlocked) {
+        //     // Coerce isBlocked (may be passed as string) to boolean
+        //     isBlocked = (isBlocked === true || isBlocked === 'true');
+        //     const action = isBlocked ? 'unblock' : 'block';
+        //     const actionText = isBlocked ? 'unblocking' : 'blocking';
+        //     const buttonColor = isBlocked ? '#22c55e' : '#ef4444'; // Green for unblock, Red for block
+        //     const icon = isBlocked ? 'success' : 'warning';
 
-            Swal.fire({
-                title: `Confirm ${action}`,
-                html: `You are about to <strong>${action}</strong> this user.<br>This action will ${isBlocked ? 'restore' : 'restrict'} their access to the platform.`,
-                icon: icon,
-                showCancelButton: true,
-                confirmButtonColor: buttonColor,
-                cancelButtonColor: '#6b7280',
-                confirmButtonText: `Yes, ${action} user!`,
-                cancelButtonText: 'Cancel',
-                showLoaderOnConfirm: true,
-                preConfirm: () => {
-                    return fetch(`/admin/users/toggle-block/${userId}`, {
-                        method: 'POST',
-                        credentials: 'same-origin',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'Accept': 'application/json'
-                        }
-                    })
-                    .then(async response => {
-                        if (response.status === 401) {
-                            throw new Error('Unauthorized - Please login as admin');
-                        }
+        //     Swal.fire({
+        //         title: `Confirm ${action}`,
+        //         html: `You are about to <strong>${action}</strong> this user.<br>This action will ${isBlocked ? 'restore' : 'restrict'} their access to the platform.`,
+        //         icon: icon,
+        //         showCancelButton: true,
+        //         confirmButtonColor: buttonColor,
+        //         cancelButtonColor: '#6b7280',
+        //         confirmButtonText: `Yes, ${action} user!`,
+        //         cancelButtonText: 'Cancel',
+        //         showLoaderOnConfirm: true,
+        //         preConfirm: () => {
+        //             return fetch(`/admin/users/toggle-block/${userId}`, {
+        //                 method: 'PUT',
+        //                 credentials: 'same-origin',
+        //                 headers: {
+        //                     'Content-Type': 'application/json',
+        //                     'Accept': 'application/json'
+        //                 }
+        //             })
+        //             .then(async response => {
+        //                 if (response.status === 401) {
+        //                     throw new Error('Unauthorized - Please login as admin');
+        //                 }
 
-                        let data;
-                        try {
-                            data = await response.json();
-                        } catch (err) {
-                            throw new Error('Unexpected server response');
-                        }
+        //                 let data;
+        //                 try {
+        //                     data = await response.json();
+        //                 } catch (err) {
+        //                     throw new Error('Unexpected server response');
+        //                 }
 
-                        if (!data.success) {
-                            throw new Error(data.message || `Failed to ${action} user`);
-                        }
+        //                 if (!data.success) {
+        //                     throw new Error(data.message || `Failed to ${action} user`);
+        //                 }
 
-                        return data;
-                    })
-                    .catch(error => {
-                        Swal.showValidationMessage(`Request failed: ${error.message}`);
-                    });
-                },
-                allowOutsideClick: () => !Swal.isLoading()
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    Swal.fire({
-                        title: 'Success!',
-                        text: `User has been ${action}ed successfully`,
-                        icon: 'success',
-                        timer: 1500,
-                        showConfirmButton: false
-                    }).then(() => {
-                        window.location.reload();
-                    });
-                }
-            });
-        }
+        //                 return data;
+        //             })
+        //             .catch(error => {
+        //                 Swal.showValidationMessage(`Request failed: ${error.message}`);
+        //             });
+        //         },
+        //         allowOutsideClick: () => !Swal.isLoading()
+        //     }).then((result) => {
+        //         if (result.isConfirmed) {
+        //             Swal.fire({
+        //                 title: 'Success!',
+        //                 text: `User has been ${action}ed successfully`,
+        //                 icon: 'success',
+        //                 timer: 1500,
+        //                 showConfirmButton: false
+        //             }).then(() => {
+        //                 window.location.reload();
+        //             });
+        //         }
+        //     });
+        // }
+
+        function toggleBlock(userId, action) {
+  const verb = action === "block" ? "Block" : "Unblock";
+
+  Swal.fire({
+    title: `Confirm ${verb.toLowerCase()}`,
+    text: `You are about to ${verb.toLowerCase()} this user.`,
+    icon: "warning",
+    showCancelButton: true,
+    confirmButtonText: `Yes, ${verb.toLowerCase()} user!`,
+    cancelButtonText: "Cancel",
+  }).then((result) => {
+    if (result.isConfirmed) {
+   fetch(`/admin/toggle-block/${userId}`, {
+  method: "PUT",
+  credentials: "same-origin",
+  headers: {
+    "Content-Type": "application/json",
+    "Accept": "application/json",
+  },
+})
+  .then(async (res) => {
+    const data = await res.json().catch(() => null);
+
+    if (!data) {
+      throw new Error("Invalid JSON");
+    }
+
+    if (data.success) {
+      Swal.fire("Success", data.message, "success").then(() => location.reload());
+    } else {
+      Swal.fire("Error", data.message || "Something went wrong.", "error");
+    }
+  })
+  .catch((err) => {
+    console.error("Fetch error:", err);
+    Swal.fire("Error", "Unexpected server response.", "error");
+  });
+
+    }
+  });
+}
+
 
         // Add real-time search indicator
         document.addEventListener('DOMContentLoaded', function() {
@@ -422,7 +479,47 @@
                 }, 2000);
             });
         });
+        
     </script>
+ <script>
+function confirmToggle(userId, isBlocked) {
+  const action = isBlocked === "true" ? "unblock" : "block";
+
+  Swal.fire({
+    title: `Confirm ${action}`,
+    text: `Are you sure you want to ${action} this user?`,
+    icon: "warning",
+    showCancelButton: true,
+    confirmButtonColor: action === "block" ? "#dc2626" : "#16a34a",
+    cancelButtonColor: "#6b7280",
+    confirmButtonText: `Yes, ${action}!`,
+  }).then((result) => {
+    if (result.isConfirmed) {
+      fetch(`/admin/toggle-block/${userId}`, {
+        method: "PUT",
+        credentials: "same-origin",
+        headers: {
+          "Content-Type": "application/json",
+          "Accept": "application/json",
+        },
+      })
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.success) {
+            Swal.fire("Success", data.message, "success").then(() => location.reload());
+          } else {
+            Swal.fire("Error", data.message || "Something went wrong.", "error");
+          }
+        })
+        .catch((err) => {
+          console.error(err);
+          Swal.fire("Error", "Unexpected server response.", "error");
+        });
+    }
+  });
+}
+</script>
+
 
 </body>
 </html>

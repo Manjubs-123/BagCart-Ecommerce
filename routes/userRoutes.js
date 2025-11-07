@@ -56,13 +56,20 @@ import {
   logoutUser,
 } from "../controllers/user/userController.js";
 import { renderForgotPassword, postForgotPassword, renderForgotVerifyOtp, postForgotVerifyOtp, renderResetPassword, postResetPassword } from "../controllers/user/authForgotController.js"; 
-import { isUserLoggedIn, isUserLoggedOut, checkBlockedUser } from "../middlewares/userAuth.js";
+import { isUserLoggedIn, isUserLoggedOut} from "../middlewares/userAuth.js";
 import { noCache }  from "../middlewares/cacheMiddleware.js";
+//import { getHome } from "../controllers/user/homeController.js";
 
 
 const router = express.Router();
 
+//Prevent browser caching
 router.use(noCache);
+
+//
+//router.get("/", getHome); // Public Home Page
+
+// --------------------- PUBLIC ROUTES ---------------------
 // Signup
 router.get("/signup", isUserLoggedOut,getSignup);
 router.post("/signup", signupUser);
@@ -91,8 +98,13 @@ router.post("/forgotOtp",postForgotVerifyOtp);
 router.get("/resetPassword",renderResetPassword);
 router.post("/resetPassword",postResetPassword);
 
+
+// --------------------- PROTECTED ROUTES ---------------------
+
+// Only logged-in & unblocked users can access these
+
 // Home
-router.get("/home", showHomePage);
+router.get("/home",isUserLoggedIn, showHomePage);
 
 // Logout
 router.get("/logout", isUserLoggedIn, logoutUser);

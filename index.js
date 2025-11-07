@@ -239,7 +239,7 @@ import adminRoutes from "./routes/adminRoutes.js";
 import { noCache } from "./middlewares/cacheMiddleware.js";
 import categoryRoutes from "./routes/admin/categoryRoutes.js";
 import productRoutes from "./routes/admin/productRoutes.js";
-import usersRoutes from "./routes/admin/usersRoutes.js";
+// import usersRoutes from "./routes/admin/usersRoutes.js";
 
 const app = express();
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -276,6 +276,12 @@ app.use(noCache);
 app.use(passport.initialize());
 app.use(passport.session());
 
+// ✅ Add this middleware RIGHT HERE 👇 (before routes)
+app.use((req, res, next) => {
+  res.locals.currentPage = ""; // default value for all EJS views
+  next();
+});
+
 // ✅ Make currentPath available everywhere
 app.use((req, res, next) => {
   res.locals.currentPath = req.path;
@@ -283,12 +289,13 @@ app.use((req, res, next) => {
 });
 
 // Routes
+// app.use("/", userRoutes);
 app.use("/admin", adminRoutes);
 app.use("/user", userRoutes);
 app.use("/auth", authRoutes);
 app.use("/admin/category", categoryRoutes);
 app.use("/admin/products", productRoutes);
-app.use("/admin/users", usersRoutes); 
+//app.use("/admin/users", usersRoutes); 
 
 app.get("/", (req, res) => {
   res.render("index", { currentPage: "home" });

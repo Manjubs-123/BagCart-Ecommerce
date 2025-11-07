@@ -664,6 +664,32 @@ function initializeExistingVariants() {
 //   }
 
 
+// ==============================
+// 🧠 VARIANT FIELD UPDATERS
+// ==============================
+
+function updateVariantColor(index, value) {
+  if (!variants[index]) return;
+  variants[index].color = value;
+}
+
+function updateVariantPrice(index, value) {
+  if (!variants[index]) return;
+  const val = parseFloat(value);
+  variants[index].price = !isNaN(val) ? val : 0;
+}
+
+function updateVariantStock(index, value) {
+  if (!variants[index]) return;
+  const val = parseInt(value);
+  variants[index].stock = !isNaN(val) ? val : 0;
+}
+
+// 🧠 Helper for debugging (optional)
+function logVariants() {
+  console.log("✅ Current Variants:", JSON.stringify(variants, null, 2));
+}
+
 function renderVariant(index) {
   const container = document.getElementById("variantsContainer");
   const v = variants[index];
@@ -674,12 +700,11 @@ function renderVariant(index) {
     )
     .join("");
 
-  // ✅ Dynamic slots based on actual image count
- // ✅ Ensure at least 3 image slots for every variant
-const imageCount = Math.max(3, (v.images || []).length);
+  // ✅ Ensure at least 3 image slots
+  const imageCount = Math.max(3, (v.images || []).length);
 
-const makeSlot = (slotIdx) => {
-  const slot = v.images[slotIdx] || null;
+  const makeSlot = (slotIdx) => {
+    const slot = v.images[slotIdx] || null;
     const badge = slot ? (slot.isExisting ? "Existing" : "New") : "Empty";
     const content = slot
       ? `<img src="${slot.url}" class="w-full h-32 object-cover rounded-xl">`
@@ -701,7 +726,7 @@ const makeSlot = (slotIdx) => {
       </div>`;
   };
 
-  // ✅ Render based on variant’s own image count
+  // ✅ Full variant card
   const html = `
     <div id="variant-${index}" class="variant-card border-2 border-gray-200 rounded-xl p-6 bg-gradient-to-br from-white to-gray-50 mb-6">
       <div class="flex justify-between items-center mb-4">
@@ -712,44 +737,153 @@ const makeSlot = (slotIdx) => {
       </div>
 
       <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+        <!-- 🟣 Color -->
         <div class="field-group">
           <label class="form-label required-field">
             <i class="fas fa-palette text-purple-500 text-sm"></i> Color
           </label>
-          <select onchange="updateVariantColor(${index}, this.value)" class="w-full px-4 py-3 border border-gray-300 rounded-lg">
+          <select onchange="updateVariantColor(${index}, this.value)" 
+                  class="w-full px-4 py-3 border border-gray-300 rounded-lg">
             <option value="">Select color</option>
             ${colorOptions}
           </select>
         </div>
 
+        <!-- 💰 Price -->
         <div class="field-group">
-          <label class="form-label required-field"><i class="fas fa-tag text-green-500 text-sm"></i> Price (₹)</label>
-          <input type="number" min="1" step="0.01" value="${v.price || ""}" oninput="updateVariantPrice(${index}, this.value)" class="w-full px-4 py-3 border border-gray-300 rounded-lg">
+          <label class="form-label required-field">
+            <i class="fas fa-tag text-green-500 text-sm"></i> Price (₹)
+          </label>
+          <input type="number" 
+                 min="1" 
+                 step="0.01" 
+                 value="${v.price || ""}" 
+                 oninput="updateVariantPrice(${index}, this.value)" 
+                 class="w-full px-4 py-3 border border-gray-300 rounded-lg">
         </div>
 
+        <!-- 📦 Stock -->
         <div class="field-group">
-          <label class="form-label required-field"><i class="fas fa-box text-orange-500 text-sm"></i> Stock</label>
-          <input type="number" min="0" step="1" value="${v.stock || ""}" oninput="updateVariantStock(${index}, this.value)" class="w-full px-4 py-3 border border-gray-300 rounded-lg">
+          <label class="form-label required-field">
+            <i class="fas fa-box text-orange-500 text-sm"></i> Stock
+          </label>
+          <input type="number" 
+                 min="0" 
+                 step="1" 
+                 value="${v.stock || ""}" 
+                 oninput="updateVariantStock(${index}, this.value)" 
+                 class="w-full px-4 py-3 border border-gray-300 rounded-lg">
         </div>
       </div>
 
+      <!-- 🖼️ Images -->
       <div class="bg-blue-50 border-2 border-dashed border-blue-300 rounded-xl p-6">
         <label class="form-label required-field">
           <i class="fas fa-images text-blue-500 text-sm"></i> Product Images
         </label>
-       <div id="images-grid-${index}" class="grid grid-cols-1 sm:grid-cols-${imageCount} gap-4">
-  ${Array.from({ length: imageCount }).map((_, i) => makeSlot(i)).join("")}
-</div>
-
+        <div id="images-grid-${index}" class="grid grid-cols-1 sm:grid-cols-${imageCount} gap-4">
+          ${Array.from({ length: imageCount }).map((_, i) => makeSlot(i)).join("")}
+        </div>
         <p class="mt-2 text-xs text-gray-500">
-  You can replace existing images or clear them. 
-  Minimum 3 slots are always available.
-</p>
-
+          You can replace existing images or clear them. 
+          Minimum 3 slots are always available.
+        </p>
       </div>
-    </div>`;
+    </div>
+  `;
+
   container.insertAdjacentHTML("beforeend", html);
 }
+
+// function renderVariant(index) {
+//   const container = document.getElementById("variantsContainer");
+//   const v = variants[index];
+//   const colorOptions = colors
+//     .map(
+//       (c) =>
+//         `<option value="${c}" ${v.color === c ? "selected" : ""}>${c}</option>`
+//     )
+//     .join("");
+
+//   // ✅ Dynamic slots based on actual image count
+//  // ✅ Ensure at least 3 image slots for every variant
+// const imageCount = Math.max(3, (v.images || []).length);
+
+// const makeSlot = (slotIdx) => {
+//   const slot = v.images[slotIdx] || null;
+//     const badge = slot ? (slot.isExisting ? "Existing" : "New") : "Empty";
+//     const content = slot
+//       ? `<img src="${slot.url}" class="w-full h-32 object-cover rounded-xl">`
+//       : `<div class="w-full h-32 rounded-xl bg-gray-100 flex items-center justify-center text-gray-400">Empty</div>`;
+
+//     return `
+//       <div class="relative border-2 border-gray-200 rounded-xl p-2">
+//         ${content}
+//         <div class="absolute top-2 left-2 bg-blue-600 text-white text-xs px-2 py-1 rounded-full">
+//           Slot ${slotIdx + 1} • ${badge}
+//         </div>
+//         <div class="flex gap-2 mt-2">
+//           <label class="flex-1">
+//             <input type="file" accept="image/*" class="hidden" onchange="startReplaceUpload(event, ${index}, ${slotIdx})">
+//             <span class="w-full text-center block px-3 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 cursor-pointer">Replace</span>
+//           </label>
+//           ${slot ? `<button type="button" class="px-3 py-2 rounded-lg bg-red-600 text-white hover:bg-red-700" onclick="clearSlot(${index}, ${slotIdx})">Clear</button>` : ""}
+//         </div>
+//       </div>`;
+//   };
+
+//   // ✅ Render based on variant’s own image count
+//   const html = `
+//     <div id="variant-${index}" class="variant-card border-2 border-gray-200 rounded-xl p-6 bg-gradient-to-br from-white to-gray-50 mb-6">
+//       <div class="flex justify-between items-center mb-4">
+//         <h3 class="text-lg font-bold text-gray-800">Variant ${index + 1}</h3>
+//         <button type="button" onclick="removeVariant(${index})" class="bg-red-500 text-white px-3 py-2 rounded-md hover:bg-red-600 transition duration-200">
+//           <i class="fas fa-trash"></i> Remove
+//         </button>
+//       </div>
+
+//       <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+//         <div class="field-group">
+//           <label class="form-label required-field">
+//             <i class="fas fa-palette text-purple-500 text-sm"></i> Color
+//           </label>
+//           <select onchange="updateVariantColor(${index}, this.value)" class="w-full px-4 py-3 border border-gray-300 rounded-lg">
+//             <option value="">Select color</option>
+//             ${colorOptions}
+//           </select>
+//         </div>
+
+//         <div class="field-group">
+//           <label class="form-label required-field"><i class="fas fa-tag text-green-500 text-sm"></i> Price (₹)</label>
+//           <input type="number" min="1" step="0.01" value="${v.price || ""}" oninput="updateVariantPrice(${index}, this.value)" class="w-full px-4 py-3 border border-gray-300 rounded-lg">
+//         </div>
+
+//         <div class="field-group">
+//           <label class="form-label required-field"><i class="fas fa-box text-orange-500 text-sm"></i> Stock</label>
+//           <input type="number" min="0" step="1" value="${v.stock || ""}" oninput="updateVariantStock(${index}, this.value)" class="w-full px-4 py-3 border border-gray-300 rounded-lg">
+//         </div>
+//       </div>
+
+//       <div class="bg-blue-50 border-2 border-dashed border-blue-300 rounded-xl p-6">
+//         <label class="form-label required-field">
+//           <i class="fas fa-images text-blue-500 text-sm"></i> Product Images
+//         </label>
+//        <div id="images-grid-${index}" class="grid grid-cols-1 sm:grid-cols-${imageCount} gap-4">
+//   ${Array.from({ length: imageCount }).map((_, i) => makeSlot(i)).join("")}
+// </div>
+
+//         <p class="mt-2 text-xs text-gray-500">
+//   You can replace existing images or clear them. 
+//   Minimum 3 slots are always available.
+// </p>
+
+//       </div>
+//     </div>`;
+//   container.insertAdjacentHTML("beforeend", html);
+// }
+
+
+
 // function renderVariant(index) {
 //   const container = document.getElementById("variantsContainer");
 //   const v = variants[index];
@@ -1073,14 +1207,36 @@ function renderUpdatedGrid(variantIndex) {
 //     if (res.ok) Swal.fire({ icon: "success", title: "Updated!", timer: 1500 }).then(() => window.location.href = "/admin/products");
 //     else Swal.fire({ icon: "error", title: "Error", text: data.message || "Something went wrong" });
 //   });
-  function addVariant() {
-  if (variants.length >= 5) {
-    Swal.fire({
+
+
+function removeVariant(index) {
+  Swal.fire({
+    title: "Remove Variant?",
+    text: "This will delete all images for this variant.",
+    icon: "warning",
+    showCancelButton: true,
+    confirmButtonText: "Yes, Remove",
+  }).then((result) => {
+    if (result.isConfirmed) {
+      variants.splice(index, 1);
+      variantCount--;
+      document.getElementById("variantsContainer").innerHTML = "";
+      variants.forEach((_, i) => renderVariant(i));
+      document.getElementById("variantsCount").textContent = `${variants.length} Variants`;
+    }
+  });
+}
+
+function addVariant() {
+  const usedColors = new Set(variants.map(v => v.color.toLowerCase()));
+  const availableColors = colors.filter(c => !usedColors.has(c.toLowerCase()));
+
+  if (availableColors.length === 0) {
+    return Swal.fire({
       icon: "warning",
-      title: "Limit reached",
-      text: "You can add up to 5 variants only.",
+      title: "All colors used!",
+      text: "You’ve already added all available color variants.",
     });
-    return;
   }
 
   variants.push({
@@ -1090,10 +1246,33 @@ function renderUpdatedGrid(variantIndex) {
     images: [null, null, null],
   });
 
-  renderVariant(variantCount);
+  document.getElementById("variantsContainer").innerHTML = "";
+  variants.forEach((_, i) => renderVariant(i));
   variantCount++;
   document.getElementById("variantsCount").textContent = `${variants.length} Variants`;
 }
+
+//   function addVariant() {
+//   if (variants.length >= 5) {
+//     Swal.fire({
+//       icon: "warning",
+//       title: "Limit reached",
+//       text: "You can add up to 5 variants only.",
+//     });
+//     return;
+//   }
+
+//   variants.push({
+//     color: "",
+//     price: "",
+//     stock: "",
+//     images: [null, null, null],
+//   });
+
+//   renderVariant(variantCount);
+//   variantCount++;
+//   document.getElementById("variantsCount").textContent = `${variants.length} Variants`;
+// }
 
 window.addEventListener('DOMContentLoaded', initializeExistingVariants);
 

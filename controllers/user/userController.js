@@ -211,9 +211,22 @@ export const resendOtp = async (req, res) => {
 
 
 //  Login Page
+//export const getLogin = (req, res) => {
+  //res.render("user/login", { error: null });
+//};
+
+//  Login Page (Enhanced: handles ?blocked=true redirect)
 export const getLogin = (req, res) => {
-  res.render("user/login", { error: null });
+  const blocked = req.query.blocked === "true";
+  let error = null;
+
+  if (blocked) {
+    error = "Your account has been blocked by the admin.";
+  }
+
+  res.render("user/login", { error });
 };
+
 
 //  Handle Login (with block check)
 export const loginUser = async (req, res) => {
