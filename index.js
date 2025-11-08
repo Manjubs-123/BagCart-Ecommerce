@@ -240,6 +240,7 @@ import { noCache } from "./middlewares/cacheMiddleware.js";
 import categoryRoutes from "./routes/admin/categoryRoutes.js";
 import productRoutes from "./routes/admin/productRoutes.js";
 import usersRoutes from "./routes/admin/usersRoutes.js";
+import shopRoutes from "./routes/shopRoute.js";
 
 
 import {renderHomePage} from "./controllers/user/productController.js";
@@ -294,6 +295,7 @@ app.use((req, res, next) => {
 // app.use("/", userRoutes);
 app.use("/admin", adminRoutes);
 app.use("/user", userRoutes);
+app.use("/user", shopRoutes);
 app.use("/auth", authRoutes);
 app.use("/admin/category", categoryRoutes);
 app.use("/admin/products", productRoutes);

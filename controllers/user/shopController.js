@@ -195,44 +195,123 @@ export const filterProducts = async (req, res) => {
 //   }
 // };
 
+// export const getProductDetails = async (req, res) => {
+//   try {
+//     const productId = req.params.id;
+
+//     const product = await Product.findById(productId)
+//       .populate("category")
+//       .lean();
+
+//     if (!product || product.isBlocked) {
+//       return res.redirect("/shop");
+//     }
+
+//     //  collect all variant images into a single array
+//     const allProductImages = product.variants
+//       ? product.variants.flatMap(v =>
+//           v.images.map(img => img.url)
+//         )
+//       : [];
+
+//     //  fetch related products (same category)
+//     const relatedProducts = await Product.find({
+//       category: product.category._id,
+//       _id: { $ne: productId },
+//       isBlocked: false,
+//     })
+//       .limit(4)
+//       .lean();
+//     //  render page with all data
+//    res.render("user/productDetails", {
+//   title: product.name,
+//   product,
+//   allProductImages: product.images,
+//   relatedProducts, // add this line
+// });
+//   } catch (error) {
+//     console.error("Product detail page error:", error);
+//     res.redirect("/shop");
+//   }
+// };
+
+
 export const getProductDetails = async (req, res) => {
   try {
+    console.log("✅ Product route hit:", req.params.id);
     const productId = req.params.id;
 
+    // find product and populate its category
     const product = await Product.findById(productId)
-      .populate("category")
+      .populate("category", "name")
       .lean();
 
     if (!product || product.isBlocked) {
-      return res.redirect("/shop");
+      return res.redirect("/user/shop");
     }
 
-    //  collect all variant images into a single array
-    const allProductImages = product.variants
-      ? product.variants.flatMap(v =>
-          v.images.map(img => img.url)
-        )
-      : [];
+    // ✅ collect all variant images
+    const allProductImages = (product.variants || [])
+      .flatMap((v) => (v.images || []).map((img) => img.url))
+      .filter(Boolean);
 
-    //  fetch related products (same category)
+    // ✅ pick first variant as default
+    const firstVariant = (product.variants || [])[0] || {};
+
+    // ✅ build data model that matches your EJS
+    const viewProduct = {
+      _id: product._id,
+      productName: product.name,
+      salePrice: firstVariant.price || 0,
+      regularPrice: firstVariant.mrp || null,
+      description: product.description || "",
+      productFeatures: product.productFeatures || [],
+      colors: (product.variants || []).map((v) => v.color).filter(Boolean),
+      stock: firstVariant.stock || 0,
+      sku: product.sku || String(product._id),
+      rating: product.rating || 4.5,
+      reviews: product.reviewsCount || 0,
+      category: product.category,
+    };
+
+    // ✅ fetch related products (same category)
     const relatedProducts = await Product.find({
-      category: product.category._id,
-      _id: { $ne: productId },
+      category: product.category?._id,
+      _id: { $ne: product._id },
       isBlocked: false,
+      isDeleted: false,
     })
       .limit(4)
       .lean();
-    //  render page with all data
-   res.render("user/productDetails", {
-  title: product.name,
-  product,
-  allProductImages: product.images,
-  relatedProducts, // add this line
-});
+
+    // ✅ format related products for your EJS
+    const formattedRelated = relatedProducts.map((p) => {
+      const fv = (p.variants || [])[0] || {};
+      const firstImage =
+        (p.variants || [])
+          .flatMap((v) => (v.images || []).map((img) => img.url))
+          .filter(Boolean)[0] || "/images/placeholder.jpg";
+
+      return {
+        _id: p._id,
+        productName: p.name,
+        salePrice: fv.price || 0,
+        regularPrice: fv.mrp || null,
+        productImage: [firstImage],
+      };
+    });
+
+    // ✅ render your EJS
+    res.render("user/productDetails", {
+      title: `${viewProduct.productName} - BagHub`,
+      product: viewProduct,
+      allProductImages,
+      relatedProducts: formattedRelated,
+      user: req.session?.user || null,
+    });
   } catch (error) {
-    console.error("Product detail page error:", error);
-    res.redirect("/shop");
+    console.error("❌ Product detail page error:", error);
+    res.redirect("/user/shop");
   }
 };
-
 
