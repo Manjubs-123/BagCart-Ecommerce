@@ -239,8 +239,10 @@ import adminRoutes from "./routes/adminRoutes.js";
 import { noCache } from "./middlewares/cacheMiddleware.js";
 import categoryRoutes from "./routes/admin/categoryRoutes.js";
 import productRoutes from "./routes/admin/productRoutes.js";
-// import usersRoutes from "./routes/admin/usersRoutes.js";
+import usersRoutes from "./routes/admin/usersRoutes.js";
 
+
+import {renderHomePage} from "./controllers/user/productController.js";
 const app = express();
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -295,11 +297,13 @@ app.use("/user", userRoutes);
 app.use("/auth", authRoutes);
 app.use("/admin/category", categoryRoutes);
 app.use("/admin/products", productRoutes);
-//app.use("/admin/users", usersRoutes); 
+app.use("/admin/users", usersRoutes); 
 
-app.get("/", (req, res) => {
-  res.render("index", { currentPage: "home" });
-});
+// app.get("/", (req, res) => {
+//   res.render("index", { currentPage: "home" });
+// });
+app.get("/", renderHomePage);
+
 
 // 404
 app.use((req, res) => {

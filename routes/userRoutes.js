@@ -58,7 +58,7 @@ import {
 import { renderForgotPassword, postForgotPassword, renderForgotVerifyOtp, postForgotVerifyOtp, renderResetPassword, postResetPassword } from "../controllers/user/authForgotController.js"; 
 import { isUserLoggedIn, isUserLoggedOut} from "../middlewares/userAuth.js";
 import { noCache }  from "../middlewares/cacheMiddleware.js";
-//import { getHome } from "../controllers/user/homeController.js";
+import { renderLandingPage ,renderShopPage} from "../controllers/user/productController.js";
 
 
 const router = express.Router();
@@ -67,7 +67,7 @@ const router = express.Router();
 router.use(noCache);
 
 //
-//router.get("/", getHome); // Public Home Page
+router.get("/landing",renderLandingPage); // landing Page
 
 // --------------------- PUBLIC ROUTES ---------------------
 // Signup
@@ -98,6 +98,9 @@ router.post("/forgotOtp",postForgotVerifyOtp);
 router.get("/resetPassword",renderResetPassword);
 router.post("/resetPassword",postResetPassword);
 
+
+//shop
+router.get("/shop",renderShopPage);
 
 // --------------------- PROTECTED ROUTES ---------------------
 

@@ -77,8 +77,9 @@
 //   }
 // };
 import Product from "../../models/productModel.js";
+import Category from "../../models/category.js";
 
-const loadHomeProducts = async () => {
+export const loadHomeProducts = async () => {
   const allProducts = await Product.find({ isDeleted: false, isActive: true })
     .populate("category", "name")
     .sort({ createdAt: -1 })
@@ -122,7 +123,6 @@ export const renderHomePage = async (req, res) => {
   }
 };
 
-// Landing Page
 export const renderLandingPage = async (req, res) => {
   try {
     const { featuredProducts, favouriteProducts, handpickedProducts, trendingProducts } = await loadHomeProducts();
@@ -133,12 +133,74 @@ export const renderLandingPage = async (req, res) => {
       featuredProducts,
       favouriteProducts,
       handpickedProducts,
-      trendingProducts
+      trendingProducts,
+      user: req.session.user || null,  // ✅ add user data if logged in
     });
   } catch (error) {
     console.error("Error rendering landing page:", error);
     res.status(500).send("Failed to load landing page");
   }
 };
+
+// export const renderShopPage = async (req, res) => {
+//   try {
+//     const products = await Product.find({ isDeleted: false, isActive: true })
+//       .populate("category", "name")
+//       .sort({ createdAt: -1 })
+//       .lean();
+
+//     res.render("user/shop", {
+//       title: "Shop | BagHub",
+//       products,
+//       user: req.session.user || null,
+//     });
+//   } catch (error) {
+//     console.error("Error rendering shop page:", error);
+//     res.status(500).send("Failed to load shop page");
+//   }
+// };
+
+
+export const renderShopPage = async (req, res) => {
+  try {
+    const selectedCategories = Array.isArray(req.query.category)
+      ? req.query.category
+      : req.query.category
+      ? [req.query.category]
+      : [];
+
+    // ✅ Add this line — your available color filters
+    const colors = ["Black", "Blue", "Brown", "Grey", "Red", "Green", "Navy", "Orange"];
+
+    const categories = await Category.find({ isDeleted: false })
+      .sort({ name: 1 })
+      .lean();
+
+    const filter = { isDeleted: false, isActive: true };
+    if (selectedCategories.length > 0) {
+      filter.category = { $in: selectedCategories };
+    }
+
+    const products = await Product.find(filter)
+      .populate("category", "name")
+      .sort({ createdAt: -1 })
+      .lean();
+
+    // ✅ Pass `colors` to EJS
+    res.render("user/shop", {
+      title: "Shop | BagHub",
+      products,
+      categories,
+      selectedCategories,
+      colors, // ✅ FIXED
+      user: req.session.user || null,
+    });
+  } catch (error) {
+    console.error("Error rendering shop page:", error);
+    res.status(500).send("Failed to load shop page");
+  }
+};
+
+
 
 
