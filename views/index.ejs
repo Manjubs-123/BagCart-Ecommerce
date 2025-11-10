@@ -247,7 +247,7 @@
                   <p class="text-gray-900 font-bold text-xl">₹<%= item.variants[0]?.price || 0 %></p>
                 </div>
                 <div class="mt-auto flex space-x-2">
-                  <a href="/product/<%= item._id %>"
+                 <a href="<%= user ? '/user/product/' + item._id : '/user/login' %>"
                      class="btn-primary text-white px-4 py-2 rounded-lg text-sm font-medium flex-1 text-center">
                     View Details
                   </a>
@@ -290,7 +290,7 @@
                   alt="<%= item.name %>"
                 />
                 <div class="absolute inset-0 bg-black bg-opacity-40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
-                  <a href="/product/<%= item._id %>"
+                  <a href="<%= user ? '/product/' + item._id : '/user/login' %>"
                      class="bg-white text-gray-900 px-6 py-3 rounded-lg font-semibold shadow hover:bg-gray-100 transition">
                     Quick View
                   </a>

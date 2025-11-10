@@ -59,7 +59,7 @@ import { renderForgotPassword, postForgotPassword, renderForgotVerifyOtp, postFo
 import { isUserLoggedIn, isUserLoggedOut} from "../middlewares/userAuth.js";
 import { noCache }  from "../middlewares/cacheMiddleware.js";
 import { renderLandingPage ,renderShopPage} from "../controllers/user/productController.js";
-
+import { getProductDetails } from "../controllers/user/shopController.js";  
 
 const router = express.Router();
 
@@ -105,6 +105,8 @@ router.get("/shop",isUserLoggedIn,renderShopPage);
 // --------------------- PROTECTED ROUTES ---------------------
 
 // Only logged-in & unblocked users can access these
+//product details page
+router.get("/product/:id",isUserLoggedIn,getProductDetails);
 
 // Home
 router.get("/home",isUserLoggedIn, showHomePage);
