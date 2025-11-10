@@ -127,12 +127,12 @@
             from { opacity: 0; transform: translateY(10px); }
             to { opacity: 1; transform: translateY(0); }
         }
-/* 
+
         /* Amazon Style Zoom */
         .zoom-container {
-          position: relative;
-  overflow: hidden;
-  cursor: crosshair;
+            position: relative;
+            overflow: hidden;
+            cursor: crosshair;
         }
 
         .zoom-image {
@@ -142,35 +142,35 @@
         }
 
         .zoom-lens {
-             position: absolute;
-  border: 2px solid rgba(0, 0, 0, 0.3);
-  background-color: rgba(255, 255, 255, 0.2);
-  display: none;
-  width: 150px;
-  height: 150px;
-  pointer-events: none;
-  border-radius: 50%;
+            position: absolute;
+            border: 2px solid #1a56db;
+            background: rgba(26, 86, 219, 0.1);
+            cursor: none;
+            display: none;
+            pointer-events: none;
         }
 
         .zoom-result {
             position: absolute;
-  top: 0;
-  left: 105%;
-  width: 500px;
-  height: 500px;
-  overflow: hidden;
-  border: 1px solid #ddd;
-  display: none;
-  background-color: #fff;
-  z-index: 100;
+            top: 0;
+            left: 105%;
+            width: 500px;
+            height: 500px;
+            border: 1px solid #e5e7eb;
+            background: white;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            display: none;
+            z-index: 1000;
+            border-radius: 8px;
         }
 
         .zoom-result-img {
             position: absolute;
-  width: auto;
-  height: auto;
-  transform-origin: top left;
-        } */
+            max-width: none;
+            max-height: none;
+            transform-origin: 0 0;
+        }
 
         .discount-badge {
             background: linear-gradient(135deg, #ef4444, #dc2626);
@@ -309,28 +309,7 @@
                     </div>
                 <% } %>
 
-                <!-- Variant Details -->
-                <div class="info-card fade-in">
-                    <h3 class="text-lg font-semibold text-gray-900 mb-4">Product Details</h3>
-                    <div class="space-y-3">
-                        <div class="flex justify-between">
-                            <span class="text-gray-600">Material:</span>
-                            <span class="font-semibold text-gray-900"><%= product.material || 'Premium Material' %></span>
-                        </div>
-                        <div class="flex justify-between">
-                            <span class="text-gray-600">Size:</span>
-                            <span class="font-semibold text-gray-900">15.6 inches</span>
-                        </div>
-                        <div class="flex justify-between">
-                            <span class="text-gray-600">Weight:</span>
-                            <span class="font-semibold text-gray-900">1.2 kg</span>
-                        </div>
-                        <div class="flex justify-between">
-                            <span class="text-gray-600">Warranty:</span>
-                            <span class="font-semibold text-gray-900">2 Years</span>
-                        </div>
-                    </div>
-                </div>
+            
 
                 <!-- Quantity Selection -->
                 <div class="info-card fade-in">
@@ -453,24 +432,24 @@
     <%-include('../partials/footer')%>
 
     <script>
-        function selectColor(color) {
-  document.querySelectorAll('.color-option').forEach(option => {
-    option.classList.remove('selected');
-  });
-  document.querySelector(`[data-color="${color}"]`).classList.add('selected');
+//         function selectColor(color) {
+//   document.querySelectorAll('.color-option').forEach(option => {
+//     option.classList.remove('selected');
+//   });
+//   document.querySelector(`[data-color="${color}"]`).classList.add('selected');
 
-  // Fetch variant images dynamically (if stored in backend)
-  fetch(`/user/api/variant-images/${'<%= product._id %>'}?color=${color}`)
-    .then(res => res.json())
-    .then(data => {
-      if (data.success && data.images.length) {
-        const mainImage = document.getElementById('mainImage');
-        mainImage.src = data.images[0];
-        document.getElementById('zoomResultImg').src = data.images[0];
-      }
-    })
-    .catch(console.error);
-}
+//   // Fetch variant images dynamically (if stored in backend)
+//   fetch(`/user/api/variant-images/${'<%= product._id %>'}?color=${color}`)
+//     .then(res => res.json())
+//     .then(data => {
+//       if (data.success && data.images.length) {
+//         const mainImage = document.getElementById('mainImage');
+//         mainImage.src = data.images[0];
+//         document.getElementById('zoomResultImg').src = data.images[0];
+//       }
+//     })
+//     .catch(console.error);
+// }
 
 
         let isWishlisted = false;
@@ -483,143 +462,75 @@
             initZoom();
         });
 
-        // // Amazon Style Zoom Functions
-        // function initZoom() {
-        //     const mainImage = document.getElementById('mainImage');
-        //     const zoomLens = document.getElementById('zoomLens');
-        //     const zoomResult = document.getElementById('zoomResult');
-        //     const zoomResultImg = document.getElementById('zoomResultImg');
+        // Amazon Style Zoom Functions
+        function initZoom() {
+            const mainImage = document.getElementById('mainImage');
+            const zoomLens = document.getElementById('zoomLens');
+            const zoomResult = document.getElementById('zoomResult');
+            const zoomResultImg = document.getElementById('zoomResultImg');
             
-        //     // Set zoom result image source
-        //     zoomResultImg.src = mainImage.getAttribute('data-zoom-src') || mainImage.src;
+            // Set zoom result image source
+            zoomResultImg.src = mainImage.getAttribute('data-zoom-src') || mainImage.src;
             
-        //     // Calculate lens size (30% of container)
-        //     const container = mainImage.parentElement;
-        //     const lensSize = Math.min(container.offsetWidth, container.offsetHeight) * 0.3;
-        //     zoomLens.style.width = lensSize + 'px';
-        //     zoomLens.style.height = lensSize + 'px';
-        // }
+            // Calculate lens size (30% of container)
+            const container = mainImage.parentElement;
+            const lensSize = Math.min(container.offsetWidth, container.offsetHeight) * 0.3;
+            zoomLens.style.width = lensSize + 'px';
+            zoomLens.style.height = lensSize + 'px';
+        }
 
-        // function showZoom() {
-        //     const zoomLens = document.getElementById('zoomLens');
-        //     const zoomResult = document.getElementById('zoomResult');
+        function showZoom() {
+            const zoomLens = document.getElementById('zoomLens');
+            const zoomResult = document.getElementById('zoomResult');
             
-        //     zoomLens.style.display = 'block';
-        //     zoomResult.style.display = 'block';
-        // }
+            zoomLens.style.display = 'block';
+            zoomResult.style.display = 'block';
+        }
 
-        // function hideZoom() {
-        //     const zoomLens = document.getElementById('zoomLens');
-        //     const zoomResult = document.getElementById('zoomResult');
+        function hideZoom() {
+            const zoomLens = document.getElementById('zoomLens');
+            const zoomResult = document.getElementById('zoomResult');
             
-        //     zoomLens.style.display = 'none';
-        //     zoomResult.style.display = 'none';
-        // }
+            zoomLens.style.display = 'none';
+            zoomResult.style.display = 'none';
+        }
 
-        // function moveLens(e) {
-        //     e.preventDefault();
+        function moveLens(e) {
+            e.preventDefault();
             
-        //     const zoomLens = document.getElementById('zoomLens');
-        //     const zoomResult = document.getElementById('zoomResult');
-        //     const zoomResultImg = document.getElementById('zoomResultImg');
-        //     const mainImage = document.getElementById('mainImage');
+            const zoomLens = document.getElementById('zoomLens');
+            const zoomResult = document.getElementById('zoomResult');
+            const zoomResultImg = document.getElementById('zoomResultImg');
+            const mainImage = document.getElementById('mainImage');
             
-        //     const container = mainImage.parentElement;
-        //     const containerRect = container.getBoundingClientRect();
+            const container = mainImage.parentElement;
+            const containerRect = container.getBoundingClientRect();
             
-        //     // Calculate cursor position relative to container
-        //     let x = e.clientX - containerRect.left;
-        //     let y = e.clientY - containerRect.top;
+            // Calculate cursor position relative to container
+            let x = e.clientX - containerRect.left;
+            let y = e.clientY - containerRect.top;
             
-        //     // Prevent lens from going outside container
-        //     const lensSize = parseInt(zoomLens.style.width);
-        //     x = Math.max(lensSize / 2, Math.min(x, containerRect.width - lensSize / 2));
-        //     y = Math.max(lensSize / 2, Math.min(y, containerRect.height - lensSize / 2));
+            // Prevent lens from going outside container
+            const lensSize = parseInt(zoomLens.style.width);
+            x = Math.max(lensSize / 2, Math.min(x, containerRect.width - lensSize / 2));
+            y = Math.max(lensSize / 2, Math.min(y, containerRect.height - lensSize / 2));
             
-        //     // Position lens
-        //     zoomLens.style.left = (x - lensSize / 2) + 'px';
-        //     zoomLens.style.top = (y - lensSize / 2) + 'px';
+            // Position lens
+            zoomLens.style.left = (x - lensSize / 2) + 'px';
+            zoomLens.style.top = (y - lensSize / 2) + 'px';
             
-        //     // Calculate zoom (2.5x zoom for Amazon style)
-        //     const zoomLevel = 2.5;
-        //     const resultWidth = zoomResult.offsetWidth;
-        //     const resultHeight = zoomResult.offsetHeight;
+            // Calculate zoom (2.5x zoom for Amazon style)
+            const zoomLevel = 2.5;
+            const resultWidth = zoomResult.offsetWidth;
+            const resultHeight = zoomResult.offsetHeight;
             
-        //     const bgX = (x / containerRect.width) * (mainImage.naturalWidth * zoomLevel - resultWidth);
-        //     const bgY = (y / containerRect.height) * (mainImage.naturalHeight * zoomLevel - resultHeight);
+            const bgX = (x / containerRect.width) * (mainImage.naturalWidth * zoomLevel - resultWidth);
+            const bgY = (y / containerRect.height) * (mainImage.naturalHeight * zoomLevel - resultHeight);
             
-        //     // Position zoom result image
-        //     zoomResultImg.style.left = -bgX + 'px';
-        //     zoomResultImg.style.top = -bgY + 'px';
-        // }
-
-
-// document.addEventListener("DOMContentLoaded", function () {
-//   const mainImage = document.getElementById("mainImage");
-//   const zoomLens = document.getElementById("zoomLens");
-//   const zoomResult = document.getElementById("zoomResult");
-//   const zoomResultImg = document.getElementById("zoomResultImg");
-
-//   // Setup zoom image
-//   zoomResultImg.src = mainImage.src;
-
-//   mainImage.addEventListener("mouseenter", function () {
-//     zoomLens.style.display = "block";
-//     zoomResult.style.display = "block";
-//   });
-
-//   mainImage.addEventListener("mouseleave", function () {
-//     zoomLens.style.display = "none";
-//     zoomResult.style.display = "none";
-//   });
-
-//   mainImage.addEventListener("mousemove", moveLens);
-//   zoomLens.addEventListener("mousemove", moveLens);
-
-//   function moveLens(e) {
-//     e.preventDefault();
-
-//     const rect = mainImage.getBoundingClientRect();
-//     const lensSize = zoomLens.offsetWidth / 2;
-
-//     let x = e.clientX - rect.left;
-//     let y = e.clientY - rect.top;
-
-//     x = Math.max(lensSize, Math.min(x, rect.width - lensSize));
-//     y = Math.max(lensSize, Math.min(y, rect.height - lensSize));
-
-//     zoomLens.style.left = `${x - lensSize}px`;
-//     zoomLens.style.top = `${y - lensSize}px`;
-
-//     // Calculate zoom factor
-//     const cx = zoomResult.offsetWidth / zoomLens.offsetWidth;
-//     const cy = zoomResult.offsetHeight / zoomLens.offsetHeight;
-
-//     zoomResultImg.style.width = `${mainImage.width * cx}px`;
-//     zoomResultImg.style.height = `${mainImage.height * cy}px`;
-
-//     zoomResultImg.style.left = `${-((x * cx) - zoomResult.offsetWidth / 2)}px`;
-//     zoomResultImg.style.top = `${-((y * cy) - zoomResult.offsetHeight / 2)}px`;
-//   }
-// });
-
-
-  // Image zoom functionality
-      const imageZoom = document.getElementById('imageZoom');
-
-      imageZoom.addEventListener('mousemove', (event) => {
-        imageZoom.style.setProperty('--display', 'block');
-        const pointer = {
-          x: (event.offsetX * 100) / imageZoom.offsetWidth,
-          y: (event.offsetY * 100) / imageZoom.offsetHeight,
-        };
-        imageZoom.style.setProperty('--zoom-x', pointer.x + '%');
-        imageZoom.style.setProperty('--zoom-y', pointer.y + '%');
-      });
-
-      imageZoom.addEventListener('mouseout', () => {
-        imageZoom.style.setProperty('--display', 'none');
-      });
+            // Position zoom result image
+            zoomResultImg.style.left = -bgX + 'px';
+            zoomResultImg.style.top = -bgY + 'px';
+        }
 
         // Change Main Image
         function changeMainImage(imgUrl, button) {
@@ -642,69 +553,100 @@
         }
 
         // Select Color
-        // function selectColor(color) {
-        //     // Update active color UI
-        //     document.querySelectorAll('.color-option').forEach(option => {
-        //         option.classList.remove('selected');
-        //     });
-        //     document.querySelector(`[data-color="${color}"]`).classList.add('selected');
-            
-        //     // In a real application, you would update the product images/variants based on color selection
-        //     showNotification(`Color changed to ${color}`, 'info');
-        // }
 
-
-        function selectColor(color) {
-  // Update selected UI
+     
+async function selectColor(color) {
+  // Update UI for color selection
   document.querySelectorAll('.color-option').forEach(option => {
     option.classList.remove('selected');
   });
   document.querySelector(`[data-color="${color}"]`).classList.add('selected');
 
-  const normalizedColor = color.toLowerCase();
-  const images = variantImages[normalizedColor] || [];
+  try {
+    const res = await fetch(`/user/api/variant/${'<%= product._id %>'}?color=${color}`);
+    const data = await res.json();
 
-  const mainImage = document.getElementById('mainImage');
-  const zoomResultImg = document.getElementById('zoomResultImg');
-  const thumbnailContainer = document.getElementById('thumbnailContainer');
+    if (data.success && data.variant) {
+      const { images, price, mrp, stock } = data.variant;
 
-  if (images.length > 0) {
-    // Set main image
-    mainImage.src = images[0];
-    mainImage.setAttribute('data-zoom-src', images[0]);
-    zoomResultImg.src = images[0];
+      // 🖼️ Update main image
+      const mainImage = document.getElementById('mainImage');
+      mainImage.src = images[0];
+      document.getElementById('zoomResultImg').src = images[0];
 
-    // Update thumbnails
-    thumbnailContainer.innerHTML = images
-      .map((img, index) => `
+      // 🖼️ Update thumbnails
+      const thumbnailContainer = document.getElementById('thumbnailContainer');
+      thumbnailContainer.innerHTML = images.map((img, index) => `
         <button onclick="changeMainImage('${img}', this)"
                 class="bg-white rounded-lg overflow-hidden border-2 border-gray-200 hover:border-blue-500 transition-all h-24 ${index === 0 ? 'border-blue-500' : ''}">
-          <img src="${img}" alt="Thumbnail ${index + 1}" class="w-full h-full object-contain p-2">
+          <img src="${img}" alt="Product thumbnail ${index + 1}" class="w-full h-full object-contain p-2">
         </button>
       `).join('');
-  } else {
-    // No images for this variant
-    thumbnailContainer.innerHTML = '<p class="text-gray-500 text-sm">No images for this color.</p>';
-  }
 
-  showNotification(`Color changed to ${color}`, 'info');
+      // 💰 Update price
+    //   const priceEl = document.querySelector('.text-3xl.font-bold.text-gray-900');
+    //   const mrpEl = document.querySelector('.text-xl.text-gray-500.line-through');
+    //   const discountEl = document.querySelector('.text-lg.font-semibold.text-green-600');
+
+    //   if (priceEl) priceEl.textContent = `₹${price}`;
+    //   if (mrpEl && mrp) {
+    //     mrpEl.textContent = `₹${mrp}`;
+    //     const discount = Math.round(((mrp - price) / mrp) * 100);
+    //     if (discountEl) discountEl.textContent = `Save ${discount}%`;
+    //   }
+    // 💰 Update all matching price elements
+document.querySelectorAll('.text-3xl.font-bold.text-gray-900').forEach(el => {
+  el.textContent = `₹${price}`;
+});
+
+document.querySelectorAll('.text-xl.text-gray-500.line-through').forEach(el => {
+  el.textContent = `₹${mrp}`;
+});
+
+const discount = Math.round(((mrp - price) / mrp) * 100);
+document.querySelectorAll('.text-lg.font-semibold.text-green-600').forEach(el => {
+  el.textContent = `Save ${discount}%`;
+});
+
+
+      // 📦 Update stock
+      const stockText = document.querySelector('.text-sm.text-gray-600');
+      if (stockText) stockText.innerHTML = `<i class="fas fa-check-circle text-green-500 mr-1"></i>${stock} available in stock`;
+
+      const qtyInput = document.getElementById('quantity');
+      qtyInput.max = stock;
+    }
+  } catch (error) {
+    console.error('Error fetching variant data:', error);
+  }
 }
 
 
+        // function selectColor(color) {
+            // Update active color UI
+            // document.querySelectorAll('.color-option').forEach(option => {
+            //     option.classList.remove('selected');
+            // });
+            // document.querySelector(`[data-color="${color}"]`).classList.add('selected');
+            
+            // In a real application, you would update the product images/variants based on color selection
+            // showNotification(`Color changed to ${color}`, 'info');
+        // }
+
         // Helper function to get color values
-        function getColorValue(color) {
-            const colorMap = {
-                'black': '#000000',
-                'blue': '#1e40af',
-                'red': '#dc2626',
-                'green': '#059669',
-                'gray': '#6b7280',
-                'navy': '#1e3a8a',
-                'brown': '#92400e',
-                'white': '#ffffff'
-            };
-            return colorMap[color.toLowerCase()] || '#6b7280';
-        }
+        // function getColorValue(color) {
+        //     const colorMap = {
+        //         'black': '#000000',
+        //         'blue': '#1e40af',
+        //         'red': '#dc2626',
+        //         'green': '#059669',
+        //         'gray': '#6b7280',
+        //         'navy': '#1e3a8a',
+        //         'brown': '#92400e',
+        //         'white': '#ffffff'
+        //     };
+        //     return colorMap[color.toLowerCase()] || '#6b7280';
+        // }
 
         // Quantity Functions
         function increaseQty() {

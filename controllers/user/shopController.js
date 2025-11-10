@@ -442,4 +442,38 @@ const allProductImages = variantImages[Object.keys(variantImages)[0]] || [];
   }
 };
 
+// ✅ Get variant details (images, price, stock) by color
+export const getVariantByColor = async (req, res) => {
+  try {
+    const { productId } = req.params;
+    const { color } = req.query;
+
+    const product = await Product.findById(productId).lean();
+    if (!product) return res.status(404).json({ success: false, message: "Product not found" });
+
+    const variant = (product.variants || []).find(
+      v => v.color.toLowerCase() === color.toLowerCase()
+    );
+
+    if (!variant) {
+      return res.status(404).json({ success: false, message: "Variant not found" });
+    }
+
+    res.json({
+      success: true,
+      variant: {
+        color: variant.color,
+        price: variant.price,
+        mrp: variant.mrp,
+        stock: variant.stock,
+        images: (variant.images || []).map(img => img.url),
+      },
+    });
+  } catch (error) {
+    console.error("❌ Error fetching variant:", error);
+    res.status(500).json({ success: false, message: "Server error" });
+  }
+};
+
+
 
