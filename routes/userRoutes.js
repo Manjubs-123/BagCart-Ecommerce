@@ -100,7 +100,7 @@ router.post("/resetPassword",postResetPassword);
 
 
 //shop
-router.get("/shop",renderShopPage);
+router.get("/shop",isUserLoggedIn,renderShopPage);
 
 // --------------------- PROTECTED ROUTES ---------------------
 

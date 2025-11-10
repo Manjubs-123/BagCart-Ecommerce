@@ -315,41 +315,296 @@ export const filterProducts = async (req, res) => {
 //   }
 // };
 
+// export const getProductDetails = async (req, res) => {
+//   try {
+//     console.log("✅ Product route hit:", req.params.id);
+//     const productId = req.params.id;
+
+//     // Fetch product with category
+//     const product = await Product.findById(productId)
+//       .populate("category", "_id name")
+//       .populate("brand", "name")
+//       .lean();
+
+//     if (!product || product.isBlocked) {
+//       return res.redirect("/user/shop");
+//     }
+
+//     // Collect variant images
+//     // const allProductImages = (product.variants || [])
+//     //   .flatMap((v) => (v.images || []).map((img) => img.url))
+//     //   .filter(Boolean);
+
+
+//     // Group images by variant color
+// const variantImages = {};
+// (product.variants || []).forEach(v => {
+//   if (v.color && v.images && v.images.length) {
+//     variantImages[v.color.toLowerCase()] = v.images.map(img => img.url);
+//   }
+// });
+
+// // Flatten all for default
+// const allProductImages = variantImages[Object.keys(variantImages)[0]] || [];
+
+//     // Default variant
+//     const firstVariant = (product.variants || [])[0] || {};
+
+//     // Clean data object for EJS
+//     const viewProduct = {
+//       _id: product._id,
+//       productName: product.name,
+//       salePrice: firstVariant.price || 0,
+//       regularPrice: firstVariant.mrp || null,
+//       description: product.description || "",
+//       productFeatures: product.productFeatures || [],
+//       colors: (product.variants || []).map((v) => v.color).filter(Boolean),
+//       stock: firstVariant.stock || 0,
+//       sku: product.sku || String(product._id),
+//       rating: product.rating || 4.5,
+//       reviews: product.reviewsCount || 0,
+//       category: product.category,
+//        brand: product.brand || "BagHub", 
+//     };
+
+//     // Related products
+//     const relatedProducts = await Product.find({
+//       category: product.category?._id,
+//       _id: { $ne: product._id },
+//       isBlocked: false,
+//       isDeleted: false,
+//     })
+//       .limit(4)
+//       .populate("category", "name") 
+//       .lean();
+
+//     const formattedRelated = relatedProducts.map((p) => {
+//       const fv = (p.variants || [])[0] || {};//get 1st varinet
+//       const firstImage =
+//         (p.variants || [])
+//           .flatMap((v) => (v.images || []).map((img) => img.url))
+//           .filter(Boolean)[0] || "/images/placeholder.jpg";
+
+//       return {
+//         _id: p._id,
+//         productName: p.name,
+//         salePrice: fv.price || 0,
+//         regularPrice: fv.mrp || null,
+//         productImage: [firstImage],
+//       };
+//     });
+
+//     // ✅ Color map for server-side rendering
+//     // const colorMap = {
+//     //   black: "#000000",
+//     //   blue: "#1e40af",
+//     //   red: "#dc2626",
+//     //   green: "#059669",
+//     //   gray: "#6b7280",
+//     //   navy: "#1e3a8a",
+//     //   brown: "#92400e",
+//     //   white: "#ffffff",
+//     // };
+
+//     const colorMap = {
+//   black: "#000000",
+//   blue: "#1e40af",
+//   red: "#dc2626",
+//   green: "#059669",
+//   gray: "#6b7280",
+//   navy: "#1e3a8a",
+//   brown: "#92400e",
+//   white: "#ffffff",
+//   yellow: "#facc15",
+//   pink: "#ec4899",
+//   purple: "#8b5cf6",
+//   orange: "#f97316",
+//   beige: "#f5f5dc",
+//   silver: "#c0c0c0",
+//   gold: "#ffd700",
+//   maroon: "#800000",
+//   cyan: "#06b6d4",
+//   teal: "#14b8a6",
+//   olive: "#808000",
+//   violet: "#7c3aed",
+// };
+
+
+//     res.render("user/productDetails", {
+//       title: `${viewProduct.productName} - BagHub`,
+//       product: viewProduct,
+//       allProductImages,
+//       relatedProducts: formattedRelated,
+//       user: req.session?.user || {wishlistCount:0},
+//       variantImages, // ✅ pass variant images to EJS
+//        colorMap, // ✅ pass color map to EJS
+//     });
+//   } catch (error) {
+//     console.error("❌ Product detail page error:", error);
+//     res.redirect("/user/shop");
+//   }
+// };
+
+
+// export const getProductDetails = async (req, res) => {
+//   try {
+//     const productId = req.params.id;
+
+//     // ✅ Populate category and brand (for ObjectId ref)
+//     const product = await Product.findById(productId)
+//       .populate("category", "_id name")
+//       .populate("brand", "name")
+//       .lean();
+
+//     if (!product || product.isBlocked) {
+//       return res.redirect("/user/shop");
+//     }
+
+//     // ✅ Group variant images by color
+//     const variantImages = {};
+//     (product.variants || []).forEach(v => {
+//       if (v.color && v.images && v.images.length) {
+//         variantImages[v.color.toLowerCase()] = v.images.map(img => img.url);
+//       }
+//     });
+
+//     const allProductImages = variantImages[Object.keys(variantImages)[0]] || [];
+//     const firstVariant = (product.variants || [])[0] || {};
+
+//     const viewProduct = {
+//       _id: product._id,
+//       productName: product.name,
+//       salePrice: firstVariant.price || 0,
+//       regularPrice: firstVariant.mrp || null,
+//       description: product.description || "",
+//       productFeatures: product.productFeatures || [],
+//       colors: (product.variants || []).map((v) => v.color).filter(Boolean),
+//       stock: firstVariant.stock || 0,
+//       sku: product.sku || String(product._id),
+//       rating: product.rating || 4.5,
+//       reviews: product.reviewsCount || 0,
+//       category: product.category,
+//       brand: product.brand || "BagHub",
+//     };
+
+//     // ✅ Related Products (same category)
+//     let relatedProducts = [];
+
+//     if (product.category && product.category._id) {
+//       relatedProducts = await Product.find({
+//         category: product.category._id,
+//         _id: { $ne: product._id },
+//         isBlocked: false,
+//         isDeleted: false,
+//       })
+//       .populate("category", "name")
+//       .populate("brand", "name")
+//       .limit(8)
+//       .lean();
+//     }
+
+//     // 🧩 Fallback if none found
+//     if (!relatedProducts.length) {
+//       relatedProducts = await Product.find({
+//         isBlocked: false,
+//         isDeleted: false,
+//         _id: { $ne: product._id },
+//       })
+//       .populate("category", "name")
+//       .populate("brand", "name")
+//       .limit(8)
+//       .lean();
+//     }
+
+//     const formattedRelated = relatedProducts.map((p) => {
+//       const fv = (p.variants || [])[0] || {};
+//       const firstImage =
+//         (p.variants || [])
+//           .flatMap((v) => (v.images || []).map((img) => img.url))
+//           .filter(Boolean)[0] || "/images/placeholder.jpg";
+
+//       return {
+//         _id: p._id,
+//         productName: p.name,
+//         salePrice: fv.price || 0,
+//         regularPrice: fv.mrp || null,
+//         productImage: [firstImage],
+//         brand: p.brand?.name || "BagHub",
+//         rating: p.rating || 4.5,
+//       };
+//     });
+
+//     console.log("Category:", product.category);
+//     console.log("Related Products Found:", relatedProducts.length);
+
+//     const colorMap = {
+//       black: "#000000",
+//       blue: "#1e40af",
+//       red: "#dc2626",
+//       green: "#059669",
+//       gray: "#6b7280",
+//       navy: "#1e3a8a",
+//       brown: "#92400e",
+//       white: "#ffffff",
+//       yellow: "#facc15",
+//       pink: "#ec4899",
+//       purple: "#8b5cf6",
+//       orange: "#f97316",
+//       beige: "#f5f5dc",
+//       silver: "#c0c0c0",
+//       gold: "#ffd700",
+//       maroon: "#800000",
+//       cyan: "#06b6d4",
+//       teal: "#14b8a6",
+//       olive: "#808000",
+//       violet: "#7c3aed",
+//     };
+
+//    res.render("user/productDetails", {
+//   title: `${viewProduct.productName} - BagHub`,
+//   product: viewProduct,
+//   allProductImages,
+//   relatedProducts: formattedRelated,
+//   user: req.session?.user || { wishlistCount: 0 },
+//   variantImages,
+//   colorMap,
+//   categoryName: product.category?.name || "Other", // ✅ add this line
+// });
+
+
+//   } catch (error) {
+//     console.error("❌ Product detail page error:", error);
+//     res.redirect("/user/shop");
+//   }
+// };
+
+// ✅ Get Product Details
 export const getProductDetails = async (req, res) => {
   try {
-    console.log("✅ Product route hit:", req.params.id);
     const productId = req.params.id;
 
-    // Fetch product with category
+    // ✅ Populate category and brand (ObjectId ref)
     const product = await Product.findById(productId)
-      .populate("category", "name")
+      .populate("category", "_id name")
+      .populate("brand", "name")
       .lean();
 
     if (!product || product.isBlocked) {
-      return res.redirect("/user/shop");
+      return res.redirect("/shop");
     }
 
-    // Collect variant images
-    // const allProductImages = (product.variants || [])
-    //   .flatMap((v) => (v.images || []).map((img) => img.url))
-    //   .filter(Boolean);
+    // ✅ Prepare images grouped by variant color
+    const variantImages = {};
+    (product.variants || []).forEach(v => {
+      if (v.color && v.images?.length) {
+        variantImages[v.color.toLowerCase()] = v.images.map(img => img.url);
+      }
+    });
 
-
-    // Group images by variant color
-const variantImages = {};
-(product.variants || []).forEach(v => {
-  if (v.color && v.images && v.images.length) {
-    variantImages[v.color.toLowerCase()] = v.images.map(img => img.url);
-  }
-});
-
-// Flatten all for default
-const allProductImages = variantImages[Object.keys(variantImages)[0]] || [];
-
-    // Default variant
     const firstVariant = (product.variants || [])[0] || {};
+    const allProductImages = variantImages[Object.keys(variantImages)[0]] || [];
 
-    // Clean data object for EJS
+    // ✅ Prepare product info
     const viewProduct = {
       _id: product._id,
       productName: product.name,
@@ -357,29 +612,46 @@ const allProductImages = variantImages[Object.keys(variantImages)[0]] || [];
       regularPrice: firstVariant.mrp || null,
       description: product.description || "",
       productFeatures: product.productFeatures || [],
-      colors: (product.variants || []).map((v) => v.color).filter(Boolean),
+      colors: (product.variants || []).map(v => v.color).filter(Boolean),
       stock: firstVariant.stock || 0,
       sku: product.sku || String(product._id),
       rating: product.rating || 4.5,
       reviews: product.reviewsCount || 0,
       category: product.category,
+      brand: product.brand?.name || "BagHub",
     };
 
-    // Related products
-    const relatedProducts = await Product.find({
-      category: product.category?._id,
+    // ✅ Find similar products (same category)
+    let relatedProducts = await Product.find({
+      category: product.category._id,
       _id: { $ne: product._id },
       isBlocked: false,
       isDeleted: false,
     })
-      .limit(4)
+      .populate("category", "name")
+      .populate("brand", "name")
+      .limit(8)
       .lean();
 
-    const formattedRelated = relatedProducts.map((p) => {
+    // ✅ Fallback to random products if none in same category
+    if (!relatedProducts.length) {
+      relatedProducts = await Product.find({
+        _id: { $ne: product._id },
+        isBlocked: false,
+        isDeleted: false,
+      })
+        .populate("category", "name")
+        .populate("brand", "name")
+        .limit(8)
+        .lean();
+    }
+
+    // ✅ Format products for EJS
+    const formattedRelated = relatedProducts.map(p => {
       const fv = (p.variants || [])[0] || {};
       const firstImage =
         (p.variants || [])
-          .flatMap((v) => (v.images || []).map((img) => img.url))
+          .flatMap(v => (v.images || []).map(img => img.url))
           .filter(Boolean)[0] || "/images/placeholder.jpg";
 
       return {
@@ -388,59 +660,44 @@ const allProductImages = variantImages[Object.keys(variantImages)[0]] || [];
         salePrice: fv.price || 0,
         regularPrice: fv.mrp || null,
         productImage: [firstImage],
+        brand: p.brand?.name || "BagHub",
+        rating: p.rating || 4.5,
+        categoryName: p.category?.name || "Other",
       };
     });
 
-    // ✅ Color map for server-side rendering
-    // const colorMap = {
-    //   black: "#000000",
-    //   blue: "#1e40af",
-    //   red: "#dc2626",
-    //   green: "#059669",
-    //   gray: "#6b7280",
-    //   navy: "#1e3a8a",
-    //   brown: "#92400e",
-    //   white: "#ffffff",
-    // };
+    console.log("✅ Related Products Found:", formattedRelated.length, "for Category:", product.category.name);
 
-    const colorMap = {
-  black: "#000000",
-  blue: "#1e40af",
-  red: "#dc2626",
-  green: "#059669",
-  gray: "#6b7280",
-  navy: "#1e3a8a",
-  brown: "#92400e",
-  white: "#ffffff",
-  yellow: "#facc15",
-  pink: "#ec4899",
-  purple: "#8b5cf6",
-  orange: "#f97316",
-  beige: "#f5f5dc",
-  silver: "#c0c0c0",
-  gold: "#ffd700",
-  maroon: "#800000",
-  cyan: "#06b6d4",
-  teal: "#14b8a6",
-  olive: "#808000",
-  violet: "#7c3aed",
-};
-
-
+    // ✅ Render
     res.render("user/productDetails", {
       title: `${viewProduct.productName} - BagHub`,
       product: viewProduct,
       allProductImages,
       relatedProducts: formattedRelated,
-      user: req.session?.user || {wishlistCount:0},
-      variantImages, // ✅ pass variant images to EJS
-       colorMap, // ✅ pass color map to EJS
+      categoryName: product.category?.name || "Other",
+      user: req.session?.user || { wishlistCount: 0 },
+      variantImages,
+      colorMap: {
+        black: "#000000",
+        blue: "#1e40af",
+        red: "#dc2626",
+        green: "#059669",
+        gray: "#6b7280",
+        brown: "#92400e",
+        white: "#ffffff",
+        yellow: "#facc15",
+        pink: "#ec4899",
+        purple: "#8b5cf6",
+        orange: "#f97316",
+      },
     });
   } catch (error) {
-    console.error("❌ Product detail page error:", error);
-    res.redirect("/user/shop");
+    console.error("❌ Error loading product details:", error);
+    res.redirect("/shop");
   }
 };
+
+
 
 // ✅ Get variant details (images, price, stock) by color
 export const getVariantByColor = async (req, res) => {

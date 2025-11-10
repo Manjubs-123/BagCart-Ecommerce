@@ -211,12 +211,6 @@ export const resendOtp = async (req, res) => {
 };
 
 
-//  Login Page
-//export const getLogin = (req, res) => {
-  //res.render("user/login", { error: null });
-//};
-
-//  Login Page (Enhanced: handles ?blocked=true redirect)
 export const getLogin = (req, res) => {
   const blocked = req.query.blocked === "true";
   let error = null;

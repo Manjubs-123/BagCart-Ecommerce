@@ -115,7 +115,8 @@ export const renderHomePage = async (req, res) => {
       featuredProducts,
       favouriteProducts,
       handpickedProducts,
-      trendingProducts
+      trendingProducts,
+       user: req.session.user || null,  
     });
   } catch (error) {
     console.error("Error rendering home page:", error);
@@ -130,11 +131,12 @@ export const renderLandingPage = async (req, res) => {
     res.render("user/landing", {
       title: "BagHub | Explore Premium Bags",
       currentPage: "home",
+       user: req.session.user || null,
       featuredProducts,
       favouriteProducts,
       handpickedProducts,
       trendingProducts,
-      user: req.session.user || null,  // ✅ add user data if logged in
+      user: req.session.user || null,  // add user data if logged in
     });
   } catch (error) {
     console.error("Error rendering landing page:", error);
@@ -163,6 +165,10 @@ export const renderLandingPage = async (req, res) => {
 
 export const renderShopPage = async (req, res) => {
   try {
+       // ✅ If user not logged in, redirect to login
+    if (!req.session.user) {
+      return res.redirect("/user/login");
+    }
     const selectedCategories = Array.isArray(req.query.category)
       ? req.query.category
       : req.query.category
@@ -172,15 +178,18 @@ export const renderShopPage = async (req, res) => {
     // ✅ Add this line — your available color filters
     const colors = ["Black", "Blue", "Brown", "Grey", "Red", "Green", "Navy", "Orange"];
 
+        // ✅ Load active categories
+
     const categories = await Category.find({ isDeleted: false })
       .sort({ name: 1 })
       .lean();
 
+       // ✅ Build filter
     const filter = { isDeleted: false, isActive: true };
     if (selectedCategories.length > 0) {
       filter.category = { $in: selectedCategories };
     }
-
+ // ✅ Fetch products
     const products = await Product.find(filter)
       .populate("category", "name")
       .sort({ createdAt: -1 })

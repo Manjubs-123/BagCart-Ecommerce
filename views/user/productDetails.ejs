@@ -128,50 +128,6 @@
             to { opacity: 1; transform: translateY(0); }
         }
 
-        /* Amazon Style Zoom */
-        .zoom-container {
-            position: relative;
-            overflow: hidden;
-            cursor: crosshair;
-        }
-
-        .zoom-image {
-            width: 100%;
-            height: 100%;
-            object-fit: contain;
-        }
-
-        .zoom-lens {
-            position: absolute;
-            border: 2px solid #1a56db;
-            background: rgba(26, 86, 219, 0.1);
-            cursor: none;
-            display: none;
-            pointer-events: none;
-        }
-
-        .zoom-result {
-            position: absolute;
-            top: 0;
-            left: 105%;
-            width: 500px;
-            height: 500px;
-            border: 1px solid #e5e7eb;
-            background: white;
-            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
-            overflow: hidden;
-            display: none;
-            z-index: 1000;
-            border-radius: 8px;
-        }
-
-        .zoom-result-img {
-            position: absolute;
-            max-width: none;
-            max-height: none;
-            transform-origin: 0 0;
-        }
-
         .discount-badge {
             background: linear-gradient(135deg, #ef4444, #dc2626);
         }
@@ -179,7 +135,85 @@
         .featured-badge {
             background: linear-gradient(135deg, #f59e0b, #d97706);
         }
+
+        * {box-sizing: border-box;}
+
+.img-zoom-container {
+  position: relative;
+}
+
+.img-zoom-lens {
+  position: absolute;
+  border: 1px solid #d4d4d4;
+  /*set the size of the lens:*/
+  width: 40px;
+  height: 40px;
+}
+
+.img-zoom-result {
+  border: 1px solid #d4d4d4;
+  /*set the size of the result div:*/
+  width: 300px;
+  height: 300px;
+}
     </style>
+    <script>
+function imageZoom(imgID, resultID) {
+  var img, lens, result, cx, cy;
+  img = document.getElementById(imgID);
+  result = document.getElementById(resultID);
+  /*create lens:*/
+  lens = document.createElement("DIV");
+  lens.setAttribute("class", "img-zoom-lens");
+  /*insert lens:*/
+  img.parentElement.insertBefore(lens, img);
+  /*calculate the ratio between result DIV and lens:*/
+  cx = result.offsetWidth / lens.offsetWidth;
+  cy = result.offsetHeight / lens.offsetHeight;
+  /*set background properties for the result DIV:*/
+  result.style.backgroundImage = "url('" + img.src + "')";
+  result.style.backgroundSize = (img.width * cx) + "px " + (img.height * cy) + "px";
+  /*execute a function when someone moves the cursor over the image, or the lens:*/
+  lens.addEventListener("mousemove", moveLens);
+  img.addEventListener("mousemove", moveLens);
+  /*and also for touch screens:*/
+  lens.addEventListener("touchmove", moveLens);
+  img.addEventListener("touchmove", moveLens);
+  function moveLens(e) {
+    var pos, x, y;
+    /*prevent any other actions that may occur when moving over the image:*/
+    e.preventDefault();
+    /*get the cursor's x and y positions:*/
+    pos = getCursorPos(e);
+    /*calculate the position of the lens:*/
+    x = pos.x - (lens.offsetWidth / 2);
+    y = pos.y - (lens.offsetHeight / 2);
+    /*prevent the lens from being positioned outside the image:*/
+    if (x > img.width - lens.offsetWidth) {x = img.width - lens.offsetWidth;}
+    if (x < 0) {x = 0;}
+    if (y > img.height - lens.offsetHeight) {y = img.height - lens.offsetHeight;}
+    if (y < 0) {y = 0;}
+    /*set the position of the lens:*/
+    lens.style.left = x + "px";
+    lens.style.top = y + "px";
+    /*display what the lens "sees":*/
+    result.style.backgroundPosition = "-" + (x * cx) + "px -" + (y * cy) + "px";
+  }
+  function getCursorPos(e) {
+    var a, x = 0, y = 0;
+    e = e || window.event;
+    /*get the x and y positions of the image:*/
+    a = img.getBoundingClientRect();
+    /*calculate the cursor's x and y coordinates, relative to the image:*/
+    x = e.pageX - a.left;
+    y = e.pageY - a.top;
+    /*consider any page scrolling:*/
+    x = x - window.pageXOffset;
+    y = y - window.pageYOffset;
+    return {x : x, y : y};
+  }
+}
+</script>
 </head>
 <body class="bg-gray-50">
    <%- include('../partials/landingheader') %>
@@ -257,9 +291,13 @@
             <div class="space-y-6">
                 <!-- Product Header -->
                 <div class="info-card fade-in">
-                    <h1 class="text-3xl lg:text-4xl font-bold text-gray-900 mb-4">
+                    <!-- Product Name -->
+<h1 id="productName" class="text-3xl lg:text-4xl font-bold text-gray-900 mb-4">
+    <%= product.productName %>
+</h1>
+                    <!-- <h1 class="text-3xl lg:text-4xl font-bold text-gray-900 mb-4">
                         <%= product.productName %>
-                    </h1>
+                    </h1> -->
                     
                     <!-- Rating and Reviews -->
                     <div class="flex items-center gap-4 mb-4">
@@ -278,7 +316,17 @@
                     </div>
 
                     <!-- Price Section -->
-                    <div class="flex items-center gap-4 mb-2">
+                     <div id="priceSection" class="flex items-center gap-4 mb-2">
+    <span id="productPrice" class="text-3xl font-bold text-gray-900">₹<%= product.salePrice %></span>
+    <% if (product.regularPrice) { %>
+        <span id="productMrp" class="text-xl text-gray-500 line-through">₹<%= product.regularPrice %></span>
+        <% let discount = Math.round(((product.regularPrice - product.salePrice) / product.regularPrice) * 100); %>
+        <span id="productDiscount" class="text-lg font-semibold text-green-600">
+            Save <%= discount %>%
+        </span>
+    <% } %>
+</div>
+                    <!-- <div class="flex items-center gap-4 mb-2">
                         <span class="text-3xl font-bold text-gray-900">₹<%= product.salePrice %></span>
                         <% if (product.regularPrice) { %>
                             <span class="text-xl text-gray-500 line-through">₹<%= product.regularPrice %></span>
@@ -288,7 +336,7 @@
                             </span>
                         <% } %>
                     </div>
-                </div>
+                </div> -->
 
                 <!-- Color Selection -->
                 <% if (product.colors && product.colors.length > 0) { %>
@@ -325,9 +373,12 @@
                                 <i class="fas fa-plus"></i>
                             </button>
                         </div>
-                        <span class="text-sm text-gray-600">
+                        <!-- <span class="text-sm text-gray-600">
                             <i class="fas fa-check-circle text-green-500 mr-1"></i>
                             <%= product.stock || 100 %> available in stock
+                        </span> -->
+                         <span class="text-sm text-green-600 font-semibold">
+                            <i class="fas fa-check-circle mr-1"></i>In Stock
                         </span>
                     </div>
                 </div>
@@ -379,12 +430,12 @@
                             <span class="text-gray-600">Category:</span>
                             <span class="font-semibold text-gray-900"><%= product.category?.name || 'Uncategorized' %></span>
                         </div>
-                        <% if (product.material) { %>
+                        <!-- <% if (product.material) { %>
                             <div class="flex justify-between items-center">
                                 <span class="text-gray-600">Material:</span>
                                 <span class="font-semibold text-gray-900"><%= product.material %></span>
                             </div>
-                        <% } %>
+                        <% } %> -->
                         <div class="flex justify-between items-center">
                             <span class="text-gray-600">Brand:</span>
                             <span class="font-semibold text-gray-900"><%= product.brand || 'BagHub' %></span>
@@ -395,38 +446,79 @@
         </div>
     </div>
 
-    <!-- Similar Products Section -->
-    <section class="bg-white py-12 md:py-16 border-t border-gray-200">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <h2 class="text-2xl md:text-3xl font-bold text-gray-900 mb-8">Similar Collection</h2>
+  <!-- Similar Products Section -->
+<!-- Similar Products Section -->
+<section class="bg-white py-16 border-t border-gray-200">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="flex items-center justify-between mb-8">
+      <h2 class="text-3xl font-bold text-gray-900">
+        Similar Products 
+        <% if (categoryName) { %>
+          in <span class="text-blue-600"><%= categoryName %></span>
+        <% } %>
+      </h2>
+      <a href="/shop?category=<%= categoryName %>" 
+         class="text-blue-600 hover:text-blue-800 font-semibold flex items-center gap-2 transition">
+        View All <i class="fas fa-arrow-right"></i>
+      </a>
+    </div>
 
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
-                <% if (relatedProducts && relatedProducts.length > 0) { %>
-                    <% relatedProducts.slice(0, 4).forEach(item => { %>
-                        <div class="bg-white rounded-lg overflow-hidden hover:shadow-lg transition-shadow">
-                            <div class="relative aspect-square bg-gray-100 overflow-hidden group">
-                                <img src="<%= item.productImage && item.productImage[0] ? item.productImage[0] : '/default-product.jpg' %>"
-                                     alt="<%= item.productName %>" class="w-full h-full object-contain p-3 group-hover:scale-110 transition-transform">
-                                <button onclick="addToWishlist('<%= item._id %>')"
-                                        class="absolute top-3 right-3 bg-white rounded-full p-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                    <i class="far fa-heart text-gray-400 hover:text-red-500"></i>
-                                </button>
-                            </div>
-                            <div class="p-3 md:p-4">
-                                <h3 class="text-sm md:text-base font-semibold text-gray-900 truncate"><%= item.productName %></h3>
-                                <div class="mt-2 flex items-center gap-2">
-                                    <span class="text-sm md:text-base font-bold text-gray-900">₹<%= item.salePrice %></span>
-                                    <% if (item.regularPrice) { %>
-                                        <span class="text-xs md:text-sm text-gray-500 line-through">₹<%= item.regularPrice %></span>
-                                    <% } %>
-                                </div>
-                            </div>
-                        </div>
-                    <% }); %>
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+      <% if (relatedProducts && relatedProducts.length > 0) { %>
+        <% relatedProducts.forEach(item => { %>
+          <a href="/product/<%= item._id %>" class="block group">
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-lg transition-all duration-300">
+              <!-- Product Image -->
+              <div class="relative aspect-square bg-gray-50 overflow-hidden">
+                <img src="<%= item.productImage[0] %>" 
+                     alt="<%= item.productName %>" 
+                     class="w-full h-full object-contain p-4 group-hover:scale-110 transition-transform duration-300">
+                
+                <% if (item.regularPrice && item.salePrice && item.regularPrice > item.salePrice) { %>
+                  <% let discount = Math.round(((item.regularPrice - item.salePrice) / item.regularPrice) * 100); %>
+                  <span class="absolute top-3 left-3 bg-red-500 text-white text-xs font-semibold px-2 py-1 rounded-full">
+                    <%= discount %>% OFF
+                  </span>
                 <% } %>
+              </div>
+              
+
+              <!-- Product Info -->
+              <div class="p-4">
+                <h3 class="font-semibold text-gray-900 text-sm mb-2 line-clamp-2 leading-tight">
+                  <%= item.productName %>
+                </h3>
+                <p class="text-xs text-gray-500 mb-3"><%= item.brand %></p>
+
+                <div class="flex items-center justify-between">
+                  <div class="flex items-center gap-2">
+                    <span class="text-lg font-bold text-gray-900">₹<%= item.salePrice %></span>
+                    <% if (item.regularPrice) { %>
+                      <span class="text-sm text-gray-500 line-through">₹<%= item.regularPrice %></span>
+                    <% } %>
+                  </div>
+
+                  <% if (item.rating) { %>
+                    <div class="flex items-center gap-1">
+                      <i class="fas fa-star text-amber-400 text-xs"></i>
+                      <span class="text-xs text-gray-600"><%= item.rating.toFixed(1) %></span>
+                    </div>
+                  <% } %>
+                </div>
+              </div>
             </div>
+          </a>
+        <% }); %>
+      <% } else { %>
+        <div class="col-span-4 text-center py-12">
+          <i class="fas fa-box-open text-4xl text-gray-300 mb-4"></i>
+          <p class="text-gray-500">No similar products found in this category.</p>
         </div>
-    </section>
+      <% } %>
+    </div>
+  </div>
+</section>
+
 
     <!-- Footer -->
     <%-include('../partials/footer')%>
@@ -458,43 +550,7 @@
   const variantImages = <%- JSON.stringify(variantImages || {}) %>;
 
         // Initialize on page load
-        document.addEventListener('DOMContentLoaded', function() {
-            initZoom();
-        });
-
-        // Amazon Style Zoom Functions
-        function initZoom() {
-            const mainImage = document.getElementById('mainImage');
-            const zoomLens = document.getElementById('zoomLens');
-            const zoomResult = document.getElementById('zoomResult');
-            const zoomResultImg = document.getElementById('zoomResultImg');
-            
-            // Set zoom result image source
-            zoomResultImg.src = mainImage.getAttribute('data-zoom-src') || mainImage.src;
-            
-            // Calculate lens size (30% of container)
-            const container = mainImage.parentElement;
-            const lensSize = Math.min(container.offsetWidth, container.offsetHeight) * 0.3;
-            zoomLens.style.width = lensSize + 'px';
-            zoomLens.style.height = lensSize + 'px';
-        }
-
-        function showZoom() {
-            const zoomLens = document.getElementById('zoomLens');
-            const zoomResult = document.getElementById('zoomResult');
-            
-            zoomLens.style.display = 'block';
-            zoomResult.style.display = 'block';
-        }
-
-        function hideZoom() {
-            const zoomLens = document.getElementById('zoomLens');
-            const zoomResult = document.getElementById('zoomResult');
-            
-            zoomLens.style.display = 'none';
-            zoomResult.style.display = 'none';
-        }
-
+   
         function moveLens(e) {
             e.preventDefault();
             
@@ -583,10 +639,11 @@ async function selectColor(color) {
         </button>
       `).join('');
 
-      // 💰 Update price
-    //   const priceEl = document.querySelector('.text-3xl.font-bold.text-gray-900');
-    //   const mrpEl = document.querySelector('.text-xl.text-gray-500.line-through');
-    //   const discountEl = document.querySelector('.text-lg.font-semibold.text-green-600');
+      // ✅ Only update main product price (not all .text-3xl)
+      const productSection = document.querySelector('.info-card.fade-in'); // first product info card
+    //   const priceEl = productSection.querySelector('.text-3xl.font-bold.text-gray-900');
+    //   const mrpEl = productSection.querySelector('.text-xl.text-gray-500.line-through');
+    //   const discountEl = productSection.querySelector('.text-lg.font-semibold.text-green-600');
 
     //   if (priceEl) priceEl.textContent = `₹${price}`;
     //   if (mrpEl && mrp) {
@@ -594,20 +651,16 @@ async function selectColor(color) {
     //     const discount = Math.round(((mrp - price) / mrp) * 100);
     //     if (discountEl) discountEl.textContent = `Save ${discount}%`;
     //   }
-    // 💰 Update all matching price elements
-document.querySelectorAll('.text-3xl.font-bold.text-gray-900').forEach(el => {
-  el.textContent = `₹${price}`;
-});
+    const priceEl = document.getElementById('productPrice');
+const mrpEl = document.getElementById('productMrp');
+const discountEl = document.getElementById('productDiscount');
 
-document.querySelectorAll('.text-xl.text-gray-500.line-through').forEach(el => {
-  el.textContent = `₹${mrp}`;
-});
-
-const discount = Math.round(((mrp - price) / mrp) * 100);
-document.querySelectorAll('.text-lg.font-semibold.text-green-600').forEach(el => {
-  el.textContent = `Save ${discount}%`;
-});
-
+if (priceEl) priceEl.textContent = `₹${price}`;
+if (mrpEl && mrp) {
+  mrpEl.textContent = `₹${mrp}`;
+  const discount = Math.round(((mrp - price) / mrp) * 100);
+  if (discountEl) discountEl.textContent = `Save ${discount}%`;
+}
 
       // 📦 Update stock
       const stockText = document.querySelector('.text-sm.text-gray-600');
@@ -620,7 +673,6 @@ document.querySelectorAll('.text-lg.font-semibold.text-green-600').forEach(el =>
     console.error('Error fetching variant data:', error);
   }
 }
-
 
         // function selectColor(color) {
             // Update active color UI

@@ -157,7 +157,7 @@
             backpacks designed for every journey — from urban commutes to
             mountain adventures.
           </p>
-          <div class="flex flex-col sm:flex-row gap-4">
+          <!-- <div class="flex flex-col sm:flex-row gap-4">
             <a
               href="#featured"
               class="btn-primary text-white px-8 py-3 rounded-lg font-semibold inline-block shadow-lg"
@@ -168,7 +168,39 @@
               class="bg-white text-blue-700 px-8 py-3 rounded-lg font-semibold hover:bg-gray-100 transition inline-block shadow-lg"
               >Shop Sale</a
             >
-          </div>
+          </div> -->
+        <!-- <div class="flex flex-col sm:flex-row gap-4">
+<a
+  href="<%= user ? '/user/shop' : '/user/login' %>"
+  class="btn-primary text-white px-8 py-3 rounded-lg font-semibold inline-block shadow-lg"
+>
+  Explore Collection
+</a>
+
+
+  <a
+    href="<%= user ? '/products' : '/user/login' %>"
+    class="bg-white text-blue-700 px-8 py-3 rounded-lg font-semibold hover:bg-gray-100 transition inline-block shadow-lg"
+  >
+    Shop Sale
+  </a>
+</div> -->
+<div class="flex flex-col sm:flex-row gap-4">
+  <a
+    href="<%= user ? '/user/shop' : '/user/login' %>"
+    class="btn-primary text-white px-8 py-3 rounded-lg font-semibold inline-block shadow-lg"
+  >
+    Explore Collection
+  </a>
+
+  <a
+    href="<%= user ? '/user/shop' : '/user/login' %>"
+    class="bg-white text-blue-700 px-8 py-3 rounded-lg font-semibold hover:bg-gray-100 transition inline-block shadow-lg"
+  >
+    Shop Sale
+  </a>
+</div>
+
         </div>
 
         <!-- Image Section -->
