@@ -271,7 +271,7 @@
 </section>
    
 <!-- SHOP YOUR FAVOURITES -->
-<section class="py-16 bg-white">
+<!-- <section class="py-16 bg-white">
   <div class="max-w-7xl mx-auto px-4">
     <h2 class="section-title text-3xl font-bold text-gray-900">
       Shop Your Favourites
@@ -308,6 +308,63 @@
 
       </div>
       <div class="swiper-pagination mt-4"></div>
+    </div>
+  </div>
+</section> -->
+
+<!-- SHOP YOUR FAVOURITES -->
+<section class="py-16 bg-white">
+  <div class="max-w-7xl mx-auto px-4">
+    <h2 class="section-title center-title text-3xl font-bold text-center text-gray-900 mb-12">
+      Shop Your Favourites
+    </h2>
+
+    <div class="swiper favSwiper relative">
+      <div class="swiper-wrapper pb-10">
+
+        <% if (favouriteProducts && favouriteProducts.length > 0) { %>
+          <% favouriteProducts.forEach(item => { %>
+            <div class="swiper-slide">
+              <div class="card-hover relative group overflow-hidden bg-white border border-gray-200 rounded-xl shadow-sm hover:shadow-lg transition-all duration-300 h-full flex flex-col">
+                
+                <!-- Product Image -->
+                <div class="relative">
+                  <img
+                    src="<%= item.variants[0]?.images[0]?.url || '/images/no-image.jpg' %>"
+                    alt="<%= item.name %>"
+                    class="rounded-t-xl w-full h-64 object-cover transition-transform duration-500 group-hover:scale-110"
+                  />
+                  <span class="badge trending-badge">Fav</span>
+
+                  <!-- Hover Overlay -->
+                  <div class="absolute inset-0 bg-black bg-opacity-40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
+                    <a href="<%= user ? '/user/product/' + item._id : '/user/login' %>"
+                       class="bg-white text-gray-900 px-6 py-3 rounded-lg font-semibold shadow hover:bg-gray-100 transition">
+                      Quick View
+                    </a>
+                  </div>
+                </div>
+
+                <!-- Product Info -->
+                <div class="p-4 text-center bg-white flex flex-col flex-1 justify-between">
+                  <div>
+                    <h3 class="font-semibold text-lg text-gray-900 mb-1"><%= item.name %></h3>
+                    <p class="text-gray-500 text-sm mb-2"><%= item.brand %></p>
+                  </div>
+                  <p class="text-gray-900 font-bold text-lg">₹<%= item.variants[0]?.price || 0 %></p>
+                </div>
+              </div>
+            </div>
+          <% }); %>
+        <% } else { %>
+          <p class="text-center text-gray-500 mt-8 w-full">No favourite products right now.</p>
+        <% } %>
+
+      </div>
+
+      <!-- Swiper navigation arrows -->
+      <div class="swiper-button-next mt-10"></div>
+      <div class="swiper-button-prev mt-10"></div>
     </div>
   </div>
 </section>
@@ -393,11 +450,20 @@
       <div class="swiper-pagination mt-4"></div>
     </div>
 
-    <div class="text-center mt-10">
+    <!-- <div class="text-center mt-10">
       <a href="/products" class="btn-secondary text-white px-8 py-3 rounded-lg font-semibold shadow-lg inline-flex items-center">
         View All Products <i class="fas fa-arrow-right ml-2"></i>
       </a>
-    </div>
+    </div> -->
+ <div class="text-center mt-10">
+  <a 
+    href="<%= user ? '/user/shop' : '/user/login' %>" 
+    class="btn-secondary text-white px-8 py-3 rounded-lg font-semibold shadow-lg inline-flex items-center transition hover:scale-105">
+    View All Products 
+    <i class="fas fa-arrow-right ml-2"></i>
+  </a>
+</div>
+
   </div>
 </section>
 
