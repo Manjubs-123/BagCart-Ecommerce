@@ -3,76 +3,402 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Add Category | Admin </title>
+  <title>Add Category | Admin Dashboard</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
+  <style>
+    :root {
+      --primary: #1a56db;
+      --primary-dark: #1e429f;
+      --secondary: #047857;
+    }
+
+    .btn-primary {
+      background-color: var(--primary);
+      transition: all 0.3s ease;
+    }
+    
+    .btn-primary:hover {
+      background-color: var(--primary-dark);
+      transform: translateY(-2px);
+      box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+    }
+    
+    .card-hover {
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    }
+    
+    .input-focus:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(26, 86, 219, 0.1);
+    }
+
+    .input-error {
+      border-color: #ef4444;
+      box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
+    }
+
+    .input-success {
+      border-color: #10b981;
+      box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
+    }
+  </style>
 </head>
-<body class="bg-white text-gray-900 flex min-h-screen">
+
+<body class="bg-gray-50 text-gray-900 flex min-h-screen">
 
   <!-- Sidebar -->
   <%- include('../partials/sidebar') %>
 
   <!-- Main Content -->
-  <main class="ml-64 flex-1 p-10">
-    <h1 class="text-2xl font-semibold mb-8">Add Category</h1>
-<form action="/admin/category/addCategory" method="POST" class="space-y-6 max-w-lg">
-  <div>
-    <input
-      type="text"
-      name="name"
-      placeholder="Category name"
-      class="border border-gray-300 rounded-md w-full px-4 py-2 focus:outline-none focus:ring-2 focus:ring-emerald-700"
-      required
-    >
-  </div>
+  <main class="ml-64 flex-1 p-8">
+    <!-- Header Section -->
+    <div class="mb-8">
+      <div class="flex items-center gap-3 mb-2">
+        <a href="/admin/category" class="text-blue-600 hover:text-blue-800 transition">
+          <i class="fas fa-arrow-left"></i>
+        </a>
+        <h1 class="text-3xl font-bold text-gray-900">Add New Category</h1>
+      </div>
+      <p class="text-gray-600">Create a new product category for your store</p>
+    </div>
 
-  <div>
-    <textarea
-      name="description"
-      placeholder="Description"
-      class="border border-gray-300 rounded-md w-full px-4 py-2 h-28 focus:outline-none focus:ring-2 focus:ring-emerald-700"
-    ></textarea>
-  </div>
+    <!-- Form Section -->
+    <div class="max-w-2xl">
+      <!-- Add Category Card -->
+      <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-8 card-hover">
+        <div class="flex items-center gap-3 mb-6">
+          <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+            <i class="fas fa-plus-circle text-blue-600 text-xl"></i>
+          </div>
+          <div>
+            <h2 class="text-xl font-semibold text-gray-900">Category Information</h2>
+            <p class="text-gray-600 text-sm">Both fields are mandatory</p>
+          </div>
+        </div>
 
-  <div>
-    <button
-      type="submit"
-      class="bg-emerald-800 text-white px-5 py-2 rounded-md hover:bg-emerald-900 transition"
-    >
-      Submit
-    </button>
-  </div>
-</form>
+        <!-- Global Error Message -->
+        <div id="globalError" class="bg-red-50 border border-red-200 rounded-lg p-4 mb-6 hidden">
+          <div class="flex items-center gap-2 text-red-700">
+            <i class="fas fa-exclamation-circle"></i>
+            <span id="globalErrorText"></span>
+          </div>
+        </div>
 
+        <form id="categoryForm" action="/admin/category/addCategory" method="POST" class="space-y-6">
+          <!-- Category Name Field -->
+          <div>
+            <label for="name" class="block text-sm font-medium text-gray-700 mb-2">
+              Category Name <span class="text-red-500">*</span>
+            </label>
+            <div class="relative">
+              <input
+                type="text"
+                id="name"
+                name="name"
+                placeholder="Enter category name"
+                class="w-full px-4 py-3 border border-gray-300 rounded-lg input-focus focus:outline-none transition duration-200 pl-11"
+                required
+                autocomplete="off"
+              >
+              <div class="absolute inset-y-0 left-0 flex items-center pl-3">
+                <i class="fas fa-tag text-gray-400"></i>
+              </div>
+            </div>
+            <div class="flex justify-between items-center mt-1">
+              <p id="nameError" class="text-red-600 text-xs hidden flex items-center gap-1">
+                <i class="fas fa-exclamation-circle"></i>
+                <span></span>
+              </p>
+              <p class="text-gray-500 text-xs">Minimum 2 characters, maximum 50 characters</p>
+            </div>
+          </div>
 
-  
+          <!-- Description Field -->
+          <div>
+            <label for="description" class="block text-sm font-medium text-gray-700 mb-2">
+              Description <span class="text-red-500">*</span>
+            </label>
+            <div class="relative">
+              <textarea
+                id="description"
+                name="description"
+                placeholder="Enter category description (max 10 words)"
+                class="w-full px-4 py-3 border border-gray-300 rounded-lg input-focus focus:outline-none transition duration-200 pl-11 resize-none h-32"
+                required
+              ></textarea>
+              <div class="absolute top-3 left-3">
+                <i class="fas fa-align-left text-gray-400"></i>
+              </div>
+            </div>
+            <div class="flex justify-between items-center mt-1">
+              <p id="descriptionError" class="text-red-600 text-xs hidden flex items-center gap-1">
+                <i class="fas fa-exclamation-circle"></i>
+                <span></span>
+              </p>
+              <p id="wordCounter" class="text-gray-500 text-xs">0/10 words</p>
+            </div>
+          </div>
+
+          <!-- Action Buttons -->
+          <div class="flex items-center gap-4 pt-4 border-t border-gray-200">
+            <button
+              type="submit"
+              id="submitBtn"
+              class="btn-primary text-white px-8 py-3 rounded-lg font-semibold flex items-center gap-2 shadow-lg"
+            >
+              <i class="fas fa-plus-circle"></i>
+              Create Category
+            </button>
+            <a 
+              href="/admin/category" 
+              class="bg-gray-500 text-white px-8 py-3 rounded-lg font-semibold hover:bg-gray-600 transition flex items-center gap-2"
+            >
+              <i class="fas fa-times"></i>
+              Cancel
+            </a>
+          </div>
+        </form>
+      </div>
+
+      <!-- Validation Rules -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-8">
+        <div class="bg-white rounded-xl p-6 card-hover border-l-4 border-blue-500">
+          <div class="flex items-center gap-3">
+            <div class="bg-blue-100 p-3 rounded-full">
+              <i class="fas fa-info-circle text-blue-600"></i>
+            </div>
+            <div>
+              <p class="text-sm font-medium text-gray-900">Category Name Rules</p>
+              <ul class="text-sm text-gray-600 mt-1 space-y-1">
+                <li>• Required field</li>
+                <li>• Minimum 2 characters</li>
+                <li>• Maximum 50 characters</li>
+                <li>• Must be unique</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        <div class="bg-white rounded-xl p-6 card-hover border-l-4 border-green-500">
+          <div class="flex items-center gap-3">
+            <div class="bg-green-100 p-3 rounded-full">
+              <i class="fas fa-info-circle text-green-600"></i>
+            </div>
+            <div>
+              <p class="text-sm font-medium text-gray-900">Description Rules</p>
+              <ul class="text-sm text-gray-600 mt-1 space-y-1">
+                <li>• Required field</li>
+                <li>• Maximum 10 words</li>
+                <li>• Clear and concise</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
   </main>
 
-  <script src="https://kit.fontawesome.com/a2e0f1fdd8.js" crossorigin="anonymous"></script>
-  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-<script>
-  const params = new URLSearchParams(window.location.search);
-  const success = params.get("success");
-  const error = params.get("error");
+  <script>
+    // DOM Elements
+    const form = document.getElementById('categoryForm');
+    const nameInput = document.getElementById('name');
+    const descriptionInput = document.getElementById('description');
+    const nameError = document.getElementById('nameError');
+    const descriptionError = document.getElementById('descriptionError');
+    const wordCounter = document.getElementById('wordCounter');
+    const globalError = document.getElementById('globalError');
+    const globalErrorText = document.getElementById('globalErrorText');
+    const submitBtn = document.getElementById('submitBtn');
 
-  if (success) {
-    Swal.fire({
-      icon: "success",
-      title: success,
-      showConfirmButton: false,
-      timer: 1500
-    });
-  }
+    // Count words function
+    function countWords(text) {
+      return text.trim() ? text.trim().split(/\s+/).filter(word => word.length > 0).length : 0;
+    }
 
-  if (error) {
-    Swal.fire({
-      icon: "error",
-      title: "Oops...",
-      text: error,
+    // Validation functions
+    function validateName(value) {
+      const trimmedValue = value.trim();
+      
+      if (!trimmedValue) {
+        return { valid: false, message: 'Category name is required' };
+      }
+      
+      if (trimmedValue.length < 2) {
+        return { valid: false, message: 'Category name must be at least 2 characters' };
+      }
+      
+      if (trimmedValue.length > 50) {
+        return { valid: false, message: 'Category name must be less than 50 characters' };
+      }
+      
+      return { valid: true, message: '' };
+    }
+
+    function validateDescription(value) {
+      const trimmedValue = value.trim();
+      const wordCount = countWords(trimmedValue);
+      
+      if (!trimmedValue) {
+        return { valid: false, message: 'Description is required' };
+      }
+      
+      if (wordCount > 10) {
+        return { valid: false, message: 'Description must be maximum 10 words' };
+      }
+      
+      return { valid: true, message: '' };
+    }
+
+    // Show/hide error functions
+    function showError(element, message) {
+      element.querySelector('span').textContent = message;
+      element.classList.remove('hidden');
+    }
+
+    function hideError(element) {
+      element.classList.add('hidden');
+    }
+
+    function setFieldState(input, isValid) {
+      input.classList.remove('input-error', 'input-success', 'border-gray-300');
+      if (isValid === true) {
+        input.classList.add('input-success');
+      } else if (isValid === false) {
+        input.classList.add('input-error');
+      }
+    }
+
+    // Real-time name validation
+    nameInput.addEventListener('input', function() {
+      const value = this.value;
+      const validation = validateName(value);
+      
+      if (!validation.valid) {
+        setFieldState(nameInput, false);
+        showError(nameError, validation.message);
+      } else {
+        setFieldState(nameInput, true);
+        hideError(nameError);
+      }
+      hideError(globalError);
     });
-  }
-</script>
+
+    // Real-time description validation
+    descriptionInput.addEventListener('input', function() {
+      const value = this.value;
+      const wordCount = countWords(value);
+      const validation = validateDescription(value);
+      
+      // Update word counter
+      wordCounter.textContent = `${wordCount}/10 words`;
+      if (wordCount > 10) {
+        wordCounter.classList.add('text-red-600');
+      } else {
+        wordCounter.classList.remove('text-red-600');
+      }
+      
+      if (!validation.valid) {
+        setFieldState(descriptionInput, false);
+        showError(descriptionError, validation.message);
+      } else {
+        setFieldState(descriptionInput, true);
+        hideError(descriptionError);
+      }
+      hideError(globalError);
+    });
+
+    // Form submission
+    form.addEventListener('submit', function(e) {
+      e.preventDefault();
+      
+      // Final validation
+      const nameValidation = validateName(nameInput.value);
+      const descValidation = validateDescription(descriptionInput.value);
+      
+      let hasErrors = false;
+      
+      if (!nameValidation.valid) {
+        setFieldState(nameInput, false);
+        showError(nameError, nameValidation.message);
+        hasErrors = true;
+      } else {
+        setFieldState(nameInput, true);
+        hideError(nameError);
+      }
+      
+      if (!descValidation.valid) {
+        setFieldState(descriptionInput, false);
+        showError(descriptionError, descValidation.message);
+        hasErrors = true;
+      } else {
+        setFieldState(descriptionInput, true);
+        hideError(descriptionError);
+      }
+      
+      if (hasErrors) {
+        showError(globalError, 'Please fix the validation errors before submitting');
+        globalErrorText.textContent = 'Please fix the validation errors before submitting';
+        return;
+      }
+      
+      // If all valid, submit form
+      submitBtn.disabled = true;
+      submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Creating...';
+      
+      // Submit the form
+      this.submit();
+    });
+
+    // Blur validation for immediate feedback
+    nameInput.addEventListener('blur', function() {
+      const validation = validateName(this.value);
+      if (!validation.valid) {
+        setFieldState(nameInput, false);
+        showError(nameError, validation.message);
+      }
+    });
+
+    descriptionInput.addEventListener('blur', function() {
+      const validation = validateDescription(this.value);
+      if (!validation.valid) {
+        setFieldState(descriptionInput, false);
+        showError(descriptionError, validation.message);
+      }
+    });
+
+    // Initialize word counter
+    descriptionInput.dispatchEvent(new Event('input'));
+
+    // SweetAlert notifications
+    const params = new URLSearchParams(window.location.search);
+    const success = params.get("success");
+    const error = params.get("error");
+
+    if (success) {
+      Swal.fire({
+        icon: "success",
+        title: success,
+        toast: true,
+        position: "top-end",
+        showConfirmButton: false,
+        timer: 3000,
+        timerProgressBar: true
+      });
+    }
+
+    if (error) {
+      Swal.fire({
+        icon: "error",
+        title: "Error",
+        text: error,
+        confirmButtonColor: "#1a56db"
+      });
+    }
+  </script>
 
 </body>
 </html>

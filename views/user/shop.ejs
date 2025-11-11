@@ -3,20 +3,91 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Our Collection - BagHub</title>
+    <title>Our Collection - BagHub | Premium Backpacks</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        .dropdown-content {
+        :root {
+            --primary: #1a56db;
+            --primary-dark: #1e429f;
+            --secondary: #047857;
+        }
+
+        .btn-primary {
+            background-color: var(--primary);
+            transition: all 0.3s ease;
+        }
+        
+        .btn-primary:hover {
+            background-color: var(--primary-dark);
+            transform: translateY(-2px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        }
+
+        .card-hover {
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+        
+        .card-hover:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        }
+
+        .filter-section {
+            transition: all 0.3s ease;
+        }
+
+        .filter-dropdown {
             max-height: 0;
             overflow: hidden;
             transition: max-height 0.3s ease-out;
         }
-        .dropdown-content.active {
+
+        .filter-dropdown.active {
             max-height: 500px;
         }
-        .heart-icon:hover {
-            color: #ef4444;
+
+        .input-focus:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(26, 86, 219, 0.1);
+        }
+
+        .wishlist-btn {
+            transition: all 0.3s ease;
+        }
+
+        .wishlist-btn:hover {
+            transform: scale(1.1);
+        }
+
+        .color-swatch {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            border: 2px solid #e5e7eb;
+            cursor: pointer;
+            transition: transform 0.2s ease;
+        }
+
+        .color-swatch:hover {
+            transform: scale(1.2);
+        }
+
+        .featured-badge {
+            background: linear-gradient(135deg, #f59e0b, #d97706);
+        }
+
+        .price-range-track {
+            background: #e5e7eb;
+            height: 4px;
+            border-radius: 2px;
+        }
+
+        .price-range-progress {
+            background: var(--primary);
+            height: 4px;
+            border-radius: 2px;
         }
     </style>
 </head>
@@ -25,219 +96,300 @@
     <%- include('../partials/landingheader') %>
 
     <div class="container mx-auto px-4 py-8">
-        <div class="flex flex-col lg:flex-row gap-6">
+        <!-- Page Header -->
+        <div class="text-center mb-12">
+            <h1 class="text-4xl font-bold text-gray-900 mb-4">Premium Collection</h1>
+            <p class="text-lg text-gray-600 max-w-2xl mx-auto">
+                Discover our carefully curated selection of premium backpacks, designed for every adventure and lifestyle.
+            </p>
+        </div>
+
+        <div class="flex flex-col lg:flex-row gap-8">
             <!-- Sidebar Filters -->
-            <aside class="lg:w-64 w-full">
-                <div class="bg-white rounded-lg shadow-md p-6 sticky top-4">
-                    <h2 class="text-xl font-bold mb-4 pb-2 border-b">Categories</h2>
-                    
-                    <!-- Shop For Category Dropdown -->
-                     <!-- 🏷️ Category Filter -->
-<div class="mb-6">
-  <button onclick="toggleDropdown('category-dropdown')" class="flex items-center justify-between w-full text-left font-semibold mb-2">
-    <span>Shop For Category</span>
-    <i class="fas fa-chevron-down transition-transform" id="category-icon"></i>
-  </button>
-  <div id="category-dropdown" class="dropdown-content active">
-    <% if (categories && categories.length) { %>
-      <div class="space-y-2">
-        <% categories.forEach(cat => { %>
-          <label class="flex items-center gap-2 cursor-pointer hover:bg-gray-50 p-1 rounded">
-            <input
-              type="checkbox"
-              name="category"
-              value="<%= cat._id %>"
-              <%= selectedCategories && selectedCategories.includes(String(cat._id)) ? 'checked' : '' %>
-              class="filter-checkbox h-4 w-4 text-teal-600"
-            >
-            <span class="text-sm"><%= cat.name %></span>
-          </label>
-        <% }) %>
-      </div>
-    <% } else { %>
-      <p class="text-gray-500 text-sm">No categories available</p>
-    <% } %>
-  </div>
-</div>
+            <aside class="lg:w-80 w-full">
+                <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 sticky top-6">
+                    <!-- Filter Header -->
+                    <div class="flex items-center justify-between mb-6">
+                        <h2 class="text-xl font-bold text-gray-900">Filters</h2>
+                        <button onclick="clearAllFilters()" class="text-sm text-blue-600 hover:text-blue-800 transition">
+                            Clear All
+                        </button>
+                    </div>
 
-
-
-
-                    <!-- Colors Dropdown -->
-                    <!-- Colors Dropdown -->
-<div class="bg-white p-4 rounded shadow mt-4 mb-6">
-  <h3 class="font-semibold mb-3">Colors</h3>
-  <div class="flex flex-wrap gap-2">
-    <% if (colors && colors.length) { %>
-      <% colors.forEach(color => { %>
-        <label class="flex items-center gap-2 cursor-pointer hover:bg-gray-50 p-1 rounded">
-          <input type="checkbox" name="color" value="<%= color %>" class="filter-checkbox h-4 w-4 text-teal-600" />
-          <span class="w-5 h-5 rounded-full border" style="background-color:<%= color %>"></span>
-          <span class="text-sm"><%= color %></span>
-        </label>
-      <% }) %>
-    <% } else { %>
-      <p class="text-gray-500 text-sm">No colors available</p>
-    <% } %>
-  </div>
-</div>
-
-
-
-                    <!-- Brand Dropdown -->
+                    <!-- Search Filter -->
                     <div class="mb-6">
-                        <button onclick="toggleDropdown('brand-dropdown')" class="flex items-center justify-between w-full text-left font-semibold mb-2">
-                            <span>BRAND</span>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Search Products</label>
+                        <div class="relative">
+                            <input 
+                                type="text" 
+                                id="searchInput" 
+                                placeholder="Search for products..." 
+                                class="w-full px-4 py-3 border border-gray-300 rounded-lg input-focus focus:outline-none transition pl-11"
+                            >
+                            <div class="absolute inset-y-0 left-0 flex items-center pl-3">
+                                <i class="fas fa-search text-gray-400"></i>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Categories Filter -->
+                    <div class="filter-section mb-6">
+                        <button onclick="toggleFilter('category')" class="flex items-center justify-between w-full text-left font-semibold text-gray-900 mb-3">
+                            <span>Categories</span>
+                            <i class="fas fa-chevron-down transition-transform" id="category-icon"></i>
+                        </button>
+                        <div id="category-filter" class="filter-dropdown active">
+                            <% if (categories && categories.length) { %>
+                                <div class="space-y-2 max-h-60 overflow-y-auto">
+                                    <% categories.forEach(cat => { %>
+                                        <label class="flex items-center gap-3 cursor-pointer hover:bg-gray-50 p-2 rounded-lg transition">
+                                            <input
+                                                type="checkbox"
+                                                name="category"
+                                                value="<%= cat._id %>"
+                                                <%= selectedCategories && selectedCategories.includes(String(cat._id)) ? 'checked' : '' %>
+                                                class="filter-checkbox h-4 w-4 text-blue-600 rounded"
+                                            >
+                                            <span class="text-sm text-gray-700 flex-1"><%= cat.name %></span>
+                                            <span class="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
+                                                <%= cat.productCount || 0 %>
+                                            </span>
+                                        </label>
+                                    <% }) %>
+                                </div>
+                            <% } else { %>
+                                <p class="text-gray-500 text-sm">No categories available</p>
+                            <% } %>
+                        </div>
+                    </div>
+
+                    <!-- Price Range Filter -->
+                    <div class="filter-section mb-6">
+                        <h3 class="font-semibold text-gray-900 mb-3">Price Range</h3>
+                        <div class="space-y-3">
+                            <div class="flex items-center gap-3">
+                                <div class="flex-1">
+                                    <input 
+                                        type="number" 
+                                        id="minPrice" 
+                                        placeholder="Min" 
+                                        class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm input-focus"
+                                        min="0"
+                                    />
+                                </div>
+                                <span class="text-gray-500">to</span>
+                                <div class="flex-1">
+                                    <input 
+                                        type="number" 
+                                        id="maxPrice" 
+                                        placeholder="Max" 
+                                        class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm input-focus"
+                                        min="0"
+                                    />
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Colors Filter -->
+                    <div class="filter-section mb-6">
+                        <button onclick="toggleFilter('color')" class="flex items-center justify-between w-full text-left font-semibold text-gray-900 mb-3">
+                            <span>Colors</span>
+                            <i class="fas fa-chevron-down transition-transform" id="color-icon"></i>
+                        </button>
+                        <div id="color-filter" class="filter-dropdown active">
+                            <% if (colors && colors.length) { %>
+                                <div class="grid grid-cols-2 gap-2">
+                                    <% colors.forEach(color => { %>
+                                        <label class="flex items-center gap-2 cursor-pointer hover:bg-gray-50 p-2 rounded-lg transition">
+                                            <input 
+                                                type="checkbox" 
+                                                name="color" 
+                                                value="<%= color %>" 
+                                                class="filter-checkbox h-4 w-4 text-blue-600 rounded"
+                                            />
+                                            <span class="color-swatch" style="background-color:<%= color.toLowerCase() %>"></span>
+                                            <span class="text-sm text-gray-700 flex-1 capitalize"><%= color %></span>
+                                        </label>
+                                    <% }) %>
+                                </div>
+                            <% } else { %>
+                                <p class="text-gray-500 text-sm">No colors available</p>
+                            <% } %>
+                        </div>
+                    </div>
+
+                    <!-- Brand Filter -->
+                    <div class="filter-section mb-6">
+                        <button onclick="toggleFilter('brand')" class="flex items-center justify-between w-full text-left font-semibold text-gray-900 mb-3">
+                            <span>Brands</span>
                             <i class="fas fa-chevron-down transition-transform" id="brand-icon"></i>
                         </button>
-                        <div id="brand-dropdown" class="dropdown-content active">
+                        <div id="brand-filter" class="filter-dropdown active">
                             <% const allBrands = [...new Set(products.filter(p => !p.isBlocked).map(p => p.brand).filter(Boolean))]; %>
-                            <% allBrands.forEach(brand => { %>
-                                <label class="flex items-center space-x-2 mb-2 cursor-pointer hover:bg-gray-50 p-1 rounded">
-                                    <input type="checkbox" name="brand" value="<%= brand %>" class="filter-checkbox w-4 h-4 text-teal-600">
-                                    <span class="text-sm"><%= brand %></span>
-                                </label>
-                            <% }) %>
+                            <% if (allBrands.length) { %>
+                                <div class="space-y-2 max-h-60 overflow-y-auto">
+                                    <% allBrands.forEach(brand => { %>
+                                        <label class="flex items-center gap-3 cursor-pointer hover:bg-gray-50 p-2 rounded-lg transition">
+                                            <input 
+                                                type="checkbox" 
+                                                name="brand" 
+                                                value="<%= brand %>" 
+                                                class="filter-checkbox h-4 w-4 text-blue-600 rounded"
+                                            >
+                                            <span class="text-sm text-gray-700 flex-1"><%= brand %></span>
+                                            <span class="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
+                                                <%= products.filter(p => p.brand === brand && !p.isBlocked).length %>
+                                            </span>
+                                        </label>
+                                    <% }) %>
+                                </div>
+                            <% } else { %>
+                                <p class="text-gray-500 text-sm">No brands available</p>
+                            <% } %>
                         </div>
                     </div>
 
-                    <!-- Price Range -->
-                    <div class="mb-6">
-                        <h3 class="font-semibold mb-3">Price</h3>
-                        <div class="flex items-center space-x-2 mb-2">
-                            <input 
-  type="number" 
-  id="minPrice" 
-  placeholder="Min" 
-  class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm" 
-  min="0"
-/>
-<span>-</span>
-<input 
-  type="number" 
-  id="maxPrice" 
-  placeholder="Max" 
-  class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm" 
-  min="0"
-/>
-
-                        </div>
-                    </div>
-
-                    <!-- Filter Button -->
-                    <button onclick="applyFilters()" class="w-full bg-teal-800 text-white py-2 rounded-lg hover:bg-teal-700 transition duration-300">
-                        Filter
+                    <!-- Apply Filters Button -->
+                    <button onclick="applyFilters()" class="w-full btn-primary text-white py-3 rounded-lg font-semibold flex items-center justify-center gap-2 shadow-lg">
+                        <i class="fas fa-filter"></i>
+                        Apply Filters
                     </button>
                 </div>
             </aside>
 
             <!-- Main Content -->
             <main class="flex-1">
-                <!-- Header Section -->
-                <div class="bg-white rounded-lg shadow-md p-6 mb-6">
-                    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                        <h1 class="text-3xl font-bold text-gray-800">Our Collection</h1>
+                <!-- Results Header -->
+                <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
+                    <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+                        <div>
+                            <h2 class="text-2xl font-bold text-gray-900">Our Collection</h2>
+                            <p id="resultsInfo" class="text-gray-600 mt-1">
+                                Showing <span id="currentCount" class="font-semibold">0</span> of 
+                                <span id="totalCount" class="font-semibold">0</span> products
+                            </p>
+                        </div>
                         
                         <div class="flex items-center gap-4">
                             <!-- Sort Dropdown -->
-                            <select id="sortSelect" onchange="applyFilters()" class="px-4 py-2 bg-teal-800 text-white rounded-lg cursor-pointer hover:bg-teal-700 transition">
-                                <option value="">Sort</option>
-                                <option value="price-low">Price: Low to High</option>
-                                <option value="price-high">Price: High to Low</option>
-                                <option value="name-asc">Name: A to Z</option>
-                                <option value="name-desc">Name: Z to A</option>
-                                <option value="popularity">Popularity</option>
-                                <option value="rating">Average Rating</option>
-                                <option value="new">New Arrivals</option>
-                                <option value="featured">Featured</option>
-                            </select>
+                            <div class="relative">
+                                <select id="sortSelect" onchange="applyFilters()" class="appearance-none bg-white border border-gray-300 rounded-lg px-4 py-2 pr-8 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 cursor-pointer">
+                                    <option value="">Sort by</option>
+                                    <option value="price-low">Price: Low to High</option>
+                                    <option value="price-high">Price: High to Low</option>
+                                    <option value="name-asc">Name: A to Z</option>
+                                    <option value="name-desc">Name: Z to A</option>
+                                    <option value="new">New Arrivals</option>
+                                    <option value="featured">Featured</option>
+                                </select>
+                                <div class="absolute inset-y-0 right-0 flex items-center px-2 pointer-events-none">
+                                    <i class="fas fa-chevron-down text-gray-400"></i>
+                                </div>
+                            </div>
                         </div>
-                    </div>
-                    
-                    <!-- Search Bar -->
-                    <div class="mt-4 relative">
-                        <input type="text" id="searchInput" placeholder="Search An Item" class="w-full px-4 py-3 pr-12 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500">
-                        <button onclick="applyFilters()" class="absolute right-3 top-1/2 transform -translate-y-1/2 bg-gray-200 p-2 rounded-full hover:bg-gray-300">
-                            <i class="fas fa-search text-gray-600"></i>
-                        </button>
                     </div>
                 </div>
 
-               
-               <!-- Products Grid -->
-<div id="productsGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
-  <% if (products && products.length > 0) { %>
-    <% products.forEach(product => { %>
-      <% if (!product.isBlocked) { %>
+                <!-- Products Grid -->
+                <div id="productsGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+                    <% if (products && products.length > 0) { %>
+                        <% products.forEach(product => { %>
+                            <% if (!product.isBlocked) { %>
+                                <a href="/user/product/<%= product._id %>" class="block">
+                                    <div class="product-card bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden card-hover"
+                                        data-category="<%= product.category?._id || '' %>"
+                                        data-brand="<%= product.brand || '' %>"
+                                        data-colors="<%= product.variants.map(v => v.color).join(',') %>"
+                                        data-price="<%= product.variants?.[0]?.price || 0 %>"
+                                        data-name="<%= (product.name || '').toLowerCase() %>"
+                                        data-created="<%= product.createdAt %>"
+                                        data-featured="<%= product.isFeatured ? 'true' : 'false' %>">
 
-        <!-- Wrap the entire product card in a link -->
-        <a href="/product/<%= product._id %>" class="block">
-          <div class="product-card bg-white rounded-lg shadow-md overflow-hidden hover:shadow-xl transition duration-300"
-              data-category="<%= product.category?._id || '' %>"
-              data-brand="<%= product.brand || '' %>"
-              data-colors="<%= product.variants.map(v => v.color).join(',') %>"
-              data-price="<%= product.variants?.[0]?.price || 0 %>"
-              data-name="<%= (product.name || '').toLowerCase() %>"
-              data-created="<%= product.createdAt %>"
-              data-featured="<%= product.isFeatured ? 'true' : 'false' %>">
+                                        <!-- Product Image -->
+                                        <div class="relative">
+                                            <% 
+                                                let mainImage = '/images/placeholder.jpg';
+                                                if (product.variants && product.variants.length > 0 && product.variants[0].images.length > 0) {
+                                                    mainImage = product.variants[0].images[0].url;
+                                                }
+                                            %>
+                                            <img 
+                                                src="<%= mainImage %>" 
+                                                alt="<%= product.name %>" 
+                                                class="w-full h-64 object-cover"
+                                            />
 
-            <div class="relative">
-              <% 
-                let mainImage = '/images/placeholder.jpg';
-                if (product.variants && product.variants.length > 0 && product.variants[0].images.length > 0) {
-                  mainImage = product.variants[0].images[0].url;
-                }
-              %>
-              <img 
-                src="<%= mainImage %>" 
-                alt="<%= product.name %>" 
-                class="w-full h-64 object-cover rounded-lg border border-gray-200" 
-              />
+                                            <!-- Featured Badge -->
+                                            <% if (product.isFeatured) { %>
+                                                <div class="absolute top-3 left-3">
+                                                    <span class="featured-badge text-white text-xs font-semibold px-2 py-1 rounded-full">
+                                                        <i class="fas fa-star mr-1"></i>Featured
+                                                    </span>
+                                                </div>
+                                            <% } %>
 
-              <% if (product.isFeatured) { %>
-                <span class="absolute top-2 left-2 bg-yellow-500 text-white px-2 py-1 rounded text-xs font-semibold">
-                  Featured
-                </span>
-              <% } %>
-            </div>
+                                            <!-- Wishlist Button -->
+                                            <button onclick="toggleWishlist(event, '<%= product._id %>')" 
+                                                    class="wishlist-btn absolute top-3 right-3 bg-white rounded-full p-2 shadow-md hover:shadow-lg">
+                                                <i class="far fa-heart text-gray-400 text-lg"></i>
+                                            </button>
+                                        </div>
 
-            <div class="p-4">
-              <h3 class="font-semibold text-lg mb-2 text-gray-800 truncate"><%= product.name %></h3>
-              <p class="text-sm text-gray-500 mb-1"><%= product.brand %></p>
-              <p class="text-teal-800 font-bold text-xl mb-2">₹<%= product.variants?.[0]?.price || 0 %></p>
+                                        <!-- Product Info -->
+                                        <div class="p-4">
+                                            <div class="flex items-start justify-between mb-2">
+                                                <h3 class="font-semibold text-gray-900 text-lg leading-tight flex-1 pr-2">
+                                                    <%= product.name %>
+                                                </h3>
+                                            </div>
+                                            
+                                            <p class="text-sm text-gray-500 mb-2"><%= product.brand %></p>
+                                            
+                                            <div class="flex items-center justify-between mb-3">
+                                                <p class="text-blue-600 font-bold text-xl">₹<%= product.variants?.[0]?.price || 0 %></p>
+                                            </div>
 
-              <!-- Color swatches -->
-              <div class="flex gap-2 mb-2">
-                <% product.variants.forEach(v => { %>
-                  <span class="w-5 h-5 rounded-full border" style="background-color:<%= v.color.toLowerCase() %>"></span>
-                <% }) %>
-              </div>
+                                            <!-- Color Variants -->
+                                            <div class="flex gap-1 mb-3">
+                                                <% product.variants.forEach(v => { %>
+                                                    <span class="color-swatch" style="background-color:<%= v.color.toLowerCase() %>" 
+                                                          title="<%= v.color %>"></span>
+                                                <% }) %>
+                                            </div>
 
-              <!-- Wishlist button -->
-              <button onclick="toggleWishlist(event, '<%= product._id %>')" class="heart-icon text-gray-400 hover:text-red-500 transition">
-                <i class="far fa-heart text-xl"></i>
-              </button>
-            </div>
-          </div>
-        </a>
-        
-      <% } %>
-    <% }) %>
-  <% } else { %>
-    <div class="col-span-3 text-center py-12">
-      <p class="text-gray-500 text-lg">No products found</p>
-    </div>
-  <% } %>
-</div>
+                                            <!-- Quick Actions -->
+                                            <div class="flex items-center justify-between pt-3 border-t border-gray-100">
+                                                <span class="text-sm text-gray-500">
+                                                    <i class="fas fa-shipping-fast mr-1"></i>Free Shipping
+                                                </span>
+                                                <button class="text-blue-600 hover:text-blue-800 text-sm font-medium transition">
+                                                    View Details <i class="fas fa-arrow-right ml-1"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </a>
+                            <% } %>
+                        <% }) %>
+                    <% } else { %>
+                        <div class="col-span-3 text-center py-16">
+                            <i class="fas fa-inbox text-6xl text-gray-300 mb-4"></i>
+                            <h3 class="text-xl font-semibold text-gray-600 mb-2">No Products Found</h3>
+                            <p class="text-gray-500 mb-6">Try adjusting your filters or search terms</p>
+                            <button onclick="clearAllFilters()" class="btn-primary text-white px-6 py-3 rounded-lg font-semibold">
+                                Clear All Filters
+                            </button>
+                        </div>
+                    <% } %>
+                </div>
 
-
-
-                <!-- Results Info & Load More -->
+                <!-- Load More Section -->
                 <div class="text-center">
-                    <p class="text-gray-600 mb-4" id="resultsInfo">Showing <span id="currentCount">0</span> of <span id="totalCount">0</span> item(s)</p>
-                    <button id="loadMoreBtn" onclick="loadMore()" class="bg-teal-800 text-white px-8 py-3 rounded-lg hover:bg-teal-700 transition duration-300 inline-flex items-center">
-                        Load More
-                        <i class="fas fa-chevron-right ml-2"></i>
+                    <button id="loadMoreBtn" onclick="loadMore()" 
+                            class="btn-primary text-white px-8 py-3 rounded-lg font-semibold inline-flex items-center gap-2 shadow-lg">
+                        <i class="fas fa-plus-circle"></i>
+                        Load More Products
                     </button>
                 </div>
             </main>
@@ -245,22 +397,42 @@
     </div>
 
     <!-- Footer -->
-    
-<%-include('../partials/footer')%>
+    <%- include('../partials/footer') %>
 
     <script>
         let currentlyShown = 12;
         const loadMoreIncrement = 12;
 
-        // Toggle dropdown functionality
-        function toggleDropdown(id) {
-            const dropdown = document.getElementById(id);
-            const icon = document.getElementById(id.replace('-dropdown', '-icon'));
-            dropdown.classList.toggle('active');
+        // Toggle filter sections
+        function toggleFilter(type) {
+            const filter = document.getElementById(`${type}-filter`);
+            const icon = document.getElementById(`${type}-icon`);
+            filter.classList.toggle('active');
             icon.classList.toggle('rotate-180');
         }
 
-        // Apply filters function
+        // Clear all filters
+        function clearAllFilters() {
+            // Clear search
+            document.getElementById('searchInput').value = '';
+            
+            // Clear price inputs
+            document.getElementById('minPrice').value = '';
+            document.getElementById('maxPrice').value = '';
+            
+            // Clear all checkboxes
+            document.querySelectorAll('.filter-checkbox').forEach(checkbox => {
+                checkbox.checked = false;
+            });
+            
+            // Reset sort
+            document.getElementById('sortSelect').value = '';
+            
+            // Reapply filters
+            applyFilters();
+        }
+
+        // Apply filters function (same logic as before, but with professional styling)
         function applyFilters() {
             const searchTerm = document.getElementById('searchInput').value.toLowerCase();
             const minPrice = parseFloat(document.getElementById('minPrice').value) || 0;
@@ -316,10 +488,16 @@
                 product.style.display = show ? 'block' : 'none';
             });
 
-            // Get visible products for sorting
+            // Sort and update display
+            sortAndDisplayProducts(sortValue, products);
+            updateResultsCount();
+            currentlyShown = loadMoreIncrement;
+            applyLoadMore();
+        }
+
+        function sortAndDisplayProducts(sortValue, products) {
             const visibleProducts = products.filter(p => p.style.display !== 'none');
 
-            // Sort products
             if (sortValue) {
                 visibleProducts.sort((a, b) => {
                     switch(sortValue) {
@@ -331,10 +509,6 @@
                             return a.getAttribute('data-name').localeCompare(b.getAttribute('data-name'));
                         case 'name-desc':
                             return b.getAttribute('data-name').localeCompare(a.getAttribute('data-name'));
-                        case 'popularity':
-                            return parseFloat(b.getAttribute('data-popularity')) - parseFloat(a.getAttribute('data-popularity'));
-                        case 'rating':
-                            return parseFloat(b.getAttribute('data-rating')) - parseFloat(a.getAttribute('data-rating'));
                         case 'new':
                             return new Date(b.getAttribute('data-created')) - new Date(a.getAttribute('data-created'));
                         case 'featured':
@@ -344,19 +518,11 @@
                     }
                 });
 
-                // Re-append sorted products
                 const grid = document.getElementById('productsGrid');
                 visibleProducts.forEach(product => {
                     grid.appendChild(product);
                 });
             }
-
-            // Update results count
-            updateResultsCount();
-            
-            // Reset load more
-            currentlyShown = loadMoreIncrement;
-            applyLoadMore();
         }
 
         // Load more functionality
@@ -369,33 +535,21 @@
             const visibleProducts = Array.from(document.querySelectorAll('.product-card')).filter(p => p.style.display !== 'none');
             
             visibleProducts.forEach((product, index) => {
-                if (index < currentlyShown) {
-                    product.style.display = 'block';
-                } else {
-                    product.style.display = 'none';
-                }
+                product.style.display = index < currentlyShown ? 'block' : 'none';
             });
 
-            // Hide load more button if all products are shown
             const loadMoreBtn = document.getElementById('loadMoreBtn');
-            if (currentlyShown >= visibleProducts.length) {
-                loadMoreBtn.style.display = 'none';
-            } else {
-                loadMoreBtn.style.display = 'inline-flex';
-            }
-
+            loadMoreBtn.style.display = currentlyShown >= visibleProducts.length ? 'none' : 'inline-flex';
             updateResultsCount();
         }
 
         function updateResultsCount() {
             const allProducts = document.querySelectorAll('.product-card');
             const visibleProducts = Array.from(allProducts).filter(p => {
-                const computedStyle = window.getComputedStyle(p);
-                return computedStyle.display !== 'none';
+                return window.getComputedStyle(p).display !== 'none';
             });
             
             const showing = Math.min(currentlyShown, visibleProducts.length);
-            
             document.getElementById('currentCount').textContent = showing;
             document.getElementById('totalCount').textContent = visibleProducts.length;
         }
@@ -406,33 +560,24 @@
             event.stopPropagation();
             
             const icon = event.currentTarget.querySelector('i');
+            const isActive = icon.classList.contains('fas');
             
-            if (icon.classList.contains('far')) {
-                icon.classList.remove('far');
-                icon.classList.add('fas');
+            if (!isActive) {
+                icon.classList.replace('far', 'fas');
                 icon.style.color = '#ef4444';
-                
-                // Add to wishlist via AJAX
                 fetch('/wishlist/add', {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
+                    headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ productId: productId })
-                }).catch(err => console.error('Error:', err));
+                }).catch(console.error);
             } else {
-                icon.classList.remove('fas');
-                icon.classList.add('far');
+                icon.classList.replace('fas', 'far');
                 icon.style.color = '';
-                
-                // Remove from wishlist via AJAX
                 fetch('/wishlist/remove', {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
+                    headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ productId: productId })
-                }).catch(err => console.error('Error:', err));
+                }).catch(console.error);
             }
         }
 
@@ -441,11 +586,8 @@
             updateResultsCount();
             applyLoadMore();
             
-            // Add enter key support for search
             document.getElementById('searchInput').addEventListener('keypress', function(e) {
-                if (e.key === 'Enter') {
-                    applyFilters();
-                }
+                if (e.key === 'Enter') applyFilters();
             });
         });
     </script>
