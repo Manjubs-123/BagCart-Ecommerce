@@ -579,21 +579,533 @@ export const filterProducts = async (req, res) => {
 // };
 
 // ✅ Get Product Details
+// export const getProductDetails = async (req, res) => {
+//   try {
+//     const productId = req.params.id;
+
+//     // ✅ Populate category and brand (ObjectId ref)
+//     const product = await Product.findById(productId)
+//       .populate("category", "_id name")
+//       .populate("brand", "name")
+//       .lean();
+
+//     if (!product || product.isBlocked) {
+//       return res.redirect("/shop");
+//     }
+
+//     // ✅ Prepare images grouped by variant color
+//     const variantImages = {};
+//     (product.variants || []).forEach(v => {
+//       if (v.color && v.images?.length) {
+//         variantImages[v.color.toLowerCase()] = v.images.map(img => img.url);
+//       }
+//     });
+
+//     const firstVariant = (product.variants || [])[0] || {};
+//     const allProductImages = variantImages[Object.keys(variantImages)[0]] || [];
+
+//     // ✅ Prepare product info
+//     const viewProduct = {
+//       _id: product._id,
+//       productName: product.name,
+//       salePrice: firstVariant.price || 0,
+//       regularPrice: firstVariant.mrp || null,
+//       description: product.description || "",
+//       productFeatures: product.productFeatures || [],
+//       colors: (product.variants || []).map(v => v.color).filter(Boolean),
+//       stock: firstVariant.stock || 0,
+//       sku: product.sku || String(product._id),
+//       rating: product.rating || 4.5,
+//       reviews: product.reviewsCount || 0,
+//       category: product.category,
+//       brand: product.brand?.name || "BagHub",
+//     };
+
+//     // ✅ Find similar products (same category)
+//   const relatedProducts = await Product.find({
+//   category: product.category._id,
+//   _id: { $ne: product._id },
+//   isDeleted: false,
+//   isBlocked: false
+// })
+// .populate("brand", "name")
+// .limit(8)
+// .lean();
+
+
+//     // ✅ Fallback to random products if none in same category
+//     if (!relatedProducts.length) {
+//       relatedProducts = await Product.find({
+//         _id: { $ne: product._id },
+//         isBlocked: false,
+//         isDeleted: false,
+//       })
+//         .populate("category", "name")
+//         .populate("brand", "name")
+//         .limit(8)
+//         .lean();
+//     }
+
+//     // ✅ Format products for EJS
+//     const formattedRelated = relatedProducts.map(p => {
+//       const fv = (p.variants || [])[0] || {};
+//       const firstImage =
+//         (p.variants || [])
+//           .flatMap(v => (v.images || []).map(img => img.url))
+//           .filter(Boolean)[0] || "/images/placeholder.jpg";
+
+//       return {
+//         _id: p._id,
+//         productName: p.name,
+//         salePrice: fv.price || 0,
+//         regularPrice: fv.mrp || null,
+//         productImage: [firstImage],
+//         brand: p.brand?.name || "BagHub",
+//         rating: p.rating || 4.5,
+//         categoryName: p.category?.name || "Other",
+//       };
+//     });
+
+//     console.log("✅ Related Products Found:", formattedRelated.length, "for Category:", product.category.name);
+
+//     // ✅ Render
+//     res.render("user/productDetails", {
+//       title: `${viewProduct.productName} - BagHub`,
+//       product: viewProduct,
+//       allProductImages,
+//       relatedProducts: formattedRelated,
+//       categoryName: product.category?.name || "Other",
+//       user: req.session?.user || { wishlistCount: 0 },
+//       variantImages,
+//       colorMap: {
+//         black: "#000000",
+//         blue: "#1e40af",
+//         red: "#dc2626",
+//         green: "#059669",
+//         gray: "#6b7280",
+//         brown: "#92400e",
+//         white: "#ffffff",
+//         yellow: "#facc15",
+//         pink: "#ec4899",
+//         purple: "#8b5cf6",
+//         orange: "#f97316",
+//       },
+//     });
+//   } catch (error) {
+//     console.error("❌ Error loading product details:", error);
+//     res.redirect("/shop");
+//   }
+// };
+
+
+// export const getProductDetails = async (req, res) => {
+//   try {
+//     const productId = req.params.id;
+
+//     // ✅ Populate category & brand
+//     const product = await Product.findById(productId)
+//       .populate("category", "_id name")
+//       .populate("brand", "name")
+//       .lean();
+
+//     if (!product || product.isBlocked || product.isDeleted) {
+//       return res.redirect("/shop");
+//     }
+
+//     // ✅ Prepare variant images grouped by color
+//     const variantImages = {};
+//     (product.variants || []).forEach(v => {
+//       if (v.color && v.images?.length) {
+//         variantImages[v.color.toLowerCase()] = v.images.map(img => img.url);
+//       }
+//     });
+
+//     const firstVariant = (product.variants || [])[0] || {};
+//     const allProductImages = variantImages[Object.keys(variantImages)[0]] || [];
+
+//     // ✅ Main product object for EJS
+//     const viewProduct = {
+//       _id: product._id,
+//       productName: product.name,
+//       salePrice: firstVariant.price || 0,
+//       regularPrice: firstVariant.mrp || null,
+//       description: product.description || "",
+//       productFeatures: product.productFeatures || [],
+//       colors: (product.variants || []).map(v => v.color).filter(Boolean),
+//       stock: firstVariant.stock || 0,
+//       sku: product.sku || String(product._id),
+//       rating: product.rating || 4.5,
+//       reviews: product.reviewsCount || 0,
+//       category: product.category,
+//       brand: product.brand?.name || "BagHub",
+//     };
+
+//     /* ----------------------------------------------------------
+//        ✅ 1. Get related products (same category)
+//     ---------------------------------------------------------- */
+//    /* ----------------------------------------------------------
+//    ✅ Fetch Related Products (with debugging)
+// ---------------------------------------------------------- */
+// let relatedProducts = [];
+
+// try {
+//   console.log("🔍 Debug Info:");
+//   console.log("Product ID:", product._id);
+//   console.log("Product Category Object:", product.category);
+//   console.log("Category ID for Query:", product.category?._id || product.category);
+
+//   relatedProducts = await Product.find({
+//     category: product.category?._id || product.category, // ✅ safer category handling
+//     _id: { $ne: product._id },
+//     isDeleted: false,
+//     isBlocked: false,
+//   })
+//     .populate("category", "name")
+//     .populate("brand", "name")
+//     .limit(8)
+//     .lean();
+
+//   console.log("✅ Related products found:", relatedProducts.length);
+//   if (relatedProducts.length) {
+//     console.log("Sample product names:", relatedProducts.map(p => p.name));
+//   } else {
+//     console.log("⚠️ No related products found for category:", product.category?.name);
+//   }
+
+//   // ✅ Fallback: same brand if category has no related
+//   if (!relatedProducts.length && product.brand) {
+//     relatedProducts = await Product.find({
+//       brand: product.brand._id,
+//       _id: { $ne: product._id },
+//       isDeleted: false,
+//       isBlocked: false,
+//     })
+//       .populate("category", "name")
+//       .populate("brand", "name")
+//       .limit(8)
+//       .lean();
+
+//     console.log("🔁 Used brand fallback. Found:", relatedProducts.length);
+//   }
+// } catch (err) {
+//   console.error("❌ Error fetching related products:", err);
+// }
+
+
+//     // /* ----------------------------------------------------------
+//     //    ✅ 2. Fallback: if no same-category products, use same brand
+//     // ---------------------------------------------------------- */
+//     // if (!relatedProducts.length && product.brand) {
+//     //   relatedProducts = await Product.find({
+//     //     brand: product.brand._id,
+//     //     _id: { $ne: product._id },
+//     //     isDeleted: false,
+//     //     isBlocked: false,
+//     //   })
+//     //     .populate("category", "name")
+//     //     .populate("brand", "name")
+//     //     .limit(8)
+//     //     .lean();
+//     // }
+
+//     /* ----------------------------------------------------------
+//        ✅ 3. Fallback: if still none, show random 8 products
+//     ---------------------------------------------------------- */
+//     if (!relatedProducts.length) {
+//       relatedProducts = await Product.find({
+//         _id: { $ne: product._id },
+//         isDeleted: false,
+//         isBlocked: false,
+//       })
+//         .populate("category", "name")
+//         .populate("brand", "name")
+//         .limit(8)
+//         .lean();
+//     }
+
+//     /* ----------------------------------------------------------
+//        ✅ 4. Format related products for EJS
+//     ---------------------------------------------------------- */
+//     const formattedRelated = relatedProducts.map(p => {
+//       const fv = (p.variants || [])[0] || {};
+//       const firstImage =
+//         (p.variants || [])
+//           .flatMap(v => (v.images || []).map(img => img.url))
+//           .filter(Boolean)[0] || "/images/placeholder.jpg";
+
+//       return {
+//         _id: p._id,
+//         productName: p.name,
+//         salePrice: fv.price || 0,
+//         regularPrice: fv.mrp || null,
+//         productImage: [firstImage],
+//         brand: p.brand?.name || "BagHub",
+//         rating: p.rating || 4.5,
+//         categoryName: p.category?.name || "Other",
+//       };
+//     });
+
+//     console.log(
+//       `✅ Related Products Found: ${formattedRelated.length} for Category: ${product.category?.name}`
+//     );
+
+//     /* ----------------------------------------------------------
+//        ✅ Render EJS
+//     ---------------------------------------------------------- */
+//     res.render("user/productDetails", {
+//       title: `${viewProduct.productName} - BagHub`,
+//       product: viewProduct,
+//       allProductImages,
+//       relatedProducts: formattedRelated,
+//       categoryName: product.category?.name || "Other",
+//       user: req.session?.user || { wishlistCount: 0 },
+//       variantImages,
+//       colorMap: {
+//         black: "#000000",
+//         blue: "#1e40af",
+//         red: "#dc2626",
+//         green: "#059669",
+//         gray: "#6b7280",
+//         brown: "#92400e",
+//         white: "#ffffff",
+//         yellow: "#facc15",
+//         pink: "#ec4899",
+//         purple: "#8b5cf6",
+//         orange: "#f97316",
+//       },
+//     });
+//   } catch (error) {
+//     console.error("❌ Error loading product details:", error);
+//     res.redirect("/shop");
+//   }
+// };
+
+
+
+// // ✅ Get variant details (images, price, stock) by color
+// export const getVariantByColor = async (req, res) => {
+//   try {
+//     const { productId } = req.params;
+//     const { color } = req.query;
+
+//     const product = await Product.findById(productId).lean();
+//     if (!product) return res.status(404).json({ success: false, message: "Product not found" });
+
+//     const variant = (product.variants || []).find(
+//       v => v.color.toLowerCase() === color.toLowerCase()
+//     );
+
+//     if (!variant) {
+//       return res.status(404).json({ success: false, message: "Variant not found" });
+//     }
+
+//     res.json({
+//       success: true,
+//       variant: {
+//         color: variant.color,
+//         price: variant.price,
+//         mrp: variant.mrp,
+//         stock: variant.stock,
+//         images: (variant.images || []).map(img => img.url),
+//       },
+//     });
+//   } catch (error) {
+//     console.error("❌ Error fetching variant:", error);
+//     res.status(500).json({ success: false, message: "Server error" });
+//   }
+// };
+
+
+
+// export const getProductDetails = async (req, res) => {
+//   try {
+//     const productId = req.params.id;
+
+//     // ✅ Populate category & brand
+//     const product = await Product.findById(productId)
+//       .populate("category", "_id name")
+//       .populate("brand", "name")
+//       .lean();
+
+//     if (!product || product.isBlocked || product.isDeleted) {
+//       return res.redirect("/shop");
+//     }
+
+//     // ✅ Prepare variant images grouped by color
+//     const variantImages = {};
+//     (product.variants || []).forEach(v => {
+//       if (v.color && v.images?.length) {
+//         variantImages[v.color.toLowerCase()] = v.images.map(img => img.url);
+//       }
+//     });
+
+//     const firstVariant = (product.variants || [])[0] || {};
+//     const allProductImages = variantImages[Object.keys(variantImages)[0]] || [];
+
+//     // ✅ Main product object for EJS
+//     const viewProduct = {
+//       _id: product._id,
+//       productName: product.name,
+//       salePrice: firstVariant.price || 0,
+//       regularPrice: firstVariant.mrp || null,
+//       description: product.description || "",
+//       productFeatures: product.productFeatures || [],
+//       colors: (product.variants || []).map(v => v.color).filter(Boolean),
+//       stock: firstVariant.stock || 0,
+//       sku: product.sku || String(product._id),
+//       rating: product.rating || 4.5,
+//       reviews: product.reviewsCount || 0,
+//       category: product.category,
+//       brand: product.brand?.name || "BagHub",
+//     };
+
+//     /* ----------------------------------------------------------
+//        ✅ Fetch Related Products (same category or brand fallback)
+//     ---------------------------------------------------------- */
+// //     let relatedProducts = [];
+
+// //     console.log("🔍 Debug Info:");
+// //     console.log("Product ID:", product._id);
+// //     console.log("Product Category Object:", product.category);
+// //     console.log("Category ID for Query:", product.category?._id || product.category);
+
+// //     // ✅ 1. Try same-category products
+  
+
+// //     console.log("✅ Related products found:", relatedProducts.length);
+// //     if (relatedProducts.length) {
+// //       console.log("Sample product names:", relatedProducts.map(p => p.name));
+// //     } else {
+// //       console.log("⚠️ No related products found for category:", product.category?.name);
+// //     }
+
+// //     // ✅ 2. Fallback to same brand
+  
+
+// //     // ✅ 3. Fallback to random if still none
+// //     if (!relatedProducts.length) {
+// //       relatedProducts = await Product.find({
+// //         _id: { $ne: product._id },
+// //         isDeleted: false,
+// //         isBlocked: false,
+// //       })
+// //         .populate("category", "name")
+// //         .populate("brand", "name")
+// //         .limit(8)
+// //         .lean();
+
+// //       console.log("🌀 Used random fallback. Found:", relatedProducts.length);
+// //     }
+
+// //     /* ----------------------------------------------------------
+// //        ✅ Format related products for EJS
+// //     ---------------------------------------------------------- */
+// //    const formattedRelated = relatedProducts.map(p => {
+// //   const fv = (p.variants || [])[0] || {};
+// //   const firstImage =
+// //     (p.variants || [])
+// //       .flatMap(v => (v.images || []).map(img => (typeof img === "string" ? img : img.url)))
+// //       .filter(Boolean)[0] || "/images/placeholder.jpg";
+
+// //   return {
+// //     _id: p._id,
+// //     productName: p.name,
+// //     salePrice: fv.price || 0,
+// //     regularPrice: fv.mrp || null,
+// //     productImage: [firstImage],
+// //     brand: p.brand?.name || "BagHub",
+// //     rating: p.rating || 4.5,
+// //     categoryName: p.category?.name || "Other",
+// //   };
+// // });
+
+
+// //     console.log(
+// //       `✅ Related Products Prepared: ${formattedRelated.length} for Category: ${product.category?.name}`
+// //     );
+
+
+// let relatedProducts = [];
+
+// // Step 1️⃣: Try to find related products by category
+// if (product.category) {
+//   relatedProducts = await Product.find({
+//     category: product.category,
+//     _id: { $ne: product._id },
+//     isDeleted: false,
+//     isActive: true
+//   })
+//     .populate("category", "name")
+//     .limit(8)
+//     .lean();
+
+//   console.log("✅ Found by category:", relatedProducts.length);
+// }
+
+// // Step 2️⃣: If no related products, fall back to brand name
+// if (!relatedProducts.length && product.brand) {
+//   relatedProducts = await Product.find({
+//     brand: product.brand,
+//     _id: { $ne: product._id },
+//     isDeleted: false,
+//     isActive: true
+//   })
+//     .populate("category", "name")
+//     .limit(8)
+//     .lean();
+
+//   console.log("🔁 Used brand fallback:", relatedProducts.length);
+// }
+
+
+//     /* ----------------------------------------------------------
+//        ✅ Render EJS
+//     ---------------------------------------------------------- */
+//     res.render("user/productDetails", {
+//       title: `${viewProduct.productName} - BagHub`,
+//       product: viewProduct,
+//       allProductImages,
+//       relatedProducts: formattedRelated,
+//       categoryName: product.category?.name || "Other",
+//       user: req.session?.user || { wishlistCount: 0 },
+//       variantImages,
+//       colorMap: {
+//         black: "#000000",
+//         blue: "#1e40af",
+//         red: "#dc2626",
+//         green: "#059669",
+//         gray: "#6b7280",
+//         brown: "#92400e",
+//         white: "#ffffff",
+//         yellow: "#facc15",
+//         pink: "#ec4899",
+//         purple: "#8b5cf6",
+//         orange: "#f97316",
+//       },
+//     });
+//   } catch (error) {
+//     console.error("❌ Error loading product details:", error);
+//     res.redirect("/shop");
+//   }
+// };
+
+
+
+
 export const getProductDetails = async (req, res) => {
   try {
     const productId = req.params.id;
 
-    // ✅ Populate category and brand (ObjectId ref)
+    // ✅ Fetch product with category populated
     const product = await Product.findById(productId)
       .populate("category", "_id name")
-      .populate("brand", "name")
       .lean();
 
-    if (!product || product.isBlocked) {
+    if (!product || product.isDeleted || product.isBlocked === true) {
       return res.redirect("/shop");
     }
 
-    // ✅ Prepare images grouped by variant color
+    // ✅ Prepare variant images grouped by color
     const variantImages = {};
     (product.variants || []).forEach(v => {
       if (v.color && v.images?.length) {
@@ -602,9 +1114,10 @@ export const getProductDetails = async (req, res) => {
     });
 
     const firstVariant = (product.variants || [])[0] || {};
-    const allProductImages = variantImages[Object.keys(variantImages)[0]] || [];
+    const allProductImages =
+      variantImages[Object.keys(variantImages)[0]] || [];
 
-    // ✅ Prepare product info
+    // ✅ Main Product object for EJS
     const viewProduct = {
       _id: product._id,
       productName: product.name,
@@ -618,41 +1131,70 @@ export const getProductDetails = async (req, res) => {
       rating: product.rating || 4.5,
       reviews: product.reviewsCount || 0,
       category: product.category,
-      brand: product.brand?.name || "BagHub",
+      brand: product.brand || "BagHub",
     };
 
-    // ✅ Find similar products (same category)
-    let relatedProducts = await Product.find({
-      category: product.category._id,
-      _id: { $ne: product._id },
-      isBlocked: false,
-      isDeleted: false,
-    })
-      .populate("category", "name")
-      .populate("brand", "name")
-      .limit(8)
-      .lean();
+    /* ----------------------------------------------------------
+       ✅ Fetch Related Products
+       Priority: 1️⃣ Category → 2️⃣ Brand → 3️⃣ Random
+    ---------------------------------------------------------- */
+    let relatedProducts = [];
 
-    // ✅ Fallback to random products if none in same category
-    if (!relatedProducts.length) {
+    // 1️⃣ Related by Category
+    if (product.category?._id) {
       relatedProducts = await Product.find({
+        category: product.category._id,
         _id: { $ne: product._id },
-        isBlocked: false,
         isDeleted: false,
+        isActive: true,
       })
         .populate("category", "name")
-        .populate("brand", "name")
         .limit(8)
         .lean();
+
+      if (relatedProducts.length > 0)
+        console.log(`✅ Found ${relatedProducts.length} related products by category`);
     }
 
-    // ✅ Format products for EJS
+    // 2️⃣ Fallback: Related by Brand
+    if (!relatedProducts.length && product.brand) {
+      relatedProducts = await Product.find({
+        brand: product.brand,
+        _id: { $ne: product._id },
+        isDeleted: false,
+        isActive: true,
+      })
+        .populate("category", "name")
+        .limit(8)
+        .lean();
+
+      if (relatedProducts.length > 0)
+        console.log(`🔁 Found ${relatedProducts.length} related products by brand`);
+    }
+
+    // 3️⃣ Fallback: Random products
+    if (!relatedProducts.length) {
+      relatedProducts = await Product.aggregate([
+        { $match: { _id: { $ne: product._id }, isDeleted: false, isActive: true } },
+        { $sample: { size: 8 } }, // randomly pick 8
+      ]);
+
+      console.log(`🌀 Used random fallback. Found: ${relatedProducts.length}`);
+    }
+
+    /* ----------------------------------------------------------
+       ✅ Format Related Products for EJS
+    ---------------------------------------------------------- */
     const formattedRelated = relatedProducts.map(p => {
       const fv = (p.variants || [])[0] || {};
       const firstImage =
         (p.variants || [])
-          .flatMap(v => (v.images || []).map(img => img.url))
-          .filter(Boolean)[0] || "/images/placeholder.jpg";
+          .flatMap(v =>
+            (v.images || []).map(img =>
+              typeof img === "string" ? img : img.url
+            )
+          )
+          .filter(Boolean)[0] || "/default-product.jpg";
 
       return {
         _id: p._id,
@@ -660,15 +1202,15 @@ export const getProductDetails = async (req, res) => {
         salePrice: fv.price || 0,
         regularPrice: fv.mrp || null,
         productImage: [firstImage],
-        brand: p.brand?.name || "BagHub",
+        brand: p.brand || "BagHub",
         rating: p.rating || 4.5,
         categoryName: p.category?.name || "Other",
       };
     });
 
-    console.log("✅ Related Products Found:", formattedRelated.length, "for Category:", product.category.name);
-
-    // ✅ Render
+    /* ----------------------------------------------------------
+       ✅ Render EJS
+    ---------------------------------------------------------- */
     res.render("user/productDetails", {
       title: `${viewProduct.productName} - BagHub`,
       product: viewProduct,
@@ -698,23 +1240,30 @@ export const getProductDetails = async (req, res) => {
 };
 
 
-
-// ✅ Get variant details (images, price, stock) by color
 export const getVariantByColor = async (req, res) => {
   try {
     const { productId } = req.params;
     const { color } = req.query;
 
-    const product = await Product.findById(productId).lean();
-    if (!product) return res.status(404).json({ success: false, message: "Product not found" });
+    const product = await Product.findById(productId)
+      .populate("brand", "name") // make sure brand is populated
+      .lean();
+
+    if (!product) {
+      return res.status(404).json({ success: false, message: "Product not found" });
+    }
 
     const variant = (product.variants || []).find(
-      v => v.color.toLowerCase() === color.toLowerCase()
+      v => v.color && v.color.toLowerCase() === color.toLowerCase()
     );
 
     if (!variant) {
       return res.status(404).json({ success: false, message: "Variant not found" });
     }
+
+    // ✅ Ensure brand is taken from populated object or fallback
+    const brandName =
+      (product.brand && (product.brand.name || product.brand)) || "BagHub";
 
     res.json({
       success: true,
@@ -724,6 +1273,7 @@ export const getVariantByColor = async (req, res) => {
         mrp: variant.mrp,
         stock: variant.stock,
         images: (variant.images || []).map(img => img.url),
+        brand: brandName, // ✅ included here
       },
     });
   } catch (error) {
