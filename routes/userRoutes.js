@@ -55,7 +55,7 @@ import {
   showHomePage,
   logoutUser,
 } from "../controllers/user/userController.js";
-import { renderForgotPassword, postForgotPassword, renderForgotVerifyOtp, postForgotVerifyOtp, renderResetPassword, postResetPassword } from "../controllers/user/authForgotController.js"; 
+import { renderForgotPassword, postForgotPassword, renderForgotVerifyOtp, postForgotVerifyOtp,resendForgotOtp, renderResetPassword, postResetPassword } from "../controllers/user/authForgotController.js"; 
 import { isUserLoggedIn, isUserLoggedOut} from "../middlewares/userAuth.js";
 import { noCache }  from "../middlewares/cacheMiddleware.js";
 import { renderLandingPage ,renderShopPage} from "../controllers/user/productController.js";
@@ -93,6 +93,8 @@ router.get("/forgotPassword",renderForgotPassword);
  //OTP verify
 router.get("/forgotOtp",renderForgotVerifyOtp);
 router.post("/forgotOtp",postForgotVerifyOtp);
+
+router.get("/resendForgotOtp", resendForgotOtp);
 
 //Reset
 router.get("/resetPassword",renderResetPassword);
