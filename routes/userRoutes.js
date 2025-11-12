@@ -57,6 +57,7 @@ import {
 } from "../controllers/user/userController.js";
 import { renderForgotPassword, postForgotPassword, renderForgotVerifyOtp, postForgotVerifyOtp,resendForgotOtp, renderResetPassword, postResetPassword } from "../controllers/user/authForgotController.js"; 
 import { isUserLoggedIn, isUserLoggedOut} from "../middlewares/userAuth.js";
+import { isAuthenticated } from "../middlewares/passportAuth.js";
 import { noCache }  from "../middlewares/cacheMiddleware.js";
 import { renderLandingPage ,renderShopPage} from "../controllers/user/productController.js";
 import { getProductDetails } from "../controllers/user/shopController.js";  
@@ -67,7 +68,7 @@ const router = express.Router();
 router.use(noCache);
 
 //
-router.get("/landing",renderLandingPage); // landing Page
+router.get("/landing",isAuthenticated,renderLandingPage); // landing Page
 
 // --------------------- PUBLIC ROUTES ---------------------
 // Signup

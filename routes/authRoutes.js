@@ -26,28 +26,39 @@
 // });
 // export default router;
 
+// routes/authRoutes.js
 import express from "express";
 import passport from "passport";
 
 const router = express.Router();
 
-// Step 1: Login with Google
+// Step 1️⃣: Start Google Login
 router.get(
   "/google",
   passport.authenticate("google", { scope: ["profile", "email"] })
 );
 
-// Step 2: Callback after Google login
+// Step 2️⃣: Google Callback after login
 router.get(
   "/google/callback",
   passport.authenticate("google", { failureRedirect: "/user/login" }),
   (req, res) => {
-    // Successful login
-    res.redirect("/user/home");
+    console.log("✅ Google login successful for:", req.user?.email);
+
+    // Save session before redirect
+    req.session.save((err) => {
+      if (err) console.error("Session save error:", err);
+      res.redirect("/user/landing"); // ✅ redirect to landing page
+    });
   }
 );
 
+// Step 3️⃣: Logout
+router.get("/logout", (req, res, next) => {
+  req.logout((err) => {
+    if (err) return next(err);
+    req.session.destroy(() => res.redirect("/user/login"));
+  });
+});
+
 export default router;
-
-
-

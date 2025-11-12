@@ -258,18 +258,36 @@ app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 
 // Session
+// app.use(
+//   session({
+//     secret: process.env.SESSION_SECRET || "supersecretkey",
+//     resave: false,
+//     saveUninitialized: false,
+//     store: MongoStore.create({
+//       mongoUrl: process.env.MONGO_URI,
+//       ttl: 24 * 60 * 60,
+//     }),
+//     cookie: {
+//       httpOnly: true,
+//       secure: false,
+//       maxAge: 24 * 60 * 60 * 1000,
+//     },
+//   })
+// );
+
 app.use(
   session({
-    secret: process.env.SESSION_SECRET || "supersecretkey",
+    secret: process.env.SESSION_SECRET,
     resave: false,
     saveUninitialized: false,
     store: MongoStore.create({
       mongoUrl: process.env.MONGO_URI,
-      ttl: 24 * 60 * 60,
+      ttl: 24 * 60 * 60, // 1 day
     }),
     cookie: {
       httpOnly: true,
-      secure: false,
+      secure: false, // ❗ false for localhost (true only in HTTPS)
+      sameSite: "lax",
       maxAge: 24 * 60 * 60 * 1000,
     },
   })
@@ -305,6 +323,8 @@ app.use("/admin/users", usersRoutes);
 //   res.render("index", { currentPage: "home" });
 // });
 app.get("/", renderHomePage);
+
+
 
 
 // 404

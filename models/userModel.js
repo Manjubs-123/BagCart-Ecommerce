@@ -4,7 +4,7 @@ const userSchema=new mongoose.Schema({
     name:{type:String,required:true,trim:true},
     email:{type:String,required:true,unique:true,lowercase:true},
     password:{type:String},
-    googleId:{type:String},
+    googleId:{type:String, sparse: true},
     resetPasswordToken:{type:String},
     resetPasswordExpires:{type:Date},
     isVerified:{type:Boolean,default:false}, 
