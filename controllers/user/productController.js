@@ -131,12 +131,12 @@ export const renderLandingPage = async (req, res) => {
     res.render("user/landing", {
       title: "BagHub | Explore Premium Bags",
       currentPage: "home",
-       user: req.session.user || null,
+      //  user: req.session.user || null,
       featuredProducts,
       favouriteProducts,
       handpickedProducts,
       trendingProducts,
-      user: req.session.user || null,  // add user data if logged in
+      // user: req.session.user || null,  // add user data if logged in
     });
   } catch (error) {
     console.error("Error rendering landing page:", error);

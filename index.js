@@ -298,13 +298,20 @@ app.use(passport.initialize());
 app.use(passport.session());
 
 // ✅ Add this middleware RIGHT HERE 👇 (before routes)
-app.use((req, res, next) => {
-  res.locals.currentPage = ""; // default value for all EJS views
-  next();
-});
+// app.use((req, res, next) => {
+//   res.locals.currentPage = ""; // default value for all EJS views
+//   next();
+// });
 
-// ✅ Make currentPath available everywhere
+// // ✅ Make currentPath available everywhere
+// app.use((req, res, next) => {
+//   res.locals.currentPath = req.path;
+//   next();
+// });
+
 app.use((req, res, next) => {
+  res.locals.user = req.user || null;
+  res.locals.currentPage = "";
   res.locals.currentPath = req.path;
   next();
 });
@@ -324,6 +331,13 @@ app.use("/admin/users", usersRoutes);
 // });
 app.get("/", renderHomePage);
 
+// app.use((req, res, next) => {
+//   res.locals.user = req.user || null;
+//   next();
+// });
+// app.get("/debug-user", (req, res) => {
+//   res.json({ user: req.user });
+// });
 
 
 
