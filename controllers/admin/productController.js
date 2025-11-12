@@ -171,9 +171,6 @@ export const getActiveCategories = async (req, res) => {
 };
 
 
-
-
-
 export const addProduct = async (req, res) => {
   try {
     console.log("Incoming body:", req.body);
@@ -190,6 +187,7 @@ export const addProduct = async (req, res) => {
         variants = [];
       }
     }
+
 
     // 🧠 Handle images for each variant (CLOUDINARY mapped to schema)
     if (Array.isArray(variants) && req.files?.length) {

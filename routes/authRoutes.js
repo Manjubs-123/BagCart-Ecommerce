@@ -29,6 +29,7 @@
 // routes/authRoutes.js
 import express from "express";
 import passport from "passport";
+import User from "../models/userModel.js";
 
 const router = express.Router();
 
@@ -42,8 +43,22 @@ router.get(
 router.get(
   "/google/callback",
   passport.authenticate("google", { failureRedirect: "/user/login" }),
-  (req, res) => {
+  async (req, res) => {
+
     console.log("✅ Google login successful for:", req.user?.email);
+
+
+    let existingUser = await User.findOne({ email: req.user.email })
+    if(existingUser){
+      req.session.user = { id: existingUser._id, name: existingUser.name, email: existingUser.email }
+      req.session.isLoggedIn = true
+    } else {
+      // create user
+      console.log("Existing User not found afte google auth")
+    }
+
+
+    
 
     // Save session before redirect
     req.session.save((err) => {

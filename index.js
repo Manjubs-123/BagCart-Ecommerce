@@ -257,6 +257,10 @@ app.use(express.static(path.join(__dirname, "public")));
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 
+
+
+
+
 // Session
 // app.use(
 //   session({
@@ -292,6 +296,10 @@ app.use(
     },
   })
 );
+
+
+
+
 
 app.use(noCache);
 app.use(passport.initialize());

@@ -107,6 +107,11 @@ export const loadHomeProducts = async () => {
 // Home Page
 export const renderHomePage = async (req, res) => {
   try {
+
+    if (req.session.user) {
+      return res.redirect("/user/home");
+    }
+
     const { featuredProducts, favouriteProducts, handpickedProducts, trendingProducts } = await loadHomeProducts();
 
     res.render("index", {
@@ -136,7 +141,7 @@ export const renderLandingPage = async (req, res) => {
       favouriteProducts,
       handpickedProducts,
       trendingProducts,
-      // user: req.session.user || null,  // add user data if logged in
+      user: req.session.user || null,  // add user data if logged in
     });
   } catch (error) {
     console.error("Error rendering landing page:", error);
