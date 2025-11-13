@@ -466,28 +466,42 @@
         }
 
 
-        // Add real-time search indicator
+        // // Add real-time search indicator
+        // document.addEventListener('DOMContentLoaded', function () {
+        //     const searchInput = document.querySelector('input[name="q"]');
+        //     const searchForm = document.querySelector('form');
+
+        //     if (searchInput && '<%= q %>') {
+        //         searchInput.parentElement.classList.add('ring-2', 'ring-blue-500');
+        //     }
+
+        //     // Add loading state to search
+        //     searchForm.addEventListener('submit', function (e) {
+        //         const submitBtn = this.querySelector('button[type="submit"]');
+        //         const originalText = submitBtn.innerHTML;
+        //         submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i><span>Searching...</span>';
+        //         submitBtn.disabled = true;
+
+        //         setTimeout(() => {
+        //             submitBtn.innerHTML = originalText;
+        //             submitBtn.disabled = false;
+        //         }, 2000);
+        //     });
+        // });
+
         document.addEventListener('DOMContentLoaded', function () {
-            const searchInput = document.querySelector('input[name="q"]');
-            const searchForm = document.querySelector('form');
+    const searchInput = document.querySelector('input[name="q"]');
+    const searchForm = document.querySelector('form[action="/admin/users"]');
 
-            if (searchInput && '<%= q %>') {
-                searchInput.parentElement.classList.add('ring-2', 'ring-blue-500');
-            }
+    if (!searchForm) return;
 
-            // Add loading state to search
-            searchForm.addEventListener('submit', function (e) {
-                const submitBtn = this.querySelector('button[type="submit"]');
-                const originalText = submitBtn.innerHTML;
-                submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i><span>Searching...</span>';
-                submitBtn.disabled = true;
+    searchForm.addEventListener('submit', function () {
+        const btn = this.querySelector('button[type="submit"]');
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Searching...';
+        btn.disabled = true;
+    });
+});
 
-                setTimeout(() => {
-                    submitBtn.innerHTML = originalText;
-                    submitBtn.disabled = false;
-                }, 2000);
-            });
-        });
 
     </script>
     <script>

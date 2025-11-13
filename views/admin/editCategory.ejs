@@ -51,7 +51,7 @@
 <body class="bg-gray-50 text-gray-900 flex min-h-screen">
 
   <!-- Sidebar -->
-  <%- include('../partials/sidebar') %>
+    <%- include('../partials/sidebar', { currentPage: 'category' }) %>
 
   <!-- Main Content -->
   <main class="ml-64 flex-1 p-8">
@@ -138,7 +138,7 @@
                 <i class="fas fa-exclamation-circle"></i>
                 <span></span>
               </p>
-              <p id="charCounter" class="text-gray-500 text-xs">0/500 characters</p>
+              <p id="charCounter" class="text-gray-500 text-xs">0/50 characters</p>
             </div>
           </div>
 
@@ -180,7 +180,7 @@
       </div>
 
       <!-- Quick Stats -->
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mt-8">
+      <!-- <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mt-8">
         <div class="bg-white rounded-xl p-6 card-hover border-l-4 border-blue-500">
           <div class="flex items-center justify-between">
             <div>
@@ -222,7 +222,7 @@
             </div>
           </div>
         </div>
-      </div>
+      </div> -->
     </div>
   </main>
 
@@ -304,7 +304,7 @@
       const validation = validateDescription(value);
       
       // Update character counter
-      charCounter.textContent = `${value.length}/500 characters`;
+      charCounter.textContent = `${value.length}/50 characters`;
       
       if (!validation.valid) {
         setFieldState(descriptionInput, false);

@@ -31,22 +31,23 @@ import Category from "../../models/category.js";
 
 export const listCategories = async (req, res) => {
   try {
-    const page = Math.max(1, parseInt(req.query.page || "1", 10));
-    const limit = Math.max(1, parseInt(req.query.limit || "10", 10));
-    const q = (req.query.q || "").trim();
+    let page = parseInt(req.query.page) || 1;
+    let limit = parseInt(req.query.limit) || 10;
+    let q = req.query.q ? req.query.q.trim() : "";
 
-    // Search + filter setup
-    const filter = { isDeleted: false };
-    if (q) {
-      filter.name = { $regex: q, $options: "i" };
-    }
+    // Search filter
+    const filter = {
+      isDeleted: false,
+      ...(q && { name: { $regex: q, $options: "i" } })
+    };
 
-    // Pagination setup
+    // Total filtered categories count
     const totalCategories = await Category.countDocuments(filter);
+
     const pages = Math.ceil(totalCategories / limit);
     const skip = (page - 1) * limit;
 
-    // Data fetching
+    // Fetch filtered + paginated categories
     const categories = await Category.find(filter)
       .sort({ createdAt: -1 })
       .skip(skip)
@@ -57,7 +58,6 @@ export const listCategories = async (req, res) => {
     const activeCategories = await Category.countDocuments({ isActive: true, isDeleted: false });
     const blockedCategories = await Category.countDocuments({ isActive: false, isDeleted: false });
 
-    // Render the view
     res.render("admin/categoryList", {
       categories,
       totalCategories,
@@ -66,14 +66,15 @@ export const listCategories = async (req, res) => {
       page,
       pages,
       limit,
-      q,
+      q
     });
 
   } catch (err) {
-    console.error("Error fetching categories:", err);
+    console.error("Category Fetch Error:", err);
     res.status(500).send("Server Error");
   }
 };
+
 
 // Render Add Category page
 export const renderAddCategory = async (req, res) => {
