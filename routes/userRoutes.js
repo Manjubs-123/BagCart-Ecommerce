@@ -55,14 +55,22 @@ import {
   showHomePage,
   logoutUser,
 } from "../controllers/user/userController.js";
-import { renderForgotPassword, postForgotPassword, renderForgotVerifyOtp, postForgotVerifyOtp, renderResetPassword, postResetPassword } from "../controllers/user/authForgotController.js"; 
-import { isUserLoggedIn, isUserLoggedOut, checkBlockedUser } from "../middlewares/userAuth.js";
+import { renderForgotPassword, postForgotPassword, renderForgotVerifyOtp, postForgotVerifyOtp,resendForgotOtp, renderResetPassword, postResetPassword } from "../controllers/user/authForgotController.js"; 
+import { isUserLoggedIn, isUserLoggedOut} from "../middlewares/userAuth.js";
 import { noCache }  from "../middlewares/cacheMiddleware.js";
-
+import { renderLandingPage ,renderShopPage} from "../controllers/user/productController.js";
+import { getProductDetails } from "../controllers/user/shopController.js";  
+import { isAuthenticated } from "../middlewares/passportAuth.js";
 
 const router = express.Router();
 
+//Prevent browser caching
 router.use(noCache);
+
+//
+router.get("/landing",isUserLoggedIn,isAuthenticated,renderLandingPage); // landing Page
+
+// --------------------- PUBLIC ROUTES ---------------------
 // Signup
 router.get("/signup", isUserLoggedOut,getSignup);
 router.post("/signup", signupUser);
@@ -87,12 +95,24 @@ router.get("/forgotPassword",renderForgotPassword);
 router.get("/forgotOtp",renderForgotVerifyOtp);
 router.post("/forgotOtp",postForgotVerifyOtp);
 
+router.get("/resendForgotOtp", resendForgotOtp);
+
 //Reset
 router.get("/resetPassword",renderResetPassword);
 router.post("/resetPassword",postResetPassword);
 
-// Home
-router.get("/home", showHomePage);
+
+//shop
+router.get("/shop",isUserLoggedIn,renderShopPage);
+
+// --------------------- PROTECTED ROUTES ---------------------
+
+// Only logged-in & unblocked users can access these
+//product details page
+router.get("/product/:id",isUserLoggedIn,getProductDetails);
+
+// // Home
+router.get("/home",isUserLoggedIn, showHomePage);
 
 // Logout
 router.get("/logout", isUserLoggedIn, logoutUser);

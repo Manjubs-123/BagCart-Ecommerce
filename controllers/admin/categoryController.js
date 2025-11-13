@@ -1,33 +1,80 @@
 import Category from "../../models/category.js";
 
 // List categories (with search, pagination)
+// export const listCategories = async (req, res) => {
+//   try {
+//     const page = Math.max(1, parseInt(req.query.page || "1", 10));
+//     const limit = Math.max(1, parseInt(req.query.limit || "10", 10));
+//     const q = (req.query.q || "").trim();
+
+//     const filter = { isDeleted: false };
+//     if (q) {
+//       filter.name={$regex:q,$options:"i"}
+//     }
+
+//     const total = await Category.countDocuments(filter);
+//     const pages = Math.ceil(total / limit);
+//     const skip = (page - 1) * limit;
+
+//     const categories = await Category.find(filter)
+//       .sort({ createdAt: -1 })
+//       .skip(skip)
+//       .limit(limit)
+//       .lean();
+
+//     res.render("admin/categoryList", { categories, page, pages, limit, q });
+//   } catch (err) {
+//     console.error(err);
+//     res.status(500).send("Server Error");
+//   }
+// };
+
 export const listCategories = async (req, res) => {
   try {
-    const page = Math.max(1, parseInt(req.query.page || "1", 10));
-    const limit = Math.max(1, parseInt(req.query.limit || "10", 10));
-    const q = (req.query.q || "").trim();
+    let page = parseInt(req.query.page) || 1;
+    let limit = parseInt(req.query.limit) || 10;
+    let q = req.query.q ? req.query.q.trim() : "";
 
-    const filter = { isDeleted: false };
-    if (q) {
-      filter.name={$regex:q,$options:"i"}
-    }
+    // Search filter
+    const filter = {
+      isDeleted: false,
+      ...(q && { name: { $regex: q, $options: "i" } })
+    };
 
-    const total = await Category.countDocuments(filter);
-    const pages = Math.ceil(total / limit);
+    // Total filtered categories count
+    const totalCategories = await Category.countDocuments(filter);
+
+    const pages = Math.ceil(totalCategories / limit);
     const skip = (page - 1) * limit;
 
+    // Fetch filtered + paginated categories
     const categories = await Category.find(filter)
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(limit)
       .lean();
 
-    res.render("admin/categoryList", { categories, page, pages, limit, q });
+    // Status counts
+    const activeCategories = await Category.countDocuments({ isActive: true, isDeleted: false });
+    const blockedCategories = await Category.countDocuments({ isActive: false, isDeleted: false });
+
+    res.render("admin/categoryList", {
+      categories,
+      totalCategories,
+      activeCategories,
+      blockedCategories,
+      page,
+      pages,
+      limit,
+      q
+    });
+
   } catch (err) {
-    console.error(err);
+    console.error("Category Fetch Error:", err);
     res.status(500).send("Server Error");
   }
 };
+
 
 // Render Add Category page
 export const renderAddCategory = async (req, res) => {
@@ -42,31 +89,70 @@ export const renderAddCategory = async (req, res) => {
 // Add new category
 
 
+// export const addCategory = async (req, res) => {
+//   try {
+//     const { name, description } = req.body;
+
+//     if (!name || name.trim() === "") {
+//       return res.redirect("/admin/category/addCategory?error=Name is required");
+//     }
+
+//     const existing = await Category.findOne({ 
+//       name: name.trim(), 
+//       isDeleted: false 
+//     });
+
+//     if (existing) {
+//       return res.redirect("/admin/category/addCategory?error=Category already exists");
+//     }
+
+//     await Category.create({ name: name.trim(), description });
+//     res.redirect("/admin/category?success=Category added successfully");
+    
+//   } catch (err) {
+//     console.error(err);
+//     res.redirect("/admin/category/addCategory?error=Server error, please try again");
+//   }
+// };
+
 export const addCategory = async (req, res) => {
   try {
     const { name, description } = req.body;
 
+    // 🧩 Basic field validations
     if (!name || name.trim() === "") {
-      return res.redirect("/admin/category/addCategory?error=Name is required");
+      return res.redirect("/admin/category/addCategory?error=Category name is required");
     }
 
-    const existing = await Category.findOne({ 
-      name: name.trim(), 
-      isDeleted: false 
+    if (!description || description.trim().length < 10) {
+      return res.redirect("/admin/category/addCategory?error=Description must be at least 10 characters long");
+    }
+
+    // 🧠 Case-insensitive duplicate check (ignores isDeleted=true)
+    const existing = await Category.findOne({
+      name: { $regex: `^${name.trim()}$`, $options: "i" },
+      isDeleted: false
     });
 
     if (existing) {
-      return res.redirect("/admin/category/addCategory?error=Category already exists");
+      return res.redirect("/admin/category/addCategory?error=Category name already exists");
     }
 
-    await Category.create({ name: name.trim(), description });
+    // ✅ Create new category
+    await Category.create({
+      name: name.trim(),
+      description: description.trim(),
+    });
+
+    // Redirect with success message
     res.redirect("/admin/category?success=Category added successfully");
     
   } catch (err) {
-    console.error(err);
+    console.error("Error adding category:", err);
     res.redirect("/admin/category/addCategory?error=Server error, please try again");
   }
 };
+
 
 // Get single category for edit
 export const getCategory = async (req, res) => {

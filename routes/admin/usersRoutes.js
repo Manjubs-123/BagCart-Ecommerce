@@ -9,6 +9,6 @@ const router = express.Router();
 router.get("/", isAdminAuthenticated, getUsers);
 
 // Block or unblock a user
-router.post("/toggle-block/:id", isAdminAuthenticated, toggleBlockUser);
+router.put("/toggle-block/:id", isAdminAuthenticated, toggleBlockUser);
 
 export default router;

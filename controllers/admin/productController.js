@@ -103,7 +103,7 @@ export const getProducts = async (req, res) => {
     // Filter out products whose category was filtered out by populate (blocked/deleted categories)
     const products = rawProducts.filter(p => p.category != null);
         // 🧠 DEBUG LOG: check if Cloudinary URLs are stored correctly
-    console.log("✅ Product image check:", products[0]?.variants?.[0]?.images);
+    // console.log("✅ Product image check:", products[0]?.variants?.[0]?.images);
 
     // 👇 Render EJS view instead of returning JSON
     res.render("admin/productList", {
@@ -113,7 +113,7 @@ export const getProducts = async (req, res) => {
         total,
         page: parseInt(page),
         pages: Math.ceil(total / limit)
-      }
+      },
     });
 
   } catch (error) {
@@ -171,9 +171,6 @@ export const getActiveCategories = async (req, res) => {
 };
 
 
-
-
-
 export const addProduct = async (req, res) => {
   try {
     console.log("Incoming body:", req.body);
@@ -190,6 +187,7 @@ export const addProduct = async (req, res) => {
         variants = [];
       }
     }
+
 
     // 🧠 Handle images for each variant (CLOUDINARY mapped to schema)
     if (Array.isArray(variants) && req.files?.length) {
@@ -213,7 +211,20 @@ export const addProduct = async (req, res) => {
 
     console.log("✅ Prepared variants before save:", JSON.stringify(variants, null, 2));
 
-    // 🧩 Validation
+
+
+    const existingProduct=await Product.findOne({
+      name:{$regex:`^${name.trim()}$`,$options:"i"}//exact matching or case sensitive
+   
+    })
+    if(existingProduct){
+      return res.status(400).json({
+        message:"Product name alreday exists.Please choose a different name.",
+        success:false
+      });
+    }
+     // 🧩 Validation
+
     if (!name || !description || !brand || !category)
       return res.status(400).json({ message: "Missing required fields" });
 
@@ -285,122 +296,675 @@ export const renderEditProduct = async (req, res) => {
 
 
 
+// export const updateProduct = async (req, res) => {
+//   try {
+//     const { id } = req.params;
+//     const { name, description, brand, category, variants } = req.body;
+
+//     const product = await Product.findOne({ _id: id, isDeleted: false });
+    
+//     if (!product) {
+//       return res.status(404).json({ 
+//         success: false, 
+//         message: 'Product not found' 
+//       });
+//     }
+//       if(product.stock>100){
+//     console.log("It is not validate ")
+//   }
+
+//     // Validate category if provided
+//     if (category) {
+//       const categoryDoc = await Category.findById(category);
+//       if (!categoryDoc) {
+//         return res.status(400).json({ 
+//           success: false, 
+//           message: 'Category not found' 
+//         });
+//       }
+      
+//       if (categoryDoc.isBlocked) {
+//         return res.status(400).json({ 
+//           success: false, 
+//           message: 'This category is blocked and cannot be used' 
+//         });
+//       }
+//     }
+
+//     // Validate variants if provided
+//     if (variants) {
+//       if (!Array.isArray(variants) || variants.length === 0) {
+//         return res.status(400).json({ 
+//           success: false, 
+//           message: 'At least one variant is required' 
+//         });
+//       }
+
+//       for (let i = 0; i < variants.length; i++) {
+//         const variant = variants[i];
+        
+//         if (variant.color && !variant.color.trim()) {
+//           return res.status(400).json({ 
+//             success: false, 
+//             message: `Variant ${i + 1}: Color cannot be empty` 
+//           });
+//         }
+
+//         if (variant.price !== undefined) {
+//           const price = parseFloat(variant.price);
+//           if (isNaN(price) || price < 0) {
+//             return res.status(400).json({ 
+//               success: false, 
+//               message: `Variant ${i + 1}: Price must be a positive number` 
+//             });
+//           }
+//         }
+
+//         if (variant.stock !== undefined) {
+//           const stock = parseInt(variant.stock);
+//           if (isNaN(stock) || stock < 0 || !Number.isInteger(stock)) {
+//             return res.status(400).json({ 
+//               success: false, 
+//               message: `Variant ${i + 1}: Stock must be a positive integer` 
+//             });
+//           }
+//         }
+
+//         if (variant.images && variant.images.length < 3) {
+//           return res.status(400).json({ 
+//             success: false, 
+//             message: `Variant ${i + 1}: At least 3 images are required` 
+//           });
+//         }
+//       }
+//     }
+
+//     // Update fields
+//     if (name?.trim()) product.name = name.trim();
+//     if (description?.trim()) product.description = description.trim();
+//     if (brand?.trim()) product.brand = brand.trim();
+//     if (category) product.category = category;
+
+//     // 🧹 CLEANUP OLD CLOUDINARY IMAGES (if replaced)
+// if (product.variants && product.variants.length > 0) {
+//   for (const oldVariant of product.variants) {
+//     for (const oldImage of oldVariant.images) {
+//       // If this image's publicId is NOT in the new variants list, delete it from Cloudinary
+//       const isStillUsed = Array.isArray(variants)
+//         && variants.some(v =>
+//           Array.isArray(v.images) &&
+//           v.images.some(img => img.publicId === oldImage.publicId)
+//         );
+
+//       if (!isStillUsed) {
+//         try {
+//           await cloudinary.uploader.destroy(oldImage.publicId);
+//           console.log(`🗑️ Deleted old Cloudinary image: ${oldImage.publicId}`);
+//         } catch (err) {
+//           console.error('❌ Failed to delete old image from Cloudinary:', err.message);
+//         }
+//       }
+//     }
+//   }
+// }
+
+//     if (variants) {
+//       product.variants = variants.map(v => {
+//   const existingVariant = product.variants.find(pv => pv.color === v.color);
+//   return {
+//     color: v.color?.trim() || v.color,
+//     price: v.price ? parseFloat(v.price) : 0,
+//     stock: v.stock ? parseInt(v.stock) : 0,
+//     // 🧠 Keep existing images if not replaced
+//     images: Array.isArray(v.images) && v.images.length > 0
+//       ? v.images.map(i => ({ url: i.url, publicId: i.publicId }))
+//       : existingVariant?.images || []
+//   };
+// });
+//     }
+
+//     await product.save();
+//     await product.populate('category');
+
+//     res.json({ 
+//       success: true, 
+//       message: 'Product updated successfully', 
+//       product 
+//     });
+//   } catch (error) {
+//     console.error('Update Product Error:', error);
+//     res.status(500).json({ 
+//       success: false, 
+//       message: 'Failed to update product',
+//       error: error.message 
+//     });
+//   }
+// };
+
+// Soft delete product
+
+
+/* ===========================
+   🧰 UPDATE PRODUCT
+   =========================== */
+// export const updateProduct = async (req, res) => {
+//   try {
+//     const { id } = req.params;
+//     let { name, description, brand, category, variants } = req.body;
+
+//     const product = await Product.findOne({ _id: id, isDeleted: false });
+//     if (!product) return res.status(404).json({ success: false, message: "Product not found" });
+
+//     if (typeof variants === "string") {
+//       try {
+//         variants = JSON.parse(variants);
+//       } catch {
+//         variants = [];
+//       }
+//     }
+
+//     if (!Array.isArray(variants) || variants.length === 0) {
+//       return res.status(400).json({ message: "At least one variant is required" });
+//     }
+
+//     // ✅ Map new images to variants
+//     if (req.files && req.files.length > 0) {
+//       variants = await Promise.all(
+//         variants.map(async (variant, index) => {
+//           const newImages = req.files
+//             .filter((f) => f.originalname.startsWith(`variant${index}_`))
+//             .map((f) => ({
+//               url: f.path,
+//               publicId: f.filename,
+//             }));
+
+//           if (newImages.length > 0 && product.variants[index]?.images?.length) {
+//             for (const oldImg of product.variants[index].images) {
+//               try {
+//                 await cloudinary.uploader.destroy(oldImg.publicId);
+//               } catch (err) {
+//                 console.warn("Failed to delete:", oldImg.publicId, err.message);
+//               }
+//             }
+//           }
+
+//           return {
+//             color: variant.color?.trim(),
+//             price: parseFloat(variant.price),
+//             stock: parseInt(variant.stock),
+//             images: newImages.length > 0 ? newImages : product.variants[index]?.images || [],
+//           };
+//         })
+//       );
+//     } else {
+//       variants = variants.map((variant, index) => ({
+//         color: variant.color?.trim(),
+//         price: parseFloat(variant.price),
+//         stock: parseInt(variant.stock),
+//         images: product.variants[index]?.images || [],
+//       }));
+//     }
+
+//     product.name = name?.trim() || product.name;
+//     product.description = description?.trim() || product.description;
+//     product.brand = brand?.trim() || product.brand;
+//     if (category) product.category = category;
+//     product.variants = variants;
+
+//     await product.save();
+//     await product.populate("category");
+
+//     res.json({ success: true, message: "Product updated successfully", product });
+//   } catch (error) {
+//     console.error("❌ Update Product Error:", error);
+//     res.status(500).json({ message: "Failed to update product", error: error.message });
+//   }
+// };
+
+
+/* ===========================
+   ✅ UPDATE PRODUCT — Fixed Version
+   =========================== */
+
+// export const updateProduct = async (req, res) => {
+//   try {
+//     const { id } = req.params;
+//     let { name, description, brand, category, variants } = req.body;
+
+//     // Parse variants safely
+//     if (typeof variants === "string") {
+//       try {
+//         variants = JSON.parse(variants);
+//       } catch {
+//         variants = [];
+//       }
+//     }
+
+//     const product = await Product.findOne({ _id: id, isDeleted: false });
+//     if (!product) {
+//       return res.status(404).json({ success: false, message: "Product not found" });
+//     }
+
+//     // ======================
+//     // 1️⃣ UPDATE BASIC DETAILS
+//     // ======================
+//     product.name = name?.trim() || product.name;
+//     product.description = description?.trim() || product.description;
+//     product.brand = brand?.trim() || product.brand;
+//     if (category) product.category = category;
+
+//     // ======================
+//     // 2️⃣ UPDATE VARIANTS (Dynamic slot merge)
+//     // ======================
+//     const updatedVariants = [];
+
+//     for (let i = 0; i < variants.length; i++) {
+//       const variant = variants[i];
+//       const oldVariant = product.variants[i];
+//       if (!oldVariant) continue;
+
+//       // ✅ Find uploaded images for this variant
+//       const uploadedImages = (req.files || [])
+//         .filter((file) => file.originalname.startsWith(`variant${i}_slot`))
+//         .map((file) => ({
+//           url: file.path,
+//           publicId: file.filename,
+//           slot: parseInt(file.originalname.match(/slot(\d+)/)?.[1] || 0, 10),
+//         }));
+
+//       // ✅ Determine image count dynamically
+//       const totalSlots = Math.max(
+//         oldVariant.images?.length || 0,
+//         ...uploadedImages.map((img) => img.slot + 1),
+//         3 // at least 3 slots always
+//       );
+
+//       const newImages = [];
+
+//       for (let slot = 0; slot < totalSlots; slot++) {
+//         const existingImg = oldVariant.images?.[slot];
+//         const replacedImg = uploadedImages.find((img) => img.slot === slot);
+
+//         if (replacedImg) {
+//           // 🧹 Delete the old image in Cloudinary if being replaced
+//           if (existingImg?.publicId) {
+//             try {
+//               await cloudinary.uploader.destroy(existingImg.publicId);
+//               console.log(`🗑️ Deleted old image: ${existingImg.publicId}`);
+//             } catch (err) {
+//               console.warn("⚠️ Failed to delete old image:", err.message);
+//             }
+//           }
+
+//           // ✅ Add the new uploaded image
+//           newImages.push({
+//             url: replacedImg.url,
+//             publicId: replacedImg.publicId,
+//           });
+//         } else if (existingImg) {
+//           // ✅ Keep old image
+//           newImages.push(existingImg);
+//         } else {
+//           // ✅ Empty slot (preserve placeholder)
+//           newImages.push(null);
+//         }
+//       }
+
+//       // ✅ Final merged variant
+//       updatedVariants.push({
+//         color: variant.color?.trim() || oldVariant.color,
+//         price: parseFloat(variant.price || oldVariant.price),
+//         stock: parseInt(variant.stock || oldVariant.stock),
+//         images: newImages, // don’t filter — keep slot indexes stable
+//       });
+//     }
+
+//     product.variants = updatedVariants;
+//     await product.save();
+//     await product.populate("category");
+
+//     res.json({
+//       success: true,
+//       message: "✅ Product updated successfully",
+//       product,
+//     });
+//   } catch (error) {
+//     console.error("❌ Update Product Error:", error);
+//     res.status(500).json({
+//       success: false,
+//       message: "Failed to update product",
+//       error: error.message,
+//     });
+//   }
+// };
+
+
+// export const updateProduct = async (req, res) => {
+//   try {
+//     const { id } = req.params;
+//     let { name, description, brand, category, variants } = req.body;
+
+//     // Parse variants safely
+//     if (typeof variants === "string") {
+//       try {
+//         variants = JSON.parse(variants);
+//       } catch {
+//         variants = [];
+//       }
+//     }
+
+    
+// // ---- helpers to avoid NaN when fields are "" or undefined ----
+// const numOr = (val, fallback = 0, asInt = false) => {
+//   const n = asInt ? parseInt(val) : parseFloat(val);
+//   return Number.isFinite(n) ? n : fallback;
+// };
+// const strOr = (s, fallback = "") =>
+//   (typeof s === "string" ? s.trim() : (s ?? "")).trim() || fallback;
+
+//     // Find existing product
+//     const product = await Product.findOne({ _id: id, isDeleted: false });
+//     if (!product)
+//       return res.status(404).json({ success: false, message: "Product not found" });
+
+//     // ======================
+//     // 1️⃣ UPDATE BASIC FIELDS
+//     // ======================
+//     product.name = name?.trim() || product.name;
+//     product.description = description?.trim() || product.description;
+//     product.brand = brand?.trim() || product.brand;
+//     if (category) product.category = category;
+
+//     // ======================
+//     // 2️⃣ HANDLE VARIANTS
+//     // ======================
+//     const updatedVariants = [];
+//     const existingVariants = product.variants || [];
+
+//     // Helper: Find uploaded files for a variant
+//     const getUploadedImages = (variantIndex) =>
+//       (req.files || [])
+//         .filter((file) => file.originalname.startsWith(`variant${variantIndex}_slot`))
+//         .map((file) => ({
+//           url: file.path,
+//           publicId: file.filename,
+//           slot: parseInt(file.originalname.match(/slot(\d+)/)?.[1] || 0, 10),
+//         }));
+
+//   for (let i = 0; i < variants.length; i++) {
+//   const vMeta = variants[i] || {};
+//   const oldVariant = existingVariants[i];
+//   const uploadedImages = getUploadedImages(i);
+
+//   // 🆕 NEW VARIANT — create fresh entry
+//   if (!oldVariant) {
+//     const newImages = uploadedImages.map((img) => ({
+//       url: img.url,
+//       publicId: img.publicId,
+//     }));
+
+//  updatedVariants.push({
+//   color: strOr(vMeta.color, "Unknown"),
+//   price: numOr(vMeta.price, 0, false),   // float
+//   stock: numOr(vMeta.stock, 0, true),    // int
+//   images: newImages.length ? newImages : [null, null, null],
+// });
+
+
+//     continue;
+//   }
+
+//   // ♻️ EXISTING VARIANT — merge images properly
+//   const totalSlots = Math.max(
+//     oldVariant.images?.length || 0,
+//     ...uploadedImages.map((img) => img.slot + 1),
+//     3
+//   );
+
+//   const mergedImages = [];
+//   for (let slot = 0; slot < totalSlots; slot++) {
+//     const existingImg = oldVariant.images?.[slot] || null;
+//     const replaced = uploadedImages.find((img) => img.slot === slot);
+
+//     if (replaced) {
+//       if (existingImg?.publicId) {
+//         try {
+//           await cloudinary.uploader.destroy(existingImg.publicId);
+//         } catch (e) {
+//           console.warn("⚠️ Failed to delete old Cloudinary image:", e.message);
+//         }
+//       }
+//       mergedImages.push({
+//         url: replaced.url,
+//         publicId: replaced.publicId,
+//       });
+//     } else if (existingImg) {
+//       mergedImages.push(existingImg);
+//     } else {
+//       mergedImages.push(null);
+//     }
+//   }
+
+//  updatedVariants.push({
+//   color: strOr(vMeta.color, oldVariant.color || "Unknown"),
+//   // if vMeta.price is "", NaN, null → fallback to oldVariant.price; if that fails → 0
+//   price: numOr(vMeta.price, numOr(oldVariant.price, 0, false), false),
+//   // same idea for stock (integer)
+//   stock: numOr(vMeta.stock, numOr(oldVariant.stock, 0, true), true),
+//   images: mergedImages.filter(Boolean),
+// });
+
+// }
+
+//     // ✅ Handle removed variants (delete their images)
+//     for (let i = variants.length; i < existingVariants.length; i++) {
+//       const toRemove = existingVariants[i];
+//       for (const img of toRemove.images || []) {
+//         try {
+//           await cloudinary.uploader.destroy(img.publicId);
+//         } catch (e) {
+//           console.warn("⚠️ Failed to delete old Cloudinary image:", e.message);
+//         }
+//       }
+//     }
+
+//     // ✅ Prevent duplicate colors
+//   const colorSet = new Set();
+// for (const v of updatedVariants) {
+//   const c = strOr(v.color, "Unknown").toLowerCase();
+//   if (colorSet.has(c)) {
+//     return res.status(400).json({
+//       success: false,
+//       message: `Duplicate color "${v.color}" not allowed.`,
+//     });
+//   }
+//   colorSet.add(c);
+// }
+
+
+//     // ✅ Save all updates
+//     product.variants = updatedVariants;
+//     await product.save();
+//     await product.populate("category");
+
+//     res.json({
+//       success: true,
+//       message: "✅ Product updated successfully",
+//       product,
+//     });
+// } catch (err) {
+//   console.error("❌ Update Product Error Details:");
+//   console.error("Message:", err.message);
+//   console.error("Stack:", err.stack);
+//   console.error("Body:", req.body);
+//   console.error("Files:", req.files);
+
+//   res.status(500).json({
+//     success: false,
+//     message: "Server error while updating product",
+//     error: err.message,
+//   });
+// }
+
+// };
+
 export const updateProduct = async (req, res) => {
   try {
     const { id } = req.params;
-    const { name, description, brand, category, variants } = req.body;
+    let { name, description, brand, category, variants } = req.body;
 
+    // ✅ Parse variants safely
+    if (typeof variants === "string") {
+      try {
+        variants = JSON.parse(variants);
+      } catch {
+        variants = [];
+      }
+    }
+
+    // ✅ Helper functions
+    const numOr = (val, fallback = 0, asInt = false) => {
+      const n = asInt ? parseInt(val) : parseFloat(val);
+      return Number.isFinite(n) ? n : fallback;
+    };
+    const strOr = (s, fallback = "") =>
+      (typeof s === "string" ? s.trim() : (s ?? "")).trim() || fallback;
+
+    // ✅ Find existing product
     const product = await Product.findOne({ _id: id, isDeleted: false });
-    
-    if (!product) {
-      return res.status(404).json({ 
-        success: false, 
-        message: 'Product not found' 
+    if (!product)
+      return res.status(404).json({ success: false, message: "Product not found" });
+
+    // ✅ Update base fields
+    product.name = strOr(name, product.name);
+    product.description = strOr(description, product.description);
+    product.brand = strOr(brand, product.brand);
+    if (category) product.category = category;
+
+    // ✅ Handle variants
+    const updatedVariants = [];
+    const existingVariants = product.variants || [];
+
+    // Helper to collect uploaded images
+    const getUploadedImages = (variantIndex) =>
+      (req.files || [])
+        .filter((f) => f.originalname.startsWith(`variant${variantIndex}_slot`))
+        .map((f) => ({
+          url: f.path,
+          publicId: f.filename,
+          slot: parseInt(f.originalname.match(/slot(\d+)/)?.[1] || 0, 10),
+        }));
+
+    for (let i = 0; i < variants.length; i++) {
+      const vMeta = variants[i] || {};
+      const oldVariant = existingVariants[i];
+      const uploadedImages = getUploadedImages(i);
+
+      // 🆕 NEW VARIANT
+      if (!oldVariant) {
+        const newImages = uploadedImages.map((img) => ({
+          url: img.url,
+          publicId: img.publicId,
+        }));
+
+        updatedVariants.push({
+          color: strOr(vMeta.color, "Unknown"),
+          price: numOr(vMeta.price, 0, false),
+          stock: numOr(vMeta.stock, 0, true),
+          images: newImages.length ? newImages : [],
+        });
+        continue;
+      }
+
+      // ♻️ EXISTING VARIANT
+      const totalSlots = Math.max(
+        oldVariant.images?.length || 0,
+        ...uploadedImages.map((img) => img.slot + 1),
+        3
+      );
+
+      const mergedImages = [];
+      for (let slot = 0; slot < totalSlots; slot++) {
+        const replaced = uploadedImages.find((img) => img.slot === slot);
+        const existingImg = oldVariant.images?.[slot] || null;
+
+        if (replaced) {
+          // Delete old Cloudinary image
+          if (existingImg?.publicId) {
+            try {
+              await cloudinary.uploader.destroy(existingImg.publicId);
+            } catch (err) {
+              console.warn("⚠️ Failed to delete old Cloudinary image:", err.message);
+            }
+          }
+          mergedImages.push({
+            url: replaced.url,
+            publicId: replaced.publicId,
+          });
+        } else if (existingImg) {
+          mergedImages.push(existingImg);
+        } else {
+          mergedImages.push(null);
+        }
+      }
+
+      // ✅ Always update all fields (no fallback to undefined)
+      updatedVariants.push({
+        color: strOr(vMeta.color, oldVariant.color),
+        price: numOr(vMeta.price, oldVariant.price, false),
+        stock: numOr(vMeta.stock, oldVariant.stock, true),
+        images: mergedImages.filter(Boolean),
       });
     }
-      if(product.stock>100){
-    console.log("It is not validate ")
-  }
 
-    // Validate category if provided
-    if (category) {
-      const categoryDoc = await Category.findById(category);
-      if (!categoryDoc) {
-        return res.status(400).json({ 
-          success: false, 
-          message: 'Category not found' 
-        });
-      }
-      
-      if (categoryDoc.isBlocked) {
-        return res.status(400).json({ 
-          success: false, 
-          message: 'This category is blocked and cannot be used' 
-        });
-      }
-    }
-
-    // Validate variants if provided
-    if (variants) {
-      if (!Array.isArray(variants) || variants.length === 0) {
-        return res.status(400).json({ 
-          success: false, 
-          message: 'At least one variant is required' 
-        });
-      }
-
-      for (let i = 0; i < variants.length; i++) {
-        const variant = variants[i];
-        
-        if (variant.color && !variant.color.trim()) {
-          return res.status(400).json({ 
-            success: false, 
-            message: `Variant ${i + 1}: Color cannot be empty` 
-          });
-        }
-
-        if (variant.price !== undefined) {
-          const price = parseFloat(variant.price);
-          if (isNaN(price) || price < 0) {
-            return res.status(400).json({ 
-              success: false, 
-              message: `Variant ${i + 1}: Price must be a positive number` 
-            });
-          }
-        }
-
-        if (variant.stock !== undefined) {
-          const stock = parseInt(variant.stock);
-          if (isNaN(stock) || stock < 0 || !Number.isInteger(stock)) {
-            return res.status(400).json({ 
-              success: false, 
-              message: `Variant ${i + 1}: Stock must be a positive integer` 
-            });
-          }
-        }
-
-        if (variant.images && variant.images.length < 3) {
-          return res.status(400).json({ 
-            success: false, 
-            message: `Variant ${i + 1}: At least 3 images are required` 
-          });
+    // ✅ Delete removed variants (and their Cloudinary images)
+    for (let i = variants.length; i < existingVariants.length; i++) {
+      for (const img of existingVariants[i]?.images || []) {
+        try {
+          await cloudinary.uploader.destroy(img.publicId);
+        } catch (err) {
+          console.warn("⚠️ Failed to delete old image:", err.message);
         }
       }
     }
 
-    // Update fields
-    if (name?.trim()) product.name = name.trim();
-    if (description?.trim()) product.description = description.trim();
-    if (brand?.trim()) product.brand = brand.trim();
-    if (category) product.category = category;
-    if (variants) {
-      product.variants = variants.map(v => ({
-        color: v.color?.trim() || v.color,
-        price: v.price !== undefined ? parseFloat(v.price) : v.price,
-        stock: v.stock !== undefined ? parseInt(v.stock) : v.stock,
-        images: v.images || []
-      }));
+    // ✅ Prevent duplicate colors
+    const seenColors = new Set();
+    for (const v of updatedVariants) {
+      const c = v.color.toLowerCase();
+      if (seenColors.has(c)) {
+        return res.status(400).json({
+          success: false,
+          message: `Duplicate color "${v.color}" not allowed.`,
+        });
+      }
+      seenColors.add(c);
     }
 
+    // ✅ Save final product
+    product.variants = updatedVariants;
     await product.save();
-    await product.populate('category');
+    await product.populate("category");
 
-    res.json({ 
-      success: true, 
-      message: 'Product updated successfully', 
-      product 
+    res.json({
+      success: true,
+      message: "✅ Product updated successfully",
+      product,
     });
-  } catch (error) {
-    console.error('Update Product Error:', error);
-    res.status(500).json({ 
-      success: false, 
-      message: 'Failed to update product',
-      error: error.message 
+  } catch (err) {
+    console.error("❌ Update Product Error:", err);
+    res.status(500).json({
+      success: false,
+      message: "Server error while updating product",
+      error: err.message,
     });
   }
 };
 
-// Soft delete product
+
+
+
+
 export const deleteProduct = async (req, res) => {
   try {
     const { id } = req.params;

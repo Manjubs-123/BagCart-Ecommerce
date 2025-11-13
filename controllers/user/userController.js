@@ -5,6 +5,7 @@ import nodemailer from "nodemailer";
 import mongoose from "mongoose";
 import dotenv from "dotenv";
 dotenv.config();
+import {loadHomeProducts,renderLandingPage} from "./productController.js";  
 
 // Email setup (Gmail SMTP)
 const transporter = nodemailer.createTransport({
@@ -210,10 +211,17 @@ export const resendOtp = async (req, res) => {
 };
 
 
-//  Login Page
 export const getLogin = (req, res) => {
-  res.render("user/login", { error: null });
+  const blocked = req.query.blocked === "true";
+  let error = null;
+
+  if (blocked) {
+    error = "Your account has been blocked by the admin.";
+  }
+
+  res.render("user/login", { error });
 };
+
 
 //  Handle Login (with block check)
 export const loginUser = async (req, res) => {
@@ -230,7 +238,7 @@ export const loginUser = async (req, res) => {
     req.session.isLoggedIn = true;
     req.session.user = { id: user._id, name: user.name, email: user.email };
 
-    res.redirect("/user/home");
+    res.redirect("/user/landing");
   } catch (err) {
     console.error("Login error:", err);
     res.status(500).render("user/login", { error: "Something went wrong. Please try again." });
@@ -238,11 +246,34 @@ export const loginUser = async (req, res) => {
 };
 
 //  Show Landing Page (Home)
-export const showHomePage = (req, res) => {
-  const user = req.session.user;
-  console.log(user)
-  res.render("user/landing", { title: "BagHub - Explore Backpacks", user });
+export const showHomePage = async (req, res) => {
+  return renderLandingPage(req, res);
 };
+// export const showHomePage = (req, res) => {
+//   const user = req.session.user;
+//   console.log(user)
+//   res.render("user/landing", { title: "BagHub - Explore Backpacks", user });
+// };
+
+// Landing Page
+// export const renderLandingPage = async (req, res) => {
+//   try {
+//     const { featuredProducts, favouriteProducts, handpickedProducts, trendingProducts } = await loadHomeProducts();
+
+//     res.render("user/landing", {
+//       title: "BagHub | Explore Premium Bags",
+//       currentPage: "home",
+//       featuredProducts,
+//       favouriteProducts,
+//       handpickedProducts,
+//       trendingProducts
+//     });
+//   } catch (error) {
+//     console.error("Error rendering landing page:", error);
+//     res.status(500).send("Failed to load landing page");
+//   }
+// };
+
 
 //  Logout User
 export const logoutUser = (req, res) => {

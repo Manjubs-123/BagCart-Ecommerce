@@ -470,608 +470,815 @@
     </div>
 
     <script>
-        let variantCount = 0;
-        let cropper = null;
-        let currentVariantIndex = null;
-        let currentImageFiles = [];
-        let currentFileIndex = 0;
-        const variants = [];
-        const colors = <%- JSON.stringify(colors) %>;
-        const existingProduct = <%- JSON.stringify(product) %>;
-        let totalImages = 0;
+  let variantCount = 0;
+  let cropper = null;
+  let replaceTarget = { variantIndex: null, slotIndex: null };
+  const variants = [];
+  const colors = <%- JSON.stringify(colors) %>;
+  const existingProduct = <%- JSON.stringify(product || {}) %>;
+  let totalImages = 0;
 
-        // Validation rules
-        const validationRules = {
-            name: {
-                min: 3,
-                max: 100,
-                pattern: /^[a-zA-Z0-9\s\-&.,()]+$/,
-                message: 'Product name must be 3-100 characters with only letters, numbers, and basic punctuation'
-            },
-            description: {
-                min: 10,
-                max: 2000,
-                message: 'Description must be 10-2000 characters'
-            },
-            brand: {
-                min: 2,
-                max: 50,
-                pattern: /^[a-zA-Z0-9\s\-&.,()]+$/,
-                message: 'Brand name must be 2-50 characters with only letters, numbers, and basic punctuation'
-            },
-            category: {
-                required: true,
-                message: 'Please select a category'
-            }
-        };
+  // ✅ Initialize with existing variants (force 3 slots)
+//   function initializeExistingVariants() {
+//     if (!existingProduct || !Array.isArray(existingProduct.variants)) {
+//       console.warn("⚠️ No existing variants found!");
+//       return;
+//     }
 
-        // Initialize with existing variants
-        function initializeExistingVariants() {
-            existingProduct.variants.forEach((variant, index) => {
-                variants.push({
-                    color: variant.color,
-                    price: variant.price,
-                    stock: variant.stock,
-                    images: variant.images.map(img => ({
-                        url: img.url,
-                        publicId: img.publicId,
-                        isExisting: true
-                    }))
-                });
-                renderVariant(index);
-                variantCount++;
-                
-                // Count total images
-                totalImages += variant.images.length;
-            });
-            
-            // Update total images count
-            document.getElementById('totalImagesCount').textContent = totalImages;
-        }
+//     existingProduct.variants.forEach((variant, index) => {
+//       if (!variant) return;
+//       variants.push({
+//         color: variant.color,
+//         price: variant.price,
+//         stock: variant.stock,
+//         images: [0, 1, 2].map(i => {
+//           const img = (variant.images || [])[i];
+//           return img ? { url: img.url, publicId: img.publicId, isExisting: true } : null;
+//         })
+//       });
 
-        function validateField(fieldName) {
-            const field = document.getElementById(fieldName);
-            const value = field.value.trim();
-            const rules = validationRules[fieldName];
-            let isValid = true;
-            let message = '';
+//       renderVariant(index);
+//       variantCount++;
+//       totalImages += variant.images?.length || 0;
+//     });
 
-            if (fieldName === 'category') {
-                isValid = value !== '';
-                message = isValid ? '' : rules.message;
-            } else {
-                if (!value) {
-                    isValid = false;
-                    message = 'This field is required';
-                } else if (value.length < rules.min) {
-                    isValid = false;
-                    message = `Minimum ${rules.min} characters required`;
-                } else if (value.length > rules.max) {
-                    isValid = false;
-                    message = `Maximum ${rules.max} characters allowed`;
-                } else if (rules.pattern && !rules.pattern.test(value)) {
-                    isValid = false;
-                    message = rules.message;
-                }
-            }
+//     document.getElementById('totalImagesCount').textContent = totalImages;
+//   }
 
-            // Update UI
-            const errorElement = document.getElementById(`${fieldName}-error`);
-            const successElement = document.getElementById(`${fieldName}-success`);
+// function initializeExistingVariants() {
+//   if (!existingProduct || !Array.isArray(existingProduct.variants)) {
+//     console.warn("⚠️ No existing variants found!");
+//     return;
+//   }
 
-            if (isValid) {
-                field.classList.remove('input-error');
-                field.classList.add('input-success');
-                if (errorElement) errorElement.classList.add('hidden');
-                if (successElement) successElement.classList.remove('hidden');
-            } else {
-                field.classList.add('input-error');
-                field.classList.remove('input-success');
-                if (errorElement) {
-                    errorElement.classList.remove('hidden');
-                    errorElement.innerHTML = `<i class="fas fa-exclamation-circle validation-icon"></i><span>${message}</span>`;
-                }
-                if (successElement) successElement.classList.add('hidden');
-            }
+//   existingProduct.variants.forEach((variant, index) => {
+//     if (!variant) return;
 
-            return isValid;
-        }
+//     // Push variant as-is with all its images
+//     variants.push({
+//       color: variant.color,
+//       price: variant.price,
+//       stock: variant.stock,
+//       // ✅ Use ALL images from DB (not just 3)
+//       images: (variant.images || []).map(img => ({
+//         url: img.url,
+//         publicId: img.publicId,
+//         isExisting: true
+//       }))
+//     });
 
-        function validateVariantField(variantIndex, fieldType, value) {
-            let isValid = true;
-            let message = '';
+//     renderVariant(index);
+//     variantCount++;
+//   });
 
-            switch (fieldType) {
-                case 'color':
-                    isValid = value !== '';
-                    message = isValid ? '' : 'Please select a color';
-                    break;
-                case 'price':
-                    const price = parseFloat(value);
-                    isValid = !isNaN(price) && price > 0 && price <= 1000000;
-                    message = isValid ? '' : 'Price must be between ₹1 and ₹1,000,000';
-                    break;
-                case 'stock':
-                    const stock = parseInt(value);
-                    isValid = !isNaN(stock) && stock >= 0 && stock <= 100000;
-                    message = isValid ? '' : 'Stock must be between 0 and 100,000';
-                    break;
-            }
+//   // Show total image count dynamically
+//   const totalImages = variants.reduce(
+//     (acc, v) => acc + (v.images ? v.images.length : 0),
+//     0
+//   );
+//   document.getElementById("totalImagesCount").textContent = totalImages;
+// }
+function initializeExistingVariants() {
+  if (!existingProduct || !Array.isArray(existingProduct.variants)) {
+    console.warn("⚠️ No existing variants found!");
+    return;
+  }
+  
 
-            const errorElement = document.getElementById(`${fieldType}-error-${variantIndex}`);
-            const successElement = document.getElementById(`${fieldType}-success-${variantIndex}`);
+  existingProduct.variants.forEach((variant, index) => {
+    if (!variant) return;
 
-            if (isValid) {
-                if (errorElement) errorElement.classList.add('hidden');
-                if (successElement) successElement.classList.remove('hidden');
-            } else {
-                if (errorElement) {
-                    errorElement.classList.remove('hidden');
-                    errorElement.innerHTML = `<i class="fas fa-exclamation-circle validation-icon"></i><span>${message}</span>`;
-                }
-                if (successElement) successElement.classList.add('hidden');
-            }
+    // Push variant as-is with all its images
+    variants.push({
+      color: variant.color,
+      price: variant.price,
+      stock: variant.stock,
+      // ✅ Use ALL images from DB (not just 3)
+      images: (variant.images || []).map(img => ({
+        url: img.url,
+        publicId: img.publicId,
+        isExisting: true
+      }))
+    });
 
-            return isValid;
-        }
+    renderVariant(index);
+    variantCount++;
+  });
 
-        function renderVariant(index) {
-            const container = document.getElementById('variantsContainer');
-            const variant = variants[index];
-            const variantId = `variant-${index}`;
-            
-            const variantHtml = `
-                <div id="${variantId}" class="variant-card border-2 border-gray-200 rounded-xl p-6 bg-gradient-to-br from-white to-gray-50 relative">
-                    <div class="floating-label">Variant ${index + 1}</div>
-                    
-                    <div class="flex justify-between items-center mb-6">
-                        <div class="flex items-center space-x-3">
-                            <div class="variant-counter">${index + 1}</div>
-                            <div>
-                                <h3 class="text-lg font-bold text-gray-800">Product Variant</h3>
-                                <p class="text-sm text-gray-600">Configure color, pricing and inventory</p>
-                            </div>
-                        </div>
-                        <button type="button" 
-                                onclick="removeVariant(${index})" 
-                                class="text-red-600 hover:text-red-800 hover:bg-red-100 px-4 py-2 rounded-lg transition duration-200 font-medium flex items-center space-x-2">
-                            <i class="fas fa-trash"></i>
-                            <span>Remove</span>
-                        </button>
-                    </div>
+  // Show total image count dynamically
+  const totalImages = variants.reduce(
+    (acc, v) => acc + (v.images ? v.images.length : 0),
+    0
+  );
+  document.getElementById("totalImagesCount").textContent = totalImages;
+}
 
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-                        <div class="field-group">
-                            <label class="form-label required-field">
-                                <i class="fas fa-palette text-purple-500 text-sm"></i>
-                                Color
-                            </label>
-                            <select onchange="updateVariantColor(${index}, this.value); validateVariantField(${index}, 'color', this.value)" 
-                                    onblur="validateVariantField(${index}, 'color', this.value)"
-                                    required
-                                    class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-200 bg-white">
-                                <option value="">Select color</option>
-                                ${colors.map(color => `<option value="${color}" ${variant.color === color ? 'selected' : ''}>${color}</option>`).join('')}
-                            </select>
-                            <div id="color-error-${index}" class="error-message hidden">
-                                <i class="fas fa-exclamation-circle validation-icon"></i>
-                                <span>Please select a color</span>
-                            </div>
-                            <div id="color-success-${index}" class="success-message hidden">
-                                <i class="fas fa-check-circle validation-icon"></i>
-                                <span>Color selected!</span>
-                            </div>
-                        </div>
 
-                        <div class="field-group">
-                            <label class="form-label required-field">
-                                <i class="fas fa-tag text-green-500 text-sm"></i>
-                                Price (₹)
-                            </label>
-                            <input type="number" 
-                                   min="1" 
-                                   max="1000000"
-                                   step="0.01" 
-                                   value="${variant.price}"
-                                   onchange="updateVariantPrice(${index}, this.value); validateVariantField(${index}, 'price', this.value)" 
-                                   onblur="validateVariantField(${index}, 'price', this.value)"
-                                   oninput="validateVariantField(${index}, 'price', this.value)"
-                                   required
-                                   class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-200"
-                                   placeholder="0.00">
-                            <div id="price-error-${index}" class="error-message hidden">
-                                <i class="fas fa-exclamation-circle validation-icon"></i>
-                                <span>Price must be between ₹1 and ₹1,000,000</span>
-                            </div>
-                            <div id="price-success-${index}" class="success-message hidden">
-                                <i class="fas fa-check-circle validation-icon"></i>
-                                <span>Valid price!</span>
-                            </div>
-                        </div>
+  // ✅ Field validation
+  const validationRules = {
+    name: { min: 3, max: 100, pattern: /^[a-zA-Z0-9\s\-&.,()]+$/, message: 'Product name must be 3-100 characters with only letters, numbers, and punctuation' },
+    description: { min: 10, max: 2000, message: 'Description must be 10-2000 characters' },
+    brand: { min: 2, max: 50, pattern: /^[a-zA-Z0-9\s\-&.,()]+$/, message: 'Brand must be 2-50 characters' },
+    category: { required: true, message: 'Please select a category' }
+  };
 
-                        <div class="field-group">
-                            <label class="form-label required-field">
-                                <i class="fas fa-boxes text-orange-500 text-sm"></i>
-                                Stock Quantity
-                            </label>
-                            <input type="number" 
-                                   min="0" 
-                                   max="100000"
-                                   step="1" 
-                                   value="${variant.stock}"
-                                   onchange="updateVariantStock(${index}, this.value); validateVariantField(${index}, 'stock', this.value)" 
-                                   onblur="validateVariantField(${index}, 'stock', this.value)"
-                                   oninput="validateVariantField(${index}, 'stock', this.value)"
-                                   required
-                                   class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-200"
-                                   placeholder="0">
-                            <div id="stock-error-${index}" class="error-message hidden">
-                                <i class="fas fa-exclamation-circle validation-icon"></i>
-                                <span>Stock must be between 0 and 100,000</span>
-                            </div>
-                            <div id="stock-success-${index}" class="success-message hidden">
-                                <i class="fas fa-check-circle validation-icon"></i>
-                                <span>Stock quantity set!</span>
-                            </div>
-                        </div>
-                    </div>
+  function validateField(fieldName) {
+    const field = document.getElementById(fieldName);
+    const value = field.value.trim();
+    const rules = validationRules[fieldName];
+    let isValid = true;
+    let message = '';
 
-                    <div class="bg-gradient-to-r from-blue-50 to-indigo-50 border-2 border-dashed border-blue-300 rounded-xl p-6">
-                        <label class="form-label required-field">
-                            <i class="fas fa-images text-blue-500 text-sm"></i>
-                            Product Images
-                            <span class="ml-2 text-xs bg-blue-500 text-white px-2 py-1 rounded-full" id="imageCount-${index}">${variant.images.length}/3</span>
-                        </label>
-                        <div class="flex items-center justify-center w-full mb-4">
-                            <label class="flex flex-col items-center justify-center w-full h-40 border-2 border-blue-300 border-dashed rounded-xl cursor-pointer bg-white hover:bg-blue-50 transition duration-200">
-                                <div class="flex flex-col items-center justify-center pt-8 pb-6">
-                                    <i class="fas fa-cloud-upload-alt text-blue-500 text-3xl mb-3"></i>
-                                    <p class="mb-2 text-sm text-gray-600 font-medium">Click to upload images</p>
-                                    <p class="text-xs text-gray-500">PNG, JPG, GIF up to 5MB each</p>
-                                    <p class="text-xs text-blue-500 font-medium mt-2">Minimum 3 images required</p>
-                                </div>
-                                <input type="file" 
-                                       accept="image/*" 
-                                       multiple 
-                                       onchange="handleImageUpload(event, ${index})"
-                                       class="hidden">
-                            </label>
-                        </div>
-                        
-                        <div id="images-preview-${index}" class="grid grid-cols-2 md:grid-cols-4 gap-4"></div>
-                        
-                        <div id="images-error-${index}" class="error-message hidden mt-3">
-                            <i class="fas fa-exclamation-circle validation-icon"></i>
-                            <span>Minimum 3 high-quality images required for this variant</span>
-                        </div>
-                        <div id="images-success-${index}" class="success-message hidden mt-3">
-                            <i class="fas fa-check-circle validation-icon"></i>
-                            <span>All required images uploaded successfully!</span>
-                        </div>
-                    </div>
-                </div>
-            `;
+    if (fieldName === 'category') {
+      isValid = value !== '';
+      message = isValid ? '' : rules.message;
+    } else {
+      if (!value) { isValid = false; message = 'This field is required'; }
+      else if (value.length < rules.min) { isValid = false; message = `Minimum ${rules.min} characters required`; }
+      else if (value.length > rules.max) { isValid = false; message = `Maximum ${rules.max} characters allowed`; }
+      else if (rules.pattern && !rules.pattern.test(value)) { isValid = false; message = rules.message; }
+    }
 
-            container.insertAdjacentHTML('beforeend', variantHtml);
-            
-            // Display existing images
-            if (variant.images && variant.images.length > 0) {
-                variant.images.forEach((img, imgIndex) => {
-                    displayImagePreview(index, img.url, imgIndex, img.isExisting, img.publicId);
-                });
-            }
-        }
+    const err = document.getElementById(`${fieldName}-error`);
+    const ok = document.getElementById(`${fieldName}-success`);
+    if (isValid) {
+      field.classList.remove('input-error'); field.classList.add('input-success');
+      err?.classList.add('hidden'); ok?.classList.remove('hidden');
+    } else {
+      field.classList.add('input-error'); field.classList.remove('input-success');
+      err?.classList.remove('hidden'); ok?.classList.add('hidden');
+      err.innerHTML = `<i class="fas fa-exclamation-circle validation-icon"></i><span>${message}</span>`;
+    }
+    return isValid;
+  }
 
-        function addVariant() {
-            variants.push({
-                color: '',
-                price: '',
-                stock: '',
-                images: []
-            });
-            renderVariant(variantCount);
-            variantCount++;
-            document.getElementById('variantsCount').textContent = `${variants.length} Variants`;
-        }
+  function validateVariantField(variantIndex, fieldType, value) {
+    let valid = true, msg = '';
+    if (fieldType === 'color') { valid = value !== ''; msg = 'Please select a color'; }
+    if (fieldType === 'price') { const p = parseFloat(value); valid = !isNaN(p) && p > 0; msg = 'Price must be > 0'; }
+    if (fieldType === 'stock') { const s = parseInt(value); valid = !isNaN(s) && s >= 0; msg = 'Stock must be >= 0'; }
 
-        function removeVariant(index) {
-            if (variants[index] && variants[index].images) {
-                totalImages -= variants[index].images.length;
-                document.getElementById('totalImagesCount').textContent = totalImages;
-            }
+    const err = document.getElementById(`${fieldType}-error-${variantIndex}`);
+    const ok = document.getElementById(`${fieldType}-success-${variantIndex}`);
+    if (valid) { err?.classList.add('hidden'); ok?.classList.remove('hidden'); }
+    else { err?.classList.remove('hidden'); ok?.classList.add('hidden'); err.innerHTML = `<i class="fas fa-exclamation-circle validation-icon"></i><span>${msg}</span>`; }
+    return valid;
+  }
 
-            Swal.fire({
-                title: 'Remove Variant?',
-                text: "This will remove the variant and all its images",
-                icon: 'warning',
-                showCancelButton: true,
-                confirmButtonColor: '#d33',
-                cancelButtonColor: '#3085d6',
-                confirmButtonText: 'Yes, remove it!',
-                cancelButtonText: 'Cancel'
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    document.getElementById(`variant-${index}`).remove();
-                    variants[index] = null;
-                    document.getElementById('variantsCount').textContent = `${variants.filter(v => v !== null).length} Variants`;
-                    
-                    Swal.fire({
-                        title: 'Removed!',
-                        text: 'Variant has been removed.',
-                        icon: 'success',
-                        timer: 1500,
-                        showConfirmButton: false
-                    });
-                }
-            });
-        }
+  // ✅ Render each variant card with 3 image slots
+//   function renderVariant(index) {
+//     const container = document.getElementById('variantsContainer');
+//     const v = variants[index];
 
-        function updateVariantColor(index, value) {
-            if (variants[index]) {
-                variants[index].color = value;
-                validateVariantField(index, 'color', value);
-            }
-        }
+//     const makeSlot = (slotIdx) => {
+//       const slot = v.images[slotIdx];
+//       const badge = slot ? (slot.isExisting ? 'Existing' : 'New') : 'Empty';
+//       const content = slot
+//         ? `<img src="${slot.url}" class="w-full h-32 object-cover rounded-xl">`
+//         : `<div class="w-full h-32 rounded-xl bg-gray-100 flex items-center justify-center text-gray-400">Empty</div>`;
+//       return `
+//         <div class="relative border-2 border-gray-200 rounded-xl p-2">
+//           ${content}
+//           <div class="absolute top-2 left-2 bg-blue-600 text-white text-xs px-2 py-1 rounded-full">Slot ${slotIdx + 1} • ${badge}</div>
+//           <div class="flex gap-2 mt-2">
+//             <label class="flex-1">
+//               <input type="file" accept="image/*" class="hidden" onchange="startReplaceUpload(event, ${index}, ${slotIdx})">
+//               <span class="w-full text-center block px-3 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 cursor-pointer">Replace</span>
+//             </label>
+//             ${slot ? `<button type="button" class="px-3 py-2 rounded-lg bg-red-600 text-white hover:bg-red-700" onclick="clearSlot(${index}, ${slotIdx})">Clear</button>` : ''}
+//           </div>
+//         </div>`;
+//     };
 
-        function updateVariantPrice(index, value) {
-            if (variants[index]) {
-                variants[index].price = value;
-                validateVariantField(index, 'price', value);
-            }
-        }
+//     const html = `
+//       <div id="variant-${index}" class="variant-card border-2 border-gray-200 rounded-xl p-6 bg-white">
+//         <div class="mt-4">
+//           <label class="form-label required-field"><i class="fas fa-images text-blue-500 text-sm"></i> Product Images</label>
+//           <div class="grid grid-cols-1 sm:grid-cols-3 gap-4" id="images-grid-${index}">
+//             ${[0, 1, 2].map(makeSlot).join('')}
+//           </div>
+//           <p class="mt-2 text-xs text-gray-500">Exactly 3 images required. Use Replace to change.</p>
+//         </div>
+//       </div>`;
+//     container.insertAdjacentHTML('beforeend', html);
+//   }
 
-        function updateVariantStock(index, value) {
-            if (variants[index]) {
-                variants[index].stock = value;
-                validateVariantField(index, 'stock', value);
-            }
-        }
 
-        function handleImageUpload(event, variantIndex) {
-            const files = Array.from(event.target.files);
-            if (files.length === 0) return;
+// ==============================
+// 🧠 VARIANT FIELD UPDATERS
+// ==============================
 
-            currentVariantIndex = variantIndex;
-            currentImageFiles = files;
-            currentFileIndex = 0;
-            processNextImage();
-            event.target.value = '';
-        }
+function updateVariantColor(index, value) {
+  if (!variants[index]) return;
+  variants[index].color = value;
+}
 
-        function processNextImage() {
-            if (currentFileIndex >= currentImageFiles.length) return;
+function updateVariantPrice(index, value) {
+  if (!variants[index]) return;
+  const val = parseFloat(value);
+  variants[index].price = !isNaN(val) ? val : 0;
+}
 
-            const file = currentImageFiles[currentFileIndex];
-            if (file.size > 5 * 1024 * 1024) {
-                Swal.fire({
-                    icon: 'error',
-                    title: 'File too large',
-                    text: 'Please select images smaller than 5MB',
-                });
-                currentFileIndex++;
-                processNextImage();
-                return;
-            }
+function updateVariantStock(index, value) {
+  if (!variants[index]) return;
+  const val = parseInt(value);
+  variants[index].stock = !isNaN(val) ? val : 0;
+}
 
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                const img = document.getElementById('cropImage');
-                img.src = e.target.result;
-                document.getElementById('cropModal').classList.remove('hidden');
-                
-                if (cropper) cropper.destroy();
-                cropper = new Cropper(img, {
-                    aspectRatio: 1,
-                    viewMode: 2,
-                    minCropBoxWidth: 200,
-                    minCropBoxHeight: 200,
-                    autoCropArea: 1,
-                    responsive: true,
-                    background: false
-                });
-            };
-            reader.readAsDataURL(file);
-        }
+// 🧠 Helper for debugging (optional)
+function logVariants() {
+  console.log("✅ Current Variants:", JSON.stringify(variants, null, 2));
+}
 
-        function closeCropModal() {
-            document.getElementById('cropModal').classList.add('hidden');
-            if (cropper) {
-                cropper.destroy();
-                cropper = null;
-            }
-            currentImageFiles = [];
-            currentFileIndex = 0;
-        }
+function renderVariant(index) {
+  const container = document.getElementById("variantsContainer");
+  const v = variants[index];
+  const colorOptions = colors
+    .map(
+      (c) =>
+        `<option value="${c}" ${v.color === c ? "selected" : ""}>${c}</option>`
+    )
+    .join("");
 
-        function cropImage() {
-            if (!cropper) return;
+  // ✅ Ensure at least 3 image slots
+  const imageCount = Math.max(3, (v.images || []).length);
 
-            const canvas = cropper.getCroppedCanvas({
-                width: 800,
-                height: 800,
-                imageSmoothingEnabled: true,
-                imageSmoothingQuality: 'high'
-            });
+  const makeSlot = (slotIdx) => {
+    const slot = v.images[slotIdx] || null;
+    const badge = slot ? (slot.isExisting ? "Existing" : "New") : "Empty";
+    const content = slot
+      ? `<img src="${slot.url}" class="w-full h-32 object-cover rounded-xl">`
+      : `<div class="w-full h-32 rounded-xl bg-gray-100 flex items-center justify-center text-gray-400">Empty</div>`;
 
-            canvas.toBlob((blob) => {
-                const reader = new FileReader();
-                reader.onload = (e) => {
-                    const base64 = e.target.result;
-                    variants[currentVariantIndex].images.push({
-                        url: base64,
-                        isExisting: false
-                    });
-                    totalImages++;
-                    document.getElementById('totalImagesCount').textContent = totalImages;
-                    
-                    displayImagePreview(currentVariantIndex, base64, variants[currentVariantIndex].images.length - 1, false);
-                    
-                    // Update image count
-                    const imageCountElement = document.getElementById(`imageCount-${currentVariantIndex}`);
-                    const imageCount = variants[currentVariantIndex].images.length;
-                    imageCountElement.textContent = `${imageCount}/3`;
-                    imageCountElement.className = `ml-2 text-xs ${imageCount >= 3 ? 'bg-green-500' : 'bg-yellow-500'} text-white px-2 py-1 rounded-full`;
+    return `
+      <div class="relative border-2 border-gray-200 rounded-xl p-2">
+        ${content}
+        <div class="absolute top-2 left-2 bg-blue-600 text-white text-xs px-2 py-1 rounded-full">
+          Slot ${slotIdx + 1} • ${badge}
+        </div>
+        <div class="flex gap-2 mt-2">
+          <label class="flex-1">
+            <input type="file" accept="image/*" class="hidden" onchange="startReplaceUpload(event, ${index}, ${slotIdx})">
+            <span class="w-full text-center block px-3 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 cursor-pointer">Replace</span>
+          </label>
+          ${slot ? `<button type="button" class="px-3 py-2 rounded-lg bg-red-600 text-white hover:bg-red-700" onclick="clearSlot(${index}, ${slotIdx})">Clear</button>` : ""}
+        </div>
+      </div>`;
+  };
 
-                    // Validate images
-                    if (imageCount >= 3) {
-                        document.getElementById(`images-success-${currentVariantIndex}`).classList.remove('hidden');
-                        document.getElementById(`images-error-${currentVariantIndex}`).classList.add('hidden');
-                    }
+  // ✅ Full variant card
+  const html = `
+    <div id="variant-${index}" class="variant-card border-2 border-gray-200 rounded-xl p-6 bg-gradient-to-br from-white to-gray-50 mb-6">
+      <div class="flex justify-between items-center mb-4">
+        <h3 class="text-lg font-bold text-gray-800">Variant ${index + 1}</h3>
+        <button type="button" onclick="removeVariant(${index})" class="bg-red-500 text-white px-3 py-2 rounded-md hover:bg-red-600 transition duration-200">
+          <i class="fas fa-trash"></i> Remove
+        </button>
+      </div>
 
-                    currentFileIndex++;
-                    
-                    if (currentFileIndex < currentImageFiles.length) {
-                        processNextImage();
-                    } else {
-                        closeCropModal();
-                    }
-                };
-                reader.readAsDataURL(blob);
-            }, 'image/jpeg', 0.9);
-        }
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+        <!-- 🟣 Color -->
+        <div class="field-group">
+          <label class="form-label required-field">
+            <i class="fas fa-palette text-purple-500 text-sm"></i> Color
+          </label>
+          <select onchange="updateVariantColor(${index}, this.value)" 
+                  class="w-full px-4 py-3 border border-gray-300 rounded-lg">
+            <option value="">Select color</option>
+            ${colorOptions}
+          </select>
+        </div>
 
-        function displayImagePreview(variantIndex, imageData, imageIndex, isExisting = false, publicId = null) {
-            const previewContainer = document.getElementById(`images-preview-${variantIndex}`);
-            const imageHtml = `
-                <div class="image-preview-container group">
-                    <img src="${imageData}" class="w-full h-32 object-cover">
-                    <div class="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-60 transition duration-200 flex items-center justify-center">
-                        <button type="button" 
-                                onclick="removeImage(${variantIndex}, ${imageIndex})"
-                                class="opacity-0 group-hover:opacity-100 bg-red-500 text-white rounded-full w-10 h-10 flex items-center justify-center hover:bg-red-600 transition duration-200 shadow-lg transform hover:scale-110">
-                            <i class="fas fa-times"></i>
-                        </button>
-                    </div>
-                    <div class="absolute top-2 right-2 bg-blue-600 text-white text-xs px-2 py-1 rounded-full font-bold">
-                        ${imageIndex + 1}
-                    </div>
-                    ${isExisting ? '<div class="existing-image-badge">Existing</div>' : ''}
-                </div>
-            `;
-            previewContainer.insertAdjacentHTML('beforeend', imageHtml);
-        }
+        <!-- 💰 Price -->
+        <div class="field-group">
+          <label class="form-label required-field">
+            <i class="fas fa-tag text-green-500 text-sm"></i> Price (₹)
+          </label>
+          <input type="number" 
+                 min="1" 
+                 step="0.01" 
+                 value="${v.price || ""}" 
+                 oninput="updateVariantPrice(${index}, this.value)" 
+                 class="w-full px-4 py-3 border border-gray-300 rounded-lg">
+        </div>
 
-        function removeImage(variantIndex, imageIndex) {
-            const imageToRemove = variants[variantIndex].images[imageIndex];
-            variants[variantIndex].images.splice(imageIndex, 1);
-            totalImages--;
-            document.getElementById('totalImagesCount').textContent = totalImages;
-            
-            const previewContainer = document.getElementById(`images-preview-${variantIndex}`);
-            previewContainer.innerHTML = '';
-            variants[variantIndex].images.forEach((img, idx) => {
-                displayImagePreview(variantIndex, img.url, idx, img.isExisting, img.publicId);
-            });
+        <!-- 📦 Stock -->
+        <div class="field-group">
+          <label class="form-label required-field">
+            <i class="fas fa-box text-orange-500 text-sm"></i> Stock
+          </label>
+          <input type="number" 
+                 min="0" 
+                 step="1" 
+                 value="${v.stock || ""}" 
+                 oninput="updateVariantStock(${index}, this.value)" 
+                 class="w-full px-4 py-3 border border-gray-300 rounded-lg">
+        </div>
+      </div>
 
-            // Update image count
-            const imageCountElement = document.getElementById(`imageCount-${variantIndex}`);
-            const imageCount = variants[variantIndex].images.length;
-            imageCountElement.textContent = `${imageCount}/3`;
-            imageCountElement.className = `ml-2 text-xs ${imageCount >= 3 ? 'bg-green-500' : 'bg-yellow-500'} text-white px-2 py-1 rounded-full`;
-        }
+      <!-- 🖼️ Images -->
+      <div class="bg-blue-50 border-2 border-dashed border-blue-300 rounded-xl p-6">
+        <label class="form-label required-field">
+          <i class="fas fa-images text-blue-500 text-sm"></i> Product Images
+        </label>
+        <div id="images-grid-${index}" class="grid grid-cols-1 sm:grid-cols-${imageCount} gap-4">
+          ${Array.from({ length: imageCount }).map((_, i) => makeSlot(i)).join("")}
+        </div>
+        <p class="mt-2 text-xs text-gray-500">
+          You can replace existing images or clear them. 
+          Minimum 3 slots are always available.
+        </p>
+      </div>
+    </div>
+  `;
 
-        // Form submission
-        document.getElementById("productForm").addEventListener("submit", async (e) => {
-            e.preventDefault();
+  container.insertAdjacentHTML("beforeend", html);
+}
 
-            // Basic validation
-            const basicInfoValid = ['name', 'description', 'brand', 'category'].every(field => validateField(field));
-            const hasValidVariants = variants.some(v => v && v.color && v.price > 0 && v.stock >= 0 && v.images && v.images.length >= 3);
+// function renderVariant(index) {
+//   const container = document.getElementById("variantsContainer");
+//   const v = variants[index];
+//   const colorOptions = colors
+//     .map(
+//       (c) =>
+//         `<option value="${c}" ${v.color === c ? "selected" : ""}>${c}</option>`
+//     )
+//     .join("");
 
-            if (!basicInfoValid || !hasValidVariants) {
-                Swal.fire({
-                    icon: "error",
-                    title: "Validation Failed",
-                    html: `Please complete all required fields:<br>
-                    • Basic product information<br>
-                    • At least one valid variant with 3+ images`,
-                    confirmButtonColor: '#3b82f6'
-                });
-                return;
-            }
+//   // ✅ Dynamic slots based on actual image count
+//  // ✅ Ensure at least 3 image slots for every variant
+// const imageCount = Math.max(3, (v.images || []).length);
 
-            const formData = new FormData();
-            formData.append("name", document.getElementById("name").value.trim());
-            formData.append("description", document.getElementById("description").value.trim());
-            formData.append("brand", document.getElementById("brand").value.trim());
-            formData.append("category", document.getElementById("category").value);
+// const makeSlot = (slotIdx) => {
+//   const slot = v.images[slotIdx] || null;
+//     const badge = slot ? (slot.isExisting ? "Existing" : "New") : "Empty";
+//     const content = slot
+//       ? `<img src="${slot.url}" class="w-full h-32 object-cover rounded-xl">`
+//       : `<div class="w-full h-32 rounded-xl bg-gray-100 flex items-center justify-center text-gray-400">Empty</div>`;
 
-            // Prepare existing images data
-            const existingImagesData = variants.filter(v => v !== null).map(variant => {
-                return variant.images
-                    .filter(img => img.isExisting)
-                    .map(img => ({ url: img.url, publicId: img.publicId }));
-            });
-            formData.append("existingImages", JSON.stringify(existingImagesData));
+//     return `
+//       <div class="relative border-2 border-gray-200 rounded-xl p-2">
+//         ${content}
+//         <div class="absolute top-2 left-2 bg-blue-600 text-white text-xs px-2 py-1 rounded-full">
+//           Slot ${slotIdx + 1} • ${badge}
+//         </div>
+//         <div class="flex gap-2 mt-2">
+//           <label class="flex-1">
+//             <input type="file" accept="image/*" class="hidden" onchange="startReplaceUpload(event, ${index}, ${slotIdx})">
+//             <span class="w-full text-center block px-3 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 cursor-pointer">Replace</span>
+//           </label>
+//           ${slot ? `<button type="button" class="px-3 py-2 rounded-lg bg-red-600 text-white hover:bg-red-700" onclick="clearSlot(${index}, ${slotIdx})">Clear</button>` : ""}
+//         </div>
+//       </div>`;
+//   };
 
-            // Add variant data and new images
-            variants.filter(v => v !== null).forEach((variant, vIndex) => {
-                formData.append(`variants[${vIndex}][color]`, variant.color);
-                formData.append(`variants[${vIndex}][price]`, variant.price);
-                formData.append(`variants[${vIndex}][stock]`, variant.stock);
+//   // ✅ Render based on variant’s own image count
+//   const html = `
+//     <div id="variant-${index}" class="variant-card border-2 border-gray-200 rounded-xl p-6 bg-gradient-to-br from-white to-gray-50 mb-6">
+//       <div class="flex justify-between items-center mb-4">
+//         <h3 class="text-lg font-bold text-gray-800">Variant ${index + 1}</h3>
+//         <button type="button" onclick="removeVariant(${index})" class="bg-red-500 text-white px-3 py-2 rounded-md hover:bg-red-600 transition duration-200">
+//           <i class="fas fa-trash"></i> Remove
+//         </button>
+//       </div>
 
-                // Add new images (base64) as blobs
-                variant.images.forEach((img, imgIndex) => {
-                    if (!img.isExisting) {
-                        const byteString = atob(img.url.split(",")[1]);
-                        const mimeString = img.url.split(",")[0].split(":")[1].split(";")[0];
-                        const ab = new ArrayBuffer(byteString.length);
-                        const ia = new Uint8Array(ab);
-                        for (let i = 0; i < byteString.length; i++) {
-                            ia[i] = byteString.charCodeAt(i);
-                        }
-                        const blob = new Blob([ab], { type: mimeString });
-                        formData.append("images", blob, `variant${vIndex}_img${imgIndex}.jpg`);
-                    }
-                });
-            });
+//       <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+//         <div class="field-group">
+//           <label class="form-label required-field">
+//             <i class="fas fa-palette text-purple-500 text-sm"></i> Color
+//           </label>
+//           <select onchange="updateVariantColor(${index}, this.value)" class="w-full px-4 py-3 border border-gray-300 rounded-lg">
+//             <option value="">Select color</option>
+//             ${colorOptions}
+//           </select>
+//         </div>
 
-            try {
-                Swal.fire({
-                    title: "Updating Product...",
-                    text: "Please wait while we save your changes...",
-                    allowOutsideClick: false,
-                    didOpen: () => Swal.showLoading(),
-                });
+//         <div class="field-group">
+//           <label class="form-label required-field"><i class="fas fa-tag text-green-500 text-sm"></i> Price (₹)</label>
+//           <input type="number" min="1" step="0.01" value="${v.price || ""}" oninput="updateVariantPrice(${index}, this.value)" class="w-full px-4 py-3 border border-gray-300 rounded-lg">
+//         </div>
 
-                const response = await fetch(`/admin/products/edit/<%= product._id %>`, {
-                    method: "POST",
-                    body: formData,
-                });
+//         <div class="field-group">
+//           <label class="form-label required-field"><i class="fas fa-box text-orange-500 text-sm"></i> Stock</label>
+//           <input type="number" min="0" step="1" value="${v.stock || ""}" oninput="updateVariantStock(${index}, this.value)" class="w-full px-4 py-3 border border-gray-300 rounded-lg">
+//         </div>
+//       </div>
 
-                const result = await response.json();
+//       <div class="bg-blue-50 border-2 border-dashed border-blue-300 rounded-xl p-6">
+//         <label class="form-label required-field">
+//           <i class="fas fa-images text-blue-500 text-sm"></i> Product Images
+//         </label>
+//        <div id="images-grid-${index}" class="grid grid-cols-1 sm:grid-cols-${imageCount} gap-4">
+//   ${Array.from({ length: imageCount }).map((_, i) => makeSlot(i)).join("")}
+// </div>
 
-                if (response.ok) {
-                    Swal.fire({
-                        icon: "success",
-                        title: "Product Updated!",
-                        text: "Your product has been successfully updated",
-                        showConfirmButton: false,
-                        timer: 2000,
-                    }).then(() => {
-                        window.location.href = "/admin/products";
-                    });
-                } else {
-                    Swal.fire({
-                        icon: "error",
-                        title: "Error!",
-                        text: result.message || "Something went wrong while updating the product",
-                    });
-                }
-            } catch (error) {
-                console.error("Error submitting form:", error);
-                Swal.fire({
-                    icon: "error",
-                    title: "Network Error",
-                    text: "Unable to update product. Please try again.",
-                });
-            }
-        });
+//         <p class="mt-2 text-xs text-gray-500">
+//   You can replace existing images or clear them. 
+//   Minimum 3 slots are always available.
+// </p>
 
-        // Initialize existing variants on page load
-        window.addEventListener('DOMContentLoaded', () => {
-            initializeExistingVariants();
-        });
-    </script>
+//       </div>
+//     </div>`;
+//   container.insertAdjacentHTML("beforeend", html);
+// }
+
+
+
+// function renderVariant(index) {
+//   const container = document.getElementById("variantsContainer");
+//   const v = variants[index];
+
+//   const colorOptions = colors
+//     .map(
+//       (c) =>
+//         `<option value="${c}" ${v.color === c ? "selected" : ""}>${c}</option>`
+//     )
+//     .join("");
+
+//   const makeSlot = (slotIdx) => {
+//     const slot = v.images[slotIdx];
+//     const badge = slot ? (slot.isExisting ? "Existing" : "New") : "Empty";
+//     const content = slot
+//       ? `<img src="${slot.url}" class="w-full h-32 object-cover rounded-xl">`
+//       : `<div class="w-full h-32 rounded-xl bg-gray-100 flex items-center justify-center text-gray-400">Empty</div>`;
+//     return `
+//       <div class="relative border-2 border-gray-200 rounded-xl p-2">
+//         ${content}
+//         <div class="absolute top-2 left-2 bg-blue-600 text-white text-xs px-2 py-1 rounded-full">
+//           Slot ${slotIdx + 1} • ${badge}
+//         </div>
+//         <div class="flex gap-2 mt-2">
+//           <label class="flex-1">
+//             <input type="file" accept="image/*" class="hidden" onchange="startReplaceUpload(event, ${index}, ${slotIdx})">
+//             <span class="w-full text-center block px-3 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 cursor-pointer">Replace</span>
+//           </label>
+//           ${
+//             slot
+//               ? `<button type="button" class="px-3 py-2 rounded-lg bg-red-600 text-white hover:bg-red-700" onclick="clearSlot(${index}, ${slotIdx})">Clear</button>`
+//               : ""
+//           }
+//         </div>
+//       </div>`;
+//   };
+
+//   const html = `
+//   <div id="variant-${index}" class="variant-card border-2 border-gray-200 rounded-xl p-6 bg-gradient-to-br from-white to-gray-50 mb-6">
+
+//     <!-- Variant Header -->
+//     <div class="flex justify-between items-center mb-4">
+//       <h3 class="text-lg font-bold text-gray-800">Variant ${index + 1}</h3>
+//       <button type="button"
+//         onclick="removeVariant(${index})"
+//         class="bg-red-500 text-white px-3 py-2 rounded-md hover:bg-red-600 transition duration-200">
+//         <i class="fas fa-trash"></i> Remove
+//       </button>
+//     </div>
+
+//     <!-- Variant Details -->
+//     <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+//       <!-- Color -->
+//       <div class="field-group">
+//         <label class="form-label required-field">
+//           <i class="fas fa-palette text-purple-500 text-sm"></i> Color
+//         </label>
+//         <select onchange="updateVariantColor(${index}, this.value)" 
+//                 class="w-full px-4 py-3 border border-gray-300 rounded-lg">
+//           <option value="">Select color</option>
+//           ${colorOptions}
+//         </select>
+//         <div id="color-error-${index}" class="error-message hidden"></div>
+//         <div id="color-success-${index}" class="success-message hidden">
+//           <i class="fas fa-check-circle validation-icon"></i><span>Color selected!</span>
+//         </div>
+//       </div>
+
+//       <!-- Price -->
+//       <div class="field-group">
+//         <label class="form-label required-field">
+//           <i class="fas fa-tag text-green-500 text-sm"></i> Price (₹)
+//         </label>
+//         <input type="number" min="1" step="0.01"
+//                value="${v.price || ""}"
+//                oninput="updateVariantPrice(${index}, this.value)"
+//                class="w-full px-4 py-3 border border-gray-300 rounded-lg">
+//       </div>
+
+//       <!-- Stock -->
+//       <div class="field-group">
+//         <label class="form-label required-field">
+//           <i class="fas fa-box text-orange-500 text-sm"></i> Stock
+//         </label>
+//         <input type="number" min="0" step="1"
+//                value="${v.stock || ""}"
+//                oninput="updateVariantStock(${index}, this.value)"
+//                class="w-full px-4 py-3 border border-gray-300 rounded-lg">
+//       </div>
+//     </div>
+
+//     <!-- Variant Images -->
+//     <div class="bg-blue-50 border-2 border-dashed border-blue-300 rounded-xl p-6">
+//       <label class="form-label required-field">
+//         <i class="fas fa-images text-blue-500 text-sm"></i> Product Images
+//       </label>
+//       <div id="images-grid-${index}" class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+//         ${[0, 1, 2].map(makeSlot).join("")}
+//       </div>
+//       <p class="mt-2 text-xs text-gray-500">Exactly 3 images are required. Use Replace to change.</p>
+//     </div>
+//   </div>`;
+
+//   container.insertAdjacentHTML("beforeend", html);
+// }
+
+
+  // === SLOT-BASED IMAGE REPLACE LOGIC ===
+  function startReplaceUpload(e, variantIndex, slotIndex) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 5 * 1024 * 1024) return Swal.fire({ icon: 'error', title: 'File too large', text: 'Max 5MB' });
+
+    replaceTarget = { variantIndex, slotIndex };
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      const img = document.getElementById('cropImage');
+      img.src = ev.target.result;
+      document.getElementById('cropModal').classList.remove('hidden');
+      if (cropper) cropper.destroy();
+      cropper = new Cropper(img, { aspectRatio: 1, viewMode: 2, autoCropArea: 1, background: false });
+    };
+    reader.readAsDataURL(file);
+  }
+
+  function cropImage() {
+    if (!cropper) return;
+    const { variantIndex, slotIndex } = replaceTarget;
+    const canvas = cropper.getCroppedCanvas({ width: 800, height: 800, imageSmoothingEnabled: true, imageSmoothingQuality: 'high' });
+    canvas.toBlob((blob) => {
+      const fr = new FileReader();
+      fr.onload = (e) => {
+        const prev = variants[variantIndex].images[slotIndex];
+        const oldPublicId = prev?.publicId || null;
+        variants[variantIndex].images[slotIndex] = { url: e.target.result, isExisting: false, replaceOf: oldPublicId };
+        renderUpdatedGrid(variantIndex);
+        closeCropModal();
+      };
+      fr.readAsDataURL(blob);
+    }, 'image/jpeg', 0.9);
+  }
+
+//   function renderUpdatedGrid(variantIndex) {
+//     const grid = document.getElementById(`images-grid-${variantIndex}`);
+//     grid.innerHTML = [0, 1, 2].map(i => {
+//       const slot = variants[variantIndex].images[i];
+//       const badge = slot ? (slot.isExisting ? 'Existing' : 'New') : 'Empty';
+//       const content = slot
+//         ? `<img src="${slot.url}" class="w-full h-32 object-cover rounded-xl">`
+//         : `<div class="w-full h-32 rounded-xl bg-gray-100 flex items-center justify-center text-gray-400">Empty</div>`;
+//       return `
+//         <div class="relative border-2 border-gray-200 rounded-xl p-2">
+//           ${content}
+//           <div class="absolute top-2 left-2 bg-blue-600 text-white text-xs px-2 py-1 rounded-full">Slot ${i + 1} • ${badge}</div>
+//           <div class="flex gap-2 mt-2">
+//             <label class="flex-1">
+//               <input type="file" accept="image/*" class="hidden" onchange="startReplaceUpload(event, ${variantIndex}, ${i})">
+//               <span class="w-full text-center block px-3 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 cursor-pointer">Replace</span>
+//             </label>
+//             ${slot ? `<button type="button" class="px-3 py-2 rounded-lg bg-red-600 text-white hover:bg-red-700" onclick="clearSlot(${variantIndex}, ${i})">Clear</button>` : ''}
+//           </div>
+//         </div>`;
+//     }).join('');
+//   }
+
+function renderUpdatedGrid(variantIndex) {
+  const v = variants[variantIndex];
+  const grid = document.getElementById(`images-grid-${variantIndex}`);
+
+  grid.innerHTML = v.images
+    .map((slot, i) => {
+      const badge = slot ? (slot.isExisting ? "Existing" : "New") : "Empty";
+      const content = slot
+        ? `<img src="${slot.url}" class="w-full h-32 object-cover rounded-xl">`
+        : `<div class="w-full h-32 rounded-xl bg-gray-100 flex items-center justify-center text-gray-400">Empty</div>`;
+      return `
+        <div class="relative border-2 border-gray-200 rounded-xl p-2">
+          ${content}
+          <div class="absolute top-2 left-2 bg-blue-600 text-white text-xs px-2 py-1 rounded-full">
+            Slot ${i + 1} • ${badge}
+          </div>
+          <div class="flex gap-2 mt-2">
+            <label class="flex-1">
+              <input type="file" accept="image/*" class="hidden" onchange="startReplaceUpload(event, ${variantIndex}, ${i})">
+              <span class="w-full text-center block px-3 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 cursor-pointer">Replace</span>
+            </label>
+            ${slot ? `<button type="button" class="px-3 py-2 rounded-lg bg-red-600 text-white hover:bg-red-700" onclick="clearSlot(${variantIndex}, ${i})">Clear</button>` : ""}
+          </div>
+        </div>`;
+    })
+    .join("");
+
+  // ✅ Update grid column count dynamically
+  grid.className = `grid grid-cols-1 sm:grid-cols-${Math.max(3, v.images.length)} gap-4`;
+}
+
+
+  function clearSlot(variantIndex, slotIndex) {
+    variants[variantIndex].images[slotIndex] = null;
+    renderUpdatedGrid(variantIndex);
+  }
+
+  function closeCropModal() {
+    document.getElementById('cropModal').classList.add('hidden');
+    if (cropper) { cropper.destroy(); cropper = null; }
+    replaceTarget = { variantIndex: null, slotIndex: null };
+  }
+
+  // ✅ Form submission
+  document.getElementById("productForm").addEventListener("submit", async (e) => {
+  e.preventDefault();
+
+  // ✅ Validate all main fields
+  const valid = ["name", "description", "brand", "category"].every((f) => validateField(f));
+ const validVariants = variants.every((v) => 
+  v && v.images.filter(Boolean).length === v.images.length
+);
+
+  if (!valid || !validVariants) {
+    return Swal.fire({
+      icon: "error",
+      title: "Validation Failed",
+      text: "Each variant must have exactly 3 images and all required fields filled.",
+    });
+  }
+
+  // ✅ Create FormData to send
+  const formData = new FormData();
+  formData.append("name", document.getElementById("name").value.trim());
+  formData.append("description", document.getElementById("description").value.trim());
+  formData.append("brand", document.getElementById("brand").value.trim());
+  formData.append("category", document.getElementById("category").value);
+
+  // ✅ Send only essential variant data (color, price, stock)
+  const simpleVariants = variants.map((v) => ({
+    color: v.color,
+    price: v.price,
+    stock: v.stock,
+  }));
+  formData.append("variants", JSON.stringify(simpleVariants));
+
+  // ✅ Add new or replaced images as blobs
+  variants.forEach((variant, vIndex) => {
+    variant.images.forEach((img, imgIdx) => {
+      if (img && !img.isExisting) {
+        const byteString = atob(img.url.split(",")[1]);
+        const mimeString = img.url.split(",")[0].split(":")[1].split(";")[0];
+        const ab = new ArrayBuffer(byteString.length);
+        const ia = new Uint8Array(ab);
+        for (let i = 0; i < byteString.length; i++) ia[i] = byteString.charCodeAt(i);
+        const blob = new Blob([ab], { type: mimeString });
+        formData.append("images", blob, `variant${vIndex}_slot${imgIdx}.jpg`);
+      }
+    });
+  });
+
+  // ✅ Show loading
+  Swal.fire({
+    title: "Updating Product...",
+    allowOutsideClick: false,
+    didOpen: () => Swal.showLoading(),
+  });
+
+  // ✅ Send to backend
+  const res = await fetch(`/admin/products/edit/<%= product._id %>`, {
+    method: "POST",
+    body: formData,
+  });
+
+  const data = await res.json();
+
+  // ✅ Show result
+  if (res.ok) {
+    Swal.fire({
+      icon: "success",
+      title: "Product updated successfully!",
+      timer: 1500,
+    }).then(() => (window.location.href = "/admin/products"));
+  } else {
+    Swal.fire({
+      icon: "error",
+      title: "Update Failed",
+      text: data.message || "Something went wrong",
+    });
+  }
+});
+
+//   document.getElementById("productForm").addEventListener("submit", async (e) => {
+//     e.preventDefault();
+//     const valid = ['name', 'description', 'brand', 'category'].every(f => validateField(f));
+//     const validVariants = variants.every(v => v && v.images.filter(Boolean).length === 3);
+//     if (!valid || !validVariants) return Swal.fire({ icon: 'error', title: 'Validation Failed', text: 'Each variant must have exactly 3 images.' });
+
+//     const formData = new FormData();
+//     formData.append("name", document.getElementById("name").value.trim());
+//     formData.append("description", document.getElementById("description").value.trim());
+//     formData.append("brand", document.getElementById("brand").value.trim());
+//     formData.append("category", document.getElementById("category").value);
+
+//     variants.forEach((variant, vIndex) => {
+//       formData.append(`variants[${vIndex}][color]`, variant.color);
+//       formData.append(`variants[${vIndex}][price]`, variant.price);
+//       formData.append(`variants[${vIndex}][stock]`, variant.stock);
+//       variant.images.forEach((img, imgIdx) => {
+//         if (img && !img.isExisting) {
+//           const byteString = atob(img.url.split(",")[1]);
+//           const mimeString = img.url.split(",")[0].split(":")[1].split(";")[0];
+//           const ab = new ArrayBuffer(byteString.length);
+//           const ia = new Uint8Array(ab);
+//           for (let i = 0; i < byteString.length; i++) ia[i] = byteString.charCodeAt(i);
+//           const blob = new Blob([ab], { type: mimeString });
+//           formData.append("images", blob, `variant${vIndex}_slot${imgIdx}.jpg`);
+//         }
+//       });
+
+//     });
+
+//     Swal.fire({ title: "Updating Product...", allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+//     const res = await fetch(`/admin/products/edit/<%= product._id %>`, { method: "POST", body: formData });
+//     const data = await res.json();
+//     if (res.ok) Swal.fire({ icon: "success", title: "Updated!", timer: 1500 }).then(() => window.location.href = "/admin/products");
+//     else Swal.fire({ icon: "error", title: "Error", text: data.message || "Something went wrong" });
+//   });
+
+
+function removeVariant(index) {
+  Swal.fire({
+    title: "Remove Variant?",
+    text: "This will delete all images for this variant.",
+    icon: "warning",
+    showCancelButton: true,
+    confirmButtonText: "Yes, Remove",
+  }).then((result) => {
+    if (result.isConfirmed) {
+      variants.splice(index, 1);
+      variantCount--;
+      document.getElementById("variantsContainer").innerHTML = "";
+      variants.forEach((_, i) => renderVariant(i));
+      document.getElementById("variantsCount").textContent = `${variants.length} Variants`;
+    }
+  });
+}
+
+function addVariant() {
+  const usedColors = new Set(variants.map(v => v.color.toLowerCase()));
+  const availableColors = colors.filter(c => !usedColors.has(c.toLowerCase()));
+
+  if (availableColors.length === 0) {
+    return Swal.fire({
+      icon: "warning",
+      title: "All colors used!",
+      text: "You’ve already added all available color variants.",
+    });
+  }
+
+  variants.push({
+    color: "",
+    price: "",
+    stock: "",
+    images: [null, null, null],
+  });
+
+  document.getElementById("variantsContainer").innerHTML = "";
+  variants.forEach((_, i) => renderVariant(i));
+  variantCount++;
+  document.getElementById("variantsCount").textContent = `${variants.length} Variants`;
+}
+
+//   function addVariant() {
+//   if (variants.length >= 5) {
+//     Swal.fire({
+//       icon: "warning",
+//       title: "Limit reached",
+//       text: "You can add up to 5 variants only.",
+//     });
+//     return;
+//   }
+
+//   variants.push({
+//     color: "",
+//     price: "",
+//     stock: "",
+//     images: [null, null, null],
+//   });
+
+//   renderVariant(variantCount);
+//   variantCount++;
+//   document.getElementById("variantsCount").textContent = `${variants.length} Variants`;
+// }
+
+window.addEventListener('DOMContentLoaded', initializeExistingVariants);
+
+
+  window.addEventListener('DOMContentLoaded', initializeExistingVariants);
+</script>
+
 </body>
 </html>
