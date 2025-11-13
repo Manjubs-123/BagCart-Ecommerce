@@ -107,6 +107,11 @@ export const loadHomeProducts = async () => {
 // Home Page
 export const renderHomePage = async (req, res) => {
   try {
+
+    if (req.session.user) {
+      return res.redirect("/user/home");
+    }
+
     const { featuredProducts, favouriteProducts, handpickedProducts, trendingProducts } = await loadHomeProducts();
 
     res.render("index", {
@@ -131,7 +136,7 @@ export const renderLandingPage = async (req, res) => {
     res.render("user/landing", {
       title: "BagHub | Explore Premium Bags",
       currentPage: "home",
-       user: req.session.user || null,
+      //  user: req.session.user || null,
       featuredProducts,
       favouriteProducts,
       handpickedProducts,

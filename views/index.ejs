@@ -157,34 +157,7 @@
             backpacks designed for every journey — from urban commutes to
             mountain adventures.
           </p>
-          <!-- <div class="flex flex-col sm:flex-row gap-4">
-            <a
-              href="#featured"
-              class="btn-primary text-white px-8 py-3 rounded-lg font-semibold inline-block shadow-lg"
-              >Explore Collection</a
-            >
-            <a
-              href="#"
-              class="bg-white text-blue-700 px-8 py-3 rounded-lg font-semibold hover:bg-gray-100 transition inline-block shadow-lg"
-              >Shop Sale</a
-            >
-          </div> -->
-        <!-- <div class="flex flex-col sm:flex-row gap-4">
-<a
-  href="<%= user ? '/user/shop' : '/user/login' %>"
-  class="btn-primary text-white px-8 py-3 rounded-lg font-semibold inline-block shadow-lg"
->
-  Explore Collection
-</a>
-
-
-  <a
-    href="<%= user ? '/products' : '/user/login' %>"
-    class="bg-white text-blue-700 px-8 py-3 rounded-lg font-semibold hover:bg-gray-100 transition inline-block shadow-lg"
-  >
-    Shop Sale
-  </a>
-</div> -->
+         
 <div class="flex flex-col sm:flex-row gap-4">
   <a
     href="<%= user ? '/user/shop' : '/user/login' %>"
@@ -211,10 +184,7 @@
               alt="Premium backpack"
               class="w-64 md:w-96 rounded-2xl shadow-2xl transform hover:scale-105 transition duration-500"
             />
-            <!-- <div class="absolute -bottom-4 -right-4 bg-white text-gray-900 py-2 px-4 rounded-lg shadow-lg">
-              <p class="font-bold">Best Seller</p>
-              <p class="text-sm">Skybags Klik Daypack</p>
-            </div> -->
+        
           </div>
         </div>
       </div>
@@ -269,48 +239,6 @@
     </div>
   </div>
 </section>
-   
-<!-- SHOP YOUR FAVOURITES -->
-<!-- <section class="py-16 bg-white">
-  <div class="max-w-7xl mx-auto px-4">
-    <h2 class="section-title text-3xl font-bold text-gray-900">
-      Shop Your Favourites
-    </h2>
-
-    <div class="swiper favSwiper mt-8">
-      <div class="swiper-wrapper pb-10">
-
-        <% if (favouriteProducts && favouriteProducts.length > 0) { %>
-          <% favouriteProducts.forEach(item => { %>
-            <div class="swiper-slide">
-              <div class="relative group overflow-hidden rounded-xl bg-white border border-gray-200 shadow-sm hover:shadow-lg transition-all">
-                <img
-                  src="<%= item.variants[0]?.images[0]?.url || '/images/no-image.jpg' %>"
-                  class="rounded-xl w-full h-72 object-cover transition duration-500 group-hover:scale-110"
-                  alt="<%= item.name %>"
-                />
-                <div class="absolute inset-0 bg-black bg-opacity-40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
-                  <a href="<%= user ? '/product/' + item._id : '/user/login' %>"
-                     class="bg-white text-gray-900 px-6 py-3 rounded-lg font-semibold shadow hover:bg-gray-100 transition">
-                    Quick View
-                  </a>
-                </div>
-                <div class="absolute bottom-0 left-0 right-0 bg-white bg-opacity-90 text-center py-3">
-                  <h3 class="font-semibold text-gray-900"><%= item.name %></h3>
-                  <p class="text-gray-600 text-sm">₹<%= item.variants[0]?.price || 0 %></p>
-                </div>
-              </div>
-            </div>
-          <% }); %>
-        <% } else { %>
-          <p class="text-center text-gray-500 mt-8 w-full">No favourite products right now.</p>
-        <% } %>
-
-      </div>
-      <div class="swiper-pagination mt-4"></div>
-    </div>
-  </div>
-</section> -->
 
 <!-- SHOP YOUR FAVOURITES -->
 <section class="py-16 bg-white">
@@ -450,44 +378,21 @@
       <div class="swiper-pagination mt-4"></div>
     </div>
 
-    <!-- <div class="text-center mt-10">
-      <a href="/products" class="btn-secondary text-white px-8 py-3 rounded-lg font-semibold shadow-lg inline-flex items-center">
-        View All Products <i class="fas fa-arrow-right ml-2"></i>
-      </a>
-    </div> -->
- <div class="text-center mt-10">
-  <a 
-    href="<%= user ? '/user/shop' : '/user/login' %>" 
-    class="btn-secondary text-white px-8 py-3 rounded-lg font-semibold shadow-lg inline-flex items-center transition hover:scale-105">
-    View All Products 
-    <i class="fas fa-arrow-right ml-2"></i>
-  </a>
-</div>
-
-  </div>
-</section>
-
-
-    <!-- NEWSLETTER SECTION -->
-    <!-- <section class="py-16 bg-gradient-to-r from-blue-600 to-emerald-600 text-white">
-      <div class="max-w-4xl mx-auto px-4 text-center">
-        <h2 class="text-3xl font-bold mb-4">Stay Updated</h2>
-        <p class="text-blue-100 mb-8 max-w-2xl mx-auto">
-          Subscribe to our newsletter and be the first to know about new arrivals, exclusive offers, and special promotions.
-        </p>
-        
-        <div class="flex flex-col sm:flex-row gap-4 max-w-md mx-auto">
-          <input 
-            type="email" 
-            placeholder="Your email address" 
-            class="flex-1 px-4 py-3 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
-          >
-          <button class="bg-yellow-400 text-gray-900 px-6 py-3 rounded-lg font-semibold hover:bg-yellow-300 transition shadow-lg">
-            Subscribe
-          </button>
+  
+        <div class="text-center mt-10">
+          <a 
+            href="<%= user ? '/user/shop' : '/user/login' %>" 
+            class="btn-secondary text-white px-8 py-3 rounded-lg font-semibold shadow-lg inline-flex items-center transition hover:scale-105">
+            View All Products 
+            <i class="fas fa-arrow-right ml-2"></i>
+          </a>
         </div>
-      </div>
-    </section> -->
+
+          </div>
+        </section>
+
+
+    
 
     <!-- FOOTER -->
       <%- include('partials/footer') %>

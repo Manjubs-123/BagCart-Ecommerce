@@ -9,8 +9,8 @@
   <script src="https://cdn.tailwindcss.com"></script>
 
   <!-- FontAwesome -->
-  <script src="https://kit.fontawesome.com/a2e0da32f7.js" crossorigin="anonymous"></script>
-
+<link rel="stylesheet" 
+        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <style>
     .gradient-bg {
       background: linear-gradient(135deg, #1a56db 0%, #047857 100%);
@@ -89,7 +89,7 @@
 </head>
 <body class="bg-gray-50 flex font-sans">
 
-<%- include('../partials/sidebar') %>
+<%- include('../partials/sidebar', { currentPage: 'dashboard' }) %>
 
   <!-- Main Content -->
   <main class="flex-1 p-8 ml-64 min-h-screen">

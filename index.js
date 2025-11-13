@@ -257,36 +257,69 @@ app.use(express.static(path.join(__dirname, "public")));
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 
+
+
+
+
 // Session
+// app.use(
+//   session({
+//     secret: process.env.SESSION_SECRET || "supersecretkey",
+//     resave: false,
+//     saveUninitialized: false,
+//     store: MongoStore.create({
+//       mongoUrl: process.env.MONGO_URI,
+//       ttl: 24 * 60 * 60,
+//     }),
+//     cookie: {
+//       httpOnly: true,
+//       secure: false,
+//       maxAge: 24 * 60 * 60 * 1000,
+//     },
+//   })
+// );
+
 app.use(
   session({
-    secret: process.env.SESSION_SECRET || "supersecretkey",
+    secret: process.env.SESSION_SECRET,
     resave: false,
     saveUninitialized: false,
     store: MongoStore.create({
       mongoUrl: process.env.MONGO_URI,
-      ttl: 24 * 60 * 60,
+      ttl: 24 * 60 * 60, // 1 day
     }),
     cookie: {
       httpOnly: true,
-      secure: false,
+      secure: false, // ❗ false for localhost (true only in HTTPS)
+      sameSite: "lax",
       maxAge: 24 * 60 * 60 * 1000,
     },
   })
 );
+
+
+
+
 
 app.use(noCache);
 app.use(passport.initialize());
 app.use(passport.session());
 
 // ✅ Add this middleware RIGHT HERE 👇 (before routes)
-app.use((req, res, next) => {
-  res.locals.currentPage = ""; // default value for all EJS views
-  next();
-});
+// app.use((req, res, next) => {
+//   res.locals.currentPage = ""; // default value for all EJS views
+//   next();
+// });
 
-// ✅ Make currentPath available everywhere
+// // ✅ Make currentPath available everywhere
+// app.use((req, res, next) => {
+//   res.locals.currentPath = req.path;
+//   next();
+// });
+
 app.use((req, res, next) => {
+  res.locals.user = req.user || null;
+  res.locals.currentPage = "";
   res.locals.currentPath = req.path;
   next();
 });
@@ -305,6 +338,15 @@ app.use("/admin/users", usersRoutes);
 //   res.render("index", { currentPage: "home" });
 // });
 app.get("/", renderHomePage);
+
+// app.use((req, res, next) => {
+//   res.locals.user = req.user || null;
+//   next();
+// });
+// app.get("/debug-user", (req, res) => {
+//   res.json({ user: req.user });
+// });
+
 
 
 // 404

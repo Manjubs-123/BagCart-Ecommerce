@@ -38,19 +38,19 @@ export const isAdminAuthenticated = (req, res, next) => {
     return next();
   }
 
-  // Detect if it's a fetch / AJAX request
-  const isAjaxRequest =
-    req.xhr ||
-    (req.headers.accept && req.headers.accept.includes("json"));
+  // // Detect if it's a fetch / AJAX request
+  // const isAjaxRequest =
+  //   req.xhr ||
+  //   (req.headers.accept && req.headers.accept.includes("json"));
 
-  if (isAjaxRequest) {
-    return res
-      .status(401)
-      .json({ success: false, message: "Admin session expired. Please log in again." });
-  }
+  // if (isAjaxRequest) {
+  //   return res
+  //     .status(401)
+  //     .json({ success: false, message: "Admin session expired. Please log in again." });
+  // }
 
   // Normal browser navigation → redirect
-  return res.redirect("/admin/login");
+  return res.redirect("/admin");
 };
 
 

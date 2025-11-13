@@ -238,7 +238,7 @@ export const loginUser = async (req, res) => {
     req.session.isLoggedIn = true;
     req.session.user = { id: user._id, name: user.name, email: user.email };
 
-    res.redirect("/user/home");
+    res.redirect("/user/landing");
   } catch (err) {
     console.error("Login error:", err);
     res.status(500).render("user/login", { error: "Something went wrong. Please try again." });

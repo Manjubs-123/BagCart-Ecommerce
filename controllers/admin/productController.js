@@ -171,9 +171,6 @@ export const getActiveCategories = async (req, res) => {
 };
 
 
-
-
-
 export const addProduct = async (req, res) => {
   try {
     console.log("Incoming body:", req.body);
@@ -190,6 +187,7 @@ export const addProduct = async (req, res) => {
         variants = [];
       }
     }
+
 
     // 🧠 Handle images for each variant (CLOUDINARY mapped to schema)
     if (Array.isArray(variants) && req.files?.length) {
@@ -213,7 +211,20 @@ export const addProduct = async (req, res) => {
 
     console.log("✅ Prepared variants before save:", JSON.stringify(variants, null, 2));
 
-    // 🧩 Validation
+
+
+    const existingProduct=await Product.findOne({
+      name:{$regex:`^${name.trim()}$`,$options:"i"}//exact matching or case sensitive
+   
+    })
+    if(existingProduct){
+      return res.status(400).json({
+        message:"Product name alreday exists.Please choose a different name.",
+        success:false
+      });
+    }
+     // 🧩 Validation
+
     if (!name || !description || !brand || !category)
       return res.status(400).json({ message: "Missing required fields" });
 
