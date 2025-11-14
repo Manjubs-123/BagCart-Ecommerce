@@ -398,8 +398,9 @@
       
       // Add to cart animation
       document.addEventListener('DOMContentLoaded', function() {
-        const addToCartButtons = document.querySelectorAll('.btn-primary');
-        
+        // const addToCartButtons = document.querySelectorAll('.btn-primary');
+        const addToCartButtons = document.querySelectorAll('.add-to-cart-btn');
+
         addToCartButtons.forEach(button => {
           button.addEventListener('click', function() {
             const originalText = this.innerHTML;
