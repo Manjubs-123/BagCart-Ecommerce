@@ -354,25 +354,82 @@
         const colors = <%- JSON.stringify(colors) %>;
 
         // Validation functions for basic information
-        function validateProductName(input) {
-            const value = input.value.trim();
-            const errorElement = document.getElementById('name-error');
-            const successElement = document.getElementById('name-success');
+        // function validateProductName(input) {
+        //     const value = input.value.trim();
+        //     const errorElement = document.getElementById('name-error');
+        //     const successElement = document.getElementById('name-success');
             
-            if (value.length < 3) {
-                input.classList.add('input-error');
-                input.classList.remove('input-success');
-                errorElement.classList.remove('hidden');
-                successElement.classList.add('hidden');
-                return false;
-            } else {
-                input.classList.remove('input-error');
-                input.classList.add('input-success');
-                errorElement.classList.add('hidden');
-                successElement.classList.remove('hidden');
-                return true;
-            }
-        }
+        //     if (value.length < 3) {
+        //         input.classList.add('input-error');
+        //         input.classList.remove('input-success');
+        //         errorElement.classList.remove('hidden');
+        //         successElement.classList.add('hidden');
+        //         return false;
+        //     } else {
+        //         input.classList.remove('input-error');
+        //         input.classList.add('input-success');
+        //         errorElement.classList.add('hidden');
+        //         successElement.classList.remove('hidden');
+        //         return true;
+        //     }
+        // }
+
+
+        function validateProductName(input) {
+    const value = input.value.trim();
+
+    const errorElement = document.getElementById('name-error');
+    const successElement = document.getElementById('name-success');
+
+    // Required
+    if (!value) {
+        input.classList.add('input-error');
+        input.classList.remove('input-success');
+        errorElement.querySelector("span").textContent = "Product name is required";
+        errorElement.classList.remove('hidden');
+        successElement.classList.add('hidden');
+        return false;
+    }
+
+    // At least 3 characters
+    if (value.length < 3) {
+        input.classList.add('input-error');
+        input.classList.remove('input-success');
+        errorElement.querySelector("span").textContent = "Product name must be at least 3 characters";
+        errorElement.classList.remove('hidden');
+        successElement.classList.add('hidden');
+        return false;
+    }
+
+    // Only alphabets + single spaces
+    const alphabetRegex = /^[A-Za-z ]+$/;
+    if (!alphabetRegex.test(value)) {
+        input.classList.add('input-error');
+        input.classList.remove('input-success');
+        errorElement.querySelector("span").textContent = "Only alphabets (A–Z) and single spaces allowed";
+        errorElement.classList.remove('hidden');
+        successElement.classList.add('hidden');
+        return false;
+    }
+
+    // No multiple spaces
+    if (/\s{2,}/.test(value)) {
+        input.classList.add('input-error');
+        input.classList.remove('input-success');
+        errorElement.querySelector("span").textContent = "Multiple spaces are not allowed";
+        errorElement.classList.remove('hidden');
+        successElement.classList.add('hidden');
+        return false;
+    }
+
+    // Valid
+    input.classList.remove('input-error');
+    input.classList.add('input-success');
+    errorElement.classList.add('hidden');
+    successElement.classList.remove('hidden');
+    return true;
+}
+
 
         function validateDescription(input) {
             const value = input.value.trim();

@@ -517,7 +517,7 @@ function initializeExistingVariants() {
 
   //  Field validation
   const validationRules = {
-    name: { min: 3, max: 100, pattern: /^[a-zA-Z0-9\s\-&.,()]+$/, message: 'Product name must be 3-100 characters with only letters, numbers, and punctuation' },
+    name: { min: 3, max: 100, pattern:/^[A-Za-z ]+$/, message:  "Only alphabets (A–Z) and spaces are allowed" },
     description: { min: 10, max: 2000, message: 'Description must be 10-2000 characters' },
     brand: { min: 2, max: 50, pattern: /^[a-zA-Z0-9\s\-&.,()]+$/, message: 'Brand must be 2-50 characters' },
     category: { required: true, message: 'Please select a category' }
@@ -537,7 +537,18 @@ function initializeExistingVariants() {
       if (!value) { isValid = false; message = 'This field is required'; }
       else if (value.length < rules.min) { isValid = false; message = `Minimum ${rules.min} characters required`; }
       else if (value.length > rules.max) { isValid = false; message = `Maximum ${rules.max} characters allowed`; }
-      else if (rules.pattern && !rules.pattern.test(value)) { isValid = false; message = rules.message; }
+      // else if (rules.pattern && !rules.pattern.test(value)) { isValid = false; message = rules.message; }
+    // Only alphabets + spaces
+else if (rules.pattern && !rules.pattern.test(value)) {
+    isValid = false;
+    message = "Only alphabets (A–Z) and spaces are allowed";
+}
+// No multiple spaces
+else if (/\s{2,}/.test(value)) {
+    isValid = false;
+    message = "Multiple spaces are not allowed";
+}
+
     }
 
     const err = document.getElementById(`${fieldName}-error`);
