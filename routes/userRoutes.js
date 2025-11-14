@@ -23,7 +23,7 @@ const router = express.Router();
 //Prevent browser caching
 router.use(noCache);
 
-//
+
 router.get("/landing", isUserLoggedIn, isAuthenticated, renderLandingPage); // landing Page
 
 // --------------------- PUBLIC ROUTES ---------------------

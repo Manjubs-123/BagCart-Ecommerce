@@ -1,117 +1,6 @@
 import Product from "../../models/productModel.js";
 import Category from "../../models/category.js";
 
-// export const getShopPage = async (req, res) => {
-//   try {
-//     const { search = "", page = 1, limit = 12, category: categoryFilter } = req.query;
-
-//     //  Fetch only active categories
-//     const categories = await Category.find({
-//       isDeleted: false,
-//       isActive: true,
-//     })
-//       .sort({ name: 1 })
-//       .lean();
-
-//     //  Build base filter
-//     const filter = { isDeleted: false, isActive: true };
-
-//     // Search filter (by product name, brand, description)
-//     if (search && search.trim()) {
-//       filter.$or = [
-//         { name: { $regex: search.trim(), $options: "i" } },
-//         { brand: { $regex: search.trim(), $options: "i" } },
-//         { description: { $regex: search.trim(), $options: "i" } },
-//       ];
-//     }
-
-//     // Category filter
-//     if (categoryFilter) {
-//       const catArray = Array.isArray(categoryFilter)
-//         ? categoryFilter
-//         : [categoryFilter];
-//       filter.category = { $in: catArray };
-//     }
-
-//     // Pagination setup
-//     const pageNum = Math.max(1, parseInt(page));
-//     const limitNum = Math.max(1, parseInt(limit));
-//     const skip = (pageNum - 1) * limitNum;
-
-//     //  Fetch products and populate category
-//     let products = await Product.find(filter)
-//       .populate({
-//         path: "category",
-//         match: { isDeleted: false, isActive: true },
-//       })
-//       .sort({ createdAt: -1 })
-//       .skip(skip)
-//       .limit(limitNum)
-//       .lean();
-
-//     // Remove products without valid category
-//     products = products.filter((p) => p.category);
-
-//      //  check if Cloudinary image URLs are stored correctly
-//     console.log("Products fetched for user side:", products[0]?.variants?.[0]?.images);
-
-//     //  Extract unique colors from variants
-//     const allColors = [
-//       ...new Set(
-//         products.flatMap((p) =>
-//           Array.isArray(p.variants)
-//             ? p.variants
-//                 .map((v) => v.color?.trim())
-//                 .filter(Boolean)
-//             : []
-//         )
-//       ),
-//     ];
-
-//     // console.log(allColors);
-
-//     //  Pagination totals
-//     const totalCount = await Product.countDocuments(filter);
-//     const totalPages = Math.ceil(totalCount / limitNum) || 1;
-
-//     //  Pass selected categories for UI highlight
-//     const selectedCategories = Array.isArray(req.query.category)
-//       ? req.query.category.map(String)
-//       : req.query.category
-//       ? [String(req.query.category)]
-//       : [];
-
-//     //Render EJS with all required data
-//     res.render("user/shop", {
-//       title: "Shop - BagHub",
-//       products,
-//       categories,
-//       search,
-//       page: pageNum,
-//       totalPages,
-//       totalCount,
-//       selectedCategories,
-         
-//       user: req.session?.user || null,
-//     });
-
-  
-
- 
-
-//   } catch (err) {
-//     console.error("Error loading shop page:", err);
-//     res
-//       .status(500)
-//       .render("user/error", { message: "Failed to load shop", error: err.message });
-//   }
-// };
-
-// Filter Products 
-
-
-
-
 export const getShopPage = async (req, res) => {
   try {
 
@@ -177,10 +66,6 @@ export const getShopPage = async (req, res) => {
     res.status(500).send("Failed to load shop page");
   }
 };
-
-
-
-
 
 export const filterProducts = async (req, res) => {
   try {

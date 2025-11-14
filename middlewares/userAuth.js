@@ -21,7 +21,7 @@ export const isUserLoggedIn = async (req, res, next) => {
       return;
     }
 
-    //If user blocked → destroy session & redirect with query
+    //If user blocked 
     if (user.isBlocked) {
       req.session.destroy(() => {
         res.redirect("/user/login?blocked=true");
@@ -46,25 +46,3 @@ export const isUserLoggedOut = (req, res, next) => {
   res.redirect("/user/home");
 };
 
-// //  3. Optional standalone blocker (for specific routes if needed)
-// export const checkBlockedUser = async (req, res, next) => {
-//   try {
-//     if (!req.session.user) return res.redirect("/user/login");
-
-//     const user = await User.findById(req.session.user.id);
-//     if (user?.isBlocked) {
-//       req.session.destroy(() => {
-//         res.render("user/blocked", {
-//           title: "Access Denied",
-//           message: "Your account has been blocked. Please contact support.",
-//         });
-//       });
-//       return;
-//     }
-
-//     next();
-//   } catch (err) {
-//     console.error("Blocked user check error:", err);
-//     res.redirect("/user/login");
-//   }
-// };

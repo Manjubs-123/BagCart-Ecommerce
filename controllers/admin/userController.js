@@ -1,7 +1,7 @@
 
 import User from "../../models/userModel.js";
 
-//  Display all users
+
 export const getUsers = async (req, res) => {
   try {
     const page = Math.max(1, parseInt(req.query.page || "1", 10));

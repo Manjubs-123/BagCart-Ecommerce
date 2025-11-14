@@ -7,14 +7,14 @@ import fs from 'fs/promises';
 // List products (with search and pagination)
 export const listProducts = async (req, res) => {
   try {
-    // --- Pagination & search setup ---
+    
     const page = Math.max(1, parseInt(req.query.page || "1", 10));
     const limit = Math.max(1, parseInt(req.query.limit || "10", 10));
     const q = (req.query.q || "").trim();
 
     const filter = { isDeleted: false };
 
-    // --- Search filter ---
+    
     if (q) {
       filter.$or = [
         { name: { $regex: q, $options: "i" } },
@@ -22,12 +22,12 @@ export const listProducts = async (req, res) => {
       ];
     }
 
-    // --- Pagination logic ---
+    
     const totalProducts = await Product.countDocuments(filter);
     const totalPages = Math.max(1, Math.ceil(totalProducts / limit));
     const skip = (page - 1) * limit;
 
-    // --- Fetch paginated products ---
+    
     const products = await Product.find(filter)
       .populate("category", "name")
       .sort({ createdAt: -1 })
@@ -35,7 +35,6 @@ export const listProducts = async (req, res) => {
       .limit(limit)
       .lean();
 
-    // --- Render EJS with all needed data ---
     res.render("admin/productList", {
       title: "Product List",
       products,
@@ -55,7 +54,7 @@ export const listProducts = async (req, res) => {
 export const renderAddProduct = async (req, res) => {
   try {
     const categories = await Category.find({ isDeleted: false }).sort({ name: 1 }).lean();
-    // Simple color list - adjust as needed
+   
     const colors = [
       'Black','Blue','Brown','Gray','Red','Green','Yellow','White','Pink','Purple','Orange'
     ];
@@ -102,10 +101,10 @@ export const getProducts = async (req, res) => {
 
     // Filter out products whose category was filtered out by populate (blocked/deleted categories)
     const products = rawProducts.filter(p => p.category != null);
-        // DEBUG LOG: check if Cloudinary URLs are stored correctly
-    // console.log("Product image check:", products[0]?.variants?.[0]?.images);
+   
+    // console.log(" Product image check:", products[0]?.variants?.[0]?.images);
 
-    //  Render EJS view instead of returning JSON
+    
     res.render("admin/productList", {
       products,
       q: search,
@@ -183,20 +182,18 @@ export const addProduct = async (req, res) => {
       try {
         variants = JSON.parse(variants);
       } catch (err) {
-        console.error(" Failed to parse variants JSON:", err);
+        console.error("Failed to parse variants JSON:", err);
         variants = [];
       }
     }
 
 
-    //  Handle images for each variant (CLOUDINARY mapped to schema)
+    // Handle images for each variant (CLOUDINARY mapped to schema)
     if (Array.isArray(variants) && req.files?.length) {
       variants = variants.map((variant, index) => {
         // Find matching images for this variant using file name pattern
         const images = req.files
-          // .filter(f => f.originalname.startsWith(`variant${index}_`))
-          filter(f => f.originalname.includes(variant.uid))
-
+          .filter(f => f.originalname.startsWith(`variant${index}_`))
           .map(f => ({
             url: f.path,        // Cloudinary image URL
             publicId: f.filename // Cloudinary public ID
@@ -211,7 +208,7 @@ export const addProduct = async (req, res) => {
       });
     }
 
-    console.log("Prepared variants before save:", JSON.stringify(variants, null, 2));
+    console.log(" Prepared variants before save:", JSON.stringify(variants, null, 2));
 
 
 
@@ -233,7 +230,7 @@ export const addProduct = async (req, res) => {
     if (!variants || variants.length === 0)
       return res.status(400).json({ message: "At least one variant is required" });
 
-    //  Create and save product
+    // Create and save product
     const newProduct = new Product({
       name: name.trim(),
       description: description.trim(),
@@ -260,8 +257,6 @@ export const addProduct = async (req, res) => {
     });
   }
 };
-
-
 
 // Render Edit Product Page
 export const renderEditProduct = async (req, res) => {
@@ -296,12 +291,13 @@ export const renderEditProduct = async (req, res) => {
 
 };
 
+
 export const updateProduct = async (req, res) => {
   try {
     const { id } = req.params;
     let { name, description, brand, category, variants } = req.body;
 
-    // Parse variants safely
+    //  Parse variants safely
     if (typeof variants === "string") {
       try {
         variants = JSON.parse(variants);
@@ -323,13 +319,13 @@ export const updateProduct = async (req, res) => {
     if (!product)
       return res.status(404).json({ success: false, message: "Product not found" });
 
-    //  Update base fields
+    // Update base fields
     product.name = strOr(name, product.name);
     product.description = strOr(description, product.description);
     product.brand = strOr(brand, product.brand);
     if (category) product.category = category;
 
-    //  Handle variants
+    // Handle variants
     const updatedVariants = [];
     const existingVariants = product.variants || [];
 
@@ -364,7 +360,7 @@ export const updateProduct = async (req, res) => {
         continue;
       }
 
-      // EXISTING VARIANT
+      //  EXISTING VARIANT
       const totalSlots = Math.max(
         oldVariant.images?.length || 0,
         ...uploadedImages.map((img) => img.slot + 1),
@@ -396,7 +392,7 @@ export const updateProduct = async (req, res) => {
         }
       }
 
-      // Always update all fields (no fallback to undefined)
+      //  Always update all fields (no fallback to undefined)
       updatedVariants.push({
         color: strOr(vMeta.color, oldVariant.color),
         price: numOr(vMeta.price, oldVariant.price, false),
@@ -416,7 +412,7 @@ export const updateProduct = async (req, res) => {
       }
     }
 
-    // Prevent duplicate colors
+    //  Prevent duplicate colors
     const seenColors = new Set();
     for (const v of updatedVariants) {
       const c = v.color.toLowerCase();
@@ -448,9 +444,6 @@ export const updateProduct = async (req, res) => {
     });
   }
 };
-
-
-
 
 
 export const deleteProduct = async (req, res) => {

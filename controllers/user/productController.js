@@ -59,7 +59,6 @@ export const renderLandingPage = async (req, res) => {
     res.render("user/landing", {
       title: "BagHub | Explore Premium Bags",
       currentPage: "home",
-      //  user: req.session.user || null,
       featuredProducts,
       favouriteProducts,
       handpickedProducts,
@@ -72,75 +71,6 @@ export const renderLandingPage = async (req, res) => {
   }
 };
 
-// export const renderShopPage = async (req, res) => {
-//   try {
-//     //If user not logged in, redirect to login
-//     if (!req.session.user) {
-//       return res.redirect("/user/login");
-//     }
-//     const selectedCategories = Array.isArray(req.query.category)
-//       ? req.query.category
-//       : req.query.category
-//         ? [req.query.category]
-//         : [];
-
-//     // Add this line — your available color filters
-//     // const colors = ["Black", "Blue", "Brown", "Grey", "Red", "Green", "Navy", "Orange"];
-//      products = await Product.find(filter)
-//       .populate({
-//         path: "category",
-//         match: { isDeleted: false, isActive: true },
-//       })
-//       .sort({ createdAt: -1 })
-//       .skip(skip)
-//       .limit(limitNum)
-//       .lean();
-
-//     // Remove products without valid category
-//     let product = products.filter((p) => p.category);
-//     const colors = [
-//       ...new Set(
-//         product.flatMap((p) =>
-//           Array.isArray(p.variants)
-//             ? p.variants
-//               .map((v) => v.color?.trim())
-//               .filter(Boolean)
-//             : []
-//         )
-//       ),
-//     ];
-
-//     // Load active categories
-
-//     const categories = await Category.find({ isDeleted: false })
-//       .sort({ name: 1 })
-//       .lean();
-
-//     // Build filter
-//     const filter = { isDeleted: false, isActive: true };
-//     if (selectedCategories.length > 0) {
-//       filter.category = { $in: selectedCategories };
-//     }
-//     //  Fetch products
-//     const products = await Product.find(filter)
-//       .populate("category", "name")
-//       .sort({ createdAt: -1 })
-//       .lean();
-
-//     //  Pass `colors` to EJS
-//     res.render("user/shop", {
-//       title: "Shop | BagHub",
-//       products,
-//       categories,
-//       selectedCategories,
-//       colors,
-//       user: req.session.user || null,
-//     });
-//   } catch (error) {
-//     console.error("Error rendering shop page:", error);
-//     res.status(500).send("Failed to load shop page");
-//   }
-// };
 
 
 

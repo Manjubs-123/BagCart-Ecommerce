@@ -1,4 +1,3 @@
-
 import dotenv from "dotenv";
 dotenv.config();
 import express from "express";
@@ -21,7 +20,7 @@ import {renderHomePage} from "./controllers/user/productController.js";
 const app = express();
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
-// Connect DB
+
 connectDB();
 
 app.set("view engine", "ejs");
@@ -63,8 +62,6 @@ app.use((req, res, next) => {
   next();
 });
 
-// Routes
-
 app.use("/admin", adminRoutes);
 app.use("/user", userRoutes);
 app.use("/user", shopRoutes);
@@ -76,7 +73,7 @@ app.get("/", renderHomePage);
 
 
 
-// 404
+
 app.use((req, res) => {
   res.status(404).render("404", { title: "Page Not Found" });
 });
