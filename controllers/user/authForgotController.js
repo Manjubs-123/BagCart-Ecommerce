@@ -4,22 +4,17 @@ import nodemailer from "nodemailer";
 import dotenv from "dotenv";
 dotenv.config();
 
-/* ============================================================
-   CONSTANTS
-============================================================ */
+
 const OTP_EXPIRY_MS = 2 * 60 * 1000;   // 2 minutes
 const RESEND_COOLDOWN_MS = 60 * 1000;  // 1 minute
 
-/* ============================================================
-   1️ Render Forgot Password Page
-============================================================ */
+    // Render Forgot Password Page
 export const renderForgotPassword = (req, res) => {
   res.render("user/forgotPassword", { error: null });
 };
 
-/* ============================================================
-   2️ Handle Forgot Password Form (Send OTP)
-============================================================ */
+
+   // Handle Forgot Password Form (Send OTP)
 export const postForgotPassword = async (req, res) => {
   const { email } = req.body;
 
@@ -56,13 +51,7 @@ export const postForgotPassword = async (req, res) => {
 
     req.session.save((err) => {
       if (err) console.error("Session save error:", err);
-      res.render("user/forgotOtp", {
-        email,
-        error: null,
-        cooldown: 60,
-        RESEND_COOLDOWN: 60,
-        OTP_EXPIRY_MINUTES: 2,
-      });
+      res.redirect("/user/forgotOtp");
     });
   } catch (err) {
     console.error("Forgot password error:", err);
@@ -70,9 +59,9 @@ export const postForgotPassword = async (req, res) => {
   }
 };
 
-/* ============================================================
-   3️ Render OTP Verification Page
-============================================================ */
+
+    // Render OTP Verification Page
+ 
 export const renderForgotVerifyOtp = (req, res) => {
   const email = req.session.resetData?.email;
   if (!email) return res.redirect("/user/forgotPassword");
@@ -90,9 +79,8 @@ export const renderForgotVerifyOtp = (req, res) => {
   });
 };
 
-/* ============================================================
-   4️ Verify OTP
-============================================================ */
+  //  Verify OTP
+ 
 export const postForgotVerifyOtp = async (req, res) => {
   const { otp } = req.body;
   const data = req.session.resetData;
@@ -127,9 +115,8 @@ export const postForgotVerifyOtp = async (req, res) => {
   });
 };
 
-/* ============================================================
-   5️ Resend OTP
-============================================================ */
+   // Resend OTP
+
 export const resendForgotOtp = async (req, res) => {
   try {
     const data = req.session.resetData;
@@ -159,7 +146,7 @@ export const resendForgotOtp = async (req, res) => {
         pass: process.env.EMAIL_PASS,
       },
     });
-
+ 
     await transporter.sendMail({
       from: `"BagHub" <${process.env.EMAIL_USER}>`,
       to: data.email,
@@ -167,14 +154,14 @@ export const resendForgotOtp = async (req, res) => {
       html: `<p>Your new OTP is <b>${newOtp}</b>. It expires in 2 minutes.</p>`,
     });
 
-    res.render("user/forgotOtp", {
-      email: data.email,
-      error: null,
-      cooldown: 60,
-      RESEND_COOLDOWN: 60,
-      OTP_EXPIRY_MINUTES: 2,
-    });
-  } catch (err) {
+      res.render("user/forgotOtp", {
+        email: data.email,
+        error: null,
+        cooldown: 60,
+        RESEND_COOLDOWN: 60,
+        OTP_EXPIRY_MINUTES: 2,
+      });
+    } catch (err) {
     console.error("Resend OTP Error:", err);
     res.render("user/forgotOtp", {
       email: req.session.resetData?.email || "",
@@ -186,56 +173,55 @@ export const resendForgotOtp = async (req, res) => {
   }
 };
 
-/* ============================================================
-   6️ Render Reset Password Page
-============================================================ */
-export const renderResetPassword = (req, res) => {
-  if (!req.session.allowPasswordReset) return res.redirect("/user/forgotPassword");
+   //Render Reset Password Page
 
-  const email = req.session.resetData?.email;
-  res.render("user/resetPassword", { email, error: null });
-};
+    export const renderResetPassword = (req, res) => {
+      if (!req.session.allowPasswordReset) return res.redirect("/user/forgotPassword");
 
-/* ============================================================
-   7️ Handle Reset Password Submission
-============================================================ */
-export const postResetPassword = async (req, res) => {
-  const { newPassword, confirmPassword } = req.body;
-  const email = req.session.resetData?.email;
+      const email = req.session.resetData?.email;
+      res.render("user/resetPassword", { email, error: null });
+    };
 
-  if (!email) return res.redirect("/user/forgotPassword");
 
-  try {
-    const passwordRegex = /^(?=.*[A-Z])(?=.*[0-9])(?=.*[!@#$%^&*()_+{}:"<>?~]).{6,}$/;
+   //Handle Reset Password Submission
 
-    if (!passwordRegex.test(newPassword)) {
-      return res.render("user/resetPassword", {
-        email,
-        error: "Password must include uppercase, number, special char, and be 6+ chars.",
-      });
-    }
+    export const postResetPassword = async (req, res) => {
+      const { newPassword, confirmPassword } = req.body;
+      const email = req.session.resetData?.email;
 
-    if (newPassword !== confirmPassword) {
-      return res.render("user/resetPassword", {
-        email,
-        error: "Passwords do not match.",
-      });
-    }
+      if (!email) return res.redirect("/user/forgotPassword");
 
-    const hashed = await bcrypt.hash(newPassword, 10);
-    await User.updateOne({ email }, { $set: { password: hashed } });
+      try {
+        const passwordRegex = /^(?=.*[A-Z])(?=.*[0-9])(?=.*[!@#$%^&*()_+{}:"<>?~]).{6,}$/;
+
+        if (!passwordRegex.test(newPassword)) {
+          return res.render("user/resetPassword", {
+            email,
+            error: "Password must include uppercase, number, special char, and be 6+ chars.",
+          });
+        }
+
+        if (newPassword !== confirmPassword) {
+          return res.render("user/resetPassword", {
+            email,
+            error: "Passwords do not match.",
+          });
+        }
+
+        const hashed = await bcrypt.hash(newPassword, 10);
+        await User.updateOne({ email }, { $set: { password: hashed } });
 
     // Securely destroy session after password reset
-req.session.destroy((err) => {
-  if (err) console.error("Session destroy error:", err);
-  res.clearCookie("connect.sid"); // important: remove cookie
-  return res.redirect("/user/login");
-});
-  } catch (err) {
-    console.error("Password reset error:", err);
-    res.render("user/resetPassword", {
-      email,
-      error: "Something went wrong. Please try again.",
-    });
-  }
-};
+      req.session.destroy((err) => {
+        if (err) console.error("Session destroy error:", err);
+        res.clearCookie("connect.sid"); 
+        return res.redirect("/user/login");
+      });
+        } catch (err) {
+          console.error("Password reset error:", err);
+          res.render("user/resetPassword", {
+            email,
+            error: "Something went wrong. Please try again.",
+          });
+        }
+      };

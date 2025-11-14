@@ -16,8 +16,7 @@ import categoryRoutes from "./routes/admin/categoryRoutes.js";
 import productRoutes from "./routes/admin/productRoutes.js";
 import usersRoutes from "./routes/admin/usersRoutes.js";
 import shopRoutes from "./routes/shopRoute.js";
-
-
+import { errorHandler } from "./middlewares/errorHandler.js";
 import {renderHomePage} from "./controllers/user/productController.js";
 const app = express();
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -76,10 +75,12 @@ app.use("/admin/users", usersRoutes);
 app.get("/", renderHomePage);
 
 
+
 // 404
 app.use((req, res) => {
   res.status(404).render("404", { title: "Page Not Found" });
 });
+app.use(errorHandler);
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));

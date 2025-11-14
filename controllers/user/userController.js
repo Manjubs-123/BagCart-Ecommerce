@@ -187,7 +187,7 @@ export const resendOtp = async (req, res) => {
       html: `<p>Your new OTP is <b>${newOtp}</b>. It will expire in 5 minutes.</p>`,
     });
 
-    // console.log(` Resent OTP to ${email}: ${newOtp}`);
+    console.log(` Resent OTP to ${email}: ${newOtp}`);
 
     res.render("user/verifyOtp", {
       email,

@@ -432,6 +432,71 @@
             applyFilters();
         }
 
+        // Apply filters function (same logic as before, but with professional styling)
+        // function applyFilters() {
+        //     const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+        //     const minPrice = parseFloat(document.getElementById('minPrice').value) || 0;
+        //     const maxPrice = parseFloat(document.getElementById('maxPrice').value) || Infinity;
+        //     const sortValue = document.getElementById('sortSelect').value;
+
+        //     // Get selected filters
+        //     const selectedCategories = Array.from(document.querySelectorAll('input[name="category"]:checked')).map(cb => cb.value);
+        //     const selectedColors = Array.from(document.querySelectorAll('input[name="color"]:checked')).map(cb => cb.value);
+        //     const selectedBrands = Array.from(document.querySelectorAll('input[name="brand"]:checked')).map(cb => cb.value);
+
+        //     // Get all product cards
+        //     // let products = Array.from(document.querySelectorAll('.product-card'));
+        //     let products = Array.from(document.querySelectorAll('#productsGrid > a'));
+
+        //     // Filter products
+        //     products.forEach(product => {
+        //         const productName = product.getAttribute('data-name');
+        //         const productPrice = parseFloat(product.getAttribute('data-price'));
+        //         const productCategory = product.getAttribute('data-category');
+        //         const productBrand = product.getAttribute('data-brand');
+        //         const productColors = product.getAttribute('data-colors').split(',').filter(c => c);
+
+        //         let show = true;
+
+        //         // Search filter
+        //         if (searchTerm && !productName.includes(searchTerm)) {
+        //             show = false;
+        //         }
+
+        //         // Price filter
+        //         if (productPrice < minPrice || productPrice > maxPrice) {
+        //             show = false;
+        //         }
+
+        //         // Category filter
+        //         if (selectedCategories.length > 0 && !selectedCategories.includes(productCategory)) {
+        //             show = false;
+        //         }
+
+        //         // Brand filter
+        //         if (selectedBrands.length > 0 && !selectedBrands.includes(productBrand)) {
+        //             show = false;
+        //         }
+
+        //         // Color filter
+        //         if (selectedColors.length > 0) {
+        //             const hasMatchingColor = selectedColors.some(color => productColors.includes(color));
+        //             if (!hasMatchingColor) {
+        //                 show = false;
+        //             }
+        //         }
+
+        //         // product.style.display = show ? 'block' : 'none';
+        //         product.style.display = show ? 'block' : 'none';
+
+        //     });
+
+        //     // Sort and update display
+        //     sortAndDisplayProducts(sortValue, products);
+        //     updateResultsCount();
+        //     currentlyShown = loadMoreIncrement;
+        //     applyLoadMore();
+        // }
 function applyFilters() {
     const searchTerm = document.getElementById('searchInput').value.toLowerCase();
     const minPrice = parseFloat(document.getElementById('minPrice').value) || 0;
@@ -494,6 +559,42 @@ function applyFilters() {
     currentlyShown = loadMoreIncrement;
     applyLoadMore();
 }
+
+
+
+        // function sortAndDisplayProducts(sortValue, products) {
+        //     const visibleProducts = products.filter(p => p.style.display !== 'none');
+
+        //     if (sortValue) {
+        //         visibleProducts.sort((a, b) => {
+        //             switch(sortValue) {
+        //                 case 'price-low':
+        //                     return parseFloat(a.getAttribute('data-price')) - parseFloat(b.getAttribute('data-price'));
+        //                 case 'price-high':
+        //                     return parseFloat(b.getAttribute('data-price')) - parseFloat(a.getAttribute('data-price'));
+        //                 case 'name-asc':
+        //                     return a.getAttribute('data-name').localeCompare(b.getAttribute('data-name'));
+        //                 case 'name-desc':
+        //                     return b.getAttribute('data-name').localeCompare(a.getAttribute('data-name'));
+        //                 case 'new':
+        //                     return new Date(b.getAttribute('data-created')) - new Date(a.getAttribute('data-created'));
+        //                 case 'featured':
+        //                     return (b.getAttribute('data-featured') === 'true' ? 1 : 0) - (a.getAttribute('data-featured') === 'true' ? 1 : 0);
+        //                 default:
+        //                     return 0;
+        //             }
+        //         });
+
+        //         const grid = document.getElementById('productsGrid');
+        //         visibleProducts.forEach(product => {
+        //             // grid.appendChild(product);
+        //             grid.appendChild(product);
+
+
+        //         });
+        //     }
+        // }
+
         // Load more functionality
      function sortAndDisplayProducts(sortValue, products) {
     const visibleProducts = products.filter(p => p.style.display !== 'none');
