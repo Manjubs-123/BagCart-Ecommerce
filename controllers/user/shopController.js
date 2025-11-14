@@ -47,7 +47,7 @@ export const getShopPage = async (req, res) => {
     ];
 
     // ---- FETCH CATEGORIES ----
-    const categories = await Category.find({ isDeleted: false })
+    const categories = await Category.find({ isDeleted: false ,isActive:true})
       .sort({ name: 1 })
       .lean();
 
