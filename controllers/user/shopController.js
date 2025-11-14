@@ -167,7 +167,7 @@ export const getProductDetails = async (req, res) => {
   try {
     const productId = req.params.id;
 
-    // ✅ Fetch product with category populated
+    // Fetch product with category populated
     const product = await Product.findById(productId)
       .populate("category", "_id name")
       .lean();
@@ -176,7 +176,7 @@ export const getProductDetails = async (req, res) => {
       return res.redirect("/shop");
     }
 
-    // ✅ Prepare variant images grouped by color
+    // Prepare variant images grouped by color
     const variantImages = {};
     (product.variants || []).forEach(v => {
       if (v.color && v.images?.length) {
@@ -188,7 +188,7 @@ export const getProductDetails = async (req, res) => {
     const allProductImages =
       variantImages[Object.keys(variantImages)[0]] || [];
 
-    // ✅ Main Product object for EJS
+    // Main Product object for EJS
     const viewProduct = {
       _id: product._id,
       productName: product.name,
@@ -206,12 +206,12 @@ export const getProductDetails = async (req, res) => {
     };
 
     /* ----------------------------------------------------------
-       ✅ Fetch Related Products
-       Priority: 1️⃣ Category → 2️⃣ Brand → 3️⃣ Random
+        Fetch Related Products
+
     ---------------------------------------------------------- */
     let relatedProducts = [];
 
-    // 1️⃣ Related by Category
+    //  Related by Category
     if (product.category?._id) {
       relatedProducts = await Product.find({
         category: product.category._id,
@@ -224,10 +224,10 @@ export const getProductDetails = async (req, res) => {
         .lean();
 
       if (relatedProducts.length > 0)
-        console.log(`✅ Found ${relatedProducts.length} related products by category`);
+        console.log(` Found ${relatedProducts.length} related products by category`);
     }
 
-    // 2️⃣ Fallback: Related by Brand
+    //  Fallback: Related by Brand
     if (!relatedProducts.length && product.brand) {
       relatedProducts = await Product.find({
         brand: product.brand,
@@ -240,48 +240,19 @@ export const getProductDetails = async (req, res) => {
         .lean();
 
       if (relatedProducts.length > 0)
-        console.log(`🔁 Found ${relatedProducts.length} related products by brand`);
+        console.log(` Found ${relatedProducts.length} related products by brand`);
     }
 
-    // 3️⃣ Fallback: Random products
+    //  Fallback: Random products
     if (!relatedProducts.length) {
       relatedProducts = await Product.aggregate([
         { $match: { _id: { $ne: product._id }, isDeleted: false, isActive: true } },
         { $sample: { size: 8 } }, // randomly pick 8
       ]);
 
-      console.log(`🌀 Used random fallback. Found: ${relatedProducts.length}`);
+      console.log(`Used random fallback. Found: ${relatedProducts.length}`);
     }
 
-    /* ----------------------------------------------------------
-       ✅ Format Related Products for EJS
-    ---------------------------------------------------------- */
-    // const formattedRelated = relatedProducts.map(p => {
-    //   const fv = (p.variants || [])[0] || {};
-    //   const firstImage =
-    //     (p.variants || [])
-    //       .flatMap(v =>
-    //         (v.images || []).map(img =>
-    //           typeof img === "string" ? img : img.url
-    //         )
-    //       )
-    //       .filter(Boolean)[0] || "/default-product.jpg";
-
-    //   return {
-    //     _id: p._id,
-    //     productName: p.name,
-    //     salePrice: fv.price || 0,
-    //     regularPrice: fv.mrp || null,
-    //     productImage: [firstImage],
-    //     brand: p.brand || "BagHub",
-    //     rating: p.rating || 4.5,
-    //     categoryName: p.category?.name || "Other",
-    //   };
-    // });
-
-    /* ----------------------------------------------------------
-   ✅ Format Related Products for EJS
----------------------------------------------------------- */
 const formattedRelated = relatedProducts.map(p => {
   const fv = (p.variants || [])[0] || {};
   const firstImage =
@@ -307,7 +278,7 @@ const formattedRelated = relatedProducts.map(p => {
 
 
     /* ----------------------------------------------------------
-       ✅ Render EJS
+       Render EJS
     ---------------------------------------------------------- */
     res.render("user/productDetails", {
       title: `${viewProduct.productName} - BagHub`,
@@ -332,7 +303,7 @@ const formattedRelated = relatedProducts.map(p => {
       },
     });
   } catch (error) {
-    console.error("❌ Error loading product details:", error);
+    console.error(" Error loading product details:", error);
     res.redirect("/shop");
   }
 };
@@ -359,7 +330,7 @@ export const getVariantByColor = async (req, res) => {
       return res.status(404).json({ success: false, message: "Variant not found" });
     }
 
-    // ✅ Ensure brand is taken from populated object or fallback
+    //  Ensure brand is taken from populated object or fallback
     const brandName =
       (product.brand && (product.brand.name || product.brand)) || "BagHub";
 
@@ -371,11 +342,11 @@ export const getVariantByColor = async (req, res) => {
         mrp: variant.mrp,
         stock: variant.stock,
         images: (variant.images || []).map(img => img.url),
-        brand: brandName, // ✅ included here
+        brand: brandName,
       },
     });
   } catch (error) {
-    console.error("❌ Error fetching variant:", error);
+    console.error("Error fetching variant:", error);
     res.status(500).json({ success: false, message: "Server error" });
   }
 };

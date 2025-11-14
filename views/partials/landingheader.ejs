@@ -24,11 +24,7 @@
 
       <!-- User Actions -->
       <div class="flex items-center space-x-4">
-        <!-- Search Button
-        <button class="text-gray-600 hover:text-blue-600 transition-colors duration-200 p-2 rounded-lg hover:bg-gray-100">
-          <i class="fas fa-search text-lg"></i>
-        </button> -->
-
+       
         <!-- Wishlist -->
         <a href="/wishlist" class="relative text-gray-600 hover:text-blue-600 transition-colors duration-200 p-2 rounded-lg hover:bg-gray-100">
           <i class="fas fa-heart text-lg"></i>
@@ -56,23 +52,9 @@
                 <i class="fas fa-user text-white text-sm"></i>
               <% } %>
             </div>
-            <!-- <span class="hidden md:block text-sm font-medium">
-  <% if (user) { %>
-    Welcome, <%= user.name || 'User' %>
-  <% } else { %>
-    <a href="/user/login" class="text-blue-600 hover:underline">Login</a>
-  <% } %>
-</span> -->
+        
 
 <span class="hidden md:block text-sm font-medium">
-  <!-- <% if (user) { %>
-    Welcome, <%= user.name || 'User' %>
-    <% if (user.email) { %>
-      (<%= user.email %>)
-    <% } %>
-  <% } else { %>
-    <a href="/user/login" class="text-blue-600 hover:underline">Login</a>
-  <% } %> -->
   <% if (typeof user !== 'undefined' && user) { %>
   Welcome, <%= user.name || 'User' %>
 <% } else { %>

@@ -1,34 +1,5 @@
 import Category from "../../models/category.js";
 
-// List categories (with search, pagination)
-// export const listCategories = async (req, res) => {
-//   try {
-//     const page = Math.max(1, parseInt(req.query.page || "1", 10));
-//     const limit = Math.max(1, parseInt(req.query.limit || "10", 10));
-//     const q = (req.query.q || "").trim();
-
-//     const filter = { isDeleted: false };
-//     if (q) {
-//       filter.name={$regex:q,$options:"i"}
-//     }
-
-//     const total = await Category.countDocuments(filter);
-//     const pages = Math.ceil(total / limit);
-//     const skip = (page - 1) * limit;
-
-//     const categories = await Category.find(filter)
-//       .sort({ createdAt: -1 })
-//       .skip(skip)
-//       .limit(limit)
-//       .lean();
-
-//     res.render("admin/categoryList", { categories, page, pages, limit, q });
-//   } catch (err) {
-//     console.error(err);
-//     res.status(500).send("Server Error");
-//   }
-// };
-
 export const listCategories = async (req, res) => {
   try {
     let page = parseInt(req.query.page) || 1;
@@ -89,37 +60,11 @@ export const renderAddCategory = async (req, res) => {
 // Add new category
 
 
-// export const addCategory = async (req, res) => {
-//   try {
-//     const { name, description } = req.body;
-
-//     if (!name || name.trim() === "") {
-//       return res.redirect("/admin/category/addCategory?error=Name is required");
-//     }
-
-//     const existing = await Category.findOne({ 
-//       name: name.trim(), 
-//       isDeleted: false 
-//     });
-
-//     if (existing) {
-//       return res.redirect("/admin/category/addCategory?error=Category already exists");
-//     }
-
-//     await Category.create({ name: name.trim(), description });
-//     res.redirect("/admin/category?success=Category added successfully");
-    
-//   } catch (err) {
-//     console.error(err);
-//     res.redirect("/admin/category/addCategory?error=Server error, please try again");
-//   }
-// };
-
 export const addCategory = async (req, res) => {
   try {
     const { name, description } = req.body;
 
-    // 🧩 Basic field validations
+    //  Basic field validations
     if (!name || name.trim() === "") {
       return res.redirect("/admin/category/addCategory?error=Category name is required");
     }
@@ -128,7 +73,7 @@ export const addCategory = async (req, res) => {
       return res.redirect("/admin/category/addCategory?error=Description must be at least 10 characters long");
     }
 
-    // 🧠 Case-insensitive duplicate check (ignores isDeleted=true)
+    //  Case-insensitive duplicate check (ignores isDeleted=true)
     const existing = await Category.findOne({
       name: { $regex: `^${name.trim()}$`, $options: "i" },
       isDeleted: false
@@ -138,7 +83,7 @@ export const addCategory = async (req, res) => {
       return res.redirect("/admin/category/addCategory?error=Category name already exists");
     }
 
-    // ✅ Create new category
+    // Create new category
     await Category.create({
       name: name.trim(),
       description: description.trim(),
@@ -219,7 +164,7 @@ export const toggleCategoryStatus = async (req, res, next) => {
     next(error);
   }
 };
-// categoryController.js (Add this function)
+
 
 // Soft delete category (Mark as isDeleted: true)
 export const softDeleteCategory = async (req, res) => {

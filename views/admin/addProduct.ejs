@@ -952,7 +952,7 @@
 
             const validVariants = variants.filter((v) => v !== null);
 
-            // ✅ Build FormData instead of JSON
+            // Build FormData instead of JSON
             const formData = new FormData();
             formData.append("name", name);
             formData.append("description", description);
@@ -985,7 +985,7 @@
                     didOpen: () => Swal.showLoading(),
                 });
 
-                // ✅ Send as multipart/form-data
+                //  Send as multipart/form-data
                 const response = await fetch("/admin/products/add", {
                     method: "POST",
                     body: formData,
