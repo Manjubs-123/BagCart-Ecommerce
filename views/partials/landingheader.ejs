@@ -18,17 +18,13 @@
       <nav class="hidden lg:flex items-center space-x-8">
         <a href="/" class="text-gray-700 hover:text-blue-600 font-medium transition-colors duration-200">Home</a>
         <a href="/user/shop" class="text-gray-700 hover:text-blue-600 font-medium transition-colors duration-200">Shop</a>
-        <a href="/categories" class="text-gray-700 hover:text-blue-600 font-medium transition-colors duration-200">Categories</a>
-        <a href="/about" class="text-gray-700 hover:text-blue-600 font-medium transition-colors duration-200">About Us</a>
+        <!-- <a href="/categories" class="text-gray-700 hover:text-blue-600 font-medium transition-colors duration-200">Categories</a>
+        <a href="/about" class="text-gray-700 hover:text-blue-600 font-medium transition-colors duration-200">About Us</a> -->
       </nav>
 
       <!-- User Actions -->
       <div class="flex items-center space-x-4">
-        <!-- Search Button
-        <button class="text-gray-600 hover:text-blue-600 transition-colors duration-200 p-2 rounded-lg hover:bg-gray-100">
-          <i class="fas fa-search text-lg"></i>
-        </button> -->
-
+       
         <!-- Wishlist -->
         <a href="/wishlist" class="relative text-gray-600 hover:text-blue-600 transition-colors duration-200 p-2 rounded-lg hover:bg-gray-100">
           <i class="fas fa-heart text-lg"></i>
@@ -56,23 +52,9 @@
                 <i class="fas fa-user text-white text-sm"></i>
               <% } %>
             </div>
-            <!-- <span class="hidden md:block text-sm font-medium">
-  <% if (user) { %>
-    Welcome, <%= user.name || 'User' %>
-  <% } else { %>
-    <a href="/user/login" class="text-blue-600 hover:underline">Login</a>
-  <% } %>
-</span> -->
+        
 
 <span class="hidden md:block text-sm font-medium">
-  <!-- <% if (user) { %>
-    Welcome, <%= user.name || 'User' %>
-    <% if (user.email) { %>
-      (<%= user.email %>)
-    <% } %>
-  <% } else { %>
-    <a href="/user/login" class="text-blue-600 hover:underline">Login</a>
-  <% } %> -->
   <% if (typeof user !== 'undefined' && user) { %>
   Welcome, <%= user.name || 'User' %>
 <% } else { %>
@@ -92,7 +74,7 @@
                   <p class="text-sm font-semibold text-gray-900"><%= user.name || 'User' %></p>
                   <p class="text-xs text-gray-500 truncate"><%= user.email || '' %></p>
                 </div>
-                <a href="/profile" class="flex items-center px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 rounded-lg transition-colors duration-200">
+                <a href="/user/profile" class="flex items-center px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 rounded-lg transition-colors duration-200">
                   <i class="fas fa-user-circle mr-3 text-gray-400"></i>
                   <span>My Profile</span>
                 </a>

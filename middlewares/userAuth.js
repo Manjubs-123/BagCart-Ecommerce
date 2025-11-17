@@ -1,51 +1,7 @@
-// // middlewares/authMiddleware.js
 
-// // ✅ 1. Check if the user is logged in
-// export const isUserLoggedIn = (req, res, next) => {
-//   if (req.session && req.session.isLoggedIn && req.session.user) {
-//     // Optional: Block access if user was blocked by admin
-//     if (req.session.user.isBlocked) {
-//       req.session.destroy(() => {
-//         return res.render("user/blocked", {
-//           title: "Access Denied",
-//           message: "Your account has been blocked. Please contact support.",
-//         });
-//       });
-//     }
-//     return next(); // allow access
-//   }
-//   // If not logged in → redirect to login page
-//   return res.redirect("/user/login");
-// };
-
-// // ✅ 2. Restrict access to login/signup pages if user already logged in
-// export const isUserLoggedOut = (req, res, next) => {
-//   if (!req.session || !req.session.isLoggedIn) {
-//     return next(); // allow access to login/signup
-//   }
-//   return res.redirect("/user/home"); // already logged in
-// };
-
-// // ✅ 3. Optional Middleware (if admin can block users)
-// export const checkBlockedUser = (req, res, next) => {
-//   if (req.session && req.session.user && req.session.user.isBlocked) {
-//     req.session.destroy(() => {
-//       res.render("user/blocked", {
-//         title: "Access Denied",
-//         message: "Your account has been blocked. Please contact support.",
-//       });
-//     });
-//   } else {
-//     next();
-//   }
-// };
-
-
-
-// middlewares/authMiddleware.js
 import User from "../models/userModel.js";
 
-// ✅ 1. Check if user is logged in and not blocked
+//  1. Check if user is logged in and not blocked
 export const isUserLoggedIn = async (req, res, next) => {
   try {
 
@@ -65,7 +21,7 @@ export const isUserLoggedIn = async (req, res, next) => {
       return;
     }
 
-    //If user blocked → destroy session & redirect with query
+    //If user blocked 
     if (user.isBlocked) {
       req.session.destroy(() => {
         res.redirect("/user/login?blocked=true");
@@ -82,7 +38,7 @@ export const isUserLoggedIn = async (req, res, next) => {
   }
 };
 
-// ✅ 2. Restrict access to login/signup pages if already logged in
+//  2. Restrict access to login/signup pages if already logged in
 export const isUserLoggedOut = (req, res, next) => {
   if (!req.session || !req.session.isLoggedIn) {
     return next();
@@ -90,25 +46,3 @@ export const isUserLoggedOut = (req, res, next) => {
   res.redirect("/user/home");
 };
 
-// ✅ 3. Optional standalone blocker (for specific routes if needed)
-export const checkBlockedUser = async (req, res, next) => {
-  try {
-    if (!req.session.user) return res.redirect("/user/login");
-
-    const user = await User.findById(req.session.user.id);
-    if (user?.isBlocked) {
-      req.session.destroy(() => {
-        res.render("user/blocked", {
-          title: "Access Denied",
-          message: "Your account has been blocked. Please contact support.",
-        });
-      });
-      return;
-    }
-
-    next();
-  } catch (err) {
-    console.error("Blocked user check error:", err);
-    res.redirect("/user/login");
-  }
-};

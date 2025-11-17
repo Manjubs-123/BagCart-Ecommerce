@@ -83,12 +83,12 @@ export const signupUser = async (req, res) => {
       to: email,
       subject: "Your OTP for BagCart Signup",
       html: `<p>Hello ${name},</p>
-             <p>Your OTP is <b>${otp}</b>. It will expire in 5 minutes.</p>`,
+             <p>Your OTP is <b>${otp}</b>. It will expire in 2 minutes.</p>`,
     });
 
     console.log(` OTP sent to ${email}: ${otp}`);
     req.session.pendingEmail = email; // store securely in session
-res.redirect("/user/verifyOtp");
+    res.redirect("/user/verifyOtp");
   } catch (err) {
     console.error(" Signup error:", err);
     res.status(500).render("user/signup", { error: "Something went wrong. Please try again later." });
@@ -104,8 +104,6 @@ export const getVerifyOtp = (req, res) => {
   // Add constants here 
   const RESEND_COOLDOWN = 60; // seconds before user can resend OTP
   const OTP_EXPIRY_MINUTES = 2; // OTP valid time (in minutes)
-
-  // Optional: if you store cooldown info in session, reuse it
   const cooldown = req.session.cooldown || 0;
 
   // Render page with all required variables
@@ -113,8 +111,8 @@ export const getVerifyOtp = (req, res) => {
     email,
     error: null,
     cooldown,
-    RESEND_COOLDOWN,     // EJS now gets this
-    OTP_EXPIRY_MINUTES,  // EJS now gets this too
+    RESEND_COOLDOWN,     
+    OTP_EXPIRY_MINUTES,  
   });
 };
 
@@ -189,7 +187,7 @@ export const resendOtp = async (req, res) => {
       html: `<p>Your new OTP is <b>${newOtp}</b>. It will expire in 5 minutes.</p>`,
     });
 
-    console.log(`🔄 Resent OTP to ${email}: ${newOtp}`);
+    console.log(` Resent OTP to ${email}: ${newOtp}`);
 
     res.render("user/verifyOtp", {
       email,
@@ -249,31 +247,28 @@ export const loginUser = async (req, res) => {
 export const showHomePage = async (req, res) => {
   return renderLandingPage(req, res);
 };
-// export const showHomePage = (req, res) => {
-//   const user = req.session.user;
-//   console.log(user)
-//   res.render("user/landing", { title: "BagHub - Explore Backpacks", user });
-// };
 
-// Landing Page
-// export const renderLandingPage = async (req, res) => {
-//   try {
-//     const { featuredProducts, favouriteProducts, handpickedProducts, trendingProducts } = await loadHomeProducts();
+export const renderUserProfile = async (req, res) => {
+  try {
+    const userId = req.session.user.id;  // or req.userId depending on your login logic
 
-//     res.render("user/landing", {
-//       title: "BagHub | Explore Premium Bags",
-//       currentPage: "home",
-//       featuredProducts,
-//       favouriteProducts,
-//       handpickedProducts,
-//       trendingProducts
-//     });
-//   } catch (error) {
-//     console.error("Error rendering landing page:", error);
-//     res.status(500).send("Failed to load landing page");
-//   }
-// };
+    const user = await User.findById(userId).lean();
 
+    if (!user) {
+      return res.status(404).send("User not found");
+    }
+
+    return res.render("user/profile", {
+      title: "My Profile",
+      user,
+      addresses: user.addresses || []
+    });
+
+  } catch (error) {
+    console.error("Profile Load Error:", error);
+    res.status(500).send("Server Error");
+  }
+};
 
 //  Logout User
 export const logoutUser = (req, res) => {

@@ -203,7 +203,7 @@
         <div id="expiryWarning" class="mt-4 p-3 bg-amber-50 border border-amber-200 rounded-lg text-center hidden">
           <p class="text-amber-800 text-sm flex items-center justify-center">
             <i class="fas fa-exclamation-triangle mr-2"></i>
-<span>Your OTP will expire in <span id="expiryCountdown" class="font-bold">02:00</span></span>
+            <span>Your OTP will expire in <span id="expiryCountdown" class="font-bold">02:00</span></span>
           </p>
         </div>
       </div>
@@ -231,13 +231,13 @@
       const resendBtn = document.getElementById('resendBtn');
       const countdownSpan = document.getElementById('countdown');
       const expiryWarning = document.getElementById('expiryWarning');
-      const expiryCountdown = document.getElementById('expiryCountdown');
-// ✅ OTP Configuration (using values from server)
-const OTP_LENGTH = 6;
-let RESEND_COOLDOWN = <%= JSON.stringify(typeof RESEND_COOLDOWN !== 'undefined' ? RESEND_COOLDOWN : 60) %>; // 60s = 1 min
-let OTP_EXPIRY_MINUTES = <%= JSON.stringify(typeof OTP_EXPIRY_MINUTES !== 'undefined' ? OTP_EXPIRY_MINUTES : 2) %>; // 2 mins
+                const expiryCountdown = document.getElementById('expiryCountdown');
+          //  OTP Configuration (using values from server)
+          const OTP_LENGTH = 6;
+          let RESEND_COOLDOWN = <%= JSON.stringify(typeof RESEND_COOLDOWN !== 'undefined' ? RESEND_COOLDOWN : 60) %>; // 60s = 1 min
+          let OTP_EXPIRY_MINUTES = <%= JSON.stringify(typeof OTP_EXPIRY_MINUTES !== 'undefined' ? OTP_EXPIRY_MINUTES : 2) %>; // 2 mins
 
-let timeLeft = Number(<%= typeof cooldown !== 'undefined' ? JSON.stringify(cooldown) : 'RESEND_COOLDOWN' %>);
+          let timeLeft = Number(<%= typeof cooldown !== 'undefined' ? JSON.stringify(cooldown) : 'RESEND_COOLDOWN' %>);
 
 
       let otpExpiryTime = Date.now() + (OTP_EXPIRY_MINUTES * 60 * 1000);
@@ -462,8 +462,6 @@ let timeLeft = Number(<%= typeof cooldown !== 'undefined' ? JSON.stringify(coold
 
     })();
   </script>
-
-
     <script>
       // Prevent back navigation
       if (window.history && window.history.replaceState) {

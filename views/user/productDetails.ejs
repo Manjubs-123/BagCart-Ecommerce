@@ -445,10 +445,6 @@
                 <div class="info-card fade-in">
                     <h3 class="text-xl font-semibold text-gray-900 mb-3 md:mb-4">Product Information</h3>
                     <div class="space-y-3 md:space-y-4">
-                        <!-- <div class="flex justify-between items-center">
-                            <span class="text-gray-600 text-sm md:text-base">SKU:</span>
-                            <span class="font-semibold text-gray-900 text-sm md:text-base"><%= product.sku || 'N/A' %></span>
-                        </div> -->
                         <div class="flex justify-between items-center">
                             <span class="text-gray-600 text-sm md:text-base">Category:</span>
                             <span class="font-semibold text-gray-900 text-sm md:text-base"><%= product.category?.name || 'Uncategorized' %></span>
@@ -574,7 +570,7 @@
       mainImage.style.cursor = "default";
     });
 
-    // ✅ Auto-run selectColor() for the default selected color when page loads
+    //  Auto-run selectColor() for the default selected color when page loads
     const firstColorOption =
       document.querySelector(".color-option.selected") ||
       document.querySelector(".color-option");
@@ -619,12 +615,12 @@
       if (data.success && data.variant) {
         const { images, price, mrp, stock, brand } = data.variant;
 
-        // ✅ Update main image
+        //  Update main image
         if (images && images.length > 0) {
           changeMainImage(images[0], document.querySelector(".thumbnail-btn"));
         }
 
-        // ✅ Update thumbnails
+        //  Update thumbnails
         const thumbnailContainer = document.getElementById("thumbnailContainer");
         if (images && images.length > 0 && thumbnailContainer) {
           thumbnailContainer.innerHTML = images
@@ -642,7 +638,7 @@
             .join("");
         }
 
-        // ✅ Update prices
+        //  Update prices
         const priceEl = document.getElementById("productPrice");
         const mrpEl = document.getElementById("productMrp");
         const discountEl = document.getElementById("productDiscount");
@@ -654,13 +650,13 @@
           if (discountEl) discountEl.textContent = `Save ${discount}%`;
         }
 
-        // ✅ Update stock info
+        //  Update stock info
         const stockText = document.getElementById("stockText");
         const qtyInput = document.getElementById("quantity");
         if (stockText) stockText.textContent = `${stock} available in stock`;
         if (qtyInput) qtyInput.max = stock;
 
-        // ✅ Update brand dynamically
+        // Update brand dynamically
         const brandElement = document.getElementById("productBrand");
         if (brandElement) {
           if (brand && brand.trim() !== "") {
@@ -671,7 +667,7 @@
         }
       }
     } catch (error) {
-      console.error("❌ Error fetching variant data:", error);
+      console.error("Error fetching variant data:", error);
     }
   }
 
