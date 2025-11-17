@@ -843,7 +843,7 @@ function renderUpdatedGrid(variantIndex) {
 
   //  Send to backend
   const res = await fetch(`/admin/products/edit/<%= product._id %>`, {
-    method: "POST",
+    method: "PUT",
     body: formData,
   });
 

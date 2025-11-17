@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Edit Category | Admin Dashboard</title>
+  <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -87,7 +88,9 @@
           </div>
         </div>
 
-        <form id="editForm" action="/admin/category/update/<%= category._id %>" method="POST" class="space-y-6">
+        <!-- <form id="editForm" action="/admin/category/update/<%= category._id %>" method="POST" class="space-y-6"> -->
+          <form id="editForm" data-id="<%= category._id %>">
+
           <!-- Category Name Field -->
           <div>
             <label for="name" class="block text-sm font-medium text-gray-700 mb-2">
@@ -306,42 +309,135 @@
     });
 
     // Form submission
-    form.addEventListener('submit', function(e) {
-      // Final validation
-      const nameValidation = validateName(nameInput.value);
-      const descValidation = validateDescription(descriptionInput.value);
-      
-      let hasErrors = false;
-      
-      if (!nameValidation.valid) {
-        setFieldState(nameInput, false);
-        showError(nameError, nameValidation.message);
-        hasErrors = true;
-      } else {
-        setFieldState(nameInput, true);
-        hideError(nameError);
-      }
-      
-      if (!descValidation.valid) {
-        setFieldState(descriptionInput, false);
-        showError(descriptionError, descValidation.message);
-        hasErrors = true;
-      } else {
-        setFieldState(descriptionInput, true);
-        hideError(descriptionError);
-      }
-      
-      if (hasErrors) {
-        e.preventDefault();
-        showError(globalError, 'Please fix the validation errors before submitting');
-        globalErrorText.textContent = 'Please fix the validation errors before submitting';
-        return;
-      }
-      
-      // If all valid, show loading state
-      submitBtn.disabled = true;
-      submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Updating...';
+    // Form submission using Axios PATCH
+// form.addEventListener("submit", async function (e) {
+//   e.preventDefault(); // prevent normal form submit
+
+//   // Final validation
+//   const nameValidation = validateName(nameInput.value);
+//   const descValidation = validateDescription(descriptionInput.value);
+
+//   let hasErrors = false;
+
+//   if (!nameValidation.valid) {
+//     setFieldState(nameInput, false);
+//     showError(nameError, nameValidation.message);
+//     hasErrors = true;
+//   }
+
+//   if (!descValidation.valid) {
+//     setFieldState(descriptionInput, false);
+//     showError(descriptionError, descValidation.message);
+//     hasErrors = true;
+//   }
+
+//   if (hasErrors) {
+//     showError(globalError, "Please fix all validation errors before submitting");
+//     globalErrorText.textContent = "Please fix all validation errors before submitting";
+//     return;
+//   }
+
+//   const id = form.getAttribute("data-id");
+
+//   submitBtn.disabled = true;
+//   submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Updating...';
+
+//   try {
+//     const res = await axios.put(`/admin/category/update/${id}`, {
+//       name: nameInput.value.trim(),
+//       description: descriptionInput.value.trim(),
+//     });
+    
+//     if (res.data.success) {
+//       Swal.fire({
+//         icon: "success",
+//         title: "Updated!",
+//         text: "Category updated successfully",
+//         confirmButtonColor: "#1a56db",
+//       }).then(() => {
+//         window.location.href = "/admin/category";
+//       });
+//     }
+//   } catch (err) {
+//     if(err.response.data.redirect){
+//       window.location = `/admin/category/edit/${id}?error=Category name already exists`;
+//     }
+//     submitBtn.disabled = false;
+//     submitBtn.innerHTML = '<i class="fas fa-save"></i> Update Category';
+
+//     const msg = err.response?.data?.error || "Server Error";
+
+//     Swal.fire({
+//       icon: "error",
+//       title: "Error",
+//       text: msg,
+//     });
+//   }
+// });
+
+form.addEventListener("submit", async function (e) {
+  e.preventDefault();
+
+  // 1️⃣ VALIDATION
+  const nameValidation = validateName(nameInput.value);
+  const descValidation = validateDescription(descriptionInput.value);
+
+  let hasErrors = false;
+
+  if (!nameValidation.valid) {
+    setFieldState(nameInput, false);
+    showError(nameError, nameValidation.message);
+    hasErrors = true;
+  }
+
+  if (!descValidation.valid) {
+    setFieldState(descriptionInput, false);
+    showError(descriptionError, descValidation.message);
+    hasErrors = true;
+  }
+
+  if (hasErrors) {
+    globalError.classList.remove("hidden");
+    globalErrorText.textContent = "Please fix all errors before submitting";
+    return;
+  }
+
+  // 2️⃣ AXIOS PATCH REQUEST
+  const id = form.getAttribute("data-id");
+
+  submitBtn.disabled = true;
+  submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Updating...';
+
+  try {
+    const res = await axios.patch(`/admin/category/update/${id}`, {
+      name: nameInput.value.trim(),
+      description: descriptionInput.value.trim(),
     });
+
+    if (res.data.success) {
+      Swal.fire({
+        icon: "success",
+        title: "Updated!",
+        text: "Category updated successfully",
+      }).then(() => {
+        window.location.href = "/admin/category";
+      });
+    }
+  } catch (err) {
+    submitBtn.disabled = false;
+    submitBtn.innerHTML = '<i class="fas fa-save"></i> Update Category';
+
+    const msg = err.response?.data?.message || "Server Error";
+
+    Swal.fire({
+      icon: "error",
+      title: "Error",
+      text: msg,
+    });
+  }
+});
+
+
 
     // Blur validation for immediate feedback
     nameInput.addEventListener('blur', function() {

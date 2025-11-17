@@ -1,17 +1,15 @@
-
 import express from "express";
 import passport from "passport";
-import User from "../models/userModel.js";
+import User from "../../models/userModel.js";
 
 const router = express.Router();
 
-// Step 1️: Start Google Login
 router.get(
   "/google",
   passport.authenticate("google", { scope: ["profile", "email"] })
 );
 
-// Step 2️: Google Callback after login
+// Google Callback after login
 router.get(
   "/google/callback",
   passport.authenticate("google", { failureRedirect: "/user/login" }),
@@ -25,12 +23,9 @@ router.get(
       req.session.user = { id: existingUser._id, name: existingUser.name, email: existingUser.email }
       req.session.isLoggedIn = true
     } else {
-      // create user
+     
       console.log("Existing User not found afte google auth")
     }
-
-
-    
 
     // Save session before redirect
     req.session.save((err) => {
@@ -40,7 +35,7 @@ router.get(
   }
 );
 
-// Step 3️: Logout
+//  Logout
 router.get("/logout", (req, res, next) => {
   req.logout((err) => {
     if (err) return next(err);

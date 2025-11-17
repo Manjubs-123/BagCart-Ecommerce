@@ -5,16 +5,17 @@ import session from "express-session";
 import path from "path";
 import { fileURLToPath } from "url";
 import MongoStore from "connect-mongo";
+import methodOverride from "method-override";
 import passport from "./config/passport.js";
 import connectDB from "./config/DB.js";
-import userRoutes from "./routes/userRoutes.js";
-import authRoutes from "./routes/authRoutes.js";
-import adminRoutes from "./routes/adminRoutes.js";
+import userRoutes from "./routes/user/userRoutes.js";
+import authRoutes from "./routes/user/authRoutes.js";
+import adminRoutes from "./routes/admin/adminRoutes.js";
 import { noCache } from "./middlewares/cacheMiddleware.js";
 import categoryRoutes from "./routes/admin/categoryRoutes.js";
 import productRoutes from "./routes/admin/productRoutes.js";
 import usersRoutes from "./routes/admin/usersRoutes.js";
-import shopRoutes from "./routes/shopRoute.js";
+import shopRoutes from "./routes/user/shopRoute.js";
 import { errorHandler } from "./middlewares/errorHandler.js";
 import {renderHomePage} from "./controllers/user/productController.js";
 const app = express();
@@ -29,6 +30,8 @@ app.use(express.static(path.join(__dirname, "public")));
 
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
+
+app.use(methodOverride("_method"));
 
 
 app.use(

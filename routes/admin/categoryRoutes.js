@@ -13,11 +13,10 @@ router.get("/addCategory",renderAddCategory);
 // Add a new category
 router.post("/addCategory",addCategory);
 
-// Get a single category by ID(edit)
 router.get("/edit/:id",getCategory);
 
 // Update a category 
-router.post("/update/:id",updateCategory);
+router.patch("/update/:id",updateCategory);
 
 router.post("/toggleStatus", toggleCategoryStatus);
 router.post("/delete/:id", softDeleteCategory);

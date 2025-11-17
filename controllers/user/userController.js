@@ -248,6 +248,27 @@ export const showHomePage = async (req, res) => {
   return renderLandingPage(req, res);
 };
 
+export const renderUserProfile = async (req, res) => {
+  try {
+    const userId = req.session.user.id;  // or req.userId depending on your login logic
+
+    const user = await User.findById(userId).lean();
+
+    if (!user) {
+      return res.status(404).send("User not found");
+    }
+
+    return res.render("user/profile", {
+      title: "My Profile",
+      user,
+      addresses: user.addresses || []
+    });
+
+  } catch (error) {
+    console.error("Profile Load Error:", error);
+    res.status(500).send("Server Error");
+  }
+};
 
 //  Logout User
 export const logoutUser = (req, res) => {

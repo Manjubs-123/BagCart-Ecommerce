@@ -1,0 +1,539 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Profile - BagHub</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+
+    <style>
+        :root {
+            --primary: #1a56db;
+            --primary-dark: #1e429f;
+            --secondary: #047857;
+        }
+
+        .btn-primary {
+            background-color: var(--primary);
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary:hover {
+            background-color: var(--primary-dark);
+            transform: translateY(-2px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        }
+
+        .card-hover {
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+
+        .card-hover:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        }
+
+        .tab-active {
+            border-bottom: 3px solid var(--primary);
+            color: var(--primary);
+            font-weight: 600;
+        }
+
+        .avatar-upload {
+            position: relative;
+            display: inline-block;
+        }
+
+        .avatar-upload input[type="file"] {
+            position: absolute;
+            left: 0;
+            top: 0;
+            opacity: 0;
+            width: 100%;
+            height: 100%;
+            cursor: pointer;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+
+        .order-progress {
+            height: 6px;
+            border-radius: 3px;
+            overflow: hidden;
+        }
+
+        .progress-step {
+            width: 25%;
+            height: 100%;
+            float: left;
+        }
+
+        .progress-step.active {
+            background-color: var(--primary);
+        }
+
+        .progress-step.completed {
+            background-color: var(--secondary);
+        }
+
+        .progress-step.pending {
+            background-color: #e5e7eb;
+        }
+
+        .wishlist-btn {
+            transition: all 0.3s ease;
+        }
+
+        .wishlist-btn:hover {
+            transform: scale(1.1);
+        }
+
+        .address-card {
+            transition: all 0.3s ease;
+            border: 2px solid transparent;
+        }
+
+        .address-card:hover {
+            border-color: var(--primary);
+        }
+
+        .address-card.selected {
+            border-color: var(--primary);
+            background-color: #f0f9ff;
+        }
+
+        .notification-item {
+            transition: all 0.3s ease;
+        }
+
+        .notification-item:hover {
+            background-color: #f9fafb;
+        }
+
+        .notification-item.unread {
+            background-color: #f0f9ff;
+        }
+    </style>
+</head>
+
+<body class="bg-gray-50">
+    <!-- Header -->
+   <%- include('../partials/landingheader')%>
+    <!-- Main Content -->
+    <div class="container mx-auto px-4 py-8">
+        <div class="flex flex-col lg:flex-row gap-8">
+            <!-- Sidebar Navigation -->
+            <div class="lg:w-1/4">
+                <div class="bg-white rounded-2xl shadow-sm p-6 card-hover sticky top-24">
+                    <!-- User Profile Summary -->
+                    <div class="text-center mb-6">
+                        <div class="avatar-upload inline-block mb-4">
+                            <div
+                                class="w-24 h-24 rounded-full bg-gradient-to-r from-blue-500 to-emerald-500 flex items-center justify-center text-white text-2xl font-bold mx-auto relative">
+                                <span id="userInitials">J</span>
+                                <div
+                                    class="absolute bottom-0 right-0 w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center border-2 border-white">
+                                    <i class="fas fa-camera text-white text-xs"></i>
+                                </div>
+                            </div>
+                            <input type="file" id="avatarInput" accept="image/*" class="cursor-pointer">
+                        </div>
+                        <h2 class="text-xl font-bold text-gray-900" id="userName">John</h2>
+                        <p class="text-gray-600 text-sm" id="userEmail">john.doe@example.com</p>
+                        <p class="text-green-600 text-sm font-medium mt-1">
+                            <i class="fas fa-check-circle mr-1"></i>Verified
+                        </p>
+                    </div>
+
+                    <!-- Navigation Menu -->
+                    <nav class="space-y-2">
+                        <button onclick="switchTab('profile')"
+                            class="tab-button w-full text-left flex items-center gap-3 p-3 rounded-xl transition-all duration-200 hover:bg-blue-50 text-blue-600 font-semibold bg-blue-50 border-l-4 border-blue-600">
+                            <i class="fas fa-user text-blue-600 w-5"></i>
+                            <span>Profile Information</span>
+                        </button>
+
+                        <button onclick="switchTab('orders')"
+                            class="tab-button w-full text-left flex items-center gap-3 p-3 rounded-xl transition-all duration-200 hover:bg-gray-100 text-gray-700">
+                            <i class="fas fa-shopping-bag text-gray-600 w-5"></i>
+                            <span>My Orders</span>
+                            <span class="ml-auto bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full">5</span>
+                        </button>
+
+                        <button onclick="switchTab('addresses')"
+                            class="tab-button w-full text-left flex items-center gap-3 p-3 rounded-xl transition-all duration-200 hover:bg-gray-100 text-gray-700">
+                            <i class="fas fa-map-marker-alt text-gray-600 w-5"></i>
+                            <span>Saved Addresses</span>
+                        </button>
+
+                        <button onclick="switchTab('wishlist')"
+                            class="tab-button w-full text-left flex items-center gap-3 p-3 rounded-xl transition-all duration-200 hover:bg-gray-100 text-gray-700">
+                            <i class="far fa-heart text-gray-600 w-5"></i>
+                            <span>Wishlist</span>
+                            <span class="ml-auto bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full">12</span>
+                        </button>
+
+                        <button onclick="switchTab('security')"
+                            class="tab-button w-full text-left flex items-center gap-3 p-3 rounded-xl transition-all duration-200 hover:bg-gray-100 text-gray-700">
+                            <i class="fas fa-shield-alt text-gray-600 w-5"></i>
+                            <span>Security</span>
+                        </button>
+
+                        <button onclick="switchTab('notifications')"
+                            class="tab-button w-full text-left flex items-center gap-3 p-3 rounded-xl transition-all duration-200 hover:bg-gray-100 text-gray-700">
+                            <i class="fas fa-bell text-gray-600 w-5"></i>
+                            <span>Notifications</span>
+                            <span class="ml-auto bg-red-100 text-red-800 text-xs px-2 py-1 rounded-full">3</span>
+                        </button>
+                    </nav>
+                </div>
+            </div>
+
+            <!-- Main Content Area -->
+            <div class="lg:w-3/4">
+                <!-- Profile Information Tab -->
+                <div id="profile-tab" class="tab-content">
+                    <div class="bg-white rounded-2xl shadow-sm p-6 card-hover">
+                        <div class="flex justify-between items-center mb-6">
+                            <h2 class="text-2xl font-bold text-gray-900">Profile Information</h2>
+                            <button onclick="toggleEditMode('profile')"
+                                class="btn-primary text-white px-4 py-2 rounded-lg flex items-center gap-2">
+                                <i class="fas fa-edit"></i>
+                                <span>Edit Profile</span>
+                            </button>
+                        </div>
+
+                        <form id="profileForm" class="space-y-6">
+                            <div class="flex flex-col gap-6">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Full Name</label>
+                                    <input type="text" id="fullName" name="fullName" value="John"
+                                        class="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                        disabled>
+                                </div>
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Email Address</label>
+                                <input type="email" id="email" name="email" value="john.doe@example.com"
+                                    class="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                    disabled>
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Phone Number</label>
+                                <input type="tel" id="phone" name="phone" value="+1 (555) 123-4567"
+                                    class="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                    disabled>
+                            </div>
+
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Date of Birth</label>
+                                    <input type="date" id="dob" name="dob" value="1990-01-15"
+                                        class="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                        disabled>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Gender</label>
+                                    <select id="gender" name="gender"
+                                        class="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                        disabled>
+                                        <option value="male" selected>Male</option>
+                                        <option value="female">Female</option>
+                                        <option value="other">Other</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="flex gap-4 pt-4 border-t border-gray-200 hidden" id="profileActions">
+                                <button type="button" onclick="saveProfile()"
+                                    class="btn-primary text-white px-6 py-3 rounded-lg flex items-center gap-2">
+                                    <i class="fas fa-save"></i>
+                                    <span>Save Changes</span>
+                                </button>
+                                <button type="button" onclick="cancelEdit('profile')"
+                                    class="bg-gray-500 text-white px-6 py-3 rounded-lg hover:bg-gray-600 transition-all flex items-center gap-2">
+                                    <i class="fas fa-times"></i>
+                                    <span>Cancel</span>
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Orders Tab -->
+                <div id="orders-tab" class="tab-content hidden">
+                    <div class="bg-white rounded-2xl shadow-sm p-6 card-hover">
+                        <h2 class="text-2xl font-bold text-gray-900 mb-6">My Orders</h2>
+
+                        <!-- Order Filters -->
+                        <div class="flex flex-wrap gap-4 mb-6">
+                            <button class="px-4 py-2 rounded-lg bg-blue-600 text-white">All Orders</button>
+                            <button
+                                class="px-4 py-2 rounded-lg bg-gray-200 text-gray-700 hover:bg-gray-300">Pending</button>
+                            <button
+                                class="px-4 py-2 rounded-lg bg-gray-200 text-gray-700 hover:bg-gray-300">Delivered</button>
+                            <button
+                                class="px-4 py-2 rounded-lg bg-gray-200 text-gray-700 hover:bg-gray-300">Cancelled</button>
+                        </div>
+
+                        <!-- Orders List -->
+                        <div class="space-y-4">
+                            <!-- Order Item -->
+                            <div class="border border-gray-200 rounded-xl p-4 card-hover">
+                                <div class="flex flex-col md:flex-row md:items-center justify-between mb-4">
+                                    <div>
+                                        <p class="text-sm text-gray-500">Order #BH123456</p>
+                                        <p class="text-lg font-semibold text-gray-900">Urban Explorer Backpack</p>
+                                    </div>
+                                    <div class="flex items-center gap-4 mt-2 md:mt-0">
+                                        <span class="status-badge bg-green-100 text-green-800">
+                                            <i class="fas fa-check-circle mr-1"></i>Delivered
+                                        </span>
+                                        <span class="text-lg font-bold text-gray-900">₹3,499</span>
+                                    </div>
+                                </div>
+
+                                <div class="flex flex-col md:flex-row md:items-center justify-between">
+                                    <div class="flex items-center gap-4 mb-3 md:mb-0">
+                                        <img src="https://images.unsplash.com/photo-1553062407-98eeb64c6a62?ixlib=rb-4.0.3&auto=format&fit=crop&w=100&q=80"
+                                            alt="Urban Explorer Backpack" class="w-16 h-16 rounded-lg object-cover">
+                                        <div>
+                                            <p class="text-sm text-gray-600">Placed on 15 Dec, 2023</p>
+                                            <p class="text-sm text-gray-600">Quantity: 1</p>
+                                        </div>
+                                    </div>
+                                    <div class="flex gap-2">
+                                        <button
+                                            class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-all text-sm">
+                                            View Details
+                                        </button>
+                                        <button
+                                            class="border border-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-50 transition-all text-sm">
+                                            Buy Again
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- More order items would go here -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Wishlist Tab -->
+                <div id="wishlist-tab" class="tab-content hidden">
+                    <div class="bg-white rounded-2xl shadow-sm p-6 card-hover">
+                        <div class="flex justify-between items-center mb-6">
+                            <h2 class="text-2xl font-bold text-gray-900">My Wishlist</h2>
+                            <button class="text-red-600 hover:text-red-700 flex items-center gap-2">
+                                <i class="far fa-trash-alt"></i>
+                                <span>Clear All</span>
+                            </button>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                            <!-- Wishlist Item -->
+                            <div class="border border-gray-200 rounded-xl overflow-hidden card-hover">
+                                <div class="relative">
+                                    <img src="https://images.unsplash.com/photo-1553062407-98eeb64c6a62?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80"
+                                        alt="Urban Explorer Backpack" class="w-full h-48 object-cover">
+                                    <button
+                                        class="wishlist-btn absolute top-3 right-3 bg-white rounded-full p-2 shadow-md text-red-500">
+                                        <i class="fas fa-heart"></i>
+                                    </button>
+                                    <span
+                                        class="absolute top-3 left-3 bg-green-500 text-white text-xs font-semibold px-2 py-1 rounded-full">
+                                        Featured
+                                    </span>
+                                </div>
+                                <div class="p-4">
+                                    <h3 class="font-semibold text-gray-900 mb-1">Urban Explorer Backpack</h3>
+                                    <p class="text-sm text-gray-500 mb-2">Herschel</p>
+                                    <p class="text-blue-600 font-bold text-lg mb-3">₹3,499</p>
+                                    <button
+                                        class="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition-all">
+                                        Add to Cart
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- More wishlist items would go here -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- More tabs would be implemented similarly -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <%- include('../partials/footer')%>
+
+    <script>
+        // Tab switching functionality
+        function switchTab(tabName) {
+            // Hide all tab contents
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.classList.add('hidden');
+            });
+
+            // Remove active state from all tab buttons
+            document.querySelectorAll('.tab-button').forEach(button => {
+                button.classList.remove('text-blue-600', 'font-semibold', 'bg-blue-50', 'border-l-4', 'border-blue-600');
+                button.classList.add('text-gray-700', 'hover:bg-gray-100');
+            });
+
+            // Show selected tab content
+            document.getElementById(`${tabName}-tab`).classList.remove('hidden');
+
+            // Add active state to clicked tab button
+            event.currentTarget.classList.remove('text-gray-700', 'hover:bg-gray-100');
+            event.currentTarget.classList.add('text-blue-600', 'font-semibold', 'bg-blue-50', 'border-l-4', 'border-blue-600');
+        }
+
+        // Edit mode toggle
+        function toggleEditMode(formType) {
+            const form = document.getElementById(`${formType}Form`);
+            const inputs = form.querySelectorAll('input, select');
+            const actions = document.getElementById(`${formType}Actions`);
+
+            inputs.forEach(input => {
+                input.disabled = !input.disabled;
+            });
+
+            actions.classList.toggle('hidden');
+
+            const editButton = event.currentTarget;
+            if (inputs[0].disabled) {
+                editButton.innerHTML = '<i class="fas fa-edit"></i><span>Edit Profile</span>';
+            } else {
+                editButton.innerHTML = '<i class="fas fa-lock"></i><span>Editing Mode</span>';
+            }
+        }
+
+        // Cancel edit
+        function cancelEdit(formType) {
+            const form = document.getElementById(`${formType}Form`);
+            const inputs = form.querySelectorAll('input, select');
+            const actions = document.getElementById(`${formType}Actions`);
+
+            inputs.forEach(input => {
+                input.disabled = true;
+            });
+
+            actions.classList.add('hidden');
+
+            // Reset form values (in a real app, you'd fetch from server)
+            document.getElementById('fullName').value = 'John';
+            document.getElementById('email').value = 'john.doe@example.com';
+            document.getElementById('phone').value = '+1 (555) 123-4567';
+            document.getElementById('dob').value = '1990-01-15';
+            document.getElementById('gender').value = 'male';
+
+            const editButton = document.querySelector(`button[onclick="toggleEditMode('${formType}')"]`);
+            editButton.innerHTML = '<i class="fas fa-edit"></i><span>Edit Profile</span>';
+        }
+
+        // Save profile using Axios
+        async function saveProfile() {
+            const formData = {
+                fullName: document.getElementById('fullName').value,
+                email: document.getElementById('email').value,
+                phone: document.getElementById('phone').value,
+                dob: document.getElementById('dob').value,
+                gender: document.getElementById('gender').value
+            };
+
+            try {
+                // Show loading state
+                const saveButton = event.currentTarget;
+                const originalText = saveButton.innerHTML;
+                saveButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i><span>Saving...</span>';
+                saveButton.disabled = true;
+
+                // In a real application, you would send this to your backend
+                const response = await axios.put('/api/user/profile', formData);
+
+                // Simulate API call
+                await new Promise(resolve => setTimeout(resolve, 1000));
+
+                // Show success message
+                showNotification('Profile updated successfully!', 'success');
+
+                // Update UI
+                document.getElementById('userName').textContent = formData.fullName;
+                document.getElementById('userEmail').textContent = formData.email;
+                document.getElementById('userInitials').textContent = formData.fullName.charAt(0);
+
+                // Exit edit mode
+                toggleEditMode('profile');
+
+            } catch (error) {
+                console.error('Error updating profile:', error);
+                showNotification('Failed to update profile. Please try again.', 'error');
+            } finally {
+                // Restore button state
+                saveButton.innerHTML = originalText;
+                saveButton.disabled = false;
+            }
+        }
+
+        // Notification system
+        function showNotification(message, type) {
+            const notification = document.createElement('div');
+            notification.className = `fixed top-4 right-4 p-4 rounded-lg shadow-lg z-50 transform transition-transform duration-300 ${type === 'success' ? 'bg-green-500 text-white' : 'bg-red-500 text-white'
+                }`;
+            notification.innerHTML = `
+                <div class="flex items-center gap-3">
+                    <i class="fas fa-${type === 'success' ? 'check' : 'exclamation'}-circle"></i>
+                    <span>${message}</span>
+                </div>
+            `;
+
+            document.body.appendChild(notification);
+
+            // Remove notification after 3 seconds
+            setTimeout(() => {
+                notification.style.transform = 'translateX(100%)';
+                setTimeout(() => {
+                    document.body.removeChild(notification);
+                }, 300);
+            }, 3000);
+        }
+
+        // Avatar upload functionality
+        document.getElementById('avatarInput').addEventListener('change', function (event) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function (e) {
+                    // In a real app, you would upload the image to your server
+                    // For now, we'll just show a success message
+                    showNotification('Profile picture updated successfully!', 'success');
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+        // Initialize the page
+        document.addEventListener('DOMContentLoaded', function () {
+            // Set the first tab as active
+            switchTab('profile');
+        });
+    </script>
+</body>
+
+</html>

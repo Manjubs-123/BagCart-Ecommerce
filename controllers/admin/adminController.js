@@ -2,8 +2,20 @@ import dotenv from "dotenv";
 dotenv.config();
 
 export const renderAdminLogin = (req, res) => {
+
+  // Prevent caching of login page
+  res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, private");
+  res.setHeader("Pragma", "no-cache");
+  res.setHeader("Expires", "0");
+
+  // If already logged in → redirect to dashboard
+  if (req.session.isAdmin) {
+    return res.redirect("/admin/dashboard");
+  }
+
   res.render("admin/login", { error: null });
 };
+
 
 export const postAdminLogin = async (req, res) => {
   const { email, password } = req.body;
@@ -15,10 +27,10 @@ export const postAdminLogin = async (req, res) => {
   }
 };
 
+
 export const renderAdminDashboard = (req, res) => {
   res.render("admin/dashboard", { title: "Admin Dashboard" });
 };
-
 
 
 export const adminLogout = (req, res) => {
@@ -28,4 +40,5 @@ export const adminLogout = (req, res) => {
     res.redirect("/admin"); // redirects to login page
   });
 };
+
 

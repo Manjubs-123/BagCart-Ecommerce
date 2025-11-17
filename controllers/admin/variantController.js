@@ -11,7 +11,7 @@ export const addVariants = async (req, res) => {
 
     const variantsData = [];
 
-    for (let i = 0; i < req.body.variants.length; i++) {
+    for (let i = 0; i < req.body.variants.length; i++) {//curr vari img
       const v = req.body.variants[i];
       const files = req.files[`variants[${i}][images]`];
 

@@ -179,7 +179,7 @@
         </form>
 
         <!-- Resend OTP Section -->
-        <div class="text-center mt-6 pt-6 border-t border-gray-200">
+        <!-- <div class="text-center mt-6 pt-6 border-t border-gray-200">
           <p class="text-sm text-gray-600 mb-3">Didn't receive the code?</p>
           <button
             id="resendBtn"
@@ -189,7 +189,29 @@
             <i class="fas fa-redo-alt mr-2"></i>
             Resend OTP in <span id="countdown" class="font-bold ml-1"><%= typeof cooldown !== 'undefined' ? cooldown : 60 %></span>s
           </button>
-        </div>
+        </div> -->
+
+        <!-- Resend OTP Section -->
+<div class="text-center mt-6 pt-6 border-t border-gray-200">
+  <p class="text-sm text-gray-600 mb-3">Didn't receive the code?</p>
+
+  <button
+    id="resendBtn"
+    class="text-sm font-medium text-blue-600 hover:text-blue-500 disabled:text-gray-400 disabled:cursor-not-allowed transition flex items-center justify-center mx-auto"
+    disabled
+  >
+    <i class="fas fa-redo-alt mr-2"></i>
+    Resend OTP in <span id="countdown" class="font-bold ml-1">60</span>s
+  </button>
+</div>
+
+<!-- OTP Expiry Warning -->
+<div id="expiryWarning" class="mt-4 p-3 bg-amber-50 border border-amber-200 rounded-lg text-center hidden">
+  <p class="text-amber-800 text-sm flex items-center justify-center">
+    <i class="fas fa-exclamation-triangle mr-2"></i>
+    <span>Your OTP will expire in <span id="expiryCountdown" class="font-bold">02:00</span></span>
+  </p>
+</div>
 
         <!-- OTP Expiry Warning -->
         <div id="expiryWarning" class="mt-4 p-3 bg-amber-50 border border-amber-200 rounded-lg text-center hidden">

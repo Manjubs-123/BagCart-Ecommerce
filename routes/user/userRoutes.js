@@ -1,4 +1,3 @@
-
 import express from "express";
 import {
   getSignup,
@@ -10,13 +9,14 @@ import {
   loginUser,
   showHomePage,
   logoutUser,
-} from "../controllers/user/userController.js";
-import { renderForgotPassword, postForgotPassword, renderForgotVerifyOtp, postForgotVerifyOtp, resendForgotOtp, renderResetPassword, postResetPassword } from "../controllers/user/authForgotController.js";
-import { isUserLoggedIn, isUserLoggedOut } from "../middlewares/userAuth.js";
-import { noCache } from "../middlewares/cacheMiddleware.js";
-import { renderLandingPage } from "../controllers/user/productController.js";
-import { getProductDetails } from "../controllers/user/shopController.js";
-import { isAuthenticated } from "../middlewares/passportAuth.js";
+  renderUserProfile
+} from "../../controllers/user/userController.js";
+import { renderForgotPassword, postForgotPassword, renderForgotVerifyOtp, postForgotVerifyOtp, resendForgotOtp, renderResetPassword, postResetPassword } from "../../controllers/user/authForgotController.js";
+import { isUserLoggedIn, isUserLoggedOut } from "../../middlewares/userAuth.js";
+import { noCache } from "../../middlewares/cacheMiddleware.js";
+import { renderLandingPage } from "../../controllers/user/productController.js";
+import { getProductDetails } from "../../controllers/user/shopController.js";
+import { isAuthenticated } from "../../middlewares/passportAuth.js";
 
 const router = express.Router();
 
@@ -26,7 +26,6 @@ router.use(noCache);
 
 router.get("/landing", isUserLoggedIn, isAuthenticated, renderLandingPage); // landing Page
 
-// --------------------- PUBLIC ROUTES ---------------------
 // Signup
 router.get("/signup", isUserLoggedOut, getSignup);
 router.post("/signup", signupUser);
@@ -34,9 +33,10 @@ router.post("/signup", signupUser);
 // OTP
 router.get("/verifyOtp", getVerifyOtp);
 router.post("/verifyOtp", postVerifyOtp);
-
 router.get("/resendOtp", resendOtp);
 
+//profile
+router.get('/profile',isUserLoggedIn,renderUserProfile);
 
 // Login
 router.get("/login", isUserLoggedOut, getLogin);
@@ -57,14 +57,6 @@ router.get("/resendForgotOtp", resendForgotOtp);
 router.get("/resetPassword", renderResetPassword);
 router.post("/resetPassword", postResetPassword);
 
-
-//shop
-// router.get("/shop",isUserLoggedIn,renderShopPage);
-
-// --------------------- PROTECTED ROUTES ---------------------
-
-// Only logged-in & unblocked users can access these
-//product details page
 router.get("/product/:id", isUserLoggedIn, getProductDetails);
 
 // // Home

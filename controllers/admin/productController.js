@@ -1,11 +1,12 @@
 import Product from "../../models/productModel.js";
 import Category from "../../models/category.js";
 import { cloudinary } from "../../config/cloudinary.js";
-import fs from 'fs/promises';
 
 
-// List products (with search and pagination)
+
+// List products 
 export const listProducts = async (req, res) => {
+
   try {
     
     const page = Math.max(1, parseInt(req.query.page || "1", 10));
@@ -70,56 +71,56 @@ export const renderAddProduct = async (req, res) => {
   }
 };
   
-// Get all products (excluding soft deleted)
-export const getProducts = async (req, res) => {
-  try {
-    const { page = 1, limit = 10, search = '', category = '' } = req.query;
+// Get all products 
+// export const getProducts = async (req, res) => {
+//   try {
+//     const { page = 1, limit = 10, search = '', category = '' } = req.query;
 
-    const query = { isDeleted: false };
+//     const query = { isDeleted: false };
 
-    if (search) {
-      query.$or = [
-        { name: { $regex: search, $options: 'i' } },
-        { brand: { $regex: search, $options: 'i' } }
-      ];
-    }
+//     if (search) {
+//       query.$or = [
+//         { name: { $regex: search, $options: 'i' } },
+//         { brand: { $regex: search, $options: 'i' } }
+//       ];
+//     }
 
-    if (category) {
-      query.category = category;
-    }
+//     if (category) {
+//       query.category = category;
+//     }
 
-    const skip = (page - 1) * limit;
+//     const skip = (page - 1) * limit;
 
-    const [rawProducts, total] = await Promise.all([
-      Product.find(query)
-        .populate({ path: 'category', match: { isActive: true, isDeleted: false } })
-        .sort({ createdAt: -1 })
-        .skip(skip)
-        .limit(parseInt(limit)),
-      Product.countDocuments(query)
-    ]);
+//     const [rawProducts, total] = await Promise.all([
+//       Product.find(query)
+//         .populate({ path: 'category', match: { isActive: true, isDeleted: false } })
+//         .sort({ createdAt: -1 })
+//         .skip(skip)
+//         .limit(parseInt(limit)),
+//       Product.countDocuments(query)
+//     ]);
 
-    // Filter out products whose category was filtered out by populate (blocked/deleted categories)
-    const products = rawProducts.filter(p => p.category != null);
+//     // Filter out products whose category was filtered out by populate (blocked/deleted categories)
+//     const products = rawProducts.filter(p => p.category != null);
    
-    // console.log(" Product image check:", products[0]?.variants?.[0]?.images);
+//     // console.log(" Product image check:", products[0]?.variants?.[0]?.images);
 
     
-    res.render("admin/productList", {
-      products,
-      q: search,
-      pagination: {
-        total,
-        page: parseInt(page),
-        pages: Math.ceil(total / limit)
-      },
-    });
+//     res.render("admin/productList", {
+//       products,
+//       q: search,
+//       pagination: {
+//         total,
+//         page: parseInt(page),
+//         pages: Math.ceil(total / limit)
+//       },
+//     });
 
-  } catch (error) {
-    console.error('Get Products Error:', error);
-    res.status(500).send("Failed to load products");
-  }
-};
+//   } catch (error) {
+//     console.error('Get Products Error:', error);
+//     res.status(500).send("Failed to load products");
+//   }
+// };
 
 
 // Get single product by ID
@@ -150,7 +151,7 @@ export const getProductById = async (req, res) => {
   }
 };
 
-// Get active categories (not blocked)
+// Get active categories 
 export const getActiveCategories = async (req, res) => {
   try {
     const categories = await Category.find({ isActive: true, isDeleted: false })
@@ -188,7 +189,7 @@ export const addProduct = async (req, res) => {
     }
 
 
-    // Handle images for each variant (CLOUDINARY mapped to schema)
+    // Handle images for each variant 
     if (Array.isArray(variants) && req.files?.length) {
       variants = variants.map((variant, index) => {
         // Find matching images for this variant using file name pattern
@@ -210,6 +211,12 @@ export const addProduct = async (req, res) => {
 
     console.log(" Prepared variants before save:", JSON.stringify(variants, null, 2));
 
+    // if(variants.length>3){
+    //   return res.status(400).json({
+    //     success:false,
+    //     message:"can't add roducts up to 3 varients"
+    //   });
+    // }
 
 
     const existingProduct=await Product.findOne({
@@ -243,7 +250,7 @@ export const addProduct = async (req, res) => {
 
     await newProduct.save();
 
-    console.log(" Saved product variant images:", newProduct.variants[0]?.images);
+    // console.log(" Saved product variant images:", newProduct.variants[0]?.images);
 
     res.status(201).json({
       message: "Product added successfully",
@@ -258,7 +265,10 @@ export const addProduct = async (req, res) => {
   }
 };
 
+
+
 // Render Edit Product Page
+
 export const renderEditProduct = async (req, res) => {
   try {
     const { id } = req.params;
@@ -318,6 +328,22 @@ export const updateProduct = async (req, res) => {
     const product = await Product.findOne({ _id: id, isDeleted: false });
     if (!product)
       return res.status(404).json({ success: false, message: "Product not found" });
+
+      // Duplicate name check (case-insensitive, exclude current product)
+    if (name && name.trim()) {
+      const existingWithSameName = await Product.findOne({
+        _id: { $ne: id }, // exclude same product
+        name: { $regex: `^${name.trim()}$`, $options: "i" }, // case-insensitive exact match
+        isDeleted: false
+      });
+
+      if (existingWithSameName) {
+        return res.status(400).json({
+          success: false,
+          message: `Product name "${name}" already exists. Please choose a different name.`
+        });
+      }
+    }
 
     // Update base fields
     product.name = strOr(name, product.name);
@@ -401,7 +427,7 @@ export const updateProduct = async (req, res) => {
       });
     }
 
-    //  Delete removed variants (and their Cloudinary images)
+    //  Delete removed variants  and Cloudinary images
     for (let i = variants.length; i < existingVariants.length; i++) {
       for (const img of existingVariants[i]?.images || []) {
         try {

@@ -1,6 +1,6 @@
 import express from "express";
-import { getShopPage, getProductDetails, filterProducts, getVariantByColor } from "../controllers/user/shopController.js";
-import { isUserLoggedIn } from "../middlewares/userAuth.js";
+import { getShopPage, getProductDetails, filterProducts, getVariantByColor } from "../../controllers/user/shopController.js";
+import { isUserLoggedIn } from "../../middlewares/userAuth.js";
 const router = express.Router();
 
 router.get("/shop", isUserLoggedIn, getShopPage);
