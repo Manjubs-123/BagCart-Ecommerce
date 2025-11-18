@@ -53,17 +53,17 @@ app.use(
 );
 
 
-app.use(noCache);
+// app.use(noCache);
 app.use(passport.initialize());
 app.use(passport.session());
 
 
-app.use((req, res, next) => {
-  res.locals.user = req.user || null;
-  res.locals.currentPage = "";
-  res.locals.currentPath = req.path;
-  next();
-});
+// app.use((req, res, next) => {
+//   res.locals.user = req.user || null;
+//   res.locals.currentPage = "";
+//   res.locals.currentPath = req.path;
+//   next();
+// });
 
 app.use("/admin", adminRoutes);
 app.use("/user", userRoutes);

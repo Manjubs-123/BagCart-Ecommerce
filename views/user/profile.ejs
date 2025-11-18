@@ -5,6 +5,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>My Profile - BagHub</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
@@ -46,6 +50,7 @@
         .avatar-upload {
             position: relative;
             display: inline-block;
+            cursor: pointer;
         }
 
         .avatar-upload input[type="file"] {
@@ -128,7 +133,8 @@
 
 <body class="bg-gray-50">
     <!-- Header -->
-   <%- include('../partials/landingheader')%>
+    <%- include('../partials/landingheader')%>
+    
     <!-- Main Content -->
     <div class="container mx-auto px-4 py-8">
         <div class="flex flex-col lg:flex-row gap-8">
@@ -136,24 +142,73 @@
             <div class="lg:w-1/4">
                 <div class="bg-white rounded-2xl shadow-sm p-6 card-hover sticky top-24">
                     <!-- User Profile Summary -->
-                    <div class="text-center mb-6">
-                        <div class="avatar-upload inline-block mb-4">
-                            <div
-                                class="w-24 h-24 rounded-full bg-gradient-to-r from-blue-500 to-emerald-500 flex items-center justify-center text-white text-2xl font-bold mx-auto relative">
-                                <span id="userInitials">J</span>
-                                <div
-                                    class="absolute bottom-0 right-0 w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center border-2 border-white">
-                                    <i class="fas fa-camera text-white text-xs"></i>
+                    <!-- <div class="text-center mb-6">
+                        <div class="avatar-upload inline-block mb-4" onclick="document.getElementById('sidebarAvatarInput').click()">
+                            <% if (user.profileImage) { %>
+                                <img src="<%= user.profileImage %>" 
+                                     alt="Profile" 
+                                     class="w-24 h-24 rounded-full object-cover mx-auto border-4 border-white shadow-md">
+                            <% } else { %>
+                                <div class="w-24 h-24 rounded-full bg-gradient-to-r from-blue-500 to-emerald-500 flex items-center justify-center text-white text-2xl font-bold mx-auto relative">
+                                    <span id="userInitials">
+                                        <%= user.name ? user.name.charAt(0).toUpperCase() : "U" %>
+                                    </span>
                                 </div>
+                            <% } %>
+                            <div class="absolute bottom-0 right-0 w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center border-2 border-white">
+                                <i class="fas fa-camera text-white text-xs"></i>
                             </div>
-                            <input type="file" id="avatarInput" accept="image/*" class="cursor-pointer">
+                            <input 
+                                type="file" 
+                                id="sidebarAvatarInput" 
+                                accept="image/*" 
+                                class="hidden"
+                                onchange="document.getElementById('avatarInput').click()"
+                            />
                         </div>
-                        <h2 class="text-xl font-bold text-gray-900" id="userName">John</h2>
-                        <p class="text-gray-600 text-sm" id="userEmail">john.doe@example.com</p>
-                        <p class="text-green-600 text-sm font-medium mt-1">
-                            <i class="fas fa-check-circle mr-1"></i>Verified
+
+                        <h2 class="text-xl font-bold text-gray-900" id="userName">
+                            <%= user.name || 'User' %>
+                        </h2>
+                        <p class="text-gray-600 text-sm" id="userEmail">
+                            <%= user.email %>
                         </p>
-                    </div>
+                        <p class="text-green-600 text-sm font-medium mt-1">
+                            <i class="fas fa-check-circle mr-1"></i>
+                            Verified
+                        </p>
+                    </div> -->
+
+<div class="text-center mb-6">
+
+    <% if (user.profileImage) { %>
+        <img id="sidebarProfileImage"
+             src="<%= user.profileImage?.url %>"
+             class="w-24 h-24 rounded-full object-cover mx-auto border-4 border-white shadow-md">
+    <% } else { %>
+        <div id="sidebarProfileImage"
+             class="w-24 h-24 rounded-full bg-gradient-to-r from-blue-500 to-emerald-500 flex items-center justify-center text-white text-2xl font-bold mx-auto">
+            <%= user.name ? user.name.charAt(0).toUpperCase() : "U" %>
+        </div>
+    <% } %>
+
+    <h2 class="text-xl font-bold text-gray-900 mt-3"><%= user.name || "User" %></h2>
+    <p class="text-gray-600 text-sm"><%= user.email %></p>
+
+    <p class="text-green-600 text-sm font-medium mt-1">
+        <i class="fas fa-check-circle mr-1"></i> Verified
+    </p>
+</div>
+
+                    <div id="cropperModal" class="fixed inset-0 bg-black/50 hidden items-center justify-center">
+  <div class="bg-white p-5 rounded-xl">
+      <img id="cropImage" class="max-w-[400px] max-h-[400px]" />
+      <div class="flex justify-end gap-4 mt-4">
+          <button onclick="cancelCrop()" class="bg-gray-500 text-white px-4 py-2 rounded">Cancel</button>
+          <button onclick="applyCrop()" class="bg-blue-600 text-white px-4 py-2 rounded">Crop & Save</button>
+      </div>
+  </div>
+</div>
 
                     <!-- Navigation Menu -->
                     <nav class="space-y-2">
@@ -167,7 +222,9 @@
                             class="tab-button w-full text-left flex items-center gap-3 p-3 rounded-xl transition-all duration-200 hover:bg-gray-100 text-gray-700">
                             <i class="fas fa-shopping-bag text-gray-600 w-5"></i>
                             <span>My Orders</span>
-                            <span class="ml-auto bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full">5</span>
+                            <span class="ml-auto bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full">
+                                <%= ordersCount || 0 %>
+                            </span>
                         </button>
 
                         <button onclick="switchTab('addresses')"
@@ -180,7 +237,9 @@
                             class="tab-button w-full text-left flex items-center gap-3 p-3 rounded-xl transition-all duration-200 hover:bg-gray-100 text-gray-700">
                             <i class="far fa-heart text-gray-600 w-5"></i>
                             <span>Wishlist</span>
-                            <span class="ml-auto bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full">12</span>
+                            <span class="ml-auto bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full">
+                                <%= wishlistCount || 0 %>
+                            </span>
                         </button>
 
                         <button onclick="switchTab('security')"
@@ -193,83 +252,108 @@
                             class="tab-button w-full text-left flex items-center gap-3 p-3 rounded-xl transition-all duration-200 hover:bg-gray-100 text-gray-700">
                             <i class="fas fa-bell text-gray-600 w-5"></i>
                             <span>Notifications</span>
-                            <span class="ml-auto bg-red-100 text-red-800 text-xs px-2 py-1 rounded-full">3</span>
+                            <span class="ml-auto bg-red-100 text-red-800 text-xs px-2 py-1 rounded-full">
+                                <%= unreadNotifications || 0 %>
+                            </span>
                         </button>
                     </nav>
                 </div>
             </div>
 
+
+            <!-- ========================================================= -->
             <!-- Main Content Area -->
             <div class="lg:w-3/4">
+                <!-- Welcome Message -->
+                <div class="bg-gradient-to-r from-blue-600 to-emerald-600 rounded-2xl shadow-lg p-6 mb-6 text-white">
+                    <div class="flex items-center gap-4">
+                        <div class="w-16 h-16 rounded-full bg-white/20 flex items-center justify-center">
+                            <i class="fas fa-user text-2xl"></i>
+                        </div>
+                        <div>
+                            <h1 class="text-2xl font-bold">Welcome, <%= user.name || 'User' %>!</h1>
+                            <p class="text-blue-100">Manage your profile and account settings</p>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Profile Information Tab -->
                 <div id="profile-tab" class="tab-content">
                     <div class="bg-white rounded-2xl shadow-sm p-6 card-hover">
-                        <div class="flex justify-between items-center mb-6">
+                        <!-- <div class="flex justify-between items-center mb-6">
                             <h2 class="text-2xl font-bold text-gray-900">Profile Information</h2>
                             <button onclick="toggleEditMode('profile')"
                                 class="btn-primary text-white px-4 py-2 rounded-lg flex items-center gap-2">
                                 <i class="fas fa-edit"></i>
                                 <span>Edit Profile</span>
                             </button>
-                        </div>
+                        </div> -->
+<div class="bg-white rounded-2xl shadow-sm p-6 max-w-xl mx-auto">
 
-                        <form id="profileForm" class="space-y-6">
-                            <div class="flex flex-col gap-6">
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700 mb-2">Full Name</label>
-                                    <input type="text" id="fullName" name="fullName" value="John"
-                                        class="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                        disabled>
-                                </div>
-                            </div>
+    <h2 class="text-2xl font-bold text-gray-900 mb-6">Profile Information</h2>
 
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-2">Email Address</label>
-                                <input type="email" id="email" name="email" value="john.doe@example.com"
-                                    class="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                    disabled>
-                            </div>
+    <form id="profileForm" enctype="multipart/form-data" class="space-y-6">
 
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-2">Phone Number</label>
-                                <input type="tel" id="phone" name="phone" value="+1 (555) 123-4567"
-                                    class="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                    disabled>
-                            </div>
-
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700 mb-2">Date of Birth</label>
-                                    <input type="date" id="dob" name="dob" value="1990-01-15"
-                                        class="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                        disabled>
-                                </div>
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700 mb-2">Gender</label>
-                                    <select id="gender" name="gender"
-                                        class="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                        disabled>
-                                        <option value="male" selected>Male</option>
-                                        <option value="female">Female</option>
-                                        <option value="other">Other</option>
-                                    </select>
-                                </div>
-                            </div>
-
-                            <div class="flex gap-4 pt-4 border-t border-gray-200 hidden" id="profileActions">
-                                <button type="button" onclick="saveProfile()"
-                                    class="btn-primary text-white px-6 py-3 rounded-lg flex items-center gap-2">
-                                    <i class="fas fa-save"></i>
-                                    <span>Save Changes</span>
-                                </button>
-                                <button type="button" onclick="cancelEdit('profile')"
-                                    class="bg-gray-500 text-white px-6 py-3 rounded-lg hover:bg-gray-600 transition-all flex items-center gap-2">
-                                    <i class="fas fa-times"></i>
-                                    <span>Cancel</span>
-                                </button>
-                            </div>
-                        </form>
+        <!-- Profile Image -->
+        <div class="flex flex-col items-center">
+            <div class="relative cursor-pointer" onclick="document.getElementById('avatarInput').click()">
+                <% if (user.profileImage) { %>
+                    <img id="profilePreview" src="<%= user.profileImage?.url%>" 
+                         class="w-32 h-32 rounded-full object-cover border-4 border-gray-300 shadow" />
+                <% } else { %>
+                    <div id="profilePreview"
+                        class="w-32 h-32 rounded-full bg-gray-300 flex items-center justify-center text-4xl font-bold text-white">
+                        <%= user.name.charAt(0).toUpperCase() %>
                     </div>
+                <% } %>
+
+                <div class="absolute bottom-1 right-1 w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center border-2 border-white shadow">
+                    <i class="fas fa-camera text-white text-sm"></i>
+                </div>
+            </div>
+
+            <input type="file" id="avatarInput" accept="image/*" class="hidden" />
+            <p class="text-sm text-gray-500 mt-2">Click to change profile picture</p>
+        </div>
+
+        <!-- Name -->
+        <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
+            <input type="text" id="fullName" value="<%= user.name %>"
+                class="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:outline-none" />
+        </div>
+
+        <!-- Phone -->
+        <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Phone Number</label>
+            <input type="tel" id="phone" value="<%= user.phone || '' %>"
+                class="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:outline-none" />
+        </div>
+
+        <!-- Email (readonly) -->
+        <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Email Address</label>
+            <input type="email" id="email" value="<%= user.email %>" disabled
+                class="w-full border border-gray-300 bg-gray-100 rounded-lg px-4 py-3" />
+            <p class="text-xs text-gray-500 mt-1">Email cannot be changed</p>
+        </div>
+
+        <!-- Buttons -->
+        <div class="flex gap-4 pt-4">
+            <button type="button" onclick="saveProfile()"
+                class="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-all flex items-center gap-2">
+                <i class="fas fa-save"></i> Save Changes
+            </button>
+
+            <button type="button" onclick="window.location.reload()"
+                class="bg-gray-500 text-white px-6 py-3 rounded-lg hover:bg-gray-600 transition-all flex items-center gap-2">
+                <i class="fas fa-times"></i> Cancel
+            </button>
+        </div>
+    </form>
+</div>
+
+                   
                 </div>
 
                 <!-- Orders Tab -->
@@ -280,54 +364,62 @@
                         <!-- Order Filters -->
                         <div class="flex flex-wrap gap-4 mb-6">
                             <button class="px-4 py-2 rounded-lg bg-blue-600 text-white">All Orders</button>
-                            <button
-                                class="px-4 py-2 rounded-lg bg-gray-200 text-gray-700 hover:bg-gray-300">Pending</button>
-                            <button
-                                class="px-4 py-2 rounded-lg bg-gray-200 text-gray-700 hover:bg-gray-300">Delivered</button>
-                            <button
-                                class="px-4 py-2 rounded-lg bg-gray-200 text-gray-700 hover:bg-gray-300">Cancelled</button>
+                            <button class="px-4 py-2 rounded-lg bg-gray-200 text-gray-700 hover:bg-gray-300">Pending</button>
+                            <button class="px-4 py-2 rounded-lg bg-gray-200 text-gray-700 hover:bg-gray-300">Delivered</button>
+                            <button class="px-4 py-2 rounded-lg bg-gray-200 text-gray-700 hover:bg-gray-300">Cancelled</button>
                         </div>
 
                         <!-- Orders List -->
                         <div class="space-y-4">
-                            <!-- Order Item -->
-                            <div class="border border-gray-200 rounded-xl p-4 card-hover">
-                                <div class="flex flex-col md:flex-row md:items-center justify-between mb-4">
-                                    <div>
-                                        <p class="text-sm text-gray-500">Order #BH123456</p>
-                                        <p class="text-lg font-semibold text-gray-900">Urban Explorer Backpack</p>
-                                    </div>
-                                    <div class="flex items-center gap-4 mt-2 md:mt-0">
-                                        <span class="status-badge bg-green-100 text-green-800">
-                                            <i class="fas fa-check-circle mr-1"></i>Delivered
-                                        </span>
-                                        <span class="text-lg font-bold text-gray-900">₹3,499</span>
-                                    </div>
-                                </div>
+                            <% if (orders && orders.length > 0) { %>
+                                <% orders.forEach(order => { %>
+                                    <div class="border border-gray-200 rounded-xl p-4 card-hover">
+                                        <div class="flex flex-col md:flex-row md:items-center justify-between mb-4">
+                                            <div>
+                                                <p class="text-sm text-gray-500">Order #<%= order.orderNumber %></p>
+                                                <p class="text-lg font-semibold text-gray-900"><%= order.productName %></p>
+                                            </div>
+                                            <div class="flex items-center gap-4 mt-2 md:mt-0">
+                                                <span class="status-badge <%= getStatusBadgeClass(order.status) %>">
+                                                    <i class="fas <%= getStatusIcon(order.status) %> mr-1"></i>
+                                                    <%= order.status %>
+                                                </span>
+                                                <span class="text-lg font-bold text-gray-900">₹<%= order.price %></span>
+                                            </div>
+                                        </div>
 
-                                <div class="flex flex-col md:flex-row md:items-center justify-between">
-                                    <div class="flex items-center gap-4 mb-3 md:mb-0">
-                                        <img src="https://images.unsplash.com/photo-1553062407-98eeb64c6a62?ixlib=rb-4.0.3&auto=format&fit=crop&w=100&q=80"
-                                            alt="Urban Explorer Backpack" class="w-16 h-16 rounded-lg object-cover">
-                                        <div>
-                                            <p class="text-sm text-gray-600">Placed on 15 Dec, 2023</p>
-                                            <p class="text-sm text-gray-600">Quantity: 1</p>
+                                        <div class="flex flex-col md:flex-row md:items-center justify-between">
+                                            <div class="flex items-center gap-4 mb-3 md:mb-0">
+                                                <img src="<%= order.image %>" 
+                                                     alt="<%= order.productName %>" 
+                                                     class="w-16 h-16 rounded-lg object-cover">
+                                                <div>
+                                                    <p class="text-sm text-gray-600">Placed on <%= formatDate(order.orderDate) %></p>
+                                                    <p class="text-sm text-gray-600">Quantity: <%= order.quantity %></p>
+                                                </div>
+                                            </div>
+                                            <div class="flex gap-2">
+                                                <button class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-all text-sm">
+                                                    View Details
+                                                </button>
+                                                <button class="border border-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-50 transition-all text-sm">
+                                                    Buy Again
+                                                </button>
+                                            </div>
                                         </div>
                                     </div>
-                                    <div class="flex gap-2">
-                                        <button
-                                            class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-all text-sm">
-                                            View Details
-                                        </button>
-                                        <button
-                                            class="border border-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-50 transition-all text-sm">
-                                            Buy Again
-                                        </button>
-                                    </div>
+                                <% }); %>
+                            <% } else { %>
+                                <div class="text-center py-8">
+                                    <i class="fas fa-shopping-bag text-gray-300 text-5xl mb-4"></i>
+                                    <h3 class="text-lg font-medium text-gray-700 mb-2">No orders yet</h3>
+                                    <p class="text-gray-500 mb-4">Start shopping to see your orders here</p>
+                                    <a href="/collection" class="btn-primary text-white px-6 py-3 rounded-lg inline-flex items-center gap-2">
+                                        <i class="fas fa-shopping-cart"></i>
+                                        <span>Start Shopping</span>
+                                    </a>
                                 </div>
-                            </div>
-
-                            <!-- More order items would go here -->
+                            <% } %>
                         </div>
                     </div>
                 </div>
@@ -344,37 +436,171 @@
                         </div>
 
                         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                            <!-- Wishlist Item -->
-                            <div class="border border-gray-200 rounded-xl overflow-hidden card-hover">
-                                <div class="relative">
-                                    <img src="https://images.unsplash.com/photo-1553062407-98eeb64c6a62?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80"
-                                        alt="Urban Explorer Backpack" class="w-full h-48 object-cover">
-                                    <button
-                                        class="wishlist-btn absolute top-3 right-3 bg-white rounded-full p-2 shadow-md text-red-500">
-                                        <i class="fas fa-heart"></i>
-                                    </button>
-                                    <span
-                                        class="absolute top-3 left-3 bg-green-500 text-white text-xs font-semibold px-2 py-1 rounded-full">
-                                        Featured
-                                    </span>
+                            <% if (wishlist && wishlist.length > 0) { %>
+                                <% wishlist.forEach(item => { %>
+                                    <div class="border border-gray-200 rounded-xl overflow-hidden card-hover">
+                                        <div class="relative">
+                                            <img src="<%= item.image %>" 
+                                                 alt="<%= item.name %>" 
+                                                 class="w-full h-48 object-cover">
+                                            <button class="wishlist-btn absolute top-3 right-3 bg-white rounded-full p-2 shadow-md text-red-500">
+                                                <i class="fas fa-heart"></i>
+                                            </button>
+                                            <% if (item.featured) { %>
+                                                <span class="absolute top-3 left-3 bg-green-500 text-white text-xs font-semibold px-2 py-1 rounded-full">
+                                                    Featured
+                                                </span>
+                                            <% } %>
+                                        </div>
+                                        <div class="p-4">
+                                            <h3 class="font-semibold text-gray-900 mb-1"><%= item.name %></h3>
+                                            <p class="text-sm text-gray-500 mb-2"><%= item.brand %></p>
+                                            <p class="text-blue-600 font-bold text-lg mb-3">₹<%= item.price %></p>
+                                            <button class="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition-all">
+                                                Add to Cart
+                                            </button>
+                                        </div>
+                                    </div>
+                                <% }); %>
+                            <% } else { %>
+                                <div class="col-span-full text-center py-8">
+                                    <i class="far fa-heart text-gray-300 text-5xl mb-4"></i>
+                                    <h3 class="text-lg font-medium text-gray-700 mb-2">Your wishlist is empty</h3>
+                                    <p class="text-gray-500 mb-4">Save items you love for later</p>
+                                    <a href="/collection" class="btn-primary text-white px-6 py-3 rounded-lg inline-flex items-center gap-2">
+                                        <i class="fas fa-plus"></i>
+                                        <span>Explore Products</span>
+                                    </a>
                                 </div>
-                                <div class="p-4">
-                                    <h3 class="font-semibold text-gray-900 mb-1">Urban Explorer Backpack</h3>
-                                    <p class="text-sm text-gray-500 mb-2">Herschel</p>
-                                    <p class="text-blue-600 font-bold text-lg mb-3">₹3,499</p>
-                                    <button
-                                        class="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition-all">
-                                        Add to Cart
-                                    </button>
-                                </div>
-                            </div>
-
-                            <!-- More wishlist items would go here -->
+                            <% } %>
                         </div>
                     </div>
                 </div>
 
-                <!-- More tabs would be implemented similarly -->
+                <!-- Security Tab -->
+                <div id="security-tab" class="tab-content hidden">
+                    <div class="bg-white rounded-2xl shadow-sm p-6 card-hover">
+                        <h2 class="text-2xl font-bold text-gray-900 mb-6">Security Settings</h2>
+                        
+                        <div class="space-y-6">
+                            <!-- Password Change Section -->
+                            <div class="border border-gray-200 rounded-xl p-6">
+                                <h3 class="text-lg font-semibold text-gray-900 mb-4">Change Password</h3>
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-2">Current Password</label>
+                                        <input type="password" class="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-2">New Password</label>
+                                        <input type="password" class="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                    </div>
+                                </div>
+                                <button class="btn-primary text-white px-6 py-3 rounded-lg mt-4 flex items-center gap-2">
+                                    <i class="fas fa-key"></i>
+                                    <span>Update Password</span>
+                                </button>
+                            </div>
+                            
+                            <!-- Two-Factor Authentication -->
+                            <div class="border border-gray-200 rounded-xl p-6">
+                                <h3 class="text-lg font-semibold text-gray-900 mb-4">Two-Factor Authentication</h3>
+                                <div class="flex items-center justify-between">
+                                    <div>
+                                        <p class="text-gray-700">Add an extra layer of security to your account</p>
+                                        <p class="text-sm text-gray-500 mt-1">Protect your account with 2FA</p>
+                                    </div>
+                                    <button class="bg-gray-200 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-300 transition-all">
+                                        Enable
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <!-- Login Activity -->
+                            <div class="border border-gray-200 rounded-xl p-6">
+                                <h3 class="text-lg font-semibold text-gray-900 mb-4">Recent Login Activity</h3>
+                                <div class="space-y-4">
+                                    <div class="flex items-center justify-between">
+                                        <div>
+                                            <p class="font-medium">Current Session</p>
+                                            <p class="text-sm text-gray-500">Just now • Chrome on Windows</p>
+                                        </div>
+                                        <span class="bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full">Active</span>
+                                    </div>
+                                    <div class="flex items-center justify-between">
+                                        <div>
+                                            <p class="font-medium">Previous Session</p>
+                                            <p class="text-sm text-gray-500">2 days ago • Safari on iPhone</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Notifications Tab -->
+                <div id="notifications-tab" class="tab-content hidden">
+                    <div class="bg-white rounded-2xl shadow-sm p-6 card-hover">
+                        <div class="flex justify-between items-center mb-6">
+                            <h2 class="text-2xl font-bold text-gray-900">Notifications</h2>
+                            <button class="text-blue-600 hover:text-blue-700 flex items-center gap-2">
+                                <i class="fas fa-cog"></i>
+                                <span>Settings</span>
+                            </button>
+                        </div>
+                        
+                        <div class="space-y-4">
+                            <div class="notification-item unread p-4 border border-gray-200 rounded-xl">
+                                <div class="flex items-start gap-4">
+                                    <div class="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600">
+                                        <i class="fas fa-shipping-fast"></i>
+                                    </div>
+                                    <div class="flex-1">
+                                        <h4 class="font-semibold text-gray-900">Your order has been shipped</h4>
+                                        <p class="text-gray-600 text-sm mt-1">Order #BGH-2023-789 has been shipped and is on its way to you.</p>
+                                        <p class="text-gray-400 text-xs mt-2">2 hours ago</p>
+                                    </div>
+                                    <button class="text-gray-400 hover:text-gray-600">
+                                        <i class="fas fa-times"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <div class="notification-item p-4 border border-gray-200 rounded-xl">
+                                <div class="flex items-start gap-4">
+                                    <div class="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center text-green-600">
+                                        <i class="fas fa-tag"></i>
+                                    </div>
+                                    <div class="flex-1">
+                                        <h4 class="font-semibold text-gray-900">Special offer just for you</h4>
+                                        <p class="text-gray-600 text-sm mt-1">Get 20% off on your next purchase with code: BAGHUB20</p>
+                                        <p class="text-gray-400 text-xs mt-2">1 day ago</p>
+                                    </div>
+                                    <button class="text-gray-400 hover:text-gray-600">
+                                        <i class="fas fa-times"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <div class="notification-item p-4 border border-gray-200 rounded-xl">
+                                <div class="flex items-start gap-4">
+                                    <div class="w-10 h-10 rounded-full bg-purple-100 flex items-center justify-center text-purple-600">
+                                        <i class="fas fa-bell"></i>
+                                    </div>
+                                    <div class="flex-1">
+                                        <h4 class="font-semibold text-gray-900">Welcome to BagHub!</h4>
+                                        <p class="text-gray-600 text-sm mt-1">Thank you for joining BagHub. Start exploring our collection of premium bags.</p>
+                                        <p class="text-gray-400 text-xs mt-2">3 days ago</p>
+                                    </div>
+                                    <button class="text-gray-400 hover:text-gray-600">
+                                        <i class="fas fa-times"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -411,13 +637,16 @@
             const actions = document.getElementById(`${formType}Actions`);
 
             inputs.forEach(input => {
-                input.disabled = !input.disabled;
+                // Don't enable email field or member since
+                if (input.id !== 'email' && input.id !== 'memberSince') {
+                    input.disabled = !input.disabled;
+                }
             });
 
             actions.classList.toggle('hidden');
 
             const editButton = event.currentTarget;
-            if (inputs[0].disabled) {
+            if (document.getElementById('fullName').disabled) {
                 editButton.innerHTML = '<i class="fas fa-edit"></i><span>Edit Profile</span>';
             } else {
                 editButton.innerHTML = '<i class="fas fa-lock"></i><span>Editing Mode</span>';
@@ -436,66 +665,266 @@
 
             actions.classList.add('hidden');
 
-            // Reset form values (in a real app, you'd fetch from server)
-            document.getElementById('fullName').value = 'John';
-            document.getElementById('email').value = 'john.doe@example.com';
-            document.getElementById('phone').value = '+1 (555) 123-4567';
-            document.getElementById('dob').value = '1990-01-15';
-            document.getElementById('gender').value = 'male';
+            // Reset to original values
+            document.getElementById('fullName').value = '<%= user.name || "" %>';
+            document.getElementById('phone').value = '<%= user.phone || "" %>';
 
             const editButton = document.querySelector(`button[onclick="toggleEditMode('${formType}')"]`);
             editButton.innerHTML = '<i class="fas fa-edit"></i><span>Edit Profile</span>';
         }
 
-        // Save profile using Axios
-        async function saveProfile() {
-            const formData = {
-                fullName: document.getElementById('fullName').value,
-                email: document.getElementById('email').value,
-                phone: document.getElementById('phone').value,
-                dob: document.getElementById('dob').value,
-                gender: document.getElementById('gender').value
-            };
+        // // Save profile using Axios
+        // async function saveProfile() {
+        //     const formData = new FormData();
+        //     formData.append("name", document.getElementById("fullName").value);
+        //     formData.append("phone", document.getElementById("phone").value);
 
-            try {
-                // Show loading state
-                const saveButton = event.currentTarget;
-                const originalText = saveButton.innerHTML;
-                saveButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i><span>Saving...</span>';
-                saveButton.disabled = true;
+        //     const file = document.getElementById("avatarInput").files[0];
+        //     if (file) {
+        //         formData.append("profileImage", file);
+        //     }
 
-                // In a real application, you would send this to your backend
-                const response = await axios.put('/api/user/profile', formData);
+        //     try {
+        //         const saveButton = event.currentTarget;
+        //         const originalText = saveButton.innerHTML;
+        //         saveButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i><span>Saving...</span>';
+        //         saveButton.disabled = true;
 
-                // Simulate API call
-                await new Promise(resolve => setTimeout(resolve, 1000));
+        //         const response = await axios.post("/user/updateProfile", formData, {
+        //             headers: { "Content-Type": "multipart/form-data" }
+        //         });
 
-                // Show success message
-                showNotification('Profile updated successfully!', 'success');
+        //         showNotification("Profile updated successfully!", "success");
 
-                // Update UI
-                document.getElementById('userName').textContent = formData.fullName;
-                document.getElementById('userEmail').textContent = formData.email;
-                document.getElementById('userInitials').textContent = formData.fullName.charAt(0);
+        //         // Refresh to load new data
+        //         setTimeout(() => {
+        //             window.location.reload();
+        //         }, 1500);
 
-                // Exit edit mode
-                toggleEditMode('profile');
+        //     } catch (error) {
+        //         console.error("Error updating profile:", error);
+        //         showNotification("Failed to update profile. Please try again.", "error");
+                
+        //         // Restore button state
+        //         const saveButton = event.currentTarget;
+        //         saveButton.innerHTML = '<i class="fas fa-save"></i><span>Save Changes</span>';
+        //         saveButton.disabled = false;
+        //     }
+        // }
 
-            } catch (error) {
-                console.error('Error updating profile:', error);
-                showNotification('Failed to update profile. Please try again.', 'error');
-            } finally {
-                // Restore button state
-                saveButton.innerHTML = originalText;
-                saveButton.disabled = false;
-            }
+//         async function saveProfile() {
+//   const formData = new FormData();
+
+//   formData.append("name", document.getElementById("fullName").value);
+//   formData.append("phone", document.getElementById("phone").value);
+
+//   // If cropped image exists
+//   if (croppedImageBlob) {
+//     formData.append("profileImage", croppedImageBlob, "cropped.jpg");
+//   }
+
+//   const res = await axios.post("/user/updateProfile", formData, {
+//     headers: { "Content-Type": "multipart/form-data" }
+//   });
+
+//   if (res.data.success) window.location.reload();
+// }
+
+
+// let cropper;
+// let croppedImageBlob = null;
+
+// document.getElementById("avatarInput").addEventListener("change", function (e) {
+//     const file = e.target.files[0];
+//     if (!file) return;
+
+//     const img = document.getElementById("cropImage");
+//     img.src = URL.createObjectURL(file);
+
+//     document.getElementById("cropperModal").classList.remove("hidden");
+
+//     if (cropper) cropper.destroy();
+
+//     cropper = new Cropper(img, {
+//         aspectRatio: 1,
+//         viewMode: 1,
+//     });
+// });
+
+// function cancelCrop() {
+//     document.getElementById("cropperModal").classList.add("hidden");
+// }
+
+// function applyCrop() {
+//     cropper.getCroppedCanvas().toBlob((blob) => {
+//         croppedImageBlob = blob;
+
+//         // Main preview
+//         const preview = document.getElementById("profilePreview");
+//         preview.src = URL.createObjectURL(blob);
+
+//         // Sidebar preview update
+//         const sidebarPreview = document.getElementById("sidebarProfileImage");
+//         sidebarPreview.src = preview.src;
+
+//         document.getElementById("cropperModal").classList.add("hidden");
+//     });
+// }
+
+let cropper;
+let croppedImageBlob = null;
+
+document.getElementById("avatarInput").addEventListener("change", function (e) {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const img = document.getElementById("cropImage");
+    img.src = URL.createObjectURL(file);
+
+    document.getElementById("cropperModal").classList.remove("hidden");
+
+    if (cropper) cropper.destroy();
+
+    cropper = new Cropper(img, {
+        aspectRatio: 1,
+        viewMode: 1,
+    });
+});
+
+function applyCrop() {
+    cropper.getCroppedCanvas().toBlob((blob) => {
+        croppedImageBlob = blob;
+
+        document.getElementById("profilePreview").src = URL.createObjectURL(blob);
+        document.getElementById("sidebarProfileImage").src = URL.createObjectURL(blob);
+
+        document.getElementById("cropperModal").classList.add("hidden");
+    });
+}
+
+function cancelCrop() {
+    document.getElementById("cropperModal").classList.add("hidden");
+}
+
+ 
+async function saveProfile() {
+    const formData = new FormData();
+    formData.append("name", document.getElementById("fullName").value);
+    formData.append("phone", document.getElementById("phone").value);
+
+    if (croppedImageBlob) {
+        formData.append("profileImage", croppedImageBlob, "profile.jpg");
+    }
+
+    try {
+        const res = await axios.post("/user/updateProfile", formData, {
+            headers: { "Content-Type": "multipart/form-data" }
+        });
+
+        if (res.data.success) {
+            Swal.fire({
+                icon: "success",
+                title: "Profile Updated!",
+                text: "Your details & image are saved.",
+                confirmButtonColor: "#2563eb"
+            }).then(() => {
+                window.location.reload();
+            });
+        } else {
+            Swal.fire("Error", "Failed to update profile", "error");
         }
+
+    } catch (err) {
+        Swal.fire("Error", "Something went wrong", "error");
+    }
+}
+
+
+// async function saveProfile() {
+//     const formData = new FormData();
+
+//     formData.append("name", document.getElementById("fullName").value);
+//     formData.append("phone", document.getElementById("phone").value);
+
+//     if (croppedImageBlob) {
+//         formData.append("profileImage", croppedImageBlob, "avatar.jpg");
+//     }
+
+//     const res = await axios.post("/user/updateProfile", formData, {
+//         headers: { "Content-Type": "multipart/form-data" }
+//     });
+
+//     if (res.data.success) {
+//         alert("Profile Updated Successfully");
+//         window.location.reload();
+//     }
+// }
+
+
+// async function saveProfile() {
+//     const formData = new FormData();
+//     formData.append("name", document.getElementById("fullName").value);
+//     formData.append("phone", document.getElementById("phone").value);
+
+//     if (croppedImageBlob) {
+//         formData.append("profileImage", croppedImageBlob, "avatar.jpg");
+//     }
+
+//     const res = await axios.post("/user/updateProfile", formData, {
+//         headers: { "Content-Type": "multipart/form-data" }
+//     });
+
+//     if (res.data.success) {
+//         Swal.fire({
+//             icon: "success",
+//             title: "Profile Updated Successfully!",
+//             text: "Your profile details & image have been updated.",
+//             confirmButtonColor: "#2563eb"
+//         }).then(() => {
+//             window.location.reload();
+//         });
+//     }
+// }
+
+function cancelCrop() {
+  document.getElementById("cropperModal").classList.add("hidden");
+}
+
+// function applyCrop() {
+//   cropper.getCroppedCanvas().toBlob((blob) => {
+//     croppedImageBlob = blob;
+//     document.getElementById("cropperModal").classList.add("hidden");
+//   });
+// }
+
+
+
+        // Handle avatar upload preview
+        // document.getElementById('avatarInput').addEventListener('change', function(e) {
+        //     const file = e.target.files[0];
+        //     if (file) {
+        //         const reader = new FileReader();
+        //         reader.onload = function(e) {
+        //             // Update all avatar previews
+        //             const avatarElements = document.querySelectorAll('.avatar-upload img, .avatar-upload div');
+        //             avatarElements.forEach(element => {
+        //                 if (element.tagName === 'IMG') {
+        //                     element.src = e.target.result;
+        //                 } else if (element.classList.contains('bg-gradient-to-r')) {
+        //                     element.innerHTML = `<img src="${e.target.result}" class="w-full h-full rounded-full object-cover" alt="Profile">`;
+        //                 }
+        //             });
+        //         };
+        //         reader.readAsDataURL(file);
+        //     }
+        // });
 
         // Notification system
         function showNotification(message, type) {
             const notification = document.createElement('div');
-            notification.className = `fixed top-4 right-4 p-4 rounded-lg shadow-lg z-50 transform transition-transform duration-300 ${type === 'success' ? 'bg-green-500 text-white' : 'bg-red-500 text-white'
-                }`;
+            notification.className = `fixed top-4 right-4 p-4 rounded-lg shadow-lg z-50 transform transition-transform duration-300 ${
+                type === 'success' ? 'bg-green-500 text-white' : 'bg-red-500 text-white'
+            }`;
             notification.innerHTML = `
                 <div class="flex items-center gap-3">
                     <i class="fas fa-${type === 'success' ? 'check' : 'exclamation'}-circle"></i>
@@ -509,27 +938,15 @@
             setTimeout(() => {
                 notification.style.transform = 'translateX(100%)';
                 setTimeout(() => {
-                    document.body.removeChild(notification);
+                    if (document.body.contains(notification)) {
+                        document.body.removeChild(notification);
+                    }
                 }, 300);
             }, 3000);
         }
 
-        // Avatar upload functionality
-        document.getElementById('avatarInput').addEventListener('change', function (event) {
-            const file = event.target.files[0];
-            if (file) {
-                const reader = new FileReader();
-                reader.onload = function (e) {
-                    // In a real app, you would upload the image to your server
-                    // For now, we'll just show a success message
-                    showNotification('Profile picture updated successfully!', 'success');
-                };
-                reader.readAsDataURL(file);
-            }
-        });
-
         // Initialize the page
-        document.addEventListener('DOMContentLoaded', function () {
+        document.addEventListener('DOMContentLoaded', function() {
             // Set the first tab as active
             switchTab('profile');
         });

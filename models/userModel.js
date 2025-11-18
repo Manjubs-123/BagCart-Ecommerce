@@ -18,7 +18,7 @@ const userSchema = new mongoose.Schema({
     phone: { type: String, default: "" },
     password: { type: String },
     googleId: { type: String, sparse: true },
-    profileImage: { type: String, default: "" },
+    profileImage: { url:{type:String},public_id:{type:String} },
     addresses: [addressSchema],
     emailVerificationToken: { type: String },
     emailVerificationExpires: { type: Date },

@@ -1,6 +1,8 @@
 import User from "../../models/userModel.js";
 import { sendOtpMail } from "../../utils/sendMail.js";
 import bcrypt from "bcryptjs";
+import cloudinary from "../../config/cloudinary.js";
+import fs from "fs";
 import nodemailer from "nodemailer";
 import mongoose from "mongoose";
 import dotenv from "dotenv";
@@ -248,27 +250,145 @@ export const showHomePage = async (req, res) => {
   return renderLandingPage(req, res);
 };
 
+// export const renderUserProfile = async (req, res) => {
+//   try {
+//     const userId = req.session.user.id;  // or req.userId depending on your login logic
+
+//     const user = await User.findById(userId).lean();
+//     // const orders=await Order.find({userId}).lean();
+//     // const wishlist=await wishlist.find({userId}).lean();
+
+
+//     if (!user) {
+//       return res.status(404).send("User not found");
+//     }
+
+//     return res.render("user/profile", {
+//       title: "My Profile",
+//       user,
+//       // orders,
+//       // wishlist,
+//       addresses: user.addresses || []
+//     });
+
+//   } catch (error) {
+//     console.error("Profile Load Error:", error);
+//     res.status(500).send("Server Error");
+//   }
+// };
+
 export const renderUserProfile = async (req, res) => {
   try {
-    const userId = req.session.user.id;  // or req.userId depending on your login logic
-
+    const userId = req.session.user.id;
     const user = await User.findById(userId).lean();
 
-    if (!user) {
-      return res.status(404).send("User not found");
-    }
-
-    return res.render("user/profile", {
-      title: "My Profile",
+    res.render("user/profile", {
+      title: "Profile",
       user,
-      addresses: user.addresses || []
+      orders: [],
+      wishlist: [],
+      ordersCount: 0,
+      wishlistCount: 0,
+      unreadNotifications: 0
     });
 
-  } catch (error) {
-    console.error("Profile Load Error:", error);
+  } catch (err) {
+    console.error(err);
     res.status(500).send("Server Error");
   }
 };
+
+
+
+export const updateUserProfile = async (req, res) => {
+  try {
+    const userId = req.session.user.id;
+    const user = await User.findById(userId);
+
+    const { name, phone } = req.body;
+
+    // If user uploaded new image
+    if (req.file) {
+
+      // DELETE OLD IMAGE
+      if (user.profileImage && user.profileImage.public_id) {
+        await cloudinary.uploader.destroy(user.profileImage.public_id);
+      }
+
+      // UPLOAD NEW ONE
+      const result = await cloudinary.uploader.upload(req.file.path, {
+        folder: "profiles",
+      });
+
+      user.profileImage = {
+        url: result.secure_url,
+        public_id: result.public_id,
+      };
+
+      fs.unlinkSync(req.file.path);
+    }
+
+    user.name = name;
+    user.phone = phone;
+
+    await user.save();
+
+    return res.json({ success: true });
+
+  } catch (err) {
+    console.log("PROFILE UPDATE ERROR:", err);
+    return res.json({ success: false, message: "Server Error" });
+  }
+};
+
+
+// export const updateUserProfile = async (req, res) => {
+//   try {
+//     const userId = req.session.user.id;
+//     const user = await User.findById(userId);
+
+//     const { name, phone } = req.body;
+
+//     // If user uploaded a new cropped image
+//     if (req.file) {
+      
+//       // 1️⃣ Delete old image from Cloudinary (if exists)
+//       if (user.profileImage?.public_id) {
+//         await cloudinary.uploader.destroy(user.profileImage.public_id);
+//       }
+
+//       // 2️⃣ Upload new cropped image to Cloudinary
+//       const uploadResult = await cloudinary.uploader.upload(req.file.path, {
+//         folder: "profiles",
+//       });
+
+//       // 3️⃣ Update DB with new image info
+//       user.profileImage = {
+//         url: uploadResult.secure_url,
+//         public_id: uploadResult.public_id,
+//       };
+
+//       // 4️⃣ Remove temp file from disk
+//       fs.unlinkSync(req.file.path);
+//     }
+
+//     // 5️⃣ Update other profile details
+//     user.name = name;
+//     user.phone = phone;
+
+//     // 6️⃣ Save user
+//     await user.save();
+
+//     return res.json({ success: true, message: "Profile updated" });
+
+//   } catch (err) {
+//     console.error("PROFILE UPDATE ERROR:", err);
+//     res.status(500).json({ success: false, message: "Error updating profile" });
+//   }
+// };
+
+
+
 
 //  Logout User
 export const logoutUser = (req, res) => {

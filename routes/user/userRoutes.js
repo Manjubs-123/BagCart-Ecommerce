@@ -9,7 +9,8 @@ import {
   loginUser,
   showHomePage,
   logoutUser,
-  renderUserProfile
+  renderUserProfile,
+  updateUserProfile
 } from "../../controllers/user/userController.js";
 import { renderForgotPassword, postForgotPassword, renderForgotVerifyOtp, postForgotVerifyOtp, resendForgotOtp, renderResetPassword, postResetPassword } from "../../controllers/user/authForgotController.js";
 import { isUserLoggedIn, isUserLoggedOut } from "../../middlewares/userAuth.js";
@@ -17,6 +18,7 @@ import { noCache } from "../../middlewares/cacheMiddleware.js";
 import { renderLandingPage } from "../../controllers/user/productController.js";
 import { getProductDetails } from "../../controllers/user/shopController.js";
 import { isAuthenticated } from "../../middlewares/passportAuth.js";
+import profileUpload from "../../middlewares/profileUpload.js";
 
 const router = express.Router();
 
@@ -35,8 +37,7 @@ router.get("/verifyOtp", getVerifyOtp);
 router.post("/verifyOtp", postVerifyOtp);
 router.get("/resendOtp", resendOtp);
 
-//profile
-router.get('/profile',isUserLoggedIn,renderUserProfile);
+
 
 // Login
 router.get("/login", isUserLoggedOut, getLogin);
@@ -62,6 +63,17 @@ router.get("/product/:id", isUserLoggedIn, getProductDetails);
 // // Home
 router.get("/home", isUserLoggedIn, showHomePage);
 
+//update profile
+// router.post("/updateProfile", profileUpload.single("profileImage"),updateUserProfile);
+
+//profile
+router.get('/profile',isUserLoggedIn,renderUserProfile);
+
+router.post(
+  "/updateProfile",
+  profileUpload.single("profileImage"),   // <--- REQUIRED
+  updateUserProfile
+);
 // Logout
 router.get("/logout", isUserLoggedIn, logoutUser);
 

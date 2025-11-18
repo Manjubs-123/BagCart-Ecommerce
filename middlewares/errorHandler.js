@@ -1,5 +1,5 @@
 export const errorHandler = (err, req, res, next) => {
-  console.error("🔥 Error caught:", err.message);
+  console.error(" Error caught:", err.message);
 
   // Prevent sending multiple responses
   if (res.headersSent) {
