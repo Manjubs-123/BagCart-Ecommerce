@@ -806,7 +806,38 @@ function cancelCrop() {
     document.getElementById("cropperModal").classList.add("hidden");
 }
 
- 
+ const phoneInput = document.getElementById("phone");
+const phoneWarning = document.getElementById("phoneWarning");
+
+phoneInput.addEventListener("input", function () {
+
+    // Block letters & symbols
+    this.value = this.value.replace(/[^0-9]/g, "");
+
+    // Limit to 10 digits
+    if (this.value.length > 10) {
+        this.value = this.value.slice(0, 10);
+    }
+
+    const indianPhoneRegex = /^[6-9][0-9]{9}$/;
+
+    // LIVE RED / GREEN Border
+    if (this.value.length === 0) {
+        this.classList.remove("border-red-500", "border-green-500");
+        phoneWarning.classList.add("hidden");
+    }
+    else if (indianPhoneRegex.test(this.value)) {
+        this.classList.add("border-green-500");
+        this.classList.remove("border-red-500");
+        phoneWarning.classList.add("hidden");
+    }
+    else {
+        this.classList.add("border-red-500");
+        this.classList.remove("border-green-500");
+        phoneWarning.classList.remove("hidden");
+    }
+});
+
 async function saveProfile() {
     const formData = new FormData();
     formData.append("name", document.getElementById("fullName").value);
@@ -951,6 +982,7 @@ function cancelCrop() {
             switchTab('profile');
         });
     </script>
+
 </body>
 
 </html>
