@@ -53,35 +53,61 @@ app.use(
   })
 );
 
-app.use(async (req, res, next) => {
-  try {
-    if (req.session.user && req.session.user.id) {
-      const dbUser = await User.findById(req.session.user.id).lean();
+// app.use(async (req, res, next) => {
+//   try {
+//     if (req.session.user && req.session.user.id) {
+//       const dbUser = await User.findById(req.session.user.id).lean();
 
-      res.locals.user = dbUser;
+//       res.locals.user = dbUser;
 
-      // Also update session user (so it always stays fresh)
-      req.session.user = {
-        id: dbUser._id,
-        name: dbUser.name,
-        email: dbUser.email,
-        profileImage: dbUser.profileImage, // ← IMPORTANT
-        wishlistCount: dbUser.wishlist?.length || 0,
-        cartCount: dbUser.cart?.items?.length || 0
-      };
+//       // Also update session user (so it always stays fresh)
+//       req.session.user = {
+//         id: dbUser._id,
+//         name: dbUser.name,
+//         email: dbUser.email,
+//         profileImage: dbUser.profileImage, // ← IMPORTANT
+//         wishlistCount: dbUser.wishlist?.length || 0,
+//         cartCount: dbUser.cart?.items?.length || 0
+//       };
 
-    } else {
-      res.locals.user = null;
-    }
-    next();
-  } catch (err) {
-    console.log("User Load Error:", err);
-    res.locals.user = null;
-    next();
-  }
-});
+//     } else {
+//       res.locals.user = null;
+//     }
+//     next();
+//   } catch (err) {
+//     console.log("User Load Error:", err);
+//     res.locals.user = null;
+//     next();
+//   }
+// });
 
 // app.use(noCache);
+
+app.use(async (req, res, next) => {
+  if (req.session.user && req.session.user.id) {
+    let user = await User.findById(req.session.user.id).lean();
+
+    // FIX: if profileImage missing → assign default
+    if (!user.profileImage || !user.profileImage.url) {
+      user.profileImage = {
+        url: "https://res.cloudinary.com/db5uwjwdv/image/upload/v1763442856/AdobeStock_1185421594_Preview_cvfm1v.jpg",
+        public_id: "AdobeStock_1185421594_Preview_cvfm1v"
+      };
+
+      await User.findByIdAndUpdate(req.session.user.id, {
+        profileImage: user.profileImage
+      });
+    }
+
+    res.locals.user = user;
+  } else {
+    res.locals.user = null;
+  }
+
+  next();
+});
+
+
 app.use(passport.initialize());
 app.use(passport.session());
 

@@ -136,10 +136,22 @@ export const postVerifyOtp = async (req, res) => {
     if (!user) return res.render("user/signup", { error: "User not found. Please sign up again." });
 
     user.isVerified = true;
+    //default profile img setup
+     const DEFAULT_URL = "https://res.cloudinary.com/db5uwjwdv/image/upload/v1763442856/AdobeStock_1185421594_Preview_cvfm1v.jpg";
+    const DEFAULT_ID = "AdobeStock_1185421594_Preview_cvfm1v";
+
+    if (!user.profileImage || !user.profileImage.url) {
+      user.profileImage = {
+        url: DEFAULT_URL,
+        public_id: DEFAULT_ID
+      };
+    }
     await user.save();
 
     req.session.isLoggedIn = true;
-    req.session.user = { id: user._id, name: user.name, email: user.email };
+    req.session.user = { id: user._id, name: user.name, email: user.email, profileImage: user.profileImage,        //  FIXED
+      wishlistCount: user.wishlist?.length || 0,
+      cartCount: user.cart?.items?.length || 0};
 
     // Clean up
     delete req.session.otp;
@@ -236,7 +248,7 @@ export const loginUser = async (req, res) => {
     if (!isMatch) return res.render("user/login", { error: "Invalid email or password." });
 
     req.session.isLoggedIn = true;
-    req.session.user = { id: user._id, name: user.name, email: user.email };
+    req.session.user = { id: user._id, name: user.name, email: user.email,profileImage:user.profileImage,wishlistCount:user.wishlist?.length||0, cartCount: user.cart?.items?.length || 0 };
 
     res.redirect("/user/landing");
   } catch (err) {
@@ -306,12 +318,13 @@ export const updateUserProfile = async (req, res) => {
     const user = await User.findById(userId);
 
     const { name, phone } = req.body;
+    const DEFAULT_AVATAR_ID = "AdobeStock_1185421594_Preview_cvfm1v";
 
     // If user uploaded new image
     if (req.file) {
 
       // DELETE OLD IMAGE
-      if (user.profileImage && user.profileImage.public_id) {
+      if (user.profileImage?.public_id&& user.profileImage.public_id!==DEFAULT_AVATAR_ID) {
         await cloudinary.uploader.destroy(user.profileImage.public_id);
       }
 
