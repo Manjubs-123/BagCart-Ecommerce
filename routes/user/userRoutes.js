@@ -10,7 +10,8 @@ import {
   showHomePage,
   logoutUser,
   renderUserProfile,
-  updateUserProfile
+  updateUserProfile,
+  getChangeEmailPage,sendChangeEmailOtp,verifyChangedEmailOtp
 } from "../../controllers/user/userController.js";
 import { renderForgotPassword, postForgotPassword, renderForgotVerifyOtp, postForgotVerifyOtp, resendForgotOtp, renderResetPassword, postResetPassword } from "../../controllers/user/authForgotController.js";
 import { isUserLoggedIn, isUserLoggedOut } from "../../middlewares/userAuth.js";
@@ -71,9 +72,15 @@ router.get('/profile',isUserLoggedIn,renderUserProfile);
 
 router.post(
   "/updateProfile",
-  profileUpload.single("profileImage"),   // <--- REQUIRED
+  profileUpload.single("profileImage"), 
   updateUserProfile
 );
+
+router.get("/change-email",getChangeEmailPage);
+router.post("/change-email/send-otp",sendChangeEmailOtp);
+router.post("/change-email/verify",verifyChangedEmailOtp);
+
+
 // Logout
 router.get("/logout", isUserLoggedIn, logoutUser);
 
