@@ -535,6 +535,27 @@ class="flex-1 bg-red-600 text-white py-2 rounded-lg hover:bg-red-700 transition-
 
 
     <script>
+
+
+// Validators
+const nameRegex = /^[A-Za-z ]+$/; // alphabets and space
+const cityStateRegex = /^[A-Za-z ]+$/; // same for city/state/country
+const addressRegex = /^[A-Za-z0-9 ,.-]+$/; // allow letters, numbers, comma, dot, dash, spaces
+const validPhoneRegex = /^[6-9]\d{9}$/; // valid Indian mobile
+const repeatedPhoneRegex = /^(\d)\1{9}$/; // 1111111111, 9999999999 etc
+
+
+function isDuplicateAddress(data) {
+    return addresses.some(addr =>
+        addr.fullName.toLowerCase() === data.fullName.toLowerCase() &&
+        addr.phone === data.phone &&
+        addr.addressLine1.toLowerCase() === data.addressLine1.toLowerCase() &&
+        addr.pincode === data.pincode &&
+        (!isEditing || addr._id !== data.addressId) // allow same address when editing
+    );
+}
+
+
         // Global variables
         // let addresses = [];
         // let addressToDelete = null;
@@ -735,65 +756,148 @@ function closeAddressModal() {
         // }
 
         // Validate address form
+        // function validateAddressForm() {
+        //     const formData = new FormData(addressForm);
+        //     const data = Object.fromEntries(formData);
+            
+        //     // Reset errors
+        //     hideAllErrors();
+            
+        //     let isValid = true;
+            
+        //     // Validate full name
+        //     if (!data.fullName.trim()) {
+        //         showError('fullNameError', 'Please enter full name');
+        //         isValid = false;
+        //     }
+            
+        //     // Validate phone
+        //     if (!data.phone.trim()) {
+        //         showError('phoneError', 'Please enter phone number');
+        //         isValid = false;
+        //     } else if (!/^\d{10}$/.test(data.phone.replace(/\D/g, ''))) {
+        //         showError('phoneError', 'Please enter a valid 10-digit phone number');
+        //         isValid = false;
+        //     }
+            
+        //     // Validate address line 1
+        //     if (!data.addressLine1.trim()) {
+        //         showError('addressLine1Error', 'Please enter address line 1');
+        //         isValid = false;
+        //     }
+            
+        //     // Validate city
+        //     if (!data.city.trim()) {
+        //         showError('cityError', 'Please enter city');
+        //         isValid = false;
+        //     }
+            
+        //     // Validate state
+        //     if (!data.state.trim()) {
+        //         showError('stateError', 'Please enter state');
+        //         isValid = false;
+        //     }
+            
+        //     // Validate pincode
+        //     if (!data.pincode.trim()) {
+        //         showError('pincodeError', 'Please enter pincode');
+        //         isValid = false;
+        //     } else if (!/^\d{6}$/.test(data.pincode)) {
+        //         showError('pincodeError', 'Please enter a valid 6-digit pincode');
+        //         isValid = false;
+        //     }
+            
+        //     // Validate country
+        //     if (!data.country) {
+        //         showError('countryError', 'Please select country');
+        //         isValid = false;
+        //     }
+            
+        //     return isValid;
+        // }
+
+
         function validateAddressForm() {
-            const formData = new FormData(addressForm);
-            const data = Object.fromEntries(formData);
-            
-            // Reset errors
-            hideAllErrors();
-            
-            let isValid = true;
-            
-            // Validate full name
-            if (!data.fullName.trim()) {
-                showError('fullNameError', 'Please enter full name');
-                isValid = false;
-            }
-            
-            // Validate phone
-            if (!data.phone.trim()) {
-                showError('phoneError', 'Please enter phone number');
-                isValid = false;
-            } else if (!/^\d{10}$/.test(data.phone.replace(/\D/g, ''))) {
-                showError('phoneError', 'Please enter a valid 10-digit phone number');
-                isValid = false;
-            }
-            
-            // Validate address line 1
-            if (!data.addressLine1.trim()) {
-                showError('addressLine1Error', 'Please enter address line 1');
-                isValid = false;
-            }
-            
-            // Validate city
-            if (!data.city.trim()) {
-                showError('cityError', 'Please enter city');
-                isValid = false;
-            }
-            
-            // Validate state
-            if (!data.state.trim()) {
-                showError('stateError', 'Please enter state');
-                isValid = false;
-            }
-            
-            // Validate pincode
-            if (!data.pincode.trim()) {
-                showError('pincodeError', 'Please enter pincode');
-                isValid = false;
-            } else if (!/^\d{6}$/.test(data.pincode)) {
-                showError('pincodeError', 'Please enter a valid 6-digit pincode');
-                isValid = false;
-            }
-            
-            // Validate country
-            if (!data.country) {
-                showError('countryError', 'Please select country');
-                isValid = false;
-            }
-            
-            return isValid;
-        }
+    const formData = new FormData(addressForm);
+    const data = Object.fromEntries(formData);
+
+    hideAllErrors();
+    let valid = true;
+
+    // FULL NAME CHECK
+    if (!data.fullName.trim()) {
+        showError("fullNameError", "Full name is required");
+        valid = false;
+    } else if (!nameRegex.test(data.fullName)) {
+        showError("fullNameError", "Full name cannot contain numbers or special symbols");
+        valid = false;
+    }
+
+    // PHONE NUMBER CHECK
+    if (!data.phone.trim()) {
+        showError("phoneError", "Phone number is required");
+        valid = false;
+    } else if (!validPhoneRegex.test(data.phone)) {
+        showError("phoneError", "Enter a valid 10-digit mobile number");
+        valid = false;
+    } else if (repeatedPhoneRegex.test(data.phone)) {
+        showError("phoneError", "Phone number cannot be all repeated digits (e.g. 1111111111)");
+        valid = false;
+    }
+
+    // ADDRESS LINE CHECK
+    if (!data.addressLine1.trim()) {
+        showError("addressLine1Error", "Address Line 1 is required");
+        valid = false;
+    } else if (!addressRegex.test(data.addressLine1)) {
+        showError("addressLine1Error", "Address cannot contain symbols like &&, **, @#, etc.");
+        valid = false;
+    }
+
+    // CITY CHECK
+    if (!data.city.trim()) {
+        showError("cityError", "City is required");
+        valid = false;
+    } else if (!cityStateRegex.test(data.city)) {
+        showError("cityError", "City can only contain alphabets");
+        valid = false;
+    }
+
+    // STATE CHECK
+    if (!data.state.trim()) {
+        showError("stateError", "State is required");
+        valid = false;
+    } else if (!cityStateRegex.test(data.state)) {
+        showError("stateError", "State can only contain alphabets");
+        valid = false;
+    }
+
+    // PINCODE CHECK
+    if (!data.pincode.trim()) {
+        showError("pincodeError", "Pincode is required");
+        valid = false;
+    } else if (!/^\d{6}$/.test(data.pincode)) {
+        showError("pincodeError", "Enter a valid 6-digit pincode");
+        valid = false;
+    }
+
+    // COUNTRY CHECK
+    if (!data.country.trim()) {
+        showError("countryError", "Country is required");
+        valid = false;
+    } else if (!cityStateRegex.test(data.country)) {
+        showError("countryError", "Country can only contain alphabets");
+        valid = false;
+    }
+
+    // DUPLICATE ADDRESS CHECK
+    if (valid && isDuplicateAddress(data)) {
+        showNotification("This address already exists", "error");
+        return false;
+    }
+
+    return valid;
+}
 
         // Save address
         async function saveAddress() {
@@ -840,21 +944,40 @@ function closeAddressModal() {
         }
 
         // Set default address
-        async function setDefaultAddress(addressId) {
-            try {
-                const response = await axios.patch(`/user/addresses/${addressId}/default`);
+
+      
+        // async function setDefaultAddress(addressId) {
+        //     try {
+        //         const response = await axios.patch(`/user/addresses/${addressId}/default`);
                 
-                if (response.data.success) {
-                    showNotification('Default address updated successfully', 'success');
-                    await loadAddresses(); // Reload addresses
-                } else {
-                    showNotification('Failed to update default address', 'error');
-                }
-            } catch (error) {
-                console.error('Error setting default address:', error);
-                showNotification('Failed to update default address', 'error');
-            }
-        }
+        //         if (response.data.success) {
+        //             showNotification('Default address updated successfully', 'success');
+        //             await loadAddresses(); // Reload addresses
+        //         } else {
+        //             showNotification('Failed to update default address', 'error');
+        //         }
+        //     } catch (error) {
+        //         console.error('Error setting default address:', error);
+        //         showNotification('Failed to update default address', 'error');
+        //     }
+        // }
+
+async function setDefaultAddress(addressId) {
+  try {
+    if (!addressId) return showNotification("Invalid address", "error");
+    // optional: disable the clicked button if you have data-target
+    const response = await axios.patch(`/user/addresses/${addressId}/default`);
+    if (response?.data?.success) {
+      showNotification("Default updated", "success");
+      setTimeout(() => window.location.href = "/user/profile/addresses", 350);
+    } else {
+      showNotification(response?.data?.message || "Failed to update default", "error");
+    }
+  } catch (err) {
+    console.error("Error setting default:", err);
+    showNotification("Error updating default", "error");
+  }
+}
 
 // async function setDefaultAddress(addressId) {
 //     try {

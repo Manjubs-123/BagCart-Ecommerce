@@ -96,7 +96,7 @@ router.put("/addresses/:id", isAuthenticated, updateAddress);
 router.delete("/addresses/:id", isAuthenticated, deleteAddress);
 
 // set default address
-router.patch("/addresses/:id/default", isAuthenticated, setDefaultAddress);
+router.patch("/addresses/:id/default", isUserLoggedIn, setDefaultAddress);
 
 // Logout
 router.get("/logout", isUserLoggedIn, logoutUser);

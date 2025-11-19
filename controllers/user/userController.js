@@ -784,36 +784,51 @@ console.log("ADDRESS ID =", req.params.id);
 
 
 export const setDefaultAddress = async (req, res) => {
-    try {
-        const userId = req.user._id;
-        const addressId = req.params.id;
-
-        const user = await User.findById(userId);
-        if (!user) {
-            return res.json({ success: false, message: "User not found!" });
-        }
-
-        // Remove default from all addresses
-        user.addresses.forEach(a => a.isDefault = false);
-
-        // Set default for selected address
-        const target = user.addresses.id(addressId);
-        if (!target) {
-            return res.json({ success: false, message: "Address not found!" });
-        }
-
-        target.isDefault = true;
-
-        await user.save();
-
-        res.json({ success: true, message: "Default address updated" });
-
-    } catch (error) {
-        console.log("Default Address Error:", error);
-        res.json({ success: false, message: "Error updating default address" });
+  try {
+    // Defensive checks
+    if (!req.user) {
+      console.warn("setDefaultAddress: req.user is missing");
+      return res.status(401).json({ success: false, message: "Unauthorized" });
     }
-};
 
+    const userId = req.user._id;
+    const addressId = req.params.id;
+
+    if (!addressId) {
+      return res.status(400).json({ success: false, message: "Address id required" });
+    }
+
+    const user = await User.findById(userId);
+    if (!user) {
+      console.warn("setDefaultAddress: user not found", { userId });
+      return res.status(404).json({ success: false, message: "User not found" });
+    }
+
+    // Ensure addresses is an array
+    if (!Array.isArray(user.addresses)) user.addresses = [];
+
+    // Clear default flags
+    user.addresses.forEach(a => { a.isDefault = false; });
+
+    // Mongoose subdoc lookup (works for arrays of subdocs)
+    const target = user.addresses.id ? user.addresses.id(addressId) : user.addresses.find(a => a._id && a._id.toString() === addressId);
+
+    if (!target) {
+      console.warn("setDefaultAddress: target address not found", { addressId });
+      return res.status(404).json({ success: false, message: "Address not found" });
+    }
+
+    target.isDefault = true;
+
+    await user.save();
+
+    return res.json({ success: true, message: "Default address updated" });
+
+  } catch (err) {
+    console.error("Default error:", err);
+    return res.status(500).json({ success: false, message: "Error updating default" });
+  }
+};
 
 
 
