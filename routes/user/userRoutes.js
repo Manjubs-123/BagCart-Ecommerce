@@ -12,7 +12,8 @@ import {
   logoutUser,
   renderUserProfile,
   updateUserProfile,
-  getChangeEmailPage,sendChangeEmailOtp,verifyChangedEmailOtp,getAddressPage,addAddress,updateAddress,deleteAddress,setDefaultAddress,getSecuritySettings
+  getChangeEmailPage,sendChangeEmailOtp,verifyChangedEmailOtp,getAddressPage,addAddress,
+  updateAddress,deleteAddress,setDefaultAddress,getSecuritySettings,checkCurrentPassword,changePassword
 } from "../../controllers/user/userController.js";
 
 import { renderForgotPassword, postForgotPassword, renderForgotVerifyOtp, postForgotVerifyOtp, resendForgotOtp, renderResetPassword, postResetPassword } from "../../controllers/user/authForgotController.js";
@@ -100,6 +101,10 @@ router.patch("/addresses/:id/default", isUserLoggedIn, setDefaultAddress);
 
 //security 
 router.get('/profile/changepassword',isUserLoggedIn,getSecuritySettings)
+router.post("/change-password", isUserLoggedIn, changePassword);
+
+router.post("/check-current-password", isUserLoggedIn, checkCurrentPassword);
+
 
 // Logout
 router.get("/logout", isUserLoggedIn, logoutUser);

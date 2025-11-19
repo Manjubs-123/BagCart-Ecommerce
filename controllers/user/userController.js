@@ -935,6 +935,54 @@ export const getSecuritySettings = async (req, res) => {
   }
 };
 
+export const checkCurrentPassword = async (req, res) => {
+    try {
+        const user = await User.findById(req.session.user.id);
+
+        if (!user) return res.json({ valid: false });
+
+        const isMatch = await bcrypt.compare(req.body.currentPassword, user.password);
+
+        res.json({ valid: isMatch });
+
+    } catch (err) {
+        console.error("Password check error:", err);
+        res.json({ valid: false });
+    }
+};
+
+export const changePassword = async (req, res) => {
+    try {
+        const { currentPassword, newPassword } = req.body;
+
+        const user = await User.findById(req.session.user.id);
+        if (!user) {
+            return res.json({ success: false, message: "User not found" });
+        }
+
+        // Compare old password
+        const isMatch = await bcrypt.compare(currentPassword, user.password);
+        if (!isMatch) {
+            return res.json({ success: false, message: "Incorrect current password" });
+        }
+
+        // Hash new password
+        const salt = await bcrypt.genSalt(10);
+        const hashed = await bcrypt.hash(newPassword, salt);
+
+        // Save new password
+        user.password = hashed;
+        await user.save();
+
+        return res.json({ success: true, message: "Password updated successfully" });
+
+    } catch (err) {
+        console.log("Error updating password:", err);
+        return res.json({ success: false, message: "Internal server error" });
+    }
+};
+
+
 
 
 
