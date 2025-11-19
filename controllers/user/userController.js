@@ -7,7 +7,9 @@ import nodemailer from "nodemailer";
 import mongoose from "mongoose";
 import dotenv from "dotenv";
 dotenv.config();
-import {loadHomeProducts,renderLandingPage} from "./productController.js";  
+import {loadHomeProducts,renderLandingPage} from "./productController.js"; 
+// import Order from "../../models/orderModel.js";
+
 
 // Email setup (Gmail SMTP)
 const transporter = nodemailer.createTransport({
@@ -891,20 +893,47 @@ export const setDefaultAddress = async (req, res) => {
 //   }
 // };
 
+// export const getSecuritySettings = async (req, res) => {
+//   try {
+//     if (!req.session.user) return res.redirect('/user/login');
+
+//     const userId = req.session.user._id;
+//     const user = await User.findById(userId);
+
+//     res.render('user/changepassword', { user });
+//   } catch (err) {
+//     console.log("Error loading security page:", err);
+//     res.status(500).send("Server error");
+//   }
+// };
+
+
+
 export const getSecuritySettings = async (req, res) => {
   try {
+    console.log("REACHED SECURITY PAGE");
+
     if (!req.session.user) return res.redirect('/user/login');
 
-    const userId = req.session.user._id;
-    const user = await User.findById(userId);
+    const userId = req.session.user.id || req.session.user._id;
+    console.log("USER ID:", userId);
 
-    res.render('user/changepassword', { user });
+    const user = await User.findById(userId);
+    console.log("USER:", user);
+
+    res.render("user/changepassword", { 
+      user,
+      ordersCount: 0,
+      wishlistCount: 0,
+      unreadNotifications: 0,
+      activePage: "security"
+    });
+
   } catch (err) {
-    console.log("Error loading security page:", err);
+    console.log("ERROR:", err);
     res.status(500).send("Server error");
   }
 };
-
 
 
 
