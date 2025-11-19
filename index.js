@@ -17,6 +17,7 @@ import productRoutes from "./routes/admin/productRoutes.js";
 import usersRoutes from "./routes/admin/usersRoutes.js";
 import shopRoutes from "./routes/user/shopRoute.js";
 import { errorHandler } from "./middlewares/errorHandler.js";
+import User from "./models/userModel.js"
 import {renderHomePage} from "./controllers/user/productController.js";
 const app = express();
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -52,18 +53,71 @@ app.use(
   })
 );
 
+// app.use(async (req, res, next) => {
+//   try {
+//     if (req.session.user && req.session.user.id) {
+//       const dbUser = await User.findById(req.session.user.id).lean();
 
-app.use(noCache);
+//       res.locals.user = dbUser;
+
+//       // Also update session user (so it always stays fresh)
+//       req.session.user = {
+//         id: dbUser._id,
+//         name: dbUser.name,
+//         email: dbUser.email,
+//         profileImage: dbUser.profileImage, // ← IMPORTANT
+//         wishlistCount: dbUser.wishlist?.length || 0,
+//         cartCount: dbUser.cart?.items?.length || 0
+//       };
+
+//     } else {
+//       res.locals.user = null;
+//     }
+//     next();
+//   } catch (err) {
+//     console.log("User Load Error:", err);
+//     res.locals.user = null;
+//     next();
+//   }
+// });
+
+// app.use(noCache);
+
+app.use(async (req, res, next) => {
+  if (req.session.user && req.session.user.id) {
+    let user = await User.findById(req.session.user.id).lean();
+
+    // FIX: if profileImage missing → assign default
+    if (!user.profileImage || !user.profileImage.url) {
+      user.profileImage = {
+        url: "https://res.cloudinary.com/db5uwjwdv/image/upload/v1763442856/AdobeStock_1185421594_Preview_cvfm1v.jpg",
+        public_id: "AdobeStock_1185421594_Preview_cvfm1v"
+      };
+
+      await User.findByIdAndUpdate(req.session.user.id, {
+        profileImage: user.profileImage
+      });
+    }
+
+    res.locals.user = user;
+  } else {
+    res.locals.user = null;
+  }
+
+  next();
+});
+
+
 app.use(passport.initialize());
 app.use(passport.session());
 
 
-app.use((req, res, next) => {
-  res.locals.user = req.user || null;
-  res.locals.currentPage = "";
-  res.locals.currentPath = req.path;
-  next();
-});
+// app.use((req, res, next) => {
+//   res.locals.user = req.user || null;
+//   res.locals.currentPage = "";
+//   res.locals.currentPath = req.path;
+//   next();
+// });
 
 app.use("/admin", adminRoutes);
 app.use("/user", userRoutes);

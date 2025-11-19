@@ -41,7 +41,7 @@
         </a>
 
         <!-- User Profile Dropdown -->
-        <div class="relative group">
+        <!-- <div class="relative group">
           <button class="flex items-center space-x-2 text-gray-700 hover:text-blue-600 transition-colors duration-200 p-2 rounded-lg hover:bg-gray-100">
             <div class="w-8 h-8 bg-gradient-to-r from-blue-500 to-emerald-500 rounded-full flex items-center justify-center shadow-sm">
               <% if (typeof user !== 'undefined' && user) { %>
@@ -51,8 +51,17 @@
               <% } else { %>
                 <i class="fas fa-user text-white text-sm"></i>
               <% } %>
-            </div>
-        
+            </div> -->
+        <!-- <div class="w-8 h-8 rounded-full overflow-hidden shadow-sm">
+  <% if (user && user.profileImage && user.profileImage.url) { %>
+      <img src="<%= user.profileImage.url %>" class="w-full h-full object-cover">
+  <% } else { %>
+      <div class="w-full h-full bg-gradient-to-r from-blue-500 to-emerald-500 flex items-center justify-center text-white text-sm font-semibold">
+        <%= user ? user.name.charAt(0).toUpperCase() : "U" %>
+      </div>
+  <% } %>
+</div>
+
 
 <span class="hidden md:block text-sm font-medium">
   <% if (typeof user !== 'undefined' && user) { %>
@@ -63,7 +72,32 @@
 </span>
 
             <i class="fas fa-chevron-down text-xs text-gray-400"></i>
-          </button>
+          </button>  -->
+<!-- User Profile Dropdown -->
+<div class="relative group">
+  <button class="flex items-center space-x-2 text-gray-700 hover:text-blue-600 transition-colors duration-200 p-2 rounded-lg hover:bg-gray-100">
+
+    <!-- Avatar (Replace the old one with this) -->
+    <div class="w-8 h-8 rounded-full overflow-hidden shadow-sm">
+      <% if (user && user.profileImage && user.profileImage.url) { %>
+        <img src="<%= user.profileImage.url %>" alt="avatar" class="w-full h-full object-cover">
+      <% } else { %>
+        <div class="w-full h-full bg-gradient-to-r from-blue-500 to-emerald-500 flex items-center justify-center text-white text-sm font-semibold">
+          <%= user && user.name ? user.name.charAt(0).toUpperCase() : "U" %>
+        </div>
+      <% } %>
+    </div>
+
+    <span class="hidden md:block text-sm font-medium">
+      <% if (user) { %>
+        Welcome, <%= user.name || 'User' %>
+      <% } else { %>
+        <a href="/user/login">Login</a>
+      <% } %>
+    </span>
+
+    <i class="fas fa-chevron-down text-xs text-gray-400"></i>
+  </button>
 
           <!-- Dropdown Menu -->
           <div class="absolute right-0 mt-2 w-56 bg-white rounded-xl shadow-lg border border-gray-200 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 transform translate-y-2 group-hover:translate-y-0 z-50">

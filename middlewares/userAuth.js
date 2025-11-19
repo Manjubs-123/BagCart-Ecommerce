@@ -31,6 +31,8 @@ export const isUserLoggedIn = async (req, res, next) => {
 
     // Keep user in req for convenience
     req.user = user;
+    console.log("USER:", req.user);
+
     next();
   } catch (err) {
     console.error("Auth middleware error:", err);

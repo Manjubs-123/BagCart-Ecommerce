@@ -18,7 +18,7 @@ const userSchema = new mongoose.Schema({
     phone: { type: String, default: "" },
     password: { type: String },
     googleId: { type: String, sparse: true },
-    profileImage: { type: String, default: "" },
+    profileImage: { url:{type:String,default:'https://res.cloudinary.com/db5uwjwdv/image/upload/v1763442856/AdobeStock_1185421594_Preview_cvfm1v.jpg'},public_id:{type:String,default:"AdobeStock_1185421594_Preview_cvfm1v"} },
     addresses: [addressSchema],
     emailVerificationToken: { type: String },
     emailVerificationExpires: { type: Date },

@@ -1,0 +1,799 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Change Email - BagHub</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    
+    <style>
+        :root {
+            --primary: #1a56db;
+            --primary-dark: #1e429f;
+            --secondary: #047857;
+        }
+        
+        .btn-primary {
+            background-color: var(--primary);
+            transition: all 0.3s ease;
+        }
+        
+        .btn-primary:hover {
+            background-color: var(--primary-dark);
+            transform: translateY(-2px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        }
+        
+        .card-hover {
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+        
+        .card-hover:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        }
+        
+        .otp-input {
+            width: 50px;
+            height: 50px;
+            text-align: center;
+            font-size: 1.25rem;
+            font-weight: 600;
+            border: 2px solid #d1d5db;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+        }
+        
+        .otp-input:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(26, 86, 219, 0.1);
+            outline: none;
+        }
+        
+        .otp-input.filled {
+            border-color: var(--primary);
+            background-color: #f0f9ff;
+        }
+        
+        .countdown {
+            font-variant-numeric: tabular-nums;
+        }
+        
+        .progress-bar {
+            height: 4px;
+            background-color: #e5e7eb;
+            border-radius: 2px;
+            overflow: hidden;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background-color: var(--primary);
+            transition: width 1s linear;
+        }
+        
+        .shake {
+            animation: shake 0.5s ease-in-out;
+        }
+        
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-5px); }
+            75% { transform: translateX(5px); }
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <!-- Header -->
+    <%- include('../partials/landingheader') %>
+    
+    <!-- Main Content -->
+    <div class="container mx-auto px-4 py-8">
+        <div class="max-w-md mx-auto">
+            <!-- Progress Steps -->
+            <div class="flex justify-center mb-8">
+                <div class="flex items-center">
+                    <div class="flex flex-col items-center">
+                        <div class="w-10 h-10 rounded-full bg-blue-600 text-white flex items-center justify-center font-semibold">
+                            1
+                        </div>
+                        <span class="text-sm mt-2 text-blue-600 font-medium">Enter Email</span>
+                    </div>
+                    <div class="w-16 h-1 bg-gray-300 mx-2"></div>
+                    <div class="flex flex-col items-center">
+                        <div class="w-10 h-10 rounded-full bg-gray-300 text-gray-600 flex items-center justify-center font-semibold">
+                            2
+                        </div>
+                        <span class="text-sm mt-2 text-gray-500">Verify OTP</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Email Entry Card -->
+            <div id="emailEntryCard" class="bg-white rounded-2xl shadow-sm p-6 card-hover">
+                <div class="text-center mb-6">
+                    <div class="w-16 h-16 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 mx-auto mb-4">
+                        <i class="fas fa-envelope text-xl"></i>
+                    </div>
+                    <h2 class="text-2xl font-bold text-gray-900">Change Your Email</h2>
+                    <p class="text-gray-600 mt-2">Enter your new email address to receive a verification code</p>
+                </div>
+                
+                <form id="emailForm" class="space-y-6">
+                    <div>
+                        <label for="currentEmail" class="block text-sm font-medium text-gray-700 mb-2">Current Email</label>
+                        <input 
+                            type="email" 
+                            id="currentEmail" 
+                            value="<%= user.email %>" 
+                            class="w-full border border-gray-300 rounded-lg px-4 py-3 bg-gray-50 text-gray-500"
+                            disabled
+                        >
+                    </div>
+                    
+                    <div>
+                        <label for="newEmail" class="block text-sm font-medium text-gray-700 mb-2">New Email Address</label>
+                        <input 
+                            type="email" 
+                            id="newEmail" 
+                            name="newEmail" 
+                            class="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            placeholder="Enter your new email address"
+                        >
+                        <div id="emailError" class="text-red-500 text-sm mt-2 hidden">
+                            <i class="fas fa-exclamation-circle mr-1"></i>
+                            <span id="emailErrorText"></span>
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <label for="confirmEmail" class="block text-sm font-medium text-gray-700 mb-2">Confirm New Email</label>
+                        <input 
+                            type="email" 
+                            id="confirmEmail" 
+                            name="confirmEmail" 
+                            class="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            placeholder="Re-enter your new email address"
+                        >
+                        <div id="confirmEmailError" class="text-red-500 text-sm mt-2 hidden">
+                            <i class="fas fa-exclamation-circle mr-1"></i>
+                            <span id="confirmEmailErrorText"></span>
+                        </div>
+                    </div>
+                    
+                    <button 
+                        type="button" 
+                        id="sendOtpBtn"
+                        onclick="sendOTP()"
+                        class="w-full btn-primary text-white py-3 rounded-lg font-medium flex items-center justify-center gap-2"
+                    >
+                        <i class="fas fa-paper-plane"></i>
+                        <span>Send Verification Code</span>
+                    </button>
+                    
+                    <div class="text-center">
+                        <a href="/user/profile" class="text-blue-600 hover:text-blue-800 font-medium">
+                            <i class="fas fa-arrow-left mr-2"></i>
+                            Back to Profile
+                        </a>
+                    </div>
+                </form>
+            </div>
+            
+            <!-- OTP Verification Card -->
+            <div id="otpVerificationCard" class="bg-white rounded-2xl shadow-sm p-6 card-hover hidden">
+                <div class="text-center mb-6">
+                    <div class="w-16 h-16 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 mx-auto mb-4">
+                        <i class="fas fa-shield-alt text-xl"></i>
+                    </div>
+                    <h2 class="text-2xl font-bold text-gray-900">Verify Your Email</h2>
+                    <p class="text-gray-600 mt-2">Enter the 6-digit code sent to</p>
+                    <p class="font-medium text-gray-900" id="otpEmailDisplay"></p>
+                </div>
+                
+                <!-- Countdown Timer -->
+                <div class="mb-6">
+                    <div class="progress-bar mb-2">
+                        <div id="progressFill" class="progress-fill" style="width: 100%"></div>
+                    </div>
+                    <div class="flex justify-between text-sm text-gray-600">
+                        <span>Code expires in:</span>
+                        <span id="countdownTimer" class="countdown font-medium">05:00</span>
+                    </div>
+                </div>
+                
+                <!-- OTP Input -->
+                <div class="mb-6">
+                    <div class="flex justify-center gap-3 mb-4">
+                        <input type="text" maxlength="1" class="otp-input" oninput="moveToNext(this, 1)">
+                        <input type="text" maxlength="1" class="otp-input" oninput="moveToNext(this, 2)">
+                        <input type="text" maxlength="1" class="otp-input" oninput="moveToNext(this, 3)">
+                        <input type="text" maxlength="1" class="otp-input" oninput="moveToNext(this, 4)">
+                        <input type="text" maxlength="1" class="otp-input" oninput="moveToNext(this, 5)">
+                        <input type="text" maxlength="1" class="otp-input" oninput="moveToNext(this, 6)">
+                    </div>
+                    <div id="otpError" class="text-red-500 text-sm text-center mt-2 hidden">
+                        <i class="fas fa-exclamation-circle mr-1"></i>
+                        <span id="otpErrorText"></span>
+                    </div>
+                </div>
+                
+                <!-- Action Buttons -->
+                <div class="space-y-4">
+                    <button 
+                        type="button" 
+                        id="verifyOtpBtn"
+                        onclick="verifyOTP()"
+                        class="w-full btn-primary text-white py-3 rounded-lg font-medium flex items-center justify-center gap-2"
+                    >
+                        <i class="fas fa-check-circle"></i>
+                        <span>Verify & Update Email</span>
+                    </button>
+                    
+                    <div class="text-center">
+                        <button 
+                            type="button" 
+                            id="resendOtpBtn"
+                            onclick="resendOTP()"
+                            class="text-blue-600 hover:text-blue-800 font-medium disabled:text-gray-400 disabled:cursor-not-allowed"
+                            disabled
+                        >
+                            <i class="fas fa-redo-alt mr-2"></i>
+                            <span id="resendText">Resend Code (60s)</span>
+                        </button>
+                    </div>
+                    
+                    <div class="text-center pt-4 border-t border-gray-200">
+                        <button 
+                            type="button" 
+                            onclick="goBackToEmail()"
+                            class="text-gray-600 hover:text-gray-800 font-medium"
+                        >
+                            <i class="fas fa-arrow-left mr-2"></i>
+                            Back to Email Entry
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Success Card -->
+            <div id="successCard" class="bg-white rounded-2xl shadow-sm p-6 card-hover hidden">
+                <div class="text-center">
+                    <div class="w-20 h-20 rounded-full bg-green-100 flex items-center justify-center text-green-600 mx-auto mb-4">
+                        <i class="fas fa-check text-2xl"></i>
+                    </div>
+                    <h2 class="text-2xl font-bold text-gray-900 mb-2">Email Updated Successfully!</h2>
+                    <p class="text-gray-600 mb-6">Your email address has been changed to <span id="successEmail" class="font-medium text-gray-900"></span></p>
+                    
+                    <a 
+                        href="/profile" 
+                        class="btn-primary text-white px-6 py-3 rounded-lg font-medium inline-flex items-center gap-2"
+                    >
+                        <i class="fas fa-user"></i>
+                        <span>Go to Profile</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Footer -->
+    <%- include('../partials/footer') %>
+    
+    <script>
+        // Global variables
+        let otpTimer;
+        let countdownSeconds = 300; // 5 minutes
+        let resendCooldown = 60; // 60 seconds
+        let currentEmail = '';
+        
+        // DOM Elements
+        const emailEntryCard = document.getElementById('emailEntryCard');
+        const otpVerificationCard = document.getElementById('otpVerificationCard');
+        const successCard = document.getElementById('successCard');
+        const newEmailInput = document.getElementById('newEmail');
+        const confirmEmailInput = document.getElementById('confirmEmail');
+        const otpEmailDisplay = document.getElementById('otpEmailDisplay');
+        const successEmail = document.getElementById('successEmail');
+        const sendOtpBtn = document.getElementById('sendOtpBtn');
+        const verifyOtpBtn = document.getElementById('verifyOtpBtn');
+        const resendOtpBtn = document.getElementById('resendOtpBtn');
+        const countdownTimer = document.getElementById('countdownTimer');
+        const progressFill = document.getElementById('progressFill');
+        const resendText = document.getElementById('resendText');
+        
+        // Email validation function
+        function validateEmail(email) {
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            return emailRegex.test(email);
+        }
+        
+        // Show error message
+        function showError(elementId, message) {
+            const errorElement = document.getElementById(elementId);
+            const errorText = document.getElementById(elementId + 'Text');
+            
+            errorText.textContent = message;
+            errorElement.classList.remove('hidden');
+            
+            // Add shake animation
+            if (elementId === 'emailError') {
+                newEmailInput.classList.add('shake');
+            } else if (elementId === 'confirmEmailError') {
+                confirmEmailInput.classList.add('shake');
+            } else if (elementId === 'otpError') {
+                const otpInputs = document.querySelectorAll('.otp-input');
+                otpInputs.forEach(input => input.classList.add('shake'));
+            }
+            
+            // Remove shake animation after delay
+            setTimeout(() => {
+                if (elementId === 'emailError') {
+                    newEmailInput.classList.remove('shake');
+                } else if (elementId === 'confirmEmailError') {
+                    confirmEmailInput.classList.remove('shake');
+                } else if (elementId === 'otpError') {
+                    const otpInputs = document.querySelectorAll('.otp-input');
+                    otpInputs.forEach(input => input.classList.remove('shake'));
+                }
+            }, 500);
+        }
+        
+        // Hide error message
+        function hideError(elementId) {
+            const errorElement = document.getElementById(elementId);
+            errorElement.classList.add('hidden');
+        }
+        
+        // Validate email form
+        function validateEmailForm() {
+            const newEmail = newEmailInput.value.trim();
+            const confirmEmail = confirmEmailInput.value.trim();
+            
+            // Reset errors
+            hideError('emailError');
+            hideError('confirmEmailError');
+            
+            // Check if email is empty
+            if (!newEmail) {
+                showError('emailError', 'Please enter your new email address');
+                return false;
+            }
+            
+            // Check if email is valid
+            if (!validateEmail(newEmail)) {
+                showError('emailError', 'Please enter a valid email address');
+                return false;
+            }
+            
+            // Check if emails match
+            if (newEmail !== confirmEmail) {
+                showError('confirmEmailError', 'Email addresses do not match');
+                return false;
+            }
+            
+            // Check if new email is same as current
+            if (newEmail === '<%= user.email %>') {
+                showError('emailError', 'New email cannot be the same as current email');
+                return false;
+            }
+            
+            return true;
+        }
+        
+        // Send OTP function
+        // async function sendOTP() {
+        //     if (!validateEmailForm()) return;
+            
+        //     const newEmail = newEmailInput.value.trim();
+        //     currentEmail = newEmail;
+            
+        //     try {
+        //         // Update button state
+        //         sendOtpBtn.disabled = true;
+        //         sendOtpBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i><span>Sending...</span>';
+                
+        //         // Simulate API call to send OTP
+        //         // In a real application, this would be an axios call to your backend
+        //         const response = await mockSendOTP(newEmail);
+                
+        //         if (response.success) {
+        //             // Show OTP verification card
+        //             emailEntryCard.classList.add('hidden');
+        //             otpVerificationCard.classList.remove('hidden');
+                    
+        //             // Update email display
+        //             otpEmailDisplay.textContent = newEmail;
+                    
+        //             // Start countdown timer
+        //             startOTPTimer();
+                    
+        //             // Focus first OTP input
+        //             document.querySelector('.otp-input').focus();
+        //         } else {
+        //             showError('emailError', response.message || 'Failed to send verification code');
+        //         }
+        //     } catch (error) {
+        //         console.error('Error sending OTP:', error);
+        //         showError('emailError', 'An error occurred. Please try again.');
+        //     } finally {
+        //         // Reset button state
+        //         sendOtpBtn.disabled = false;
+        //         sendOtpBtn.innerHTML = '<i class="fas fa-paper-plane"></i><span>Send Verification Code</span>';
+        //     }
+        // }
+     
+        async function sendOTP() {
+    if (!validateEmailForm()) return;
+
+    const newEmail = newEmailInput.value.trim();
+    currentEmail = newEmail;
+
+    try {
+        sendOtpBtn.disabled = true;
+        sendOtpBtn.innerHTML =
+            '<i class="fas fa-spinner fa-spin"></i><span>Sending...</span>';
+
+        // REAL SERVER CALL (NO MOCK)
+        const response = await axios.post("/user/change-email/send-otp", {
+            newEmail
+        });
+
+        if (!response.data.success) {
+            showError("emailError", response.data.message);
+            sendOtpBtn.disabled = false;
+            sendOtpBtn.innerHTML =
+                '<i class="fas fa-paper-plane"></i><span>Send Verification Code</span>';
+            return;
+        }
+
+        // OTP sent successfully
+        emailEntryCard.classList.add("hidden");
+        otpVerificationCard.classList.remove("hidden");
+
+        otpEmailDisplay.textContent = newEmail;
+        startOTPTimer();
+        document.querySelector(".otp-input").focus();
+
+    } catch (error) {
+        console.log(error);
+        showError("emailError", "Something went wrong. Try again.");
+    }
+
+    sendOtpBtn.disabled = false;
+    sendOtpBtn.innerHTML =
+        '<i class="fas fa-paper-plane"></i><span>Send Verification Code</span>';
+}
+
+
+
+        // Mock function to simulate sending OTP
+        function mockSendOTP(email) {
+            return new Promise((resolve) => {
+                setTimeout(() => {
+                    // Simulate success 90% of the time
+                    if (Math.random() > 0.1) {
+                        resolve({
+                            success: true,
+                            message: 'Verification code sent successfully'
+                        });
+                    } else {
+                        resolve({
+                            success: false,
+                            message: 'Failed to send verification code. Please try again.'
+                        });
+                    }
+                }, 1500);
+            });
+        }
+        
+        // Start OTP timer
+        function startOTPTimer() {
+            // Reset countdown
+            countdownSeconds = 300;
+            updateCountdownDisplay();
+            
+            // Start progress bar animation
+            progressFill.style.transition = 'none';
+            progressFill.style.width = '100%';
+            setTimeout(() => {
+                progressFill.style.transition = 'width 300s linear';
+                progressFill.style.width = '0%';
+            }, 100);
+            
+            // Start countdown
+            clearInterval(otpTimer);
+            otpTimer = setInterval(() => {
+                countdownSeconds--;
+                updateCountdownDisplay();
+                
+                if (countdownSeconds <= 0) {
+                    clearInterval(otpTimer);
+                    // Optionally disable verify button when OTP expires
+                    // verifyOtpBtn.disabled = true;
+                }
+            }, 1000);
+            
+            // Set up resend cooldown
+            startResendCooldown();
+        }
+        
+        // Update countdown display
+        function updateCountdownDisplay() {
+            const minutes = Math.floor(countdownSeconds / 60);
+            const seconds = countdownSeconds % 60;
+            countdownTimer.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+        }
+        
+        // Start resend cooldown
+        function startResendCooldown() {
+            let cooldown = resendCooldown;
+            resendOtpBtn.disabled = true;
+            resendText.textContent = `Resend Code (${cooldown}s)`;
+            
+            const cooldownInterval = setInterval(() => {
+                cooldown--;
+                resendText.textContent = `Resend Code (${cooldown}s)`;
+                
+                if (cooldown <= 0) {
+                    clearInterval(cooldownInterval);
+                    resendOtpBtn.disabled = false;
+                    resendText.textContent = 'Resend Code';
+                }
+            }, 1000);
+        }
+        
+        // Move to next OTP input
+        function moveToNext(current, nextIndex) {
+            // Only allow numbers
+            current.value = current.value.replace(/[^0-9]/g, '');
+            
+            // Update filled state
+            if (current.value) {
+                current.classList.add('filled');
+            } else {
+                current.classList.remove('filled');
+            }
+            
+            // Auto-focus next input
+            if (current.value && nextIndex <= 6) {
+                const nextInput = document.querySelector(`.otp-input:nth-child(${nextIndex})`);
+                if (nextInput) nextInput.focus();
+            }
+            
+            // Auto-submit when all fields are filled
+            if (nextIndex > 6 && isOTPComplete()) {
+                verifyOTP();
+            }
+        }
+        
+        // Check if OTP is complete
+        function isOTPComplete() {
+            const otpInputs = document.querySelectorAll('.otp-input');
+            for (let input of otpInputs) {
+                if (!input.value) return false;
+            }
+            return true;
+        }
+        
+        // Get OTP value
+        function getOTP() {
+            const otpInputs = document.querySelectorAll('.otp-input');
+            let otp = '';
+            otpInputs.forEach(input => {
+                otp += input.value;
+            });
+            return otp;
+        }
+        
+        // Verify OTP
+        // async function verifyOTP() {
+        //     const otp = getOTP();
+            
+        //     // Validate OTP
+        //     if (otp.length !== 6) {
+        //         showError('otpError', 'Please enter the complete 6-digit code');
+        //         return;
+        //     }
+            
+        //     if (!/^\d+$/.test(otp)) {
+        //         showError('otpError', 'OTP should contain only numbers');
+        //         return;
+        //     }
+            
+        //     hideError('otpError');
+            
+        //     try {
+        //         // Update button state
+        //         verifyOtpBtn.disabled = true;
+        //         verifyOtpBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i><span>Verifying...</span>';
+                
+        //         // Simulate API call to verify OTP
+        //         const response = await mockVerifyOTP(otp, currentEmail);
+                
+        //         if (response.success) {
+        //             // Show success card
+        //             otpVerificationCard.classList.add('hidden');
+        //             successCard.classList.remove('hidden');
+        //             successEmail.textContent = currentEmail;
+                    
+        //             // Clear timer
+        //             clearInterval(otpTimer);
+        //         } else {
+        //             showError('otpError', response.message || 'Invalid verification code');
+        //         }
+        //     } catch (error) {
+        //         console.error('Error verifying OTP:', error);
+        //         showError('otpError', 'An error occurred. Please try again.');
+        //     } finally {
+        //         // Reset button state
+        //         verifyOtpBtn.disabled = false;
+        //         verifyOtpBtn.innerHTML = '<i class="fas fa-check-circle"></i><span>Verify & Update Email</span>';
+        //     }
+        // }
+        
+
+        async function verifyOTP() {
+    const otp = getOTP();
+
+    if (otp.length !== 6) {
+        showError("otpError", "Enter full 6-digit OTP");
+        return;
+    }
+
+    try {
+        verifyOtpBtn.disabled = true;
+        verifyOtpBtn.innerHTML =
+            '<i class="fas fa-spinner fa-spin"></i> Verifying...';
+
+        const response = await axios.post("/user/change-email/verify", {
+            otp: otp
+        });
+
+        if (!response.data.success) {
+            showError("otpError", response.data.message);
+            verifyOtpBtn.disabled = false;
+            verifyOtpBtn.innerHTML =
+                '<i class="fas fa-check-circle"></i> Verify & Update Email';
+            return;
+        }
+
+        // SUCCESS
+        otpVerificationCard.classList.add("hidden");
+        successCard.classList.remove("hidden");
+        successEmail.textContent = response.data.newEmail;
+
+        clearInterval(otpTimer);
+
+        // Optional: Auto redirect after 3 seconds
+        setTimeout(() => window.location.href = "/user/profile", 3000);
+
+    } catch (error) {
+        console.log(error);
+        showError("otpError", "Something went wrong.");
+    }
+
+    verifyOtpBtn.disabled = false;
+    verifyOtpBtn.innerHTML =
+        '<i class="fas fa-check-circle"></i> Verify & Update Email';
+}
+
+
+        // Mock function to simulate verifying OTP
+        function mockVerifyOTP(otp, email) {
+            return new Promise((resolve) => {
+                setTimeout(() => {
+                    // Simulate success if OTP is "123456"
+                    if (otp === '123456') {
+                        resolve({
+                            success: true,
+                            message: 'Email updated successfully'
+                        });
+                    } else {
+                        resolve({
+                            success: false,
+                            message: 'Invalid verification code'
+                        });
+                    }
+                }, 1500);
+            });
+        }
+        
+        // Resend OTP
+        async function resendOTP() {
+            try {
+                // Update button state
+                resendOtpBtn.disabled = true;
+                resendOtpBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i><span>Resending...</span>';
+                
+                // Simulate API call to resend OTP
+                const response = await mockSendOTP(currentEmail);
+                
+                if (response.success) {
+                    // Restart timer
+                    startOTPTimer();
+                    
+                    // Clear OTP inputs
+                    const otpInputs = document.querySelectorAll('.otp-input');
+                    otpInputs.forEach(input => {
+                        input.value = '';
+                        input.classList.remove('filled');
+                    });
+                    
+                    // Focus first input
+                    otpInputs[0].focus();
+                    
+                    // Show success message
+                    showNotification('New verification code sent!', 'success');
+                } else {
+                    showError('otpError', response.message || 'Failed to resend verification code');
+                }
+            } catch (error) {
+                console.error('Error resending OTP:', error);
+                showError('otpError', 'An error occurred. Please try again.');
+            } finally {
+                // Reset button state after cooldown
+                startResendCooldown();
+            }
+        }
+        
+        // Go back to email entry
+        function goBackToEmail() {
+            otpVerificationCard.classList.add('hidden');
+            emailEntryCard.classList.remove('hidden');
+            
+            // Clear timer
+            clearInterval(otpTimer);
+        }
+        
+        // Notification system
+        function showNotification(message, type) {
+            const notification = document.createElement('div');
+            notification.className = `fixed top-4 right-4 p-4 rounded-lg shadow-lg z-50 transform transition-transform duration-300 ${
+                type === 'success' ? 'bg-green-500 text-white' : 'bg-red-500 text-white'
+            }`;
+            notification.innerHTML = `
+                <div class="flex items-center gap-3">
+                    <i class="fas fa-${type === 'success' ? 'check' : 'exclamation'}-circle"></i>
+                    <span>${message}</span>
+                </div>
+            `;
+            
+            document.body.appendChild(notification);
+            
+            // Remove notification after 3 seconds
+            setTimeout(() => {
+                notification.style.transform = 'translateX(100%)';
+                setTimeout(() => {
+                    if (document.body.contains(notification)) {
+                        document.body.removeChild(notification);
+                    }
+                }, 300);
+            }, 3000);
+        }
+        
+        // Initialize the page
+        document.addEventListener('DOMContentLoaded', function() {
+            // Add input event listeners for real-time validation
+            newEmailInput.addEventListener('input', function() {
+                hideError('emailError');
+            });
+            
+            confirmEmailInput.addEventListener('input', function() {
+                hideError('confirmEmailError');
+            });
+            
+            // Allow Enter key to submit email form
+            document.getElementById('emailForm').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    sendOTP();
+                }
+            });
+        });
+    </script>
+</body>
+</html>
