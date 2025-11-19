@@ -226,12 +226,19 @@
                                 <%= ordersCount || 0 %>
                             </span>
                         </button>
-
+<!-- 
                         <button onclick="switchTab('addresses')"
                             class="tab-button w-full text-left flex items-center gap-3 p-3 rounded-xl transition-all duration-200 hover:bg-gray-100 text-gray-700">
                             <i class="fas fa-map-marker-alt text-gray-600 w-5"></i>
                             <span>Saved Addresses</span>
-                        </button>
+                        </button> -->
+
+                        <a href="/user/profile/addresses"
+   class="w-full text-left flex items-center gap-3 p-3 rounded-xl">
+   <i class="fas fa-map-marker-alt"></i>
+   <span>Saved Addresses</span>
+</a>
+
 
                         <button onclick="switchTab('wishlist')"
                             class="tab-button w-full text-left flex items-center gap-3 p-3 rounded-xl transition-all duration-200 hover:bg-gray-100 text-gray-700">
