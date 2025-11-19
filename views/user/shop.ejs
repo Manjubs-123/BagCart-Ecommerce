@@ -53,13 +53,14 @@
             box-shadow: 0 0 0 3px rgba(26, 86, 219, 0.1);
         }
 
-        .wishlist-btn {
-            transition: all 0.3s ease;
-        }
+        .wishlist-btn i {
+    transition: 0.2s ease;
+}
 
-        .wishlist-btn:hover {
-            transform: scale(1.1);
-        }
+.wishlist-btn:hover i {
+    transform: scale(1.15);
+}
+
 
         .color-swatch {
             width: 20px;
@@ -330,10 +331,20 @@
                                             <% } %>
 
                                             <!-- Wishlist Button -->
-                                            <button onclick="toggleWishlist(event, '<%= product._id %>')" 
+                                            <!-- <button onclick="toggleWishlist(event, '<%= product._id %>')" 
                                                     class="wishlist-btn absolute top-3 right-3 bg-white rounded-full p-2 shadow-md hover:shadow-lg">
                                                 <i class="far fa-heart text-gray-400 text-lg"></i>
-                                            </button>
+                                            </button> -->
+
+                                            <button 
+    onclick="toggleWishlist(event, '<%= product._id %>', this)"
+    class="wishlist-btn absolute top-3 right-3 bg-white rounded-full p-2 shadow-md hover:shadow-lg">
+
+    <i class="<%= userWishlistIds.includes(product._id.toString()) 
+                ? 'fas fa-heart text-red-500' 
+                : 'far fa-heart text-gray-400' %> text-lg"></i>
+</button>
+
                                         </div>
 
                                         <!-- Product Info -->
@@ -661,31 +672,59 @@ function applyFilters() {
         }
 
         // Toggle wishlist
-        function toggleWishlist(event, productId) {
-            event.preventDefault();
-            event.stopPropagation();
+        // function toggleWishlist(event, productId) {
+        //     event.preventDefault();
+        //     event.stopPropagation();
             
-            const icon = event.currentTarget.querySelector('i');
-            const isActive = icon.classList.contains('fas');
+        //     const icon = event.currentTarget.querySelector('i');
+        //     const isActive = icon.classList.contains('fas');
             
-            if (!isActive) {
-                icon.classList.replace('far', 'fas');
-                icon.style.color = '#ef4444';
-                fetch('/wishlist/add', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ productId: productId })
-                }).catch(console.error);
-            } else {
-                icon.classList.replace('fas', 'far');
-                icon.style.color = '';
-                fetch('/wishlist/remove', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ productId: productId })
-                }).catch(console.error);
-            }
-        }
+        //     if (!isActive) {
+        //         icon.classList.replace('far', 'fas');
+        //         icon.style.color = '#ef4444';
+        //         fetch('/wishlist/add', {
+        //             method: 'POST',
+        //             headers: { 'Content-Type': 'application/json' },
+        //             body: JSON.stringify({ productId: productId })
+        //         }).catch(console.error);
+        //     } else {
+        //         icon.classList.replace('fas', 'far');
+        //         icon.style.color = '';
+        //         fetch('/wishlist/remove', {
+        //             method: 'POST',
+        //             headers: { 'Content-Type': 'application/json' },
+        //             body: JSON.stringify({ productId: productId })
+        //         }).catch(console.error);
+        //     }
+        // }
+
+
+        function toggleWishlist(event, productId, btn) {
+    event.preventDefault();
+    event.stopPropagation();
+
+    const icon = btn.querySelector("i");
+    const isAdded = icon.classList.contains("fas");
+
+    if (!isAdded) {
+        // ADD TO WISHLIST
+        icon.classList.replace("far", "fas");
+        icon.classList.add("text-red-500");
+
+        fetch(`/user/wishlist/add/${productId}`, {
+            method: "POST"
+        }).catch(console.error);
+
+    } else {
+        // REMOVE FROM WISHLIST
+        icon.classList.replace("fas", "far");
+        icon.classList.remove("text-red-500");
+
+        fetch(`/user/wishlist/remove/${productId}`, {
+            method: "POST"
+        }).catch(console.error);
+    }
+}
 
         // Initialize on page load
         document.addEventListener('DOMContentLoaded', function() {

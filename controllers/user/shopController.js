@@ -1,13 +1,93 @@
 import Product from "../../models/productModel.js";
 import Category from "../../models/category.js";
+import User from "../../models/userModel.js";
+
+// export const getShopPage = async (req, res) => {
+//   try {
+
+//     //If user not logged in, redirect to login
+//     if (!req.session.user) {
+//       return res.redirect("/user/login");
+//     }
+
+//     // CATEGORY SELECTION FROM QUERY
+//     const selectedCategories = Array.isArray(req.query.category)
+//       ? req.query.category
+//       : req.query.category
+//         ? [req.query.category]
+//         : [];
+
+//     // --- BUILD FILTER FIRST ---
+//     const filter = { isDeleted: false, isActive: true };
+
+//     if (selectedCategories.length > 0) {
+//       filter.category = { $in: selectedCategories };
+//     }
+
+//     // ---- FETCH PRODUCTS ----
+//     const products = await Product.find(filter)
+//       .populate({
+//         path: "category",
+//         match: { isDeleted: false, isActive: true }
+//       })
+//       .sort({ createdAt: -1 })
+//       .lean();
+
+//     // CLEAN PRODUCTS (remove invalid category)
+//     const cleanedProducts = products.filter((p) => p.category);
+
+//     // ---- GET UNIQUE COLORS FROM ALL VARIANTS ----
+//     const colors = [
+//       ...new Set(
+//         cleanedProducts.flatMap((p) =>
+//           p.variants
+//             ?.map(v => v.color?.trim())
+//             .filter(Boolean) || []
+//         )
+//       )
+//     ];
+
+//     // ---- FETCH CATEGORIES ----
+//     const categories = await Category.find({ isDeleted: false ,isActive:true})
+//       .sort({ name: 1 })
+//       .lean();
+
+//     // RENDER SHOP PAGE
+//     res.render("user/shop", {
+//       title: "Shop | BagHub",
+//       products: cleanedProducts,
+//       categories,
+//       selectedCategories,
+//       colors,  // sending colors to EJS
+//       user: req.session.user || null,
+//     });
+
+//   } catch (error) {
+//     console.error("Error rendering shop page:", error);
+//     res.status(500).send("Failed to load shop page");
+//   }
+// };
+
 
 export const getShopPage = async (req, res) => {
   try {
 
-    //If user not logged in, redirect to login
+    // If user not logged in, redirect to login
     if (!req.session.user) {
       return res.redirect("/user/login");
     }
+
+    // ⭐⭐⭐ ADD THIS PART HERE (STEP 1)
+    let userWishlistIds = [];
+
+    if (req.session.user) {
+      const user = await User.findById(req.session.user.id).select("wishlist");
+      if (user) {
+        userWishlistIds = user.wishlist.map(id => id.toString());
+      }
+    }
+    // ⭐⭐⭐ END OF ADDED BLOCK
+
 
     // CATEGORY SELECTION FROM QUERY
     const selectedCategories = Array.isArray(req.query.category)
@@ -16,7 +96,7 @@ export const getShopPage = async (req, res) => {
         ? [req.query.category]
         : [];
 
-    // --- BUILD FILTER FIRST ---
+    // --- BUILD FILTER ---
     const filter = { isDeleted: false, isActive: true };
 
     if (selectedCategories.length > 0) {
@@ -35,29 +115,28 @@ export const getShopPage = async (req, res) => {
     // CLEAN PRODUCTS (remove invalid category)
     const cleanedProducts = products.filter((p) => p.category);
 
-    // ---- GET UNIQUE COLORS FROM ALL VARIANTS ----
+    // ---- UNIQUE COLORS ----
     const colors = [
       ...new Set(
         cleanedProducts.flatMap((p) =>
-          p.variants
-            ?.map(v => v.color?.trim())
-            .filter(Boolean) || []
+          p.variants?.map(v => v.color?.trim()).filter(Boolean) || []
         )
       )
     ];
 
     // ---- FETCH CATEGORIES ----
-    const categories = await Category.find({ isDeleted: false ,isActive:true})
+    const categories = await Category.find({ isDeleted: false, isActive: true })
       .sort({ name: 1 })
       .lean();
 
-    // RENDER SHOP PAGE
+    // ⭐⭐⭐ PASS userWishlistIds TO SHOP PAGE (STEP 2)
     res.render("user/shop", {
       title: "Shop | BagHub",
       products: cleanedProducts,
       categories,
       selectedCategories,
-      colors,  // sending colors to EJS
+      colors,
+      userWishlistIds,     // <--- SUPER IMPORTANT
       user: req.session.user || null,
     });
 
@@ -238,6 +317,18 @@ const formattedRelated = relatedProducts.map(p => {
     categoryName: p.category?.name || "Other",
   };
 });
+
+// ⭐ FETCH USER WISHLIST IDS
+let userWishlist = [];
+
+if (req.session.user && req.session.user.id) {
+  const usr = await User.findById(req.session.user.id).select("wishlist");
+
+  if (usr && usr.wishlist) {
+    userWishlist = usr.wishlist.map(id => id.toString());
+  }
+}
+
     res.render("user/productDetails", {
       title: `${viewProduct.productName} - BagHub`,
       product: viewProduct,
@@ -245,6 +336,7 @@ const formattedRelated = relatedProducts.map(p => {
       relatedProducts: formattedRelated,
       categoryName: product.category?.name || "Other",
       user: req.session?.user || { wishlistCount: 0 },
+      userWishlist,
       variantImages,
       colorMap: {
         black: "#000000",

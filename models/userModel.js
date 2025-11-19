@@ -35,6 +35,7 @@ const userSchema = new mongoose.Schema({
     isVerified: { type: Boolean, default: false },
     isBlocked: { type: Boolean, default: false },
     createdAt: { type: Date, default: Date.now },
+    wishlist: [{ type: mongoose.Schema.Types.ObjectId, ref: "Product" }],
 }, { timestamps: true });
 
 const User = mongoose.model("User", userSchema);

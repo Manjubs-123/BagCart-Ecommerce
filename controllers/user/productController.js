@@ -1,6 +1,7 @@
 
 import Product from "../../models/productModel.js";
 import Category from "../../models/category.js";
+import User from "../../models/userModel.js";
 
 export const loadHomeProducts = async () => {
   const allProducts = await Product.find({ isDeleted: false, isActive: true })
@@ -52,9 +53,39 @@ export const renderHomePage = async (req, res) => {
   }
 };
 
+// export const renderLandingPage = async (req, res) => {
+//   try {
+//     const { featuredProducts, favouriteProducts, handpickedProducts, trendingProducts } = await loadHomeProducts();
+
+//     res.render("user/landing", {
+//       title: "BagHub | Explore Premium Bags",
+//       currentPage: "home",
+//       featuredProducts,
+//       favouriteProducts,
+//       handpickedProducts,
+//       trendingProducts,
+//       user: req.session.user || null,  // add user data if logged in
+//     });
+//   } catch (error) {
+//     console.error("Error rendering landing page:", error);
+//     res.status(500).send("Failed to load landing page");
+//   }
+// };
+
+
 export const renderLandingPage = async (req, res) => {
   try {
     const { featuredProducts, favouriteProducts, handpickedProducts, trendingProducts } = await loadHomeProducts();
+
+    let userWishlistIds = [];
+
+    // If user is logged in, load their wishlist
+    if (req.session.user && req.session.user.id) {
+      const user = await User.findById(req.session.user.id).select("wishlist");
+      if (user) {
+        userWishlistIds = user.wishlist.map(id => id.toString());
+      }
+    }
 
     res.render("user/landing", {
       title: "BagHub | Explore Premium Bags",
@@ -63,15 +94,15 @@ export const renderLandingPage = async (req, res) => {
       favouriteProducts,
       handpickedProducts,
       trendingProducts,
-      user: req.session.user || null,  // add user data if logged in
+      userWishlistIds,              // 👈 IMPORTANT
+      user: req.session.user || null
     });
+
   } catch (error) {
     console.error("Error rendering landing page:", error);
     res.status(500).send("Failed to load landing page");
   }
 };
-
-
 
 
 
