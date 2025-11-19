@@ -935,14 +935,65 @@ export const getSecuritySettings = async (req, res) => {
   }
 };
 
+// export const checkCurrentPassword = async (req, res) => {
+//     try {
+//         const user = await User.findById(req.session.user.id);
+
+//         if (!user) return res.json({ valid: false });
+
+//         const isMatch = await bcrypt.compare(req.body.currentPassword, user.password);
+
+//         res.json({ valid: isMatch });
+
+//     } catch (err) {
+//         console.error("Password check error:", err);
+//         res.json({ valid: false });
+//     }
+// };
+
+// export const changePassword = async (req, res) => {
+//     try {
+//         const { currentPassword, newPassword } = req.body;
+
+//         const user = await User.findById(req.session.user.id);
+//         if (!user) {
+//             return res.json({ success: false, message: "User not found" });
+//         }
+
+//         // Compare old password
+//         const isMatch = await bcrypt.compare(currentPassword, user.password);
+//         if (!isMatch) {
+//             return res.json({ success: false, message: "Incorrect current password" });
+//         }
+
+//         // Hash new password
+//         const salt = await bcrypt.genSalt(10);
+//         const hashed = await bcrypt.hash(newPassword, salt);
+
+//         // Save new password
+//         user.password = hashed;
+//         await user.save();
+
+//         return res.json({ success: true, message: "Password updated successfully" });
+
+//     } catch (err) {
+//         console.log("Error updating password:", err);
+//         return res.json({ success: false, message: "Internal server error" });
+//     }
+// };
+
 export const checkCurrentPassword = async (req, res) => {
     try {
         const user = await User.findById(req.session.user.id);
 
         if (!user) return res.json({ valid: false });
 
-        const isMatch = await bcrypt.compare(req.body.currentPassword, user.password);
+        // BLOCK CURRENT PASSWORD CHECK FOR GOOGLE USERS
+        if (user.googleId) {
+            return res.json({ valid: false });
+        }
 
+        const isMatch = await bcrypt.compare(req.body.currentPassword, user.password);
         res.json({ valid: isMatch });
 
     } catch (err) {
@@ -950,6 +1001,7 @@ export const checkCurrentPassword = async (req, res) => {
         res.json({ valid: false });
     }
 };
+
 
 export const changePassword = async (req, res) => {
     try {
@@ -960,6 +1012,14 @@ export const changePassword = async (req, res) => {
             return res.json({ success: false, message: "User not found" });
         }
 
+        // BLOCK PASSWORD CHANGE FOR GOOGLE USERS
+        if (user.googleId) {
+            return res.json({
+                success: false,
+                message: "You logged in using Google. Password change is not required."
+            });
+        }
+
         // Compare old password
         const isMatch = await bcrypt.compare(currentPassword, user.password);
         if (!isMatch) {
@@ -967,10 +1027,7 @@ export const changePassword = async (req, res) => {
         }
 
         // Hash new password
-        const salt = await bcrypt.genSalt(10);
-        const hashed = await bcrypt.hash(newPassword, salt);
-
-        // Save new password
+        const hashed = await bcrypt.hash(newPassword, 10);
         user.password = hashed;
         await user.save();
 
@@ -981,7 +1038,6 @@ export const changePassword = async (req, res) => {
         return res.json({ success: false, message: "Internal server error" });
     }
 };
-
 
 
 
