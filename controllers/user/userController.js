@@ -600,6 +600,240 @@ export const verifyChangedEmailOtp = async (req, res) => {
   }
 };
 
+export const getAddressPage = async (req, res) => {
+    try {
+        const userId = req.session.user.id;
+        const user = await User.findById(userId).lean();
+
+        const addresses = user.addresses || [];
+
+        // Function for EJS
+        const getAddressTypeIcon = (type) => {
+            switch (type) {
+                case "home": return "home";
+                case "work": return "briefcase";
+                default: return "map-marker-alt";
+            }
+        };
+
+        res.render("user/addressList", {
+            user,
+            addresses,
+            ordersCount: user.orders?.length || 0,
+            wishlistCount: user.wishlist?.length || 0,
+            unreadNotifications: user.notifications?.filter(n => !n.read).length || 0,
+            getAddressTypeIcon  // send function to EJS
+        });
+
+    } catch (err) {
+        console.log(err);
+        res.status(500).send("Server Error");
+    }
+};
+
+// export const getAddressPage = async (req, res) => {
+//     try {
+//         const userId = req.session.user.id;
+
+//         const user = await User.findById(userId).lean();
+
+//         const addresses = user.addresses || [];
+
+//         const ordersCount = user.orders?.length || 0;
+//         const wishlistCount = user.wishlist?.length || 0;
+//         const unreadNotifications = user.notifications?.filter(n => !n.read).length || 0;
+
+//         res.render("user/addressList", {
+//             user,
+//             addresses,
+//             ordersCount,
+//             wishlistCount,
+//             unreadNotifications
+//         });
+
+//     } catch (error) {
+//         console.error("Error loading address page:", error);
+//         return res.status(500).send("Internal Server Error");
+//     }
+// };
+
+// export const getAddresses = async (req, res) => {
+//     try {
+//         const user = await User.findById(req.session.user.id).lean();
+
+//         res.json({
+//             success: true,
+//             addresses: user.addresses || []
+//         });
+
+//     } catch (err) {
+//         console.error("Address fetch error:", err);
+//         res.json({ success: false, addresses: [] });
+//     }
+// };
+
+// export const getAddressPage = async (req, res) => {
+//     try {
+//         const user = await User.findById(req.session.user.id).lean();
+//         res.json({ success: true, addresses: user.addresses || [] });
+//     } catch (err) {
+//         res.json({ success: false, addresses: [] });
+//     }
+// };
+
+export const addAddress = async (req, res) => {
+    try {
+        const userId = req.session.user.id;
+
+        const newAddress = {
+            addressType: req.body.addressType,
+            fullName: req.body.fullName,
+            phone: req.body.phone,
+            addressLine1: req.body.addressLine1,
+            addressLine2: req.body.addressLine2,
+            city: req.body.city,
+            state: req.body.state,
+            pincode: req.body.pincode,
+            country: req.body.country,
+            isDefault: req.body.isDefault === "on" || req.body.isDefault === true
+        };
+
+        const user = await User.findById(userId);
+
+        // If first address → set default
+        if (user.addresses.length === 0) {
+            newAddress.isDefault = true;
+        }
+
+        // If setting new default → remove default from others
+        if (newAddress.isDefault) {
+            user.addresses.forEach(addr => addr.isDefault = false);
+        }
+
+        user.addresses.push(newAddress);
+        await user.save();
+
+        res.json({ success: true, message: "Address added successfully" });
+
+    } catch (err) {
+        console.error("Add Address Error:", err);
+        res.json({ success: false, message: "Server error while adding address" });
+    }
+};
+
+export const updateAddress = async (req, res) => {
+    try {
+        const userId = req.session.user.id;
+        const addressId = req.params.id;
+
+        const user = await User.findById(userId);
+
+        const address = user.addresses.id(addressId);
+        if (!address) return res.json({ success: false, message: "Address not found" });
+
+        // update fields
+        Object.assign(address, req.body);
+
+        // if default → update all
+        if (req.body.isDefault) {
+            user.addresses.forEach(a => a.isDefault = false);
+            address.isDefault = true;
+        }
+
+        await user.save();
+
+        res.json({ success: true, message: "Address updated successfully" });
+
+    } catch (err) {
+        console.log(err);
+        res.json({ success: false, message: "Error updating address" });
+    }
+};
+export const deleteAddress = async (req, res) => {
+    try {
+        const userId = req.session.user.id;   // FIXED
+        const addressId = req.params.id;
+
+
+        console.log("SESSION USER =", req.session.user);
+console.log("ADDRESS ID =", req.params.id);
+
+        const user = await User.findById(userId);
+        if (!user) {
+            return res.json({ success: false, message: "User not found!" });
+        }
+
+        const addressExists = user.addresses.some(
+            (a) => a._id.toString() === addressId
+        );
+
+        if (!addressExists) {
+            return res.json({ success: false, message: "Address not found!" });
+        }
+
+        user.addresses = user.addresses.filter(
+            (a) => a._id.toString() !== addressId
+        );
+
+        await user.save();
+
+        return res.json({ success: true, message: "Address deleted successfully" });
+
+    } catch (err) {
+        console.log("Delete Error:", err);
+        return res.json({ success: false, message: "Error deleting address" });
+    }
+};
+
+
+
+export const setDefaultAddress = async (req, res) => {
+  try {
+    // Defensive checks
+    if (!req.user) {
+      console.warn("setDefaultAddress: req.user is missing");
+      return res.status(401).json({ success: false, message: "Unauthorized" });
+    }
+
+    const userId = req.user._id;
+    const addressId = req.params.id;
+
+    if (!addressId) {
+      return res.status(400).json({ success: false, message: "Address id required" });
+    }
+
+    const user = await User.findById(userId);
+    if (!user) {
+      console.warn("setDefaultAddress: user not found", { userId });
+      return res.status(404).json({ success: false, message: "User not found" });
+    }
+
+    // Ensure addresses is an array
+    if (!Array.isArray(user.addresses)) user.addresses = [];
+
+    // Clear default flags
+    user.addresses.forEach(a => { a.isDefault = false; });
+
+    // Mongoose subdoc lookup (works for arrays of subdocs)
+    const target = user.addresses.id ? user.addresses.id(addressId) : user.addresses.find(a => a._id && a._id.toString() === addressId);
+
+    if (!target) {
+      console.warn("setDefaultAddress: target address not found", { addressId });
+      return res.status(404).json({ success: false, message: "Address not found" });
+    }
+
+    target.isDefault = true;
+
+    await user.save();
+
+    return res.json({ success: true, message: "Default address updated" });
+
+  } catch (err) {
+    console.error("Default error:", err);
+    return res.status(500).json({ success: false, message: "Error updating default" });
+  }
+};
+
 
 
 

@@ -1,4 +1,5 @@
 import express from "express";
+// import * as userController from "../../controllers/user/userController.js";
 import {
   getSignup,
   signupUser,
@@ -11,8 +12,9 @@ import {
   logoutUser,
   renderUserProfile,
   updateUserProfile,
-  getChangeEmailPage,sendChangeEmailOtp,verifyChangedEmailOtp
+  getChangeEmailPage,sendChangeEmailOtp,verifyChangedEmailOtp,getAddressPage,addAddress,updateAddress,deleteAddress,setDefaultAddress
 } from "../../controllers/user/userController.js";
+
 import { renderForgotPassword, postForgotPassword, renderForgotVerifyOtp, postForgotVerifyOtp, resendForgotOtp, renderResetPassword, postResetPassword } from "../../controllers/user/authForgotController.js";
 import { isUserLoggedIn, isUserLoggedOut } from "../../middlewares/userAuth.js";
 import { noCache } from "../../middlewares/cacheMiddleware.js";
@@ -80,6 +82,21 @@ router.get("/change-email",isUserLoggedIn,getChangeEmailPage);
 router.post("/change-email/send-otp",isUserLoggedIn,sendChangeEmailOtp);
 router.post("/change-email/verify",isUserLoggedIn,verifyChangedEmailOtp);
 
+router.get('/profile/addresses',isAuthenticated,getAddressPage)
+// router.get('/profile/addresses', isAuthenticated, userController.getAddressPage);
+
+
+// create address
+router.post("/addresses", isAuthenticated, addAddress);
+
+// update address
+router.put("/addresses/:id", isAuthenticated, updateAddress);
+
+// delete address
+router.delete("/addresses/:id", isAuthenticated, deleteAddress);
+
+// set default address
+router.patch("/addresses/:id/default", isUserLoggedIn, setDefaultAddress);
 
 // Logout
 router.get("/logout", isUserLoggedIn, logoutUser);
