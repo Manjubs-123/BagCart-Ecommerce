@@ -12,7 +12,7 @@ import {
   logoutUser,
   renderUserProfile,
   updateUserProfile,
-  getChangeEmailPage,sendChangeEmailOtp,verifyChangedEmailOtp,getAddressPage,addAddress,updateAddress,deleteAddress,setDefaultAddress
+  getChangeEmailPage,sendChangeEmailOtp,verifyChangedEmailOtp,getAddressPage,addAddress,updateAddress,deleteAddress,setDefaultAddress,getSecuritySettings
 } from "../../controllers/user/userController.js";
 
 import { renderForgotPassword, postForgotPassword, renderForgotVerifyOtp, postForgotVerifyOtp, resendForgotOtp, renderResetPassword, postResetPassword } from "../../controllers/user/authForgotController.js";
@@ -97,6 +97,9 @@ router.delete("/addresses/:id", isAuthenticated, deleteAddress);
 
 // set default address
 router.patch("/addresses/:id/default", isUserLoggedIn, setDefaultAddress);
+
+//security 
+router.get('/profile/changepassword',isUserLoggedIn,getSecuritySettings)
 
 // Logout
 router.get("/logout", isUserLoggedIn, logoutUser);

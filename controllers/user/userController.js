@@ -835,6 +835,79 @@ export const setDefaultAddress = async (req, res) => {
 };
 
 
+// export const getSecuritySettings=async (req,res)=>{
+
+//      try {
+//         if (!req.session.user) return res.redirect('/user/login');
+
+//         const user = await User.findById(req.session.user._id);
+
+//         res.render('user/changepassword', { user });
+//     } catch (err) {
+//         console.log("Error loading security page:", err);
+//         res.status(500).send("Server error");
+//     }
+// };
+
+
+// export const getSecuritySettings = async (req, res) => {
+//   try {
+//     if (!req.session.user) {
+//       return res.redirect('/user/login');
+//     }
+
+//     const userId = req.session.user._id || req.session.userId;
+
+//     if (!userId) {
+//       return res.redirect('/user/login');
+//     }
+
+//     const user = await User.findById(userId);
+
+//     if (!user) {
+//       return res.redirect('/user/login');
+//     }
+
+//     res.render('user/changepassword', { user });
+
+//   } catch (err) {
+//     console.log("Error loading security page:", err);
+//     res.status(500).send("Server error");
+//   }
+// };
+
+
+// export const getSecuritySettings = async (req, res) => {
+//   try {
+//     if (!req.session.user) return res.redirect('/user/login');
+
+//     const userId = req.session.user._id;
+//     const user = await User.findById(userId);
+
+//     res.render('user/changepassword', { user });
+//   } catch (err) {
+//     console.log("Error loading security page:", err);
+//     res.status(500).send("Server error");
+//   }
+// };
+
+export const getSecuritySettings = async (req, res) => {
+  try {
+    if (!req.session.user) return res.redirect('/user/login');
+
+    const userId = req.session.user._id;
+    const user = await User.findById(userId);
+
+    res.render('user/changepassword', { user });
+  } catch (err) {
+    console.log("Error loading security page:", err);
+    res.status(500).send("Server error");
+  }
+};
+
+
+
+
 
 
 export const logoutUser = (req, res) => {
