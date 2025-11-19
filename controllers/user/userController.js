@@ -459,8 +459,12 @@ export const updateUserProfile = async (req, res) => {
 
 // Page to enter new email
 export const getChangeEmailPage = (req, res) => {
-  const user=req.session.user;
+  const user=req.user;
   if(!user) return res.redirect("/user/login")
+    if(user.googleId){
+          return res.redirect("/user/profile?error=email_change_not_allowed");
+
+    }
   res.render("user/profileEmailChange", { user });
 };
 
