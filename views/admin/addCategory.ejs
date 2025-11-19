@@ -220,23 +220,55 @@
     }
 
     // Validation functions
-    function validateName(value) {
-      const trimmedValue = value.trim();
+    // function validateName(value) {
+    //   const trimmedValue = value.trim();
       
-      if (!trimmedValue) {
-        return { valid: false, message: 'Category name is required' };
-      }
+    //   if (!trimmedValue) {
+    //     return { valid: false, message: 'Category name is required' };
+    //   }
       
-      if (trimmedValue.length < 2) {
-        return { valid: false, message: 'Category name must be at least 2 characters' };
-      }
+    //   if (trimmedValue.length < 2) {
+    //     return { valid: false, message: 'Category name must be at least 2 characters' };
+    //   }
       
-      if (trimmedValue.length > 50) {
-        return { valid: false, message: 'Category name must be less than 50 characters' };
-      }
+    //   if (trimmedValue.length > 50) {
+    //     return { valid: false, message: 'Category name must be less than 50 characters' };
+    //   }
       
-      return { valid: true, message: '' };
-    }
+    //   return { valid: true, message: '' };
+    // }
+
+function validateName(value) {
+  const trimmedValue = value.trim();
+
+  // 1. Required
+  if (!trimmedValue) {
+    return { valid: false, message: 'Category name is required' };
+  }
+
+  // 2. Length check
+  if (trimmedValue.length < 2) {
+    return { valid: false, message: 'Category name must be at least 2 characters' };
+  }
+
+  if (trimmedValue.length > 50) {
+    return { valid: false, message: 'Category name must be less than 50 characters' };
+  }
+
+  // 3. Allow only A–Z and space (no numbers or symbols)
+  const regex = /^[A-Za-z ]+$/;
+  if (!regex.test(trimmedValue)) {
+    return { valid: false, message: 'Only alphabets (A–Z) and spaces are allowed' };
+  }
+
+  // 4. Prevent double/multiple spaces
+  if (/\s{2,}/.test(trimmedValue)) {
+    return { valid: false, message: 'Multiple spaces are not allowed' };
+  }
+
+  return { valid: true, message: '' };
+}
+
 
     function validateDescription(value) {
       const trimmedValue = value.trim();

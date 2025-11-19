@@ -1,0 +1,1155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manage Addresses - BagHub</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    
+    <style>
+        :root {
+            --primary: #1a56db;
+            --primary-dark: #1e429f;
+            --secondary: #047857;
+        }
+        
+        .btn-primary {
+            background-color: var(--primary);
+            transition: all 0.3s ease;
+        }
+        
+        .btn-primary:hover {
+            background-color: var(--primary-dark);
+            transform: translateY(-2px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        }
+        
+        .card-hover {
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+        
+        .card-hover:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        }
+        
+        .address-card {
+            transition: all 0.3s ease;
+            border: 2px solid transparent;
+        }
+        
+        .address-card:hover {
+            border-color: var(--primary);
+        }
+        
+        .address-card.selected {
+            border-color: var(--primary);
+            background-color: #f0f9ff;
+        }
+        
+        .modal-overlay {
+            background-color: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(4px);
+        }
+        
+        .modal-content {
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+        
+        .shake {
+            animation: shake 0.5s ease-in-out;
+        }
+        
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-5px); }
+            75% { transform: translateX(5px); }
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <!-- Header -->
+    <%- include('../partials/landingheader') %>
+    
+    <!-- Main Content -->
+    <div class="container mx-auto px-4 py-8">
+        <div class="flex flex-col lg:flex-row gap-8">
+            <!-- Sidebar Navigation - Updated to match profile.ejs -->
+            <div class="lg:w-1/4">
+                <div class="bg-white rounded-2xl shadow-sm p-6 card-hover sticky top-24">
+                    <!-- User Profile Summary -->
+                    <div class="text-center mb-6">
+                        <% if (user.profileImage) { %>
+                            <img id="sidebarProfileImage"
+                                 src="<%= user.profileImage?.url %>"
+                                 class="w-24 h-24 rounded-full object-cover mx-auto border-4 border-white shadow-md">
+                        <% } else { %>
+                            <div id="sidebarProfileImage"
+                                 class="w-24 h-24 rounded-full bg-gradient-to-r from-blue-500 to-emerald-500 flex items-center justify-center text-white text-2xl font-bold mx-auto">
+                                <%= user.name ? user.name.charAt(0).toUpperCase() : "U" %>
+                            </div>
+                        <% } %>
+
+                        <h2 class="text-xl font-bold text-gray-900 mt-3"><%= user.name || "User" %></h2>
+                        <p class="text-gray-600 text-sm"><%= user.email %></p>
+
+                        <p class="text-green-600 text-sm font-medium mt-1">
+                            <i class="fas fa-check-circle mr-1"></i> Verified
+                        </p>
+                    </div>
+
+                    <!-- Navigation Menu - Updated to match profile.ejs -->
+                    <nav class="space-y-2">
+                        <a href="/user/profile"
+                           class="w-full text-left flex items-center gap-3 p-3 rounded-xl transition-all duration-200 hover:bg-gray-100 text-gray-700">
+                            <i class="fas fa-user text-gray-600 w-5"></i>
+                            <span>Profile Information</span>
+                        </a>
+
+                        <a href="/user/profile/orders"
+                           class="w-full text-left flex items-center gap-3 p-3 rounded-xl transition-all duration-200 hover:bg-gray-100 text-gray-700">
+                            <i class="fas fa-shopping-bag text-gray-600 w-5"></i>
+                            <span>My Orders</span>
+                            <span class="ml-auto bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full">
+                                <%= ordersCount || 0 %>
+                            </span>
+                        </a>
+
+                        <!-- Current Active Tab - Addresses -->
+                        <a href="/user/profile/addresses"
+                           class="w-full text-left flex items-center gap-3 p-3 rounded-xl transition-all duration-200 text-blue-600 font-semibold bg-blue-50 border-l-4 border-blue-600">
+                            <i class="fas fa-map-marker-alt text-blue-600 w-5"></i>
+                            <span>Saved Addresses</span>
+                        </a>
+
+                        <a href="/user/profile/wishlist"
+                           class="w-full text-left flex items-center gap-3 p-3 rounded-xl transition-all duration-200 hover:bg-gray-100 text-gray-700">
+                            <i class="far fa-heart text-gray-600 w-5"></i>
+                            <span>Wishlist</span>
+                            <span class="ml-auto bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full">
+                                <%= wishlistCount || 0 %>
+                            </span>
+                        </a>
+
+                        <a href="/user/profile/security"
+                           class="w-full text-left flex items-center gap-3 p-3 rounded-xl transition-all duration-200 hover:bg-gray-100 text-gray-700">
+                            <i class="fas fa-shield-alt text-gray-600 w-5"></i>
+                            <span>Security</span>
+                        </a>
+
+                        <a href="/user/profile/notifications"
+                           class="w-full text-left flex items-center gap-3 p-3 rounded-xl transition-all duration-200 hover:bg-gray-100 text-gray-700">
+                            <i class="fas fa-bell text-gray-600 w-5"></i>
+                            <span>Notifications</span>
+                            <span class="ml-auto bg-red-100 text-red-800 text-xs px-2 py-1 rounded-full">
+                                <%= unreadNotifications || 0 %>
+                            </span>
+                        </a>
+                    </nav>
+                </div>
+            </div>
+
+            <!-- Main Content Area -->
+            <div class="lg:w-3/4">
+                <!-- Header Section -->
+                <div class="bg-gradient-to-r from-blue-600 to-emerald-600 rounded-2xl shadow-lg p-6 mb-6 text-white">
+                    <div class="flex items-center gap-4">
+                        <div class="w-16 h-16 rounded-full bg-white/20 flex items-center justify-center">
+                            <i class="fas fa-map-marker-alt text-2xl"></i>
+                        </div>
+                        <div>
+                            <h1 class="text-2xl font-bold">Manage Your Addresses</h1>
+                            <p class="text-blue-100">Add, edit, or remove your delivery addresses</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Addresses Section -->
+                <div class="bg-white rounded-2xl shadow-sm p-6 card-hover">
+                    <div class="flex justify-between items-center mb-6">
+                        <h2 class="text-2xl font-bold text-gray-900">Saved Addresses</h2>
+                        <button 
+                            id="addAddressBtn"
+                            onclick="openAddAddressModal()"
+                            class="btn-primary text-white px-4 py-2 rounded-lg flex items-center gap-2"
+                        >
+                            <i class="fas fa-plus"></i>
+                            <span>Add New Address</span>
+                        </button>
+                    </div>
+
+                    <!-- Address List -->
+                    <div id="addressList" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <% if (addresses && addresses.length > 0) { %>
+                            <% addresses.forEach(address => { %>
+                                <!-- <div class="address-card border border-gray-200 rounded-xl p-6 relative <%= address.isDefault ? 'selected' : '' %>"> -->
+                                   <div class="address-card border border-gray-200 rounded-xl p-6 relative <%= address.isDefault ? 'selected' : '' %>"
+     data-address-id="<%= address._id %>">
+
+                                    <% if (address.isDefault) { %>
+                                        <span class="absolute top-4 right-4 bg-blue-100 text-blue-800 text-xs font-semibold px-2 py-1 rounded-full">
+                                            Default
+                                        </span>
+<!-- 
+                                        <span class="default-badge absolute top-4 right-4 bg-blue-100 text-blue-800 text-xs font-semibold px-2 py-1 rounded-full">
+    Default
+</span> -->
+
+                                    <% } %>
+                                    
+                                    <div class="flex items-start gap-3 mb-3">
+                                        <div class="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600">
+                                            <i class="fas fa-<%= getAddressTypeIcon(address.addressType) %>"></i>
+                                        </div>
+                                        <div>
+                                            <h3 class="font-semibold text-gray-900 capitalize"><%= address.addressType %> Address</h3>
+                                            <p class="text-sm text-gray-500"><%= address.fullName %> • <%= address.phone %></p>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="text-gray-700 mb-4">
+                                        <p><%= address.addressLine1 %></p>
+                                        <% if (address.addressLine2) { %>
+                                            <p><%= address.addressLine2 %></p>
+                                        <% } %>
+                                        <p><%= address.city %>, <%= address.state %> - <%= address.pincode %></p>
+                                        <p><%= address.country %></p>
+                                    </div>
+                                    
+                                    <div class="flex gap-2 pt-4 border-t border-gray-200">
+                                        <button 
+                                            onclick="setDefaultAddress('<%= address._id %>')"
+                                            class="flex-1 bg-gray-100 text-gray-700 py-2 rounded-lg hover:bg-gray-200 transition-all text-sm <%= address.isDefault ? 'hidden' : '' %>"
+                                        >
+                                            Set as Default
+                                        </button>
+                                       
+                                       <!-- <button 
+    onclick="setDefaultAddress('<%= address._id %>')"
+    class="set-default-btn flex-1 bg-gray-100 text-gray-700 py-2 rounded-lg hover:bg-gray-200 transition-all text-sm <%= address.isDefault ? 'hidden' : '' %>"
+>
+    Set as Default
+</button> -->
+
+
+                                        <button 
+                                            onclick="editAddress('<%= address._id %>')"
+                                            class="flex-1 bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition-all text-sm"
+                                        >
+                                            Edit
+                                        </button>
+                                       <!-- <a href="/user/profile/addresses/edit/<%= address._id %>" 
+   class="flex-1 bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 text-sm text-center">
+   Edit
+</a> -->
+
+                                       
+                                        <!-- <button 
+                                            onclick="deleteAddress('<%= address._id %>')"
+                                            class="flex-1 bg-red-600 text-white py-2 rounded-lg hover:bg-red-700 transition-all text-sm"
+                                        >
+                                            Delete
+                                        </button> -->
+
+                                        <button onclick="deleteAddress('<%= address._id %>')"
+class="flex-1 bg-red-600 text-white py-2 rounded-lg hover:bg-red-700 transition-all text-sm <%= address.isDefault ? 'hidden' : '' %>">
+    Delete
+</button>
+
+                                    </div>
+                                </div>
+                            <% }); %>
+                        <% } else { %>
+                            <div class="text-center py-12 col-span-full">
+                                <i class="fas fa-map-marker-alt text-gray-300 text-5xl mb-4"></i>
+                                <h3 class="text-lg font-medium text-gray-700 mb-2">No addresses saved yet</h3>
+                                <p class="text-gray-500 mb-4">Add your first address to get started</p>
+                                <button 
+                                    onclick="openAddAddressModal()"
+                                    class="btn-primary text-white px-6 py-3 rounded-lg inline-flex items-center gap-2"
+                                >
+                                    <i class="fas fa-plus"></i>
+                                    <span>Add Your First Address</span>
+                                </button>
+                            </div>
+                        <% } %>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <%- include('../partials/footer') %>
+
+    <!-- Add/Edit Address Modal -->
+    <div id="addressModal" class="fixed inset-0 z-50 hidden">
+        <div class="modal-overlay absolute inset-0 flex items-center justify-center p-4">
+            <div class="bg-white rounded-2xl shadow-xl modal-content w-full max-w-2xl">
+                <!-- Modal Header -->
+                <div class="flex justify-between items-center p-6 border-b border-gray-200">
+                    <h3 class="text-xl font-bold text-gray-900" id="modalTitle">Add New Address</h3>
+                    <button onclick="closeAddressModal()" class="text-gray-400 hover:text-gray-600">
+                        <i class="fas fa-times text-xl"></i>
+                    </button>
+                </div>
+
+                <!-- Modal Body -->
+                <div class="p-6">
+                    <form id="addressForm" class="space-y-6">
+                        <input type="hidden" id="addressId" name="addressId">
+                        
+                        <!-- Address Type -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Address Type</label>
+                            <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+                                <label class="flex items-center">
+                                    <input type="radio" name="addressType" value="home" class="sr-only peer" checked>
+                                    <div class="w-full p-3 border border-gray-300 rounded-lg text-center cursor-pointer peer-checked:border-blue-500 peer-checked:bg-blue-50">
+                                        <i class="fas fa-home text-gray-600 mb-1"></i>
+                                        <div class="text-sm font-medium">Home</div>
+                                    </div>
+                                </label>
+                                <label class="flex items-center">
+                                    <input type="radio" name="addressType" value="work" class="sr-only peer">
+                                    <div class="w-full p-3 border border-gray-300 rounded-lg text-center cursor-pointer peer-checked:border-blue-500 peer-checked:bg-blue-50">
+                                        <i class="fas fa-briefcase text-gray-600 mb-1"></i>
+                                        <div class="text-sm font-medium">Work</div>
+                                    </div>
+                                </label>
+                                <label class="flex items-center">
+                                    <input type="radio" name="addressType" value="other" class="sr-only peer">
+                                    <div class="w-full p-3 border border-gray-300 rounded-lg text-center cursor-pointer peer-checked:border-blue-500 peer-checked:bg-blue-50">
+                                        <i class="fas fa-map-marker-alt text-gray-600 mb-1"></i>
+                                        <div class="text-sm font-medium">Other</div>
+                                    </div>
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Full Name -->
+                        <div>
+                            <label for="fullName" class="block text-sm font-medium text-gray-700 mb-2">Full Name</label>
+                            <input 
+                                type="text" 
+                                id="fullName" 
+                                name="fullName" 
+                                class="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                placeholder="Enter full name"
+                            >
+                            <div id="fullNameError" class="text-red-500 text-sm mt-2 hidden">
+                                <i class="fas fa-exclamation-circle mr-1"></i>
+                                <span id="fullNameErrorText"></span>
+                            </div>
+                        </div>
+
+                        <!-- Phone Number -->
+                        <div>
+                            <label for="phone" class="block text-sm font-medium text-gray-700 mb-2">Phone Number</label>
+                            <input 
+                                type="tel" 
+                                id="phone" 
+                                name="phone" 
+                                class="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                placeholder="Enter phone number"
+                            >
+                            <div id="phoneError" class="text-red-500 text-sm mt-2 hidden">
+                                <i class="fas fa-exclamation-circle mr-1"></i>
+                                <span id="phoneErrorText"></span>
+                            </div>
+                        </div>
+
+                        <!-- Address Line 1 -->
+                        <div>
+                            <label for="addressLine1" class="block text-sm font-medium text-gray-700 mb-2">Address Line 1</label>
+                            <input 
+                                type="text" 
+                                id="addressLine1" 
+                                name="addressLine1" 
+                                class="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                placeholder="House no., Building, Street"
+                            >
+                            <div id="addressLine1Error" class="text-red-500 text-sm mt-2 hidden">
+                                <i class="fas fa-exclamation-circle mr-1"></i>
+                                <span id="addressLine1ErrorText"></span>
+                            </div>
+                        </div>
+
+                        <!-- Address Line 2 -->
+                        <div>
+                            <label for="addressLine2" class="block text-sm font-medium text-gray-700 mb-2">Address Line 2 (Optional)</label>
+                            <input 
+                                type="text" 
+                                id="addressLine2" 
+                                name="addressLine2" 
+                                class="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                placeholder="Area, Landmark"
+                            >
+                        </div>
+
+                        <!-- City, State, Pincode -->
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div>
+                                <label for="city" class="block text-sm font-medium text-gray-700 mb-2">City</label>
+                                <input 
+                                    type="text" 
+                                    id="city" 
+                                    name="city" 
+                                    class="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                    placeholder="City"
+                                >
+                                <div id="cityError" class="text-red-500 text-sm mt-2 hidden">
+                                    <i class="fas fa-exclamation-circle mr-1"></i>
+                                    <span id="cityErrorText"></span>
+                                </div>
+                            </div>
+                            <div>
+                                <label for="state" class="block text-sm font-medium text-gray-700 mb-2">State</label>
+                                <input 
+                                    type="text" 
+                                    id="state" 
+                                    name="state" 
+                                    class="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                    placeholder="State"
+                                >
+                                <div id="stateError" class="text-red-500 text-sm mt-2 hidden">
+                                    <i class="fas fa-exclamation-circle mr-1"></i>
+                                    <span id="stateErrorText"></span>
+                                </div>
+                            </div>
+                            <div>
+                                <label for="pincode" class="block text-sm font-medium text-gray-700 mb-2">Pincode</label>
+                                <input 
+                                    type="text" 
+                                    id="pincode" 
+                                    name="pincode" 
+                                    class="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                    placeholder="Pincode"
+                                >
+                                <div id="pincodeError" class="text-red-500 text-sm mt-2 hidden">
+                                    <i class="fas fa-exclamation-circle mr-1"></i>
+                                    <span id="pincodeErrorText"></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Country -->
+                        <div>
+                            <label for="country" class="block text-sm font-medium text-gray-700 mb-2">Country</label>
+                            <select 
+                                id="country" 
+                                name="country"
+                                class="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            >
+                                <option value="">Select Country</option>
+                                <option value="India" selected>India</option>
+                                <option value="United States">United States</option>
+                                <option value="United Kingdom">United Kingdom</option>
+                                <option value="Canada">Canada</option>
+                                <option value="Australia">Australia</option>
+                            </select>
+                            <div id="countryError" class="text-red-500 text-sm mt-2 hidden">
+                                <i class="fas fa-exclamation-circle mr-1"></i>
+                                <span id="countryErrorText"></span>
+                            </div>
+                        </div>
+
+                        <!-- Set as Default -->
+                        <div class="flex items-center">
+                            <input 
+                                type="checkbox" 
+                                id="isDefault" 
+                                name="isDefault"
+                                class="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                            >
+                            <label for="isDefault" class="ml-2 text-sm text-gray-700">
+                                Set as default address
+                            </label>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Modal Footer -->
+                <div class="flex justify-end gap-3 p-6 border-t border-gray-200">
+                    <button 
+                        type="button" 
+                        onclick="closeAddressModal()"
+                        class="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-all"
+                    >
+                        Cancel
+                    </button>
+                    <button 
+                        type="button" 
+                        id="saveAddressBtn"
+                        onclick="saveAddress()"
+                        class="btn-primary text-white px-6 py-3 rounded-lg flex items-center gap-2"
+                    >
+                        <i class="fas fa-save"></i>
+                        <span>Save Address</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Delete Confirmation Modal -->
+    <div id="deleteModal" class="fixed inset-0 z-50 hidden">
+        <div class="modal-overlay absolute inset-0 flex items-center justify-center p-4">
+            <div class="bg-white rounded-2xl shadow-xl w-full max-w-md">
+                <div class="p-6 text-center">
+                    <div class="w-16 h-16 rounded-full bg-red-100 flex items-center justify-center text-red-600 mx-auto mb-4">
+                        <i class="fas fa-exclamation-triangle text-xl"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-gray-900 mb-2">Delete Address</h3>
+                    <p class="text-gray-600 mb-6">Are you sure you want to delete this address? This action cannot be undone.</p>
+                    
+                    <div class="flex justify-center gap-3">
+                        <button 
+                            type="button" 
+                            onclick="closeDeleteModal()"
+                            class="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-all"
+                        >
+                            Cancel
+                        </button>
+                        <button 
+                            type="button" 
+                            id="confirmDeleteBtn"
+                            onclick="confirmDeleteAddress()"
+                            class="bg-red-600 text-white px-6 py-3 rounded-lg hover:bg-red-700 transition-all flex items-center gap-2"
+                        >
+                            <i class="fas fa-trash"></i>
+                            <span>Delete Address</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+  
+
+
+    <script>
+
+
+// Validators
+const nameRegex = /^[A-Za-z ]+$/; // alphabets and space
+const cityStateRegex = /^[A-Za-z ]+$/; // same for city/state/country
+const addressRegex = /^[A-Za-z0-9 ,.-]+$/; // allow letters, numbers, comma, dot, dash, spaces
+const validPhoneRegex = /^[6-9]\d{9}$/; // valid Indian mobile
+const repeatedPhoneRegex = /^(\d)\1{9}$/; // 1111111111, 9999999999 etc
+
+
+function isDuplicateAddress(data) {
+    return addresses.some(addr =>
+        addr.fullName.toLowerCase() === data.fullName.toLowerCase() &&
+        addr.phone === data.phone &&
+        addr.addressLine1.toLowerCase() === data.addressLine1.toLowerCase() &&
+        addr.pincode === data.pincode &&
+        (!isEditing || addr._id !== data.addressId) // allow same address when editing
+    );
+}
+
+
+        // Global variables
+        // let addresses = [];
+        // let addressToDelete = null;
+    //       window.addresses = <%- JSON.stringify(addresses) %>;
+    // addresses = window.addresses;
+    //     let isEditing = false;
+
+        // DOM Elements
+        // const addressModal = document.getElementById('addressModal');
+        // const deleteModal = document.getElementById('deleteModal');
+        // const addressForm = document.getElementById('addressForm');
+        // const addressList = document.getElementById('addressList');
+        // const modalTitle = document.getElementById('modalTitle');
+        // const saveAddressBtn = document.getElementById('saveAddressBtn');
+
+        // Initialize the page
+        // document.addEventListener('DOMContentLoaded', function() {
+        //     loadAddresses();
+            
+        //     // Add input event listeners for real-time validation
+        //     const inputs = addressForm.querySelectorAll('input, select');
+        //     inputs.forEach(input => {
+        //         input.addEventListener('input', function() {
+        //             hideError(input.id + 'Error');
+        //         });
+        //     });
+        // });
+
+        // Load addresses from server
+
+
+
+window.addresses = <%- JSON.stringify(addresses) %>;
+let addresses = window.addresses;
+let isEditing = false;
+
+function openAddAddressModal() {
+    isEditing = false;
+    document.getElementById("modalTitle").innerText = "Add New Address";
+    document.getElementById("addressForm").reset();
+    document.getElementById("addressModal").classList.remove("hidden");
+}
+
+function editAddress(id) {
+    const address = addresses.find(a => a._id === id);
+    if (!address) return;
+
+    isEditing = true;
+
+    document.getElementById("modalTitle").innerText = "Edit Address";
+    document.getElementById("addressId").value = address._id;
+    document.getElementById("fullName").value = address.fullName;
+    document.getElementById("phone").value = address.phone;
+    document.getElementById("addressLine1").value = address.addressLine1;
+    document.getElementById("addressLine2").value = address.addressLine2;
+    document.getElementById("city").value = address.city;
+    document.getElementById("state").value = address.state;
+    document.getElementById("pincode").value = address.pincode;
+    document.getElementById("country").value = address.country;
+    document.getElementById("isDefault").checked = address.isDefault;
+
+    document.getElementById("addressModal").classList.remove("hidden");
+}
+
+function closeAddressModal() {
+    document.getElementById("addressModal").classList.add("hidden");
+}
+
+
+        async function loadAddresses() {
+            try {
+                const response = await axios.get('/user/profile/addresses');
+                addresses = response.data.addresses || [];
+                renderAddressList();
+            } catch (error) {
+                console.error('Error loading addresses:', error);
+                showNotification('Failed to load addresses', 'error');
+            }
+        }
+
+        // Render address list
+        // function renderAddressList() {
+        //     if (addresses.length === 0) {
+        //         addressList.innerHTML = `
+        //             <div class="text-center py-12 col-span-full">
+        //                 <i class="fas fa-map-marker-alt text-gray-300 text-5xl mb-4"></i>
+        //                 <h3 class="text-lg font-medium text-gray-700 mb-2">No addresses saved yet</h3>
+        //                 <p class="text-gray-500 mb-4">Add your first address to get started</p>
+        //                 <button 
+        //                     onclick="openAddAddressModal()"
+        //                     class="btn-primary text-white px-6 py-3 rounded-lg inline-flex items-center gap-2"
+        //                 >
+        //                     <i class="fas fa-plus"></i>
+        //                     <span>Add Your First Address</span>
+        //                 </button>
+        //             </div>
+        //         `;
+        //         return;
+        //     }
+
+        //     addressList.innerHTML = addresses.map(address => `
+        //         <div class="address-card border border-gray-200 rounded-xl p-6 relative ${address.isDefault ? 'selected' : ''}">
+        //             ${address.isDefault ? `
+        //                 <span class="absolute top-4 right-4 bg-blue-100 text-blue-800 text-xs font-semibold px-2 py-1 rounded-full">
+        //                     Default
+        //                 </span>
+        //             ` : ''}
+                    
+        //             <div class="flex items-start gap-3 mb-3">
+        //                 <div class="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600">
+        //                     <i class="fas fa-${getAddressTypeIcon(address.addressType)}"></i>
+        //                 </div>
+        //                 <div>
+        //                     <h3 class="font-semibold text-gray-900 capitalize">${address.addressType} Address</h3>
+        //                     <p class="text-sm text-gray-500">${address.fullName} • ${address.phone}</p>
+        //                 </div>
+        //             </div>
+                    
+        //             <div class="text-gray-700 mb-4">
+        //                 <p>${address.addressLine1}</p>
+        //                 ${address.addressLine2 ? `<p>${address.addressLine2}</p>` : ''}
+        //                 <p>${address.city}, ${address.state} - ${address.pincode}</p>
+        //                 <p>${address.country}</p>
+        //             </div>
+                    
+        //             <div class="flex gap-2 pt-4 border-t border-gray-200">
+        //                 <button 
+        //                     onclick="setDefaultAddress('${address._id}')"
+        //                     class="flex-1 bg-gray-100 text-gray-700 py-2 rounded-lg hover:bg-gray-200 transition-all text-sm ${address.isDefault ? 'hidden' : ''}"
+        //                 >
+        //                     Set as Default
+        //                 </button>
+        //                 <button 
+        //                     onclick="editAddress('${address._id}')"
+        //                     class="flex-1 bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition-all text-sm"
+        //                 >
+        //                     Edit
+        //                 </button>
+        //                 <button 
+        //                     onclick="deleteAddress('${address._id}')"
+        //                     class="flex-1 bg-red-600 text-white py-2 rounded-lg hover:bg-red-700 transition-all text-sm"
+        //                 >
+        //                     Delete
+        //                 </button>
+        //             </div>
+        //         </div>
+        //     `).join('');
+        // }
+
+        // Get address type icon
+        function getAddressTypeIcon(type) {
+            const icons = {
+                'home': 'home',
+                'work': 'briefcase',
+                'other': 'map-marker-alt'
+            };
+            return icons[type] || 'map-marker-alt';
+        }
+
+        // Open add address modal
+        // function openAddAddressModal() {
+        //     isEditing = false;
+        //     modalTitle.textContent = 'Add New Address';
+        //     addressForm.reset();
+        //     document.getElementById('addressId').value = '';
+        //     document.querySelector('input[name="addressType"][value="home"]').checked = true;
+        //     document.getElementById('isDefault').checked = addresses.length === 0;
+        //     addressModal.classList.remove('hidden');
+        // }
+
+        // Open edit address modal
+        // function editAddress(addressId) {
+        //     const address = addresses.find(addr => addr._id === addressId);
+        //     if (!address) return;
+
+        //     isEditing = true;
+        //     modalTitle.textContent = 'Edit Address';
+            
+        //     // Fill form with address data
+        //     document.getElementById('addressId').value = address._id;
+        //     document.querySelector(`input[name="addressType"][value="${address.addressType}"]`).checked = true;
+        //     document.getElementById('fullName').value = address.fullName;
+        //     document.getElementById('phone').value = address.phone;
+        //     document.getElementById('addressLine1').value = address.addressLine1;
+        //     document.getElementById('addressLine2').value = address.addressLine2 || '';
+        //     document.getElementById('city').value = address.city;
+        //     document.getElementById('state').value = address.state;
+        //     document.getElementById('pincode').value = address.pincode;
+        //     document.getElementById('country').value = address.country;
+        //     document.getElementById('isDefault').checked = address.isDefault;
+            
+        //     addressModal.classList.remove('hidden');
+        // }
+
+        // Close address modal
+        // function closeAddressModal() {
+        //     addressModal.classList.add('hidden');
+        // }
+
+        // Validate address form
+        // function validateAddressForm() {
+        //     const formData = new FormData(addressForm);
+        //     const data = Object.fromEntries(formData);
+            
+        //     // Reset errors
+        //     hideAllErrors();
+            
+        //     let isValid = true;
+            
+        //     // Validate full name
+        //     if (!data.fullName.trim()) {
+        //         showError('fullNameError', 'Please enter full name');
+        //         isValid = false;
+        //     }
+            
+        //     // Validate phone
+        //     if (!data.phone.trim()) {
+        //         showError('phoneError', 'Please enter phone number');
+        //         isValid = false;
+        //     } else if (!/^\d{10}$/.test(data.phone.replace(/\D/g, ''))) {
+        //         showError('phoneError', 'Please enter a valid 10-digit phone number');
+        //         isValid = false;
+        //     }
+            
+        //     // Validate address line 1
+        //     if (!data.addressLine1.trim()) {
+        //         showError('addressLine1Error', 'Please enter address line 1');
+        //         isValid = false;
+        //     }
+            
+        //     // Validate city
+        //     if (!data.city.trim()) {
+        //         showError('cityError', 'Please enter city');
+        //         isValid = false;
+        //     }
+            
+        //     // Validate state
+        //     if (!data.state.trim()) {
+        //         showError('stateError', 'Please enter state');
+        //         isValid = false;
+        //     }
+            
+        //     // Validate pincode
+        //     if (!data.pincode.trim()) {
+        //         showError('pincodeError', 'Please enter pincode');
+        //         isValid = false;
+        //     } else if (!/^\d{6}$/.test(data.pincode)) {
+        //         showError('pincodeError', 'Please enter a valid 6-digit pincode');
+        //         isValid = false;
+        //     }
+            
+        //     // Validate country
+        //     if (!data.country) {
+        //         showError('countryError', 'Please select country');
+        //         isValid = false;
+        //     }
+            
+        //     return isValid;
+        // }
+
+
+        function validateAddressForm() {
+    const formData = new FormData(addressForm);
+    const data = Object.fromEntries(formData);
+
+    hideAllErrors();
+    let valid = true;
+
+    // FULL NAME CHECK
+    if (!data.fullName.trim()) {
+        showError("fullNameError", "Full name is required");
+        valid = false;
+    } else if (!nameRegex.test(data.fullName)) {
+        showError("fullNameError", "Full name cannot contain numbers or special symbols");
+        valid = false;
+    }
+
+    // PHONE NUMBER CHECK
+    if (!data.phone.trim()) {
+        showError("phoneError", "Phone number is required");
+        valid = false;
+    } else if (!validPhoneRegex.test(data.phone)) {
+        showError("phoneError", "Enter a valid 10-digit mobile number");
+        valid = false;
+    } else if (repeatedPhoneRegex.test(data.phone)) {
+        showError("phoneError", "Phone number cannot be all repeated digits (e.g. 1111111111)");
+        valid = false;
+    }
+
+    // ADDRESS LINE CHECK
+    if (!data.addressLine1.trim()) {
+        showError("addressLine1Error", "Address Line 1 is required");
+        valid = false;
+    } else if (!addressRegex.test(data.addressLine1)) {
+        showError("addressLine1Error", "Address cannot contain symbols like &&, **, @#, etc.");
+        valid = false;
+    }
+
+    // CITY CHECK
+    if (!data.city.trim()) {
+        showError("cityError", "City is required");
+        valid = false;
+    } else if (!cityStateRegex.test(data.city)) {
+        showError("cityError", "City can only contain alphabets");
+        valid = false;
+    }
+
+    // STATE CHECK
+    if (!data.state.trim()) {
+        showError("stateError", "State is required");
+        valid = false;
+    } else if (!cityStateRegex.test(data.state)) {
+        showError("stateError", "State can only contain alphabets");
+        valid = false;
+    }
+
+    // PINCODE CHECK
+    if (!data.pincode.trim()) {
+        showError("pincodeError", "Pincode is required");
+        valid = false;
+    } else if (!/^\d{6}$/.test(data.pincode)) {
+        showError("pincodeError", "Enter a valid 6-digit pincode");
+        valid = false;
+    }
+
+    // COUNTRY CHECK
+    if (!data.country.trim()) {
+        showError("countryError", "Country is required");
+        valid = false;
+    } else if (!cityStateRegex.test(data.country)) {
+        showError("countryError", "Country can only contain alphabets");
+        valid = false;
+    }
+
+    // DUPLICATE ADDRESS CHECK
+    if (valid && isDuplicateAddress(data)) {
+        showNotification("This address already exists", "error");
+        return false;
+    }
+
+    return valid;
+}
+
+        // Save address
+        async function saveAddress() {
+            if (!validateAddressForm()) return;
+            
+            const formData = new FormData(addressForm);
+            const data = Object.fromEntries(formData);
+            
+            try {
+                // Update button state
+                saveAddressBtn.disabled = true;
+                saveAddressBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i><span>Saving...</span>';
+                
+                let response;
+                
+                if (isEditing) {
+                    // Update existing address
+                    response = await axios.put(`/user/addresses/${data.addressId}`, data);
+                } else {
+                    // Create new address
+                    response = await axios.post('/user/addresses', data);
+                }
+                
+                if (response.data.success) {
+                    showNotification(response.data.message || 'Address saved successfully', 'success');
+                    closeAddressModal();
+
+                    // Redirect to address list page
+                    setTimeout(() => {
+                        window.location.href = "/user/profile/addresses";
+                    }, 800);
+
+                } else {
+                    showError('generalError', response.data.message || 'Failed to save address');
+                }
+            } catch (error) {
+                console.error('Error saving address:', error);
+                showNotification('Failed to save address. Please try again.', 'error');
+            } finally {
+                // Reset button state
+                saveAddressBtn.disabled = false;
+                saveAddressBtn.innerHTML = '<i class="fas fa-save"></i><span>Save Address</span>';
+            }
+        }
+
+        // Set default address
+
+      
+        // async function setDefaultAddress(addressId) {
+        //     try {
+        //         const response = await axios.patch(`/user/addresses/${addressId}/default`);
+                
+        //         if (response.data.success) {
+        //             showNotification('Default address updated successfully', 'success');
+        //             await loadAddresses(); // Reload addresses
+        //         } else {
+        //             showNotification('Failed to update default address', 'error');
+        //         }
+        //     } catch (error) {
+        //         console.error('Error setting default address:', error);
+        //         showNotification('Failed to update default address', 'error');
+        //     }
+        // }
+
+async function setDefaultAddress(addressId) {
+  try {
+    if (!addressId) return showNotification("Invalid address", "error");
+    // optional: disable the clicked button if you have data-target
+    const response = await axios.patch(`/user/addresses/${addressId}/default`);
+    if (response?.data?.success) {
+      showNotification("Default updated", "success");
+      setTimeout(() => window.location.href = "/user/profile/addresses", 350);
+    } else {
+      showNotification(response?.data?.message || "Failed to update default", "error");
+    }
+  } catch (err) {
+    console.error("Error setting default:", err);
+    showNotification("Error updating default", "error");
+  }
+}
+
+// async function setDefaultAddress(addressId) {
+//     try {
+//         // disable if no id
+//         if (!addressId) return showNotification("Invalid address", "error");
+
+//         const btn = document.querySelector(`.set-default-btn[data-target="${addressId}"]`);
+//         if (btn) {
+//             btn.disabled = true;
+//             btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i><span>Setting...</span>';
+//         }
+
+//         const response = await axios.patch(`/user/addresses/${addressId}/default`);
+
+//         if (response && response.data && response.data.success) {
+//             showNotification("Default address updated", "success");
+//             // safe reload of address page (not whole site)
+//             setTimeout(() => {
+//                 window.location.href = "/user/profile/addresses";
+//             }, 350);
+//         } else {
+//             showNotification((response && response.data && response.data.message) || "Failed to update default", "error");
+//             if (btn) {
+//                 btn.disabled = false;
+//                 btn.innerHTML = 'Set as Default';
+//             }
+//         }
+//     } catch (err) {
+//         console.error("Error setting default:", err);
+//         showNotification("Error updating default", "error");
+//         const btn = document.querySelector(`.set-default-btn[data-target="${addressId}"]`);
+//         if (btn) {
+//             btn.disabled = false;
+//             btn.innerHTML = 'Set as Default';
+//         }
+//     }
+// }
+
+        // Delete address confirmation
+        function deleteAddress(addressId) {
+            addressToDelete = addressId;
+            deleteModal.classList.remove('hidden');
+        }
+
+        // Close delete modal
+        function closeDeleteModal() {
+            deleteModal.classList.add('hidden');
+            addressToDelete = null;
+        }
+
+        // Confirm address deletion
+        // async function confirmDeleteAddress() {
+        //     if (!addressToDelete) return;
+            
+        //     try {
+        //         const deleteBtn = document.getElementById('confirmDeleteBtn');
+        //         deleteBtn.disabled = true;
+        //         deleteBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i><span>Deleting...</span>';
+                
+        //         const response = await axios.delete(`/user/addresses/${addressToDelete}`);
+                
+        //         if (response.data.success) {
+        //             showNotification('Address deleted successfully', 'success');
+        //             closeDeleteModal();
+        //             await loadAddresses(); // Reload addresses
+        //         } else {
+        //             showNotification('Failed to delete address', 'error');
+        //         }
+        //     } catch (error) {
+        //         console.error('Error deleting address:', error);
+        //         showNotification('Failed to delete address', 'error');
+        //     } finally {
+        //         const deleteBtn = document.getElementById('confirmDeleteBtn');
+        //         deleteBtn.disabled = false;
+        //         deleteBtn.innerHTML = '<i class="fas fa-trash"></i><span>Delete Address</span>';
+        //     }
+        // }
+
+
+        async function confirmDeleteAddress() {
+    if (!addressToDelete) return;
+
+    try {
+        const deleteBtn = document.getElementById('confirmDeleteBtn');
+        deleteBtn.disabled = true;
+        deleteBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i><span>Deleting...</span>';
+
+        const response = await axios.delete(`/user/addresses/${addressToDelete}`);
+
+        if (response.data.success) {
+            showNotification('Address deleted successfully', 'success');
+
+            // ❗ REMOVE CARD FROM DOM IMMEDIATELY
+            const card = document.querySelector(`[data-address-id="${addressToDelete}"]`);
+            if (card) {
+                card.remove();
+            }
+
+            closeDeleteModal();
+        } else {
+            showNotification('Failed to delete address', 'error');
+        }
+    } catch (error) {
+        console.error('Error deleting address:', error);
+        showNotification('Failed to delete address', 'error');
+    } finally {
+        const deleteBtn = document.getElementById('confirmDeleteBtn');
+        deleteBtn.disabled = false;
+        deleteBtn.innerHTML = '<i class="fas fa-trash"></i><span>Delete Address</span>';
+    }
+}
+
+        // Show error message
+        function showError(elementId, message) {
+            const errorElement = document.getElementById(elementId);
+            const errorText = document.getElementById(elementId + 'Text');
+            
+            if (errorElement && errorText) {
+                errorText.textContent = message;
+                errorElement.classList.remove('hidden');
+                
+                // Add shake animation to corresponding input
+                const inputId = elementId.replace('Error', '');
+                const input = document.getElementById(inputId);
+                if (input) {
+                    input.classList.add('shake');
+                    setTimeout(() => input.classList.remove('shake'), 500);
+                }
+            }
+        }
+
+        // Hide error message
+        function hideError(elementId) {
+            const errorElement = document.getElementById(elementId);
+            if (errorElement) {
+                errorElement.classList.add('hidden');
+            }
+        }
+
+        // Hide all errors
+        function hideAllErrors() {
+            const errorElements = document.querySelectorAll('[id$="Error"]');
+            errorElements.forEach(element => {
+                element.classList.add('hidden');
+            });
+        }
+
+        // Notification system
+        function showNotification(message, type) {
+            const notification = document.createElement('div');
+            notification.className = `fixed top-4 right-4 p-4 rounded-lg shadow-lg z-50 transform transition-transform duration-300 ${
+                type === 'success' ? 'bg-green-500 text-white' : 'bg-red-500 text-white'
+            }`;
+            notification.innerHTML = `
+                <div class="flex items-center gap-3">
+                    <i class="fas fa-${type === 'success' ? 'check' : 'exclamation'}-circle"></i>
+                    <span>${message}</span>
+                </div>
+            `;
+            
+            document.body.appendChild(notification);
+            
+            // Remove notification after 3 seconds
+            setTimeout(() => {
+                notification.style.transform = 'translateX(100%)';
+                setTimeout(() => {
+                    if (document.body.contains(notification)) {
+                        document.body.removeChild(notification);
+                    }
+                }, 300);
+            }, 3000);
+        }
+    </script>
+</body>
+</html>

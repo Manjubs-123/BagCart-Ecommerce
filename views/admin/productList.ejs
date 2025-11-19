@@ -349,7 +349,7 @@
                 confirmButtonText: `Yes, ${action}!`
             }).then((result) => {
                 if (result.isConfirmed) {
-                    // ✅ Disable all buttons to prevent double-clicks
+                    //  Disable all buttons to prevent double-clicks
                     document.querySelectorAll('button').forEach(btn => btn.disabled = true);
 
                     fetch(`/admin/products/toggle-status/${id}`, { method: 'POST' })
@@ -365,7 +365,7 @@
                                 showConfirmButton: false
                             });
 
-                            // ✅ Wait for SweetAlert to close before reload
+                            //  Wait for SweetAlert to close before reload
                             setTimeout(() => location.reload(), 1500);
                         })
                         .catch(error => {
@@ -373,7 +373,7 @@
                             Swal.fire('Error', error.message || 'Failed to toggle product status', 'error');
                         })
                         .finally(() => {
-                            // ✅ Re-enable buttons after the fetch completes
+                            //  Re-enable buttons after the fetch completes
                             document.querySelectorAll('button').forEach(btn => btn.disabled = false);
                         });
                 }

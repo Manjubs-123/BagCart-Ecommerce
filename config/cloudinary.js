@@ -2,7 +2,6 @@ import {v2 as cloudinary }from "cloudinary";
 import { CloudinaryStorage } from "multer-storage-cloudinary";  
 import multer from "multer";
 import dotenv from "dotenv";
-
 dotenv.config();
 
 //Cloudinary configuration
@@ -25,3 +24,4 @@ const storage=new CloudinaryStorage({
 //Multer upload Middleware
 const upload=multer ({storage});
 export {cloudinary,upload};
+export default cloudinary;

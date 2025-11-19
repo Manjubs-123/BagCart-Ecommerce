@@ -3,10 +3,9 @@ import passport from "passport";
 import { Strategy as GoogleStrategy } from "passport-google-oauth20";
 import dotenv from "dotenv";
 import User from "../models/userModel.js";
-
 dotenv.config();
 
-// ✅ Google OAuth Strategy
+//Google OAuth Strategy
 passport.use(
   new GoogleStrategy(
     {
@@ -40,16 +39,16 @@ passport.use(
   )
 );
 
-// ✅ Serialize & Deserialize
+// Serialize & Deserialize
 passport.serializeUser((user, done) => {
-  console.log("🔐 Serialize user:", user.email);
+  console.log("Serialize user:", user.email);
   done(null, user.id);
 });
 
 passport.deserializeUser(async (id, done) => {
   try {
     const user = await User.findById(id);
-    console.log("🔓 Deserialize user:", user?.email);
+    console.log(" Deserialize user:", user?.email);
     done(null, user);
   } catch (err) {
     done(err, null);
