@@ -338,10 +338,10 @@
             <p class="text-xs text-gray-500 mt-1">Email cannot be changed</p>
         </div> -->
 
-        <div>
+        <!-- <div>
     <label class="block text-sm font-medium text-gray-700 mb-1">Email Address</label>
 
-    <!-- <div class="flex gap-3">
+     <div class="flex gap-3">
         <input type="email" value="<%= user.email %>" disabled
             class="flex-1 border border-gray-300 bg-gray-100 rounded-lg px-4 py-3" />
 
@@ -349,12 +349,11 @@
             class="bg-blue-600 text-white px-4 py-3 rounded-lg hover:bg-blue-700 transition">
             Change
         </button>
-    </div> -->
+    </div>  -->
 
+      <div class="flex gap-3">
 
-    <div class="flex gap-3">
-
-    <!-- Email input (always disabled) -->
+     <!-- Email input (always disabled)  -->
     <input type="email" value="<%= user.email %>" disabled
         class="flex-1 border border-gray-300 bg-gray-100 rounded-lg px-4 py-3" />
 
@@ -362,7 +361,7 @@
         <!-- User is NOT Google login → allow email change -->
         <button 
             type="button" 
-            onclick="window.location.href='/user/profile/change-email'"
+            onclick="window.location.href='/user/change-email'"
             class="bg-blue-600 text-white px-4 py-3 rounded-lg hover:bg-blue-700 transition">
             Change
         </button>
@@ -374,6 +373,9 @@
     <% } %>
 
 </div>
+
+
+  
 
     <p class="text-xs text-gray-500 mt-1">Click change to update your email</p>
 </div>
@@ -1017,10 +1019,20 @@ function cancelCrop() {
         }
 
         // Initialize the page
+        // document.addEventListener('DOMContentLoaded', function() {
+        //     // Set the first tab as active
+        //     switchTab('profile');
+        // });
+
+
         document.addEventListener('DOMContentLoaded', function() {
-            // Set the first tab as active
-            switchTab('profile');
-        });
+    const currentUrl = window.location.pathname;
+
+    if (currentUrl === "/user/profile") {
+        switchTab('profile');
+    }
+});
+
     </script>
 
 </body>

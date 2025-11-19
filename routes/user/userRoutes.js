@@ -76,9 +76,9 @@ router.post(
   updateUserProfile
 );
 
-router.get("/change-email",getChangeEmailPage);
-router.post("/change-email/send-otp",sendChangeEmailOtp);
-router.post("/change-email/verify",verifyChangedEmailOtp);
+router.get("/change-email",isUserLoggedIn,getChangeEmailPage);
+router.post("/change-email/send-otp",isUserLoggedIn,sendChangeEmailOtp);
+router.post("/change-email/verify",isUserLoggedIn,verifyChangedEmailOtp);
 
 
 // Logout
