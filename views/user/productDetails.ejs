@@ -298,14 +298,26 @@
 
   <!-- Wishlist Button -->
   <div class="absolute top-4 right-4 z-10">
-    <button 
+    <!-- <button 
       onclick="toggleWishlist('<%= product._id %>')" 
       class="wishlist-btn bg-white rounded-full p-3 shadow-md hover:shadow-lg transition"
       title="Add to Wishlist"
     >
       <i id="wishlistIcon" class="far fa-heart text-gray-400 text-lg"></i>
-    </button>
+    </button> -->
+  
+  <button onclick="toggleWishlist('<%= product._id %>', this)"
+        class="wishlist-btn bg-white rounded-full p-3 shadow-md hover:shadow-lg transition">
+
+  <i class="<%= userWishlist.includes(product._id.toString()) 
+              ? 'fas fa-heart text-red-500' 
+              : 'far fa-heart text-gray-400' %> text-lg"></i>
+</button>
+
+
   </div>
+
+
 </div>
 
 
@@ -692,26 +704,62 @@
   /* ----------------------------------------------------------
      WISHLIST HANDLER
   ---------------------------------------------------------- */
-  function toggleWishlist(productId) {
-    const wishlistIcon = document.getElementById("wishlistIcon");
+  // function toggleWishlist(productId) {
+  //   const wishlistIcon = document.getElementById("wishlistIcon");
 
-    if (isWishlisted) {
-      wishlistIcon.classList.replace("fas", "far");
-      wishlistIcon.style.color = "";
-    } else {
-      wishlistIcon.classList.replace("far", "fas");
-      wishlistIcon.style.color = "#ef4444";
+  //   if (isWishlisted) {
+  //     wishlistIcon.classList.replace("fas", "far");
+  //     wishlistIcon.style.color = "";
+  //   } else {
+  //     wishlistIcon.classList.replace("far", "fas");
+  //     wishlistIcon.style.color = "#ef4444";
+  //   }
+
+  //   isWishlisted = !isWishlisted;
+
+  //   showNotification(
+  //     isWishlisted
+  //       ? "Product added to wishlist!"
+  //       : "Product removed from wishlist!",
+  //     isWishlisted ? "success" : "info"
+  //   );
+  // }
+async function toggleWishlist(productId, btn) {
+  const icon = btn.querySelector("i");
+
+  const isWishlisted = icon.classList.contains("fas");
+
+  const url = isWishlisted
+      ? `/user/wishlist/remove/${productId}`
+      : `/user/wishlist/add/${productId}`;
+
+  try {
+    const response = await fetch(url, { method: "POST" });
+    const data = await response.json();
+
+    if (!data.success) {
+      return showNotification("Something went wrong!", "error");
     }
 
-    isWishlisted = !isWishlisted;
+    // Toggle UI without resetting on variant change
+    if (isWishlisted) {
+      icon.classList.replace("fas", "far");
+      icon.classList.remove("text-red-500");
+      icon.classList.add("text-gray-400");
+      showNotification("Removed from wishlist", "info");
+    } else {
+      icon.classList.replace("far", "fas");
+      icon.classList.remove("text-gray-400");
+      icon.classList.add("text-red-500");
+      showNotification("Added to wishlist!", "success");
+    }
 
-    showNotification(
-      isWishlisted
-        ? "Product added to wishlist!"
-        : "Product removed from wishlist!",
-      isWishlisted ? "success" : "info"
-    );
+  } catch (error) {
+    console.error(error);
+    showNotification("Server error!", "error");
   }
+}
+
 
   /* ----------------------------------------------------------
      CART + BUY NOW

@@ -212,12 +212,27 @@
                   <p class="text-gray-900 font-bold text-xl">₹<%= product.variants?.[0]?.price || 0 %></p>
                 </div>
                 <div class="mt-auto flex space-x-2">
-                  <button class="btn-primary text-white px-4 py-2 rounded-lg text-sm font-medium flex-1">
+                  <!-- <button class="btn-primary text-white px-4 py-2 rounded-lg text-sm font-medium flex-1">
                     Add to Cart
-                  </button>
-                  <button class="border border-gray-300 text-gray-700 px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-50 transition">
-                    <i class="far fa-heart"></i>
-                  </button>
+                  </button> -->
+                  <button 
+  class="btn-primary add-to-cart-btn text-white px-4 py-2 rounded-lg text-sm font-medium flex-1"
+  onclick="addToCartFrontend('<%= product._id %>')">
+  Add to Cart
+</button>
+
+
+<button 
+  class="wishlist-btn border border-gray-300 text-gray-700 px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-50 transition"
+  onclick="toggleWishlist('<%= product._id %>', this)">
+    <i class="<%= userWishlistIds.includes(product._id.toString()) 
+              ? 'fas fa-heart text-red-500' 
+              : 'far fa-heart' %>"></i>
+</button>
+
+
+
+
                 </div>
               </div>
             </div>
@@ -240,41 +255,90 @@
    <!-- SHOP YOUR FAVOURITES -->
 <section class="py-16 bg-white">
   <div class="max-w-7xl mx-auto px-4">
+    
     <h2 class="section-title text-3xl font-bold text-gray-900">
       Shop Your Favourites
     </h2>
 
     <div class="swiper favSwiper mt-8">
       <div class="swiper-wrapper pb-10">
+
         <% if (favouriteProducts && favouriteProducts.length > 0) { %>
-          <% favouriteProducts.forEach(product => { %>
+          <% favouriteProducts.forEach(product => { 
+              const variant = product.variants?.[0];
+          %>
+
             <div class="swiper-slide">
               <div class="card-hover bg-white border border-gray-200 rounded-xl p-4 h-full flex flex-col">
+
+                <!-- IMAGE -->
                 <div class="relative">
-                  <img
-                    src="<%= product.variants?.[0]?.images?.[0]?.url || '/images/no-image.jpg' %>"
+                  <img 
+                    src="<%= variant?.images?.[0]?.url || '/images/no-image.jpg' %>"
                     alt="<%= product.name %>"
                     class="rounded-lg w-full h-64 object-cover mb-4"
                   />
-                  <span class="badge">Fav</span>
+                  <span class="badge new-badge">Fav</span>
                 </div>
-                <h3 class="font-bold text-lg mb-2 text-gray-900"><%= product.name %></h3>
-                <p class="text-gray-700 mb-3"><%= product.category?.name || 'Uncategorized' %></p>
-                <p class="text-gray-900 font-bold text-xl mb-4">₹<%= product.variants?.[0]?.price || 0 %></p>
-                <button class="btn-primary text-white px-4 py-2 rounded-lg text-sm font-medium">
-                  Add to Cart
-                </button>
+
+                <!-- NAME -->
+                <h3 class="font-bold text-lg mb-1 text-gray-900">
+                  <%= product.name %>
+                </h3>
+
+                <!-- CATEGORY -->
+                <p class="text-gray-700 text-sm mb-2">
+                  <%= product.category?.name || 'Uncategorized' %>
+                </p>
+
+                <!-- PRICE -->
+                <p class="text-gray-900 font-bold text-xl mb-4">
+                  ₹<%= variant?.price || 0 %>
+                </p>
+
+                <!-- BUTTONS -->
+                <div class="mt-auto flex space-x-2">
+
+                  <!-- Add to Cart Button -->
+                  <!-- <button class="btn-primary text-white px-4 py-2 rounded-lg text-sm font-medium flex-1">
+                    Add to Cart
+                  </button> -->
+                  <button 
+  class="btn-primary add-to-cart-btn text-white px-4 py-2 rounded-lg text-sm font-medium flex-1"
+  onclick="addToCartFrontend('<%= product._id %>')">
+  Add to Cart
+</button>
+
+
+                  <!-- Wishlist Button -->
+                  <button 
+                    class="border border-gray-300 text-gray-700 px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-50 transition wishlist-btn flex items-center justify-center"
+                    onclick="toggleWishlist('<%= product._id %>', this)"
+                  >
+                    <i class="
+                      <%= userWishlistIds.includes(product._id.toString()) 
+                        ? 'fas fa-heart text-red-500'
+                        : 'far fa-heart'
+                      %>
+                    "></i>
+                  </button>
+
+                </div>
               </div>
             </div>
+
           <% }); %>
         <% } else { %>
           <p class="text-gray-500 text-center">No favourite products available</p>
         <% } %>
+
       </div>
+
       <div class="swiper-pagination mt-4"></div>
     </div>
   </div>
 </section>
+
 
 
     <!-- HAND PICKED -->
@@ -397,23 +461,87 @@
       loadProducts();
       
       // Add to cart animation
-      document.addEventListener('DOMContentLoaded', function() {
-        // const addToCartButtons = document.querySelectorAll('.btn-primary');
-        const addToCartButtons = document.querySelectorAll('.add-to-cart-btn');
+   
+// function addToCartFrontend(productId) {
+//     fetch("/user/cart/add", {
+//         method: "POST",
+//         headers: { "Content-Type": "application/json" },
+//         body: JSON.stringify({
+//             productId: productId,
+//             quantity: 1,
+//             color: null
+//         })
+//     })
+//     .then(res => res.json())
+//     .then(data => {
+//         if (data.success) {
+//             updateCartCount();
 
-        addToCartButtons.forEach(button => {
-          button.addEventListener('click', function() {
-            const originalText = this.innerHTML;
-            this.innerHTML = '<i class="fas fa-check mr-2"></i> Added to Cart';
-            this.classList.add('bg-green-600');
-            
-            setTimeout(() => {
-              this.innerHTML = originalText;
-              this.classList.remove('bg-green-600');
-            }, 2000);
-          });
-        });
-      });
-    </script>
+//             showNotification("Added to Cart", "success");
+//         } else {
+//             showNotification("Failed to add to cart", "error");
+//         }
+//     });
+// }
+function addToCartFrontend(productId) {
+  fetch("/user/cart/add", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      productId,
+      quantity: 1,
+      variantIndex: 0
+    })
+  })
+  .then(res => res.json())
+  .then(data => {
+    if (data.success) {
+      updateCartCount();
+      showNotification("Added to Cart", "success");
+    } else {
+      showNotification("Failed to add to cartttt", "error");
+    }
+  });
+}
+
+// Update navbar cart badge
+function updateCartCount() {
+    const cartBadge = document.querySelector("#cartCount, .cartCount, .cart-count");
+
+    if (cartBadge) {
+        let current = parseInt(cartBadge.innerText) || 0;
+        cartBadge.innerText = current + 1;
+    }
+}
+
+// Simple toast (you already use it for wishlist)
+function showNotification(msg, type) {
+    alert(msg);
+}
+
+
+    
+
+function toggleWishlist(productId, btn) {
+    fetch(`/user/wishlist/toggle/${productId}`, {
+        method: "POST"
+    })
+    .then(res => res.json())
+    .then(data => {
+        const icon = btn.querySelector("i");
+
+        if (data.added) {
+            icon.classList.remove("far");
+            icon.classList.add("fas", "text-red-500");
+        } else {
+            icon.classList.remove("fas", "text-red-500");
+            icon.classList.add("far");
+        }
+
+        showNotification(data.message, "success");
+    });
+}
+</script>
+
   </body>
 </html>

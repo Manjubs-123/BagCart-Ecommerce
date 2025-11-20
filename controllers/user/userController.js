@@ -7,7 +7,9 @@ import nodemailer from "nodemailer";
 import mongoose from "mongoose";
 import dotenv from "dotenv";
 dotenv.config();
-import {loadHomeProducts,renderLandingPage} from "./productController.js";  
+import {loadHomeProducts,renderLandingPage} from "./productController.js"; 
+// import Order from "../../models/orderModel.js";
+
 
 // Email setup (Gmail SMTP)
 const transporter = nodemailer.createTransport({
@@ -833,6 +835,425 @@ export const setDefaultAddress = async (req, res) => {
     return res.status(500).json({ success: false, message: "Error updating default" });
   }
 };
+
+
+// export const getSecuritySettings=async (req,res)=>{
+
+//      try {
+//         if (!req.session.user) return res.redirect('/user/login');
+
+//         const user = await User.findById(req.session.user._id);
+
+//         res.render('user/changepassword', { user });
+//     } catch (err) {
+//         console.log("Error loading security page:", err);
+//         res.status(500).send("Server error");
+//     }
+// };
+
+
+// export const getSecuritySettings = async (req, res) => {
+//   try {
+//     if (!req.session.user) {
+//       return res.redirect('/user/login');
+//     }
+
+//     const userId = req.session.user._id || req.session.userId;
+
+//     if (!userId) {
+//       return res.redirect('/user/login');
+//     }
+
+//     const user = await User.findById(userId);
+
+//     if (!user) {
+//       return res.redirect('/user/login');
+//     }
+
+//     res.render('user/changepassword', { user });
+
+//   } catch (err) {
+//     console.log("Error loading security page:", err);
+//     res.status(500).send("Server error");
+//   }
+// };
+
+
+// export const getSecuritySettings = async (req, res) => {
+//   try {
+//     if (!req.session.user) return res.redirect('/user/login');
+
+//     const userId = req.session.user._id;
+//     const user = await User.findById(userId);
+
+//     res.render('user/changepassword', { user });
+//   } catch (err) {
+//     console.log("Error loading security page:", err);
+//     res.status(500).send("Server error");
+//   }
+// };
+
+// export const getSecuritySettings = async (req, res) => {
+//   try {
+//     if (!req.session.user) return res.redirect('/user/login');
+
+//     const userId = req.session.user._id;
+//     const user = await User.findById(userId);
+
+//     res.render('user/changepassword', { user });
+//   } catch (err) {
+//     console.log("Error loading security page:", err);
+//     res.status(500).send("Server error");
+//   }
+// };
+
+
+
+export const getSecuritySettings = async (req, res) => {
+  try {
+    console.log("REACHED SECURITY PAGE");
+
+    if (!req.session.user) return res.redirect('/user/login');
+
+    const userId = req.session.user.id || req.session.user._id;
+    console.log("USER ID:", userId);
+
+    const user = await User.findById(userId);
+    console.log("USER:", user);
+
+    res.render("user/changepassword", { 
+      user,
+      ordersCount: 0,
+      wishlistCount: 0,
+      unreadNotifications: 0,
+      activePage: "security"
+    });
+
+  } catch (err) {
+    console.log("ERROR:", err);
+    res.status(500).send("Server error");
+  }
+};
+
+// export const checkCurrentPassword = async (req, res) => {
+//     try {
+//         const user = await User.findById(req.session.user.id);
+
+//         if (!user) return res.json({ valid: false });
+
+//         const isMatch = await bcrypt.compare(req.body.currentPassword, user.password);
+
+//         res.json({ valid: isMatch });
+
+//     } catch (err) {
+//         console.error("Password check error:", err);
+//         res.json({ valid: false });
+//     }
+// };
+
+// export const changePassword = async (req, res) => {
+//     try {
+//         const { currentPassword, newPassword } = req.body;
+
+//         const user = await User.findById(req.session.user.id);
+//         if (!user) {
+//             return res.json({ success: false, message: "User not found" });
+//         }
+
+//         // Compare old password
+//         const isMatch = await bcrypt.compare(currentPassword, user.password);
+//         if (!isMatch) {
+//             return res.json({ success: false, message: "Incorrect current password" });
+//         }
+
+//         // Hash new password
+//         const salt = await bcrypt.genSalt(10);
+//         const hashed = await bcrypt.hash(newPassword, salt);
+
+//         // Save new password
+//         user.password = hashed;
+//         await user.save();
+
+//         return res.json({ success: true, message: "Password updated successfully" });
+
+//     } catch (err) {
+//         console.log("Error updating password:", err);
+//         return res.json({ success: false, message: "Internal server error" });
+//     }
+// };
+
+export const checkCurrentPassword = async (req, res) => {
+    try {
+        const user = await User.findById(req.session.user.id);
+
+        if (!user) return res.json({ valid: false });
+
+        // BLOCK CURRENT PASSWORD CHECK FOR GOOGLE USERS
+        if (user.googleId) {
+            return res.json({ valid: false });
+        }
+
+        const isMatch = await bcrypt.compare(req.body.currentPassword, user.password);
+        res.json({ valid: isMatch });
+
+    } catch (err) {
+        console.error("Password check error:", err);
+        res.json({ valid: false });
+    }
+};
+
+
+export const changePassword = async (req, res) => {
+    try {
+        const { currentPassword, newPassword } = req.body;
+
+        const user = await User.findById(req.session.user.id);
+        if (!user) {
+            return res.json({ success: false, message: "User not found" });
+        }
+
+        // BLOCK PASSWORD CHANGE FOR GOOGLE USERS
+        if (user.googleId) {
+            return res.json({
+                success: false,
+                message: "You logged in using Google. Password change is not required."
+            });
+        }
+
+        // Compare old password
+        const isMatch = await bcrypt.compare(currentPassword, user.password);
+        if (!isMatch) {
+            return res.json({ success: false, message: "Incorrect current password" });
+        }
+
+        // Hash new password
+        const hashed = await bcrypt.hash(newPassword, 10);
+        user.password = hashed;
+        await user.save();
+
+        return res.json({ success: true, message: "Password updated successfully" });
+
+    } catch (err) {
+        console.log("Error updating password:", err);
+        return res.json({ success: false, message: "Internal server error" });
+    }
+};
+
+
+// export const getWishlistPage = async (req, res) => {
+//     try {
+//         const user = await User.findById(req.session.user._id)
+//             .populate("wishlist");
+
+//         res.render("user/wishlist", {
+//             activePage: "wishlist",
+//             wishlist: user.wishlist,
+//             wishlistCount: user.wishlist.length
+//         });
+//     } catch (err) {
+//         console.log(err);
+//         res.status(500).send("Error loading wishlist");
+//     }
+// };
+
+
+
+
+
+// export const getWishlistPage = async (req, res) => {
+//     try {
+//         if (!req.session.user || !req.session.user.id) {
+//             return res.redirect("/login");
+//         }
+
+//         const user = await User.findById(req.session.user.id)
+//             .populate("wishlist");
+
+//         const wishlistItems = user.wishlist; // ARRAY OF PRODUCTS
+
+//         const ordersCount = 0;
+//         const unreadNotifications = 0;
+
+//         res.render("user/wishlist", {
+//             activePage: "wishlist",
+//             user,
+//             wishlistItems,
+//             wishlistCount: wishlistItems.length,
+//             ordersCount,
+//             unreadNotifications
+//         });
+
+//     } catch (err) {
+//         console.log("WISHLIST ERROR:", err);
+//         return res.status(500).send("Error loading wishlist");
+//     }
+// };
+
+export const getWishlistPage = async (req, res) => {
+    try {
+        if (!req.session.user || !req.session.user.id) {
+            return res.redirect("/login");
+        }
+
+        const user = await User.findById(req.session.user.id)
+            .populate({
+                path: "wishlist",
+                populate: { path: "category", select: "name" }
+            });
+
+        const wishlistItems = user.wishlist;
+
+        res.render("user/wishlist", {
+            activePage: "wishlist",
+            user,
+            wishlistItems,
+            wishlistCount: wishlistItems.length,
+            ordersCount: 0,
+            unreadNotifications: 0
+        });
+
+    } catch (err) {
+        console.log("WISHLIST ERROR:", err);
+        return res.status(500).send("Error loading wishlist");
+    }
+};
+
+
+
+
+// export const addToWishlist = async (req, res) => {
+//   try {
+//     const userId = req.session.user._id;
+//     const productId = req.params.productId;
+
+//     const user = await User.findById(userId);
+
+//     if (!user.wishlist.includes(productId)) {
+//       user.wishlist.push(productId);
+//     }
+
+//     await user.save();
+
+//     return res.json({ success: true, message: "Added to wishlist" });
+
+//   } catch (err) {
+//     console.log(err);
+//     return res.json({ success: false });
+//   }
+// };
+
+
+// export const removeFromWishlist = async (req, res) => {
+//   try {
+//     const userId = req.session.user._id;
+//     const productId = req.params.productId;
+
+//     await User.findByIdAndUpdate(userId, {
+//       $pull: { wishlist: productId }
+//     });
+
+//     return res.json({ success: true });
+
+//   } catch (err) {
+//     console.log(err);
+//     return res.json({ success: false });
+//   }
+// };
+
+
+export const addToWishlist = async (req, res) => {
+  try {
+    const userId = req.session.user.id;   // ✔ ALWAYS USE id
+    const productId = req.params.productId;
+
+    const user = await User.findById(userId);
+
+    if (!user.wishlist.includes(productId)) {
+      user.wishlist.push(productId);
+      await user.save();
+    }
+
+    return res.json({ success: true });
+
+  } catch (error) {
+    console.error("Error adding to wishlist:", error);
+    return res.status(500).json({ success: false });
+  }
+};
+
+// export const removeFromWishlist = async (req, res) => {
+//   try {
+//     const userId = req.session.user.id;  // ✔ FIXED (was _id)
+//     const productId = req.params.productId;
+
+//     console.log("Removing product:", productId);
+
+//     const user = await User.findByIdAndUpdate(
+//       userId,
+//       { $pull: { wishlist: productId } },
+//       { new: true }
+//     );
+
+//     if (!user) {
+//       return res.json({ success: false, message: "User not found" });
+//     }
+
+//     // update wishlist count in session
+//     req.session.user.wishlistCount = user.wishlist.length;
+
+//     return res.json({ success: true });
+
+//   } catch (err) {
+//     console.log("REMOVE ERROR:", err);
+//     return res.json({ success: false, message: "Server error" });
+//   }
+// };
+
+export const removeFromWishlist = async (req, res) => {
+  try {
+    const userId = req.session.user.id;  // ✔ MATCH here
+    const productId = req.params.productId;
+
+    await User.findByIdAndUpdate(userId, {
+      $pull: { wishlist: productId }
+    });
+
+    return res.json({ success: true });
+
+  } catch (error) {
+    console.error("Error removing from wishlist:", error);
+    return res.status(500).json({ success: false });
+  }
+};
+
+
+export const toggleWishlist = async (req, res) => {
+    try {
+        const userId = req.session.user.id;
+        const productId = req.params.productId;
+
+        const user = await User.findById(userId);
+
+        if (!user) return res.json({ success: false, message: "User not found" });
+
+        let added = false;
+
+        if (user.wishlist.includes(productId)) {
+            user.wishlist.pull(productId);
+            await user.save();
+            return res.json({ success: true, added: false, message: "Removed from wishlist" });
+        } else {
+            user.wishlist.push(productId);
+            await user.save();
+            return res.json({ success: true, added: true, message: "Added to wishlist" });
+        }
+    } catch (err) {
+        console.log(err);
+        res.json({ success: false, message: "Something went wrong" });
+    }
+};
+
+
 
 
 
