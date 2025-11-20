@@ -1,24 +1,7 @@
 import Cart from "../../models/cartModel.js";
 import Product from "../../models/productModel.js";
 
-// export const getCartPage = async (req, res) => {
-//     try {
-//     const userId = req.session.user?.id;
 
-//     if (!userId) return res.redirect("/user/login");
-
-//     const cart = await Cart.findOne({ user: userId }).populate("items.product");
-
-//     res.render("user/cart", {
-//       title: "Cart",
-//       cart: cart || { items: [] },
-//       user: req.session.user,
-//     });
-//   } catch (error) {
-//     console.log("Error loading cart page:", error);
-//     res.status(500).send("Cart page error");
-//   }
-// };
 
 export const getCartPage = async (req, res) => {
   try {
@@ -58,75 +41,6 @@ export const getCartPage = async (req, res) => {
   }
 };
 
-
-// export const addToCart = async (req, res) => {
-//     const { productId, quantity, color } = req.body;
-
-//     let cart = await Cart.findOne({ user: req.session.user.id });
-
-//     if (!cart) {
-//         cart = new Cart({ user: req.session.user.id, items: [] });
-//     }
-
-//     const existing = cart.items.find(
-//         item => item.product.toString() === productId && item.color === color
-//     );
-
-//     if (existing) {
-//         existing.quantity += quantity;
-//     } else {
-//         cart.items.push({ product: productId, quantity, color });
-//     }
-
-//     await cart.save();
-//     res.json({ success: true });
-// };
-
-// export const addToCart = async (req, res) => {
-//   try {
-//     const { productId, variantIndex, quantity } = req.body;
-//     const userId = req.session.user.id;
-
-//     const product = await Product.findById(productId);
-//     if (!product) return res.json({ success: false, message: "Product not found" });
-
-//     const variant = product.variants[variantIndex];
-//     if (!variant) return res.json({ success: false, message: "Invalid variant" });
-
-//     if (variant.stock < quantity)
-//       return res.json({ success: false, message: "Out of stock" });
-
-//     let cart = await Cart.findOne({ user: userId });
-
-//     if (!cart) cart = new Cart({ user: userId, items: [] });
-
-//     const existing = cart.items.find(
-//       item =>
-//         item.product.toString() === productId &&
-//         item.variantIndex === variantIndex
-//     );
-
-//     if (existing) {
-//       if (existing.quantity + quantity > variant.stock) {
-//         return res.json({
-//           success: false,
-//           message: "Not enough stock"
-//         });
-//       }
-//       existing.quantity += quantity;
-//     } else {
-//       cart.items.push({ product: productId, variantIndex, quantity });
-//     }
-
-//     await cart.save();
-
-//     res.json({ success: true });
-
-//   } catch (err) {
-//     console.error(err);
-//     res.json({ success: false, message: "Error adding to cart" });
-//   }
-// };
 
 export const addToCart = async (req, res) => {
   try {
@@ -207,7 +121,6 @@ export const addToCart = async (req, res) => {
     return res.json({ success: false, message: "Something went wrong" });
   }
 };
-
 
 
 export const updateCartQuantity = async (req, res) => {
