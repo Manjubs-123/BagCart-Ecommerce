@@ -155,7 +155,8 @@
 <div class="cart-item bg-white border border-gray-200 rounded-xl p-4 flex flex-col md:flex-row gap-4"
      data-item-id="<%= item._id %>"
      data-price="<%= variant.price %>"
-     data-qty="<%= item.quantity %>">
+     data-qty="<%= item.quantity %>"
+     data-available="<%= available %>">
 
     <!-- IMAGE -->
     <div class="flex-shrink-0">
@@ -225,12 +226,13 @@
                     </span>
 
                     <!-- increase -->
-                    <button class="quantity-btn px-3 py-1 text-gray-600 hover:bg-gray-100"
-                            data-item-id="<%= item._id %>"
-                            data-action="increase"
-                            <%= isOutOfStock || item.quantity >= available ? 'disabled' : '' %>>
-                        <i class="fas fa-plus"></i>
-                    </button>
+                   <button class="quantity-btn px-3 py-1 text-gray-600 hover:bg-gray-100"
+        data-item-id="<%= item._id %>"
+        data-action="increase"
+        <%= isOutOfStock || item.quantity >= available ? 'disabled' : '' %>>
+    <i class="fas fa-plus"></i>
+</button>
+
 
                 </div>
 
@@ -412,63 +414,91 @@
         }
 
         // Handle quantity changes
-        async function handleQuantityChange(itemId, action) {
-            try {
-                const itemElement = document.querySelector(`[data-item-id="${itemId}"]`);
-                const currentQty = parseInt(itemElement.querySelector('.quantity-btn + span').textContent);
-                let newQuantity = currentQty;
+       async function handleQuantityChange(itemId, action) {
+    const itemEl = document.querySelector(`[data-item-id="${itemId}"]`);
+    const currentQty = parseInt(itemEl.querySelector('.qty-value').textContent);
+    const available = parseInt(itemEl.getAttribute('data-available')); // Add this attribute
 
-                if (action === 'increase') {
-                    newQuantity++;
-                } else if (action === 'decrease') {
-                    if (newQuantity > 1) {
-                        newQuantity--;
-                    } else {
-                        // If quantity becomes 0, remove the item
-                        await handleRemoveItem(itemId);
-                        return;
-                    }
-                }
+    let newQty = currentQty;
 
-                const success = await updateCartItem(itemId, newQuantity);
-                if (success) {
-                    // Update UI immediately for better UX
-                    itemElement.querySelector('.quantity-btn + span').textContent = newQuantity;
-                    updateItemTotal(itemId, newQuantity);
-                    updateCartSummary();
-                }
-            } catch (error) {
-                console.error('Error handling quantity change:', error);
-                showNotification('Failed to update quantity', 'error');
-            }
+    if (action === "increase") {
+        if (currentQty >= available) {
+            showNotification(`Only ${available} available`, "error");
+            return;
         }
+        newQty++;
+    }
+
+    if (action === "decrease") {
+        if (currentQty <= 1) return;
+        newQty--;
+    }
+
+    const success = await updateCartItem(itemId, newQty);
+
+    if (success) {
+        // Update UI
+        itemEl.querySelector('.qty-value').textContent = newQty;
+        itemEl.setAttribute('data-qty', newQty);
+        updateItemTotal(itemId, newQty);
+
+        // Disable/Enable +
+        const plusBtn = itemEl.querySelector('[data-action="increase"]');
+        plusBtn.disabled = newQty >= available;
+    }
+}
 
         // Update cart item quantity using PUT
-        async function updateCartItem(itemId, newQuantity) {
-            try {
-                setLoading(true);
+//         async function updateCartItem(itemId, newQuantity) {
+//             try {
+//                 setLoading(true);
 
-                const response = await axios.put(API_ENDPOINTS.updateItem, {
-                    itemId,
-                    quantity: newQuantity
-                });
+//                const response = await axios.put(`/user/cart/update/${itemId}`, {
+//     quantity: newQuantity
+// });
 
-                if (response.data.success) {
-                    updateCartSummary();
-                    showNotification('Cart updated successfully', 'success');
-                    return true;
-                } else {
-                    showNotification(response.data.message || 'Failed to update cart', 'error');
-                    return false;
-                }
-            } catch (error) {
-                console.error('Error updating cart item:', error);
-                showNotification('Failed to update cart item', 'error');
-                return false;
-            } finally {
-                setLoading(false);
-            }
+
+//                 if (response.data.success) {
+//                     updateCartSummary();
+//                     showNotification('Cart updated successfully', 'success');
+//                     return true;
+//                 } else {
+//                     showNotification(response.data.message || 'Failed to update cart', 'error');
+//                     return false;
+//                 }
+//             } catch (error) {
+//                 console.error('Error updating cart item:', error);
+//                 showNotification('Failed to update cart item', 'error');
+//                 return false;
+//             } finally {
+//                 setLoading(false);
+//             }
+//         }
+
+async function updateCartItem(itemId, newQuantity) {
+    try {
+        setLoading(true);
+
+        const response = await axios.put(`/user/cart/update/${itemId}`, {
+            quantity: newQuantity
+        });
+
+        if (response.data.success) {
+            updateCartSummary();
+            showNotification('Cart updated successfully', 'success');
+            return true;
+        } else {
+            showNotification(response.data.message || 'Failed to update cart', 'error');
+            return false;
         }
+    } catch (error) {
+        console.error('Error updating cart item:', error);
+        showNotification('Failed to update cart item', 'error');
+        return false;
+    } finally {
+        setLoading(false);
+    }
+}
 
         // Update item total display
         function updateItemTotal(itemId, quantity) {

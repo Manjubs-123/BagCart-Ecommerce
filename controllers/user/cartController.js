@@ -3,6 +3,44 @@ import Product from "../../models/productModel.js";
 
 
 
+// export const getCartPage = async (req, res) => {
+//   try {
+//     if (!req.session.user) {
+//       return res.redirect("/user/login");
+//     }
+
+//     const userId = req.session.user.id;
+
+//     // 👉 Fetch cart dynamically
+//     const cart = await Cart.findOne({ user: userId })
+//       .populate("items.product")
+//       .lean();
+
+//     // 👉 Sidebar related values (keep your logic)
+//     const ordersCount = 0;  
+//     const wishlistCount = req.session.user.wishlistCount || 0;
+//     const unreadNotifications = 0;
+
+//     res.render("user/cart", {
+//       title: "Shopping Cart",
+//       currentPage: "cart",
+
+//       // keep your existing variables
+//       user: req.session.user,
+//       ordersCount,
+//       wishlistCount,
+//       unreadNotifications,
+
+//       // NEW → dynamic cart data
+//       cart: cart || { items: [] }
+//     });
+
+//   } catch (error) {
+//     console.error("Cart Page Error:", error);
+//     res.status(500).send("Error loading cart page");
+//   }
+// };
+
 export const getCartPage = async (req, res) => {
   try {
     if (!req.session.user) {
@@ -11,27 +49,24 @@ export const getCartPage = async (req, res) => {
 
     const userId = req.session.user.id;
 
-    // 👉 Fetch cart dynamically
+    // 👉 Fetch cart WITHOUT .lean()
     const cart = await Cart.findOne({ user: userId })
-      .populate("items.product")
-      .lean();
+      .populate("items.product");   // ❗ DO NOT USE .lean()
 
     // 👉 Sidebar related values (keep your logic)
-    const ordersCount = 0;  
+    const ordersCount = 0;
     const wishlistCount = req.session.user.wishlistCount || 0;
     const unreadNotifications = 0;
 
     res.render("user/cart", {
       title: "Shopping Cart",
       currentPage: "cart",
-
-      // keep your existing variables
       user: req.session.user,
       ordersCount,
       wishlistCount,
       unreadNotifications,
 
-      // NEW → dynamic cart data
+      // Pass real mongoose document (NOT lean object)
       cart: cart || { items: [] }
     });
 
@@ -40,7 +75,6 @@ export const getCartPage = async (req, res) => {
     res.status(500).send("Error loading cart page");
   }
 };
-
 
 export const addToCart = async (req, res) => {
   try {
@@ -132,27 +166,30 @@ export const updateCartQuantity = async (req, res) => {
     let cart = await Cart.findOne({ user: userId }).populate("items.product");
 
     const item = cart.items.id(itemId);
-    if (!item) return res.json({ success: false, message: "Item not found" });
+    if (!item) 
+      return res.json({ success: false, message: "Item not found" });
 
     const product = item.product;
-    const variant = product.variants.find(v => v.color === item.color) || product.variants[0];
 
-    // prevent exceeding stock
+    const variant = product.variants[item.variantIndex] || product.variants[0];
+
+    // ✅ STOCK VALIDATION — PLACE HERE
     if (quantity > variant.stock) {
       return res.json({
-        success: false, 
+        success: false,
         message: `Only ${variant.stock} items available`
       });
     }
 
+    // Update quantity
     item.quantity = quantity;
     await cart.save();
 
-    res.json({ success: true });
+    return res.json({ success: true });
 
   } catch (err) {
     console.log(err);
-    res.json({ success: false, message: "Error updating quantity" });
+    return res.json({ success: false, message: "Error updating quantity" });
   }
 };
 
