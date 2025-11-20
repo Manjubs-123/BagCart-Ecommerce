@@ -88,8 +88,10 @@
 
                     <% wishlistItems.forEach(product => { %>
 
-                     <% const variant = product.variants?.[0]; %>
+                 <% const variantIndex = 0; %>
+<% const variant = product.variants?.[variantIndex]; %>
 <% const unavailable = product.isDeleted || !product.isActive; %>
+
 
 <div class="wishlist-item bg-white border border-gray-200 rounded-xl p-4 flex flex-col md:flex-row gap-4 
     <%= unavailable ? 'opacity-50 pointer-events-none' : '' %>">
@@ -153,17 +155,22 @@
             <div class="flex gap-2 mt-3 md:mt-0">
 
                 <!-- Add to Cart -->
-                <button 
-                    onclick="<%= (!unavailable && variant?.stock > 0) ? `addToCart('${product._id}')` : '' %>"
-                    class="px-4 py-2 rounded-lg flex items-center gap-2 
-                        <%= (!unavailable && variant?.stock > 0) 
-                            ? 'bg-gray-100 text-gray-700 hover:bg-gray-200' 
-                            : 'bg-gray-300 text-gray-400 cursor-not-allowed' 
-                        %>"
-                >
-                    <i class="fas fa-shopping-cart"></i>
-                    Add to Cart
-                </button>
+        <button 
+    onclick="<%= (!unavailable && variant?.stock > 0) 
+                ? `addToCart('${product._id}', ${variantIndex})` 
+                : '' %>"
+    class="px-4 py-2 rounded-lg flex items-center gap-2 
+        <%= (!unavailable && variant?.stock > 0) 
+            ? 'bg-gray-100 text-gray-700 hover:bg-gray-200' 
+            : 'bg-gray-300 text-gray-400 cursor-not-allowed' 
+        %>"
+>
+    <i class="fas fa-shopping-cart"></i>
+    Add to Cart
+</button>
+
+
+
 
                 <!-- Remove -->
                 <button 
@@ -210,13 +217,52 @@ function removeFromWishlist(productId) {
         .then(data => { if (data.success) location.reload(); });
 }
 
-function addToCart(productId) {
-    fetch(`/cart/add/${productId}`, { method: "POST" })
-        .then(res => res.json())
-        .then(data => {
-            if (data.success) showNotification("Item added to cart", "success");
-        });
+// function addToCart(productId) {
+//     fetch(`/cart/add/${productId}`, { method: "POST" })
+//         .then(res => res.json())
+//         .then(data => {
+//             if (data.success) showNotification("Item added to cart", "success");
+//         });
+// }
+function addToCart(productId, variantIndex = 0) {
+
+    fetch("/user/cart/add", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ productId, quantity: 1, variantIndex })
+    })
+    .then(res => res.json())
+    .then(async data => {
+
+        if (!data.success) {
+            showNotification(data.message || "Failed to add", "error");
+            return;
+        }
+
+        showNotification("Item added to cart", "success");
+
+        // 🟢 REMOVE ITEM FROM WISHLIST (DB)
+        await fetch(`/user/wishlist/remove/${productId}`, { method: "POST" });
+
+        // 🟢 REMOVE FROM UI IMMEDIATELY WITHOUT REFRESH
+        const card = document.querySelector(`[data-product-id="${productId}"]`);
+        if (card) {
+            card.style.opacity = "0";
+            setTimeout(() => card.remove(), 300);
+        }
+
+        // 🟢 Redirect to cart AFTER wishlist item is removed
+        setTimeout(() => {
+            window.location.href = "/user/cart";
+        }, 400);
+
+    })
+    .catch(err => {
+        console.error(err);
+        showNotification("Error adding item", "error");
+    });
 }
+
 
 function showNotification(message, type) {
     const n = document.createElement("div");

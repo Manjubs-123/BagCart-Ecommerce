@@ -261,48 +261,52 @@
             </div>
 
             <!-- Order Summary Section -->
-            <div class="lg:w-1/3">
-                <div class="bg-white rounded-2xl shadow-sm p-6 card-hover sticky top-24">
-                    <h2 class="text-xl font-bold text-gray-900 mb-6">Order Summary</h2>
-                    
-                    <!-- Summary -->
-                    <div class="space-y-4 mb-6">
-                        <div class="flex justify-between items-center">
-                            <span class="text-gray-600">Subtotal (<span id="summaryItemCount"><%= cart.items ? cart.items.length : 0 %></span> items)</span>
-                            <span class="font-medium text-lg" id="subtotal">₹<%= cart.total || '0.00' %></span>
-                        </div>
-                        
-                        <div class="border-t pt-4">
-                            <div class="flex justify-between items-center text-xl font-bold">
-                                <span>Total</span>
-                                <span id="totalAmount">₹<%= cart.total || '0.00' %></span>
-                            </div>
-                            <p class="text-gray-500 text-sm mt-1">Including <span id="taxAmount">₹0.00</span> in taxes</p>
-                        </div>
-                    </div>
+            <!-- Order Summary Section -->
+<div class="lg:w-1/3">
+    <div class="bg-white rounded-2xl shadow-sm p-6 card-hover sticky top-24">
 
-                    <!-- Checkout Button -->
-                    <button id="checkoutBtn" class="w-full btn-primary text-white py-4 rounded-lg flex items-center justify-center gap-2 mb-4 text-lg font-semibold <%= (!cart.items || cart.items.length === 0) ? 'opacity-50 cursor-not-allowed' : '' %>"
-                            <%= (!cart.items || cart.items.length === 0) ? 'disabled' : '' %>>
-                        <i class="fas fa-lock"></i>
-                        <span>Proceed to Checkout</span>
-                    </button>
-                    
-                    <!-- Security Notice -->
-                    <div class="text-center text-gray-500 text-sm">
-                        <i class="fas fa-shield-alt mr-1"></i>
-                        <span>Secure checkout • Your information is safe</span>
-                    </div>
+        <h2 class="text-xl font-bold text-gray-900 mb-6">Order Summary</h2>
 
-                    <!-- Continue Shopping -->
-                    <div class="border-t mt-6 pt-6">
-                        <a href="/user/shop" class="block text-center text-blue-600 hover:text-blue-800 transition-colors font-medium">
-                            <i class="fas fa-arrow-left mr-2"></i>
-                            Continue Shopping
-                        </a>
-                    </div>
+        <!-- Summary -->
+        <div class="space-y-4 mb-6">
+            
+            <!-- Subtotal -->
+            <div class="flex justify-between items-center">
+                <span class="text-gray-600">
+                    Subtotal (<span id="summaryItemCount"><%= cart.items ? cart.items.length : 0 %></span> items)
+                </span>
+                <span class="font-medium text-lg" id="subtotal">₹0.00</span>
+            </div>
+
+            <!-- Grand Total -->
+            <div class="border-t pt-4">
+                <div class="flex justify-between items-center text-xl font-bold">
+                    <span>Grand Total</span>
+                    <span id="totalAmount">₹0.00</span>
                 </div>
             </div>
+
+        </div>
+
+        <!-- Checkout Button -->
+        <button id="checkoutBtn"
+            class="w-full btn-primary text-white py-4 rounded-lg flex items-center justify-center gap-2 mb-4 text-lg font-semibold 
+            <%= (!cart.items || cart.items.length === 0) ? 'opacity-50 cursor-not-allowed' : '' %>"
+            <%= (!cart.items || cart.items.length === 0) ? 'disabled' : '' %>>
+            <i class="fas fa-lock"></i>
+            <span>Proceed to Checkout</span>
+        </button>
+
+        <!-- Continue Shopping -->
+        <div class="border-t mt-6 pt-6">
+            <a href="/user/shop" class="block text-center text-blue-600 hover:text-blue-800 transition-colors font-medium">
+                <i class="fas fa-arrow-left mr-2"></i> Continue Shopping
+            </a>
+        </div>
+
+    </div>
+</div>
+
         </div>
     </div>
 
@@ -574,37 +578,31 @@ async function updateCartItem(itemId, newQuantity) {
         }
 
         // Update cart summary
-        function updateCartSummary() {
-            let subtotal = 0;
-            let itemCount = 0;
-            
-            // Calculate from actual cart items in DOM
-            document.querySelectorAll('.cart-item').forEach(itemElement => {
-                const price = parseFloat(itemElement.getAttribute('data-price'));
-                const quantity = parseInt(itemElement.getAttribute('data-qty'));
-                subtotal += price * quantity;
-                itemCount += quantity;
-            });
-            
-            const taxAmount = subtotal * 0.10; // 10% tax
-            const totalAmount = subtotal + taxAmount;
-            
-            document.getElementById('subtotal').textContent = `₹${subtotal.toFixed(2)}`;
-            document.getElementById('taxAmount').textContent = `₹${taxAmount.toFixed(2)}`;
-            document.getElementById('totalAmount').textContent = `₹${totalAmount.toFixed(2)}`;
-            document.getElementById('itemCount').textContent = itemCount;
-            document.getElementById('summaryItemCount').textContent = itemCount;
+      function updateCartSummary() {
+    let subtotal = 0;
+    let itemCount = 0;
 
-            // Update checkout button state
-            const checkoutBtn = document.getElementById('checkoutBtn');
-            if (itemCount === 0) {
-                checkoutBtn.disabled = true;
-                checkoutBtn.classList.add('opacity-50', 'cursor-not-allowed');
-            } else {
-                checkoutBtn.disabled = false;
-                checkoutBtn.classList.remove('opacity-50', 'cursor-not-allowed');
-            }
-        }
+    document.querySelectorAll('.cart-item').forEach(itemElement => {
+        const price = parseFloat(itemElement.getAttribute('data-price'));
+        const quantity = parseInt(itemElement.getAttribute('data-qty'));
+        subtotal += price * quantity;
+        itemCount += quantity;
+    });
+
+    document.getElementById('subtotal').textContent = `₹${subtotal.toFixed(2)}`;
+    document.getElementById('totalAmount').textContent = `₹${subtotal.toFixed(2)}`;
+    document.getElementById('summaryItemCount').textContent = itemCount;
+
+    // Update checkout button state
+    const checkoutBtn = document.getElementById('checkoutBtn');
+    if (itemCount === 0) {
+        checkoutBtn.disabled = true;
+        checkoutBtn.classList.add('opacity-50', 'cursor-not-allowed');
+    } else {
+        checkoutBtn.disabled = false;
+        checkoutBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+    }
+}
 
         // Handle checkout
         async function handleCheckout() {
