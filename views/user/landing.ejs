@@ -212,9 +212,15 @@
                   <p class="text-gray-900 font-bold text-xl">₹<%= product.variants?.[0]?.price || 0 %></p>
                 </div>
                 <div class="mt-auto flex space-x-2">
-                  <button class="btn-primary text-white px-4 py-2 rounded-lg text-sm font-medium flex-1">
+                  <!-- <button class="btn-primary text-white px-4 py-2 rounded-lg text-sm font-medium flex-1">
                     Add to Cart
-                  </button>
+                  </button> -->
+                  <button 
+  class="btn-primary add-to-cart-btn text-white px-4 py-2 rounded-lg text-sm font-medium flex-1"
+  onclick="addToCartFrontend('<%= product._id %>')">
+  Add to Cart
+</button>
+
 
 <button 
   class="wishlist-btn border border-gray-300 text-gray-700 px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-50 transition"
@@ -294,9 +300,15 @@
                 <div class="mt-auto flex space-x-2">
 
                   <!-- Add to Cart Button -->
-                  <button class="btn-primary text-white px-4 py-2 rounded-lg text-sm font-medium flex-1">
+                  <!-- <button class="btn-primary text-white px-4 py-2 rounded-lg text-sm font-medium flex-1">
                     Add to Cart
-                  </button>
+                  </button> -->
+                  <button 
+  class="btn-primary add-to-cart-btn text-white px-4 py-2 rounded-lg text-sm font-medium flex-1"
+  onclick="addToCartFrontend('<%= product._id %>')">
+  Add to Cart
+</button>
+
 
                   <!-- Wishlist Button -->
                   <button 
@@ -449,25 +461,67 @@
       loadProducts();
       
       // Add to cart animation
-      document.addEventListener('DOMContentLoaded', function() {
-        // const addToCartButtons = document.querySelectorAll('.btn-primary');
-        const addToCartButtons = document.querySelectorAll('.add-to-cart-btn');
+   
+// function addToCartFrontend(productId) {
+//     fetch("/user/cart/add", {
+//         method: "POST",
+//         headers: { "Content-Type": "application/json" },
+//         body: JSON.stringify({
+//             productId: productId,
+//             quantity: 1,
+//             color: null
+//         })
+//     })
+//     .then(res => res.json())
+//     .then(data => {
+//         if (data.success) {
+//             updateCartCount();
 
-        addToCartButtons.forEach(button => {
-          button.addEventListener('click', function() {
-            const originalText = this.innerHTML;
-            this.innerHTML = '<i class="fas fa-check mr-2"></i> Added to Cart';
-            this.classList.add('bg-green-600');
-            
-            setTimeout(() => {
-              this.innerHTML = originalText;
-              this.classList.remove('bg-green-600');
-            }, 2000);
-          });
-        });
-      });
-    </script>
-    <script>
+//             showNotification("Added to Cart", "success");
+//         } else {
+//             showNotification("Failed to add to cart", "error");
+//         }
+//     });
+// }
+function addToCartFrontend(productId) {
+  fetch("/user/cart/add", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      productId,
+      quantity: 1,
+      variantIndex: 0
+    })
+  })
+  .then(res => res.json())
+  .then(data => {
+    if (data.success) {
+      updateCartCount();
+      showNotification("Added to Cart", "success");
+    } else {
+      showNotification("Failed to add to cartttt", "error");
+    }
+  });
+}
+
+// Update navbar cart badge
+function updateCartCount() {
+    const cartBadge = document.querySelector("#cartCount, .cartCount, .cart-count");
+
+    if (cartBadge) {
+        let current = parseInt(cartBadge.innerText) || 0;
+        cartBadge.innerText = current + 1;
+    }
+}
+
+// Simple toast (you already use it for wishlist)
+function showNotification(msg, type) {
+    alert(msg);
+}
+
+
+    
+
 function toggleWishlist(productId, btn) {
     fetch(`/user/wishlist/toggle/${productId}`, {
         method: "POST"

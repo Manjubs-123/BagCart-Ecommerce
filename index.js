@@ -19,6 +19,7 @@ import shopRoutes from "./routes/user/shopRoute.js";
 import { errorHandler } from "./middlewares/errorHandler.js";
 import User from "./models/userModel.js"
 import {renderHomePage} from "./controllers/user/productController.js";
+import cartRoutes from "./routes/user/cartRoutes.js"
 const app = express();
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -119,6 +120,8 @@ app.use(passport.session());
 //   next();
 // });
 
+
+app.use('/user/cart',cartRoutes);
 app.use("/admin", adminRoutes);
 app.use("/user", userRoutes);
 app.use("/user", shopRoutes);

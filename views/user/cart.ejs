@@ -1,0 +1,750 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shopping Cart - BagHub</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <style>
+        :root {
+            --primary: #1a56db;
+            --primary-dark: #1e429f;
+            --secondary: #047857;
+            --error: #dc2626;
+            --success: #059669;
+        }
+        
+        .btn-primary {
+            background-color: var(--primary);
+            transition: all 0.3s ease;
+        }
+        
+        .btn-primary:hover {
+            background-color: var(--primary-dark);
+            transform: translateY(-2px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        }
+        
+        .card-hover {
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+        
+        .card-hover:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        }
+        
+        .cart-item {
+            transition: all 0.3s ease;
+        }
+        
+        .quantity-btn {
+            transition: all 0.2s ease;
+        }
+        
+        .quantity-btn:hover:not(:disabled) {
+            background-color: #e5e7eb;
+        }
+        
+        .empty-state {
+            animation: fadeIn 0.5s ease-in-out;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .notification {
+            animation: slideIn 0.5s ease-out;
+        }
+        
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        
+        .pulse-low-stock {
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.4); }
+            70% { box-shadow: 0 0 0 10px rgba(245, 158, 11, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0); }
+        }
+        
+        .loading {
+            opacity: 0.6;
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <!-- Header -->
+    <%- include('../partials/landingheader') %>
+
+    <!-- Main Content -->
+    <div class="container mx-auto px-4 py-8">
+        <div class="flex flex-col lg:flex-row gap-8">
+
+            <!-- Sidebar -->
+            <%- include('../partials/userProfileSiderbar', {
+                activePage: 'addresses',
+                user,
+                ordersCount,
+                wishlistCount,
+                unreadNotifications
+            }) %>
+
+            <!-- Cart Items Section -->
+            <div class="lg:w-2/3">
+                <!-- Header -->
+                <div class="bg-gradient-to-r from-blue-600 to-emerald-600 rounded-2xl shadow-lg p-6 mb-6 text-white">
+                    <div class="flex items-center gap-4">
+                        <div class="w-16 h-16 rounded-full bg-white/20 flex items-center justify-center">
+                            <i class="fas fa-shopping-cart text-2xl"></i>
+                        </div>
+                        <div>
+                            <h1 class="text-2xl font-bold">Shopping Cart</h1>
+                            <p class="text-blue-100">Review your items and proceed to checkout</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Cart Items -->
+        <div id="cartItems" class="space-y-4">
+
+  <% if (!cart.items || cart.items.length === 0) { %>
+
+    <div class="text-center py-12">
+      <div class="w-24 h-24 mx-auto bg-gray-100 rounded-full flex items-center justify-center mb-4">
+        <i class="fas fa-shopping-cart text-gray-400 text-3xl"></i>
+      </div>
+      <h3 class="text-xl font-bold text-gray-700 mb-2">Your cart is empty</h3>
+      <p class="text-gray-500 mb-6">Add some products to your cart to continue shopping</p>
+      <a href="/user/shop" class="btn-primary text-white px-6 py-3 rounded-lg inline-flex items-center gap-2">
+        <i class="fas fa-shopping-bag"></i>
+        <span>Continue Shopping</span>
+      </a>
+    </div>
+
+  <% } else { %>
+
+    <% cart.items.forEach(item => { 
+         const product = item.product;
+         const variant = product.variants[0];
+    %>
+
+      <!-- DYNAMIC CART ITEM CARD -->
+      <div class="cart-item bg-white border border-gray-200 rounded-xl p-4 flex flex-col md:flex-row gap-4"
+           data-item-id="<%= item._id %>">
+
+        <!-- PRODUCT IMAGE -->
+        <div class="flex-shrink-0">
+          <img 
+            src="<%= variant?.images?.[0]?.url || '/images/no-image.jpg' %>"
+            alt="<%= product.name %>"
+            class="w-24 h-24 md:w-32 md:h-32 object-cover rounded-lg">
+        </div>
+
+        <div class="flex-grow">
+
+          <!-- NAME -->
+          <div class="flex flex-col md:flex-row md:justify-between">
+            <div>
+              <h3 class="font-bold text-gray-900 text-lg"><%= product.name %></h3>
+
+              <!-- COLOR -->
+              <p class="text-gray-600 text-sm mt-1">
+                <%= item.color ? ('Color: ' + item.color) : 'Color: Default' %>
+              </p>
+
+              <!-- FIXED DUMMY RATING (YOU CAN MAKE IT DYNAMIC LATER) -->
+              <div class="flex items-center mt-2">
+                <div class="flex text-yellow-400">
+                  <i class="fas fa-star"></i>
+                  <i class="fas fa-star"></i>
+                  <i class="fas fa-star"></i>
+                  <i class="fas fa-star"></i>
+                  <i class="fas fa-star-half-alt"></i>
+                </div>
+                <span class="text-gray-500 text-sm ml-2">4.5 (128 reviews)</span>
+              </div>
+
+              <!-- STOCK (DUMMY FOR NOW) -->
+              <div class="mt-2">
+                <span class="text-green-600 text-sm font-medium">
+                  <i class="fas fa-check-circle mr-1"></i>In Stock
+                </span>
+                <span class="text-gray-500 text-sm ml-3">
+                  <i class="fas fa-box mr-1"></i>10 left
+                </span>
+              </div>
+            </div>
+
+            <!-- PRICE -->
+            <div class="mt-4 md:mt-0 md:text-right">
+              <p class="text-2xl font-bold text-gray-900">₹<%= variant.price %></p>
+            </div>
+          </div>
+
+          <!-- QUANTITY + REMOVE -->
+          <div class="flex flex-col md:flex-row md:items-center justify-between mt-4">
+
+            <div class="flex items-center gap-3">
+              <span class="text-gray-700 font-medium">Quantity:</span>
+
+              <div class="flex items-center border border-gray-300 rounded-lg">
+
+                <!-- DECREASE -->
+                <button class="quantity-btn px-3 py-1 text-gray-600" 
+                        data-item-id="<%= item._id %>" 
+                        data-action="decrease">
+                  <i class="fas fa-minus"></i>
+                </button>
+
+                <span class="px-3 py-1 border-l border-r border-gray-300 w-12 text-center">
+                  <%= item.quantity %>
+                </span>
+
+                <!-- INCREASE -->
+                <button class="quantity-btn px-3 py-1 text-gray-600" 
+                        data-item-id="<%= item._id %>" 
+                        data-action="increase">
+                  <i class="fas fa-plus"></i>
+                </button>
+
+              </div>
+
+              <!-- REMOVE -->
+              <button class="remove-item-btn text-red-500 hover:text-red-700 transition-colors flex items-center gap-1 ml-4"
+                      data-item-id="<%= item._id %>">
+                <i class="fas fa-trash"></i>
+                <span>Remove</span>
+              </button>
+            </div>
+
+            <!-- ITEM TOTAL -->
+            <div class="mt-3 md:mt-0">
+              <p class="text-xl font-bold text-gray-900">
+                ₹<%= (variant.price * item.quantity).toFixed(2) %>
+              </p>
+            </div>
+
+          </div>
+
+        </div>
+
+      </div>
+
+    <% }) %>
+  <% } %>
+
+</div>
+
+
+            </div>
+
+         
+
+
+ <!-- Order Summary Section -->
+            <div class="lg:w-1/3">
+                <div class="bg-white rounded-2xl shadow-sm p-6 card-hover sticky top-24">
+                    <h2 class="text-xl font-bold text-gray-900 mb-6">Order Summary</h2>
+                    
+                    <!-- Summary -->
+                    <div class="space-y-4 mb-6">
+                        <div class="flex justify-between items-center">
+                            <span class="text-gray-600">Subtotal (<span id="summaryItemCount">2</span> items)</span>
+                            <span class="font-medium text-lg" id="subtotal">$154.98</span>
+                        </div>
+                        
+                        <div class="border-t pt-4">
+                            <div class="flex justify-between items-center text-xl font-bold">
+                                <span>Total</span>
+                                <span id="totalAmount">$170.48</span>
+                            </div>
+                            <p class="text-gray-500 text-sm mt-1">Including <span id="taxAmount">$15.50</span> in taxes</p>
+                        </div>
+                    </div>
+
+                    <!-- Checkout Button -->
+                    <button id="checkoutBtn" class="w-full btn-primary text-white py-4 rounded-lg flex items-center justify-center gap-2 mb-4 text-lg font-semibold">
+                        <i class="fas fa-lock"></i>
+                        <span>Proceed to Checkout</span>
+                    </button>
+                    
+                    <!-- Security Notice -->
+                    <div class="text-center text-gray-500 text-sm">
+                        <i class="fas fa-shield-alt mr-1"></i>
+                        <span>Secure checkout • Your information is safe</span>
+                    </div>
+
+                    <!-- Continue Shopping -->
+                    <div class="border-t mt-6 pt-6">
+                        <a href="/products" class="block text-center text-blue-600 hover:text-blue-800 transition-colors font-medium">
+                            <i class="fas fa-arrow-left mr-2"></i>
+                            Continue Shopping
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+
+
+
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="bg-gray-800 text-white mt-12">
+        <div class="container mx-auto px-4 py-8">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
+                <div>
+                    <div class="flex items-center gap-2 mb-4">
+                        <i class="fas fa-shopping-bag text-blue-400 text-2xl"></i>
+                        <span class="text-xl font-bold">BagHub</span>
+                    </div>
+                    <p class="text-gray-400">Your one-stop shop for quality bags and accessories.</p>
+                </div>
+                <div>
+                    <h3 class="font-bold text-lg mb-4">Quick Links</h3>
+                    <ul class="space-y-2 text-gray-400">
+                        <li><a href="/" class="hover:text-white transition-colors">Home</a></li>
+                        <li><a href="/products" class="hover:text-white transition-colors">Products</a></li>
+                        <li><a href="/about" class="hover:text-white transition-colors">About Us</a></li>
+                        <li><a href="/contact" class="hover:text-white transition-colors">Contact</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h3 class="font-bold text-lg mb-4">Customer Service</h3>
+                    <ul class="space-y-2 text-gray-400">
+                        <li><a href="/shipping" class="hover:text-white transition-colors">Shipping Info</a></li>
+                        <li><a href="/returns" class="hover:text-white transition-colors">Returns</a></li>
+                        <li><a href="/faq" class="hover:text-white transition-colors">FAQ</a></li>
+                        <li><a href="/privacy" class="hover:text-white transition-colors">Privacy Policy</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h3 class="font-bold text-lg mb-4">Contact Us</h3>
+                    <ul class="space-y-2 text-gray-400">
+                        <li class="flex items-center gap-2">
+                            <i class="fas fa-map-marker-alt"></i>
+                            <span>123 Bag Street, City</span>
+                        </li>
+                        <li class="flex items-center gap-2">
+                            <i class="fas fa-phone"></i>
+                            <span>+1 (555) 123-4567</span>
+                        </li>
+                        <li class="flex items-center gap-2">
+                            <i class="fas fa-envelope"></i>
+                            <span>support@baghub.com</span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+            <div class="border-t border-gray-700 mt-8 pt-6 text-center text-gray-400">
+                <p>&copy; 2023 BagHub. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Notification Container -->
+    <div id="notificationContainer" class="fixed top-4 right-4 z-50 space-y-2"></div>
+
+    <script>
+        // Cart API endpoints
+        const API_ENDPOINTS = {
+            getCart: '/api/cart',
+            updateCart: '/api/cart',
+            updateItem: '/user/cart/update',
+            removeItem: '/user/cart/remove',
+            clearCart: '/user/cart/clear',
+            checkout: '/api/checkout'
+        };
+
+        // Cart state
+        let cartState = {
+            items: [
+                {
+                    id: 1,
+                    name: "Premium Leather Backpack",
+                    price: 89.99,
+                    quantity: 1,
+                    maxQuantity: 12,
+                    image: "https://images.unsplash.com/photo-1548036328-c9fa89d128fa?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=500&q=80",
+                    inStock: true,
+                    stockLeft: 12,
+                    rating: 4.5,
+                    reviews: "128 reviews",
+                    variant: "Color: Brown • Size: Medium",
+                    originalPrice: 119.99,
+                    discount: 25
+                },
+                {
+                    id: 2,
+                    name: "Professional Laptop Bag",
+                    price: 64.99,
+                    quantity: 1,
+                    maxQuantity: 3,
+                    image: "https://images.unsplash.com/photo-1553062407-98eeb64c6a62?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=500&q=80",
+                    inStock: true,
+                    stockLeft: 3,
+                    rating: 4.0,
+                    reviews: "92 reviews",
+                    variant: "Color: Black • Size: 15\"",
+                    originalPrice: null,
+                    discount: null
+                },
+                {
+                    id: 3,
+                    name: "Weekend Travel Duffel Bag",
+                    price: 49.99,
+                    quantity: 0,
+                    maxQuantity: 0,
+                    image: "https://images.unsplash.com/photo-1584917865442-de89df76afd3?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=500&q=80",
+                    inStock: false,
+                    stockLeft: 0,
+                    rating: 5.0,
+                    reviews: "64 reviews",
+                    variant: "Color: Navy Blue • Size: Large",
+                    originalPrice: 69.99,
+                    discount: 30
+                }
+            ],
+            taxRate: 0.10,
+            loading: false
+        };
+
+        // Initialize cart
+        document.addEventListener('DOMContentLoaded', function() {
+            updateCartSummary();
+            setupEventListeners();
+        });
+
+        // Set up event listeners
+        function setupEventListeners() {
+            // Quantity buttons
+            // document.querySelectorAll('.quantity-btn').forEach(button => {
+            //     button.addEventListener('click', function() {
+            //         const itemId = this.getAttribute('data-item-id');
+            //         const action = this.getAttribute('data-action');
+            //         handleQuantityChange(itemId, action);
+            //     });
+            // });
+            
+            document.querySelectorAll('.qty-btn-increase, .qty-btn-decrease').forEach(button => {
+    button.addEventListener('click', function () {
+        const itemId = this.getAttribute('data-id');
+        const isIncrease = this.classList.contains('qty-btn-increase');
+        handleQuantityChange(itemId, isIncrease ? "increase" : "decrease");
+    });
+});
+
+            // Remove item buttons
+            document.querySelectorAll('.remove-item-btn').forEach(button => {
+                button.addEventListener('click', function() {
+                    const itemId = this.getAttribute('data-item-id');
+                    handleRemoveItem(itemId);
+                });
+            });
+            
+            // Clear cart button
+            document.getElementById('clearCartBtn').addEventListener('click', function() {
+                if (confirm('Are you sure you want to clear your cart?')) {
+                    handleClearCart();
+                }
+            });
+            
+            // Checkout button
+            document.getElementById('checkoutBtn').addEventListener('click', handleCheckout);
+        }
+
+        // Handle quantity changes
+        async function handleQuantityChange(itemId, action) {
+            const item = cartState.items.find(item => item.id == itemId);
+            if (!item) return;
+            
+            let newQuantity = item.quantity;
+            
+            if (action === 'increase') {
+                if (newQuantity < item.maxQuantity) {
+                    newQuantity++;
+                } else {
+                    showNotification(`Cannot add more than ${item.maxQuantity} of this item`, 'error');
+                    return;
+                }
+            } else if (action === 'decrease') {
+                if (newQuantity > 1) {
+                    newQuantity--;
+                } else {
+                    // If quantity becomes 0, remove the item
+                    await handleRemoveItem(itemId);
+                    return;
+                }
+            }
+            
+            const success = await updateCartItem(itemId, newQuantity);
+            if (success) {
+                // Update UI immediately for better UX
+                const quantityElement = document.querySelector(`[data-item-id="${itemId}"]`);
+                if (quantityElement) {
+                    quantityElement.textContent = newQuantity;
+                }
+                updateItemTotal(itemId, newQuantity);
+            }
+        }
+
+        // Update cart item quantity using PATCH
+       async function updateCartItem(itemId, newQuantity) {
+    try {
+        setLoading(true);
+
+        const response = await axios.put(API_ENDPOINTS.updateItem, {
+            itemId,
+            quantity: newQuantity
+        });
+
+        if (response.data.success) {
+            updateCartSummary();
+            showNotification('Cart updated successfully', 'success');
+            return true;
+        } else {
+            showNotification(response.data.message || 'Failed to update cart', 'error');
+            return false;
+        }
+    } catch (error) {
+        console.error('Error updating cart item:', error);
+        showNotification('Failed to update cart item', 'error');
+        return false;
+    } finally {
+        setLoading(false);
+    }
+}
+
+        // Update item total display
+        function updateItemTotal(itemId, quantity) {
+            const item = cartState.items.find(item => item.id == itemId);
+            if (!item) return;
+            
+            const itemTotal = item.price * quantity;
+            const itemTotalElement = document.querySelector(`.cart-item[data-item-id="${itemId}"] .text-xl.font-bold`);
+            if (itemTotalElement) {
+                itemTotalElement.textContent = `$${itemTotal.toFixed(2)}`;
+            }
+        }
+
+        // Handle remove item
+        async function handleRemoveItem(itemId) {
+            const item = cartState.items.find(item => item.id == itemId);
+            if (!item) return;
+            
+            if (confirm(`Remove ${item.name} from cart?`)) {
+                const success = await removeCartItem(itemId);
+                if (success) {
+                    const itemElement = document.querySelector(`.cart-item[data-item-id="${itemId}"]`);
+                    if (itemElement) {
+                        itemElement.style.opacity = '0';
+                        itemElement.style.transform = 'translateX(100%)';
+                        setTimeout(() => {
+                            itemElement.remove();
+                        }, 300);
+                    }
+                }
+            }
+        }
+        function addToCartFrontend(productId) {
+    fetch("/user/cart/add", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+            productId,
+            quantity: 1,
+            color: selectedColor // or null if not required
+        })
+    })
+    .then(res => res.json())
+    .then(data => {
+       if(data.success){
+          updateCartCount();
+          showNotification("Item added to cart!", "success");
+       } else {
+          showNotification(data.message, "error");
+       }
+    });
+}
+
+
+        // Remove item from cart using DELETE
+        async function removeCartItem(itemId) {
+            try {
+                setLoading(true);
+                
+                const response = await axios.delete(`${API_ENDPOINTS.removeItem}/${itemId}`);
+
+                if (response.data.success) {
+                    cartState.items = cartState.items.filter(item => item.id !== itemId);
+                    updateCartSummary();
+                    showNotification('Item removed from cart', 'success');
+                    return true;
+                } else {
+                    showNotification(response.data.message || 'Failed to remove item', 'error');
+                    return false;
+                }
+            } catch (error) {
+                console.error('Error removing cart item:', error);
+                if (error.response?.data?.message) {
+                    showNotification(error.response.data.message, 'error');
+                } else {
+                    showNotification('Failed to remove item from cart', 'error');
+                }
+                return false;
+            } finally {
+                setLoading(false);
+            }
+        }
+
+        // Handle clear cart
+        async function handleClearCart() {
+            const success = await clearCart();
+            if (success) {
+                document.getElementById('cartItems').innerHTML = '';
+            }
+        }
+
+        // Clear entire cart using DELETE
+        async function clearCart() {
+            try {
+                setLoading(true);
+                
+                const response = await axios.delete(API_ENDPOINTS.clearCart);
+
+                if (response.data.success) {
+                    cartState.items = [];
+                    updateCartSummary();
+                    showNotification('Cart cleared successfully', 'success');
+                    return true;
+                } else {
+                    showNotification(response.data.message || 'Failed to clear cart', 'error');
+                    return false;
+                }
+            } catch (error) {
+                console.error('Error clearing cart:', error);
+                if (error.response?.data?.message) {
+                    showNotification(error.response.data.message, 'error');
+                } else {
+                    showNotification('Failed to clear cart', 'error');
+                }
+                return false;
+            } finally {
+                setLoading(false);
+            }
+        }
+
+        // Update cart summary
+        function updateCartSummary() {
+            let subtotal = 0;
+            let itemCount = 0;
+            
+            cartState.items.forEach(item => {
+                if (item.inStock) {
+                    subtotal += item.price * item.quantity;
+                    itemCount += item.quantity;
+                }
+            });
+            
+            const taxAmount = subtotal * cartState.taxRate;
+            const totalAmount = subtotal + taxAmount;
+            
+            document.getElementById('subtotal').textContent = `$${subtotal.toFixed(2)}`;
+            document.getElementById('taxAmount').textContent = `$${taxAmount.toFixed(2)}`;
+            document.getElementById('totalAmount').textContent = `$${totalAmount.toFixed(2)}`;
+            document.getElementById('itemCount').textContent = itemCount;
+        }
+
+        // Handle checkout
+        async function handleCheckout() {
+            if (cartState.items.length === 0) {
+                showNotification('Your cart is empty', 'error');
+                return;
+            }
+            
+            // Check if all items are in stock
+            const outOfStockItems = cartState.items.filter(item => !item.inStock);
+            if (outOfStockItems.length > 0) {
+                showNotification('Please remove out-of-stock items before checkout', 'error');
+                return;
+            }
+            
+            try {
+                setLoading(true);
+                const response = await axios.post(API_ENDPOINTS.checkout, {
+                    items: cartState.items
+                });
+                
+                if (response.data.success) {
+                    showNotification('Order placed successfully!', 'success');
+                    // Redirect to order confirmation
+                    setTimeout(() => {
+                        window.location.href = '/order/confirmation';
+                    }, 2000);
+                } else {
+                    showNotification(response.data.message || 'Checkout failed', 'error');
+                }
+            } catch (error) {
+                console.error('Error during checkout:', error);
+                if (error.response?.data?.message) {
+                    showNotification(error.response.data.message, 'error');
+                } else {
+                    showNotification('Checkout failed. Please try again.', 'error');
+                }
+            } finally {
+                setLoading(false);
+            }
+        }
+
+        // Set loading state
+        function setLoading(loading) {
+            cartState.loading = loading;
+            const mainContent = document.querySelector('.container');
+            if (loading) {
+                mainContent.classList.add('loading');
+            } else {
+                mainContent.classList.remove('loading');
+            }
+        }
+
+        // Notification system
+        function showNotification(message, type) {
+            const notification = document.createElement('div');
+            notification.className = `p-4 rounded-lg shadow-lg transform transition-all duration-300 notification ${
+                type === 'success' ? 'bg-green-500 text-white' : 'bg-red-500 text-white'
+            }`;
+            notification.innerHTML = `
+                <div class="flex items-center gap-3">
+                    <i class="fas fa-${type === 'success' ? 'check' : 'exclamation'}-circle"></i>
+                    <span class="font-medium">${message}</span>
+                </div>
+            `;
+            
+            const container = document.getElementById('notificationContainer');
+            container.appendChild(notification);
+            
+            // Remove notification after 5 seconds
+            setTimeout(() => {
+                notification.style.opacity = '0';
+                setTimeout(() => {
+                    if (container.contains(notification)) {
+                        container.removeChild(notification);
+                    }
+                }, 300);
+            }, 5000);
+        }
+    </script>
+</body>
+</html>
