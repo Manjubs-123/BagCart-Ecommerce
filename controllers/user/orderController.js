@@ -90,7 +90,8 @@ itemCount++;
       subtotal,
       tax,
       shippingFee,
-      totalAmount
+      totalAmount,
+      orderStatus: "pending"
     });
   // 🔥 Generate readable orderId if missing
 if (!order.orderId) {
@@ -213,71 +214,218 @@ export const getMyOrders = async (req, res) => {
 };
 
 // Download invoice for a specific item in an order
+// export const downloadInvoice = async (req, res) => {
+//   try {
+//     const { orderId, itemId } = req.params;
+//     const userId = req.session.user?.id;
+
+//     const order = await Order.findOne({ _id: orderId, user: userId }).populate("items.product").lean();
+//     if (!order) return res.status(404).send("Order not found");
+
+//     const item = order.items.find(i => i._id.toString() === itemId || i.itemOrderId === itemId);
+//     if (!item) return res.status(404).send("Order item not found");
+
+//     const fileName = `Invoice-${order.orderId || order._id}-${(item.itemOrderId || item._id)}.pdf`;
+//     res.setHeader("Content-Type", "application/pdf");
+//     res.setHeader("Content-Disposition", `attachment; filename="${fileName}"`);
+
+//     const doc = new PDFDocument({ margin: 40 });
+//     doc.pipe(res);
+
+//     // Header
+//     doc.fontSize(22).text("BagHub", { align: "center" });
+//     doc.moveDown(0.5);
+//     doc.fontSize(16).text("INVOICE", { align: "center" });
+//     doc.moveDown(1);
+
+//     // Order info
+//     doc.fontSize(12).text(`Order ID: ${order.orderId || order._id}`);
+//     doc.text(`Item: ${item.product?.name || "Product"}`);
+//     doc.text(`Item Order ID: ${item.itemOrderId || item._id}`);
+//     doc.text(`Date: ${new Date(order.createdAt).toLocaleString()}`);
+//     doc.moveDown();
+
+//     // Shipping address
+//     doc.fontSize(12).text("Shipping Address:", { underline: true });
+//     doc.moveDown(0.3);
+//     const sa = order.shippingAddress || {};
+//     doc.text(sa.fullName || "");
+//     doc.text(sa.addressLine1 || "");
+//     if (sa.addressLine2) doc.text(sa.addressLine2);
+//     doc.text(`${sa.city || ""}, ${sa.state || ""} - ${sa.pincode || ""}`);
+//     doc.text(`Phone: ${sa.phone || ""}`);
+//     doc.moveDown();
+
+//     // Item details
+//     doc.fontSize(12).text("Product Details:", { underline: true });
+//     doc.moveDown(0.3);
+//     doc.text(`Product: ${item.product?.name || "N/A"}`);
+//     doc.text(`Color: ${item.color || "N/A"}`);
+//     doc.text(`Quantity: ${item.quantity}`);
+//     doc.text(`Price per unit: ₹${item.price}`);
+//     doc.text(`Total: ₹${(item.price * item.quantity).toFixed(2)}`);
+//     doc.moveDown();
+
+//     // Totals (showing full order totals)
+//     doc.text(`Subtotal: ₹${order.subtotal?.toFixed(2) || "0.00"}`);
+//     doc.text(`Tax: ₹${order.tax?.toFixed(2) || "0.00"}`);
+//     doc.text(`Shipping Fee: ₹${order.shippingFee?.toFixed(2) || "0.00"}`);
+//     doc.moveDown();
+//     doc.fontSize(14).text(`Grand Total: ₹${order.totalAmount?.toFixed(2) || "0.00"}`, { underline: true });
+
+//     doc.end();
+//   } catch (err) {
+//     console.error("downloadInvoice error:", err);
+//     res.status(500).send("Could not generate invoice");
+//   }
+// };
+
+// Download invoice for a specific item in an order
+// export const downloadInvoice = async (req, res) => {
+//   try {
+//     const { orderId, itemId } = req.params;
+//     const userId = req.session.user?.id;
+
+//     const order = await Order.findOne({ _id: orderId, user: userId }).populate("items.product").lean();
+//     if (!order) return res.status(404).send("Order not found");
+
+//     const item = order.items.find(i => i._id.toString() === itemId);
+//     if (!item) return res.status(404).send("Order item not found");
+
+//     // FIXED: Proper filename generation
+//     // const fileName = `Invoice-${order.orderId}-${item.itemOrderId?.split('/')[1] || '1'}.pdf`;
+//     const fileName = `Invoice-${order.orderId}-${item.itemOrderId?.split('/')[1] || '1'}.pdf`;
+    
+//     res.setHeader("Content-Type", "application/pdf");
+//     res.setHeader("Content-Disposition", `attachment; filename="${fileName}"`);
+
+//     const doc = new PDFDocument({ margin: 40 });
+//     doc.pipe(res);
+
+//     // Header
+//     doc.fontSize(22).text("BagHub", { align: "center" });
+//     doc.moveDown(0.5);
+//     doc.fontSize(16).text("INVOICE", { align: "center" });
+//     doc.moveDown(1);
+
+//     // Order info
+//     doc.fontSize(12).text(`Order ID: ${order.orderId}`);
+//     doc.text(`Item Order ID: ${item.itemOrderId}`);
+//     doc.text(`Date: ${new Date(order.createdAt).toLocaleString()}`);
+//     doc.moveDown();
+
+//     // Shipping address
+//     doc.fontSize(12).text("Shipping Address:", { underline: true });
+//     doc.moveDown(0.3);
+//     const sa = order.shippingAddress || {};
+//     doc.text(sa.fullName || "");
+//     doc.text(sa.addressLine1 || "");
+//     if (sa.addressLine2) doc.text(sa.addressLine2);
+//     doc.text(`${sa.city || ""}, ${sa.state || ""} - ${sa.pincode || ""}`);
+//     doc.text(`Phone: ${sa.phone || ""}`);
+//     doc.moveDown();
+
+//     // Item details
+//     doc.fontSize(12).text("Product Details:", { underline: true });
+//     doc.moveDown(0.3);
+//     doc.text(`Product: ${item.product?.name || "N/A"}`);
+//     doc.text(`Color: ${item.color || "N/A"}`);
+//     doc.text(`Quantity: ${item.quantity}`);
+//     doc.text(`Price per unit: ₹${item.price}`);
+//     doc.text(`Total: ₹${(item.price * item.quantity).toFixed(2)}`);
+//     doc.moveDown();
+
+//     // Order totals
+//     doc.text(`Subtotal: ₹${order.subtotal?.toFixed(2) || "0.00"}`);
+//     doc.text(`Tax: ₹${order.tax?.toFixed(2) || "0.00"}`);
+//     doc.text(`Shipping Fee: ₹${order.shippingFee?.toFixed(2) || "0.00"}`);
+//     doc.moveDown();
+//     doc.fontSize(14).text(`Grand Total: ₹${order.totalAmount?.toFixed(2) || "0.00"}`, { underline: true });
+
+//     doc.end();
+//   } catch (err) {
+//     console.error("downloadInvoice error:", err);
+//     res.status(500).send("Could not generate invoice");
+//   }
+// };
+
 export const downloadInvoice = async (req, res) => {
   try {
     const { orderId, itemId } = req.params;
     const userId = req.session.user?.id;
 
-    const order = await Order.findOne({ _id: orderId, user: userId }).populate("items.product").lean();
+    const order = await Order.findOne({ _id: orderId, user: userId })
+      .populate("items.product")
+      .lean();
+
     if (!order) return res.status(404).send("Order not found");
 
-    const item = order.items.find(i => i._id.toString() === itemId || i.itemOrderId === itemId);
+    // Fix: locate item
+    const item = order.items.find(i => i._id.toString() === itemId);
     if (!item) return res.status(404).send("Order item not found");
 
-    const fileName = `Invoice-${order.orderId || order._id}-${(item.itemOrderId || item._id)}.pdf`;
+    // FIXED: always show correct Order ID
+    const displayOrderId = order.orderId || order._id.toString();
+
+    // FIXED: always show correct item-order-id
+    const displayItemOrderId =
+      item.itemOrderId ||
+      `${displayOrderId}/${order.items.indexOf(item) + 1}`;
+
+    // Good filename
+    const fileName = `Invoice-${displayOrderId}-${displayItemOrderId}.pdf`;
+
     res.setHeader("Content-Type", "application/pdf");
     res.setHeader("Content-Disposition", `attachment; filename="${fileName}"`);
 
     const doc = new PDFDocument({ margin: 40 });
     doc.pipe(res);
 
-    // Header
+    // HEADER
     doc.fontSize(22).text("BagHub", { align: "center" });
-    doc.moveDown(0.5);
+    doc.moveDown();
     doc.fontSize(16).text("INVOICE", { align: "center" });
+    doc.moveDown(2);
+
+    // ORDER INFO
+    doc.fontSize(12).text(`Order ID: ${displayOrderId}`);
+    doc.text(`Item Order ID: ${displayItemOrderId}`);
+    doc.text(`Date: ${new Date(order.createdAt).toLocaleString()}`);
     doc.moveDown(1);
 
-    // Order info
-    doc.fontSize(12).text(`Order ID: ${order.orderId || order._id}`);
-    doc.text(`Item: ${item.product?.name || "Product"}`);
-    doc.text(`Item Order ID: ${item.itemOrderId || item._id}`);
-    doc.text(`Date: ${new Date(order.createdAt).toLocaleString()}`);
-    doc.moveDown();
-
-    // Shipping address
+    // SHIPPING ADDRESS
+    const sa = order.shippingAddress;
     doc.fontSize(12).text("Shipping Address:", { underline: true });
-    doc.moveDown(0.3);
-    const sa = order.shippingAddress || {};
-    doc.text(sa.fullName || "");
-    doc.text(sa.addressLine1 || "");
+    doc.text(sa.fullName);
+    doc.text(sa.addressLine1);
     if (sa.addressLine2) doc.text(sa.addressLine2);
-    doc.text(`${sa.city || ""}, ${sa.state || ""} - ${sa.pincode || ""}`);
-    doc.text(`Phone: ${sa.phone || ""}`);
-    doc.moveDown();
+    doc.text(`${sa.city}, ${sa.state} - ${sa.pincode}`);
+    doc.text(`Phone: ${sa.phone}`);
+    doc.moveDown(1);
 
-    // Item details
+    // ITEM INFO
     doc.fontSize(12).text("Product Details:", { underline: true });
-    doc.moveDown(0.3);
-    doc.text(`Product: ${item.product?.name || "N/A"}`);
-    doc.text(`Color: ${item.color || "N/A"}`);
+    doc.text(`Product: ${item.product?.name}`);
+    doc.text(`Color: ${item.color}`);
     doc.text(`Quantity: ${item.quantity}`);
-    doc.text(`Price per unit: ₹${item.price}`);
-    doc.text(`Total: ₹${(item.price * item.quantity).toFixed(2)}`);
-    doc.moveDown();
+    doc.text(`Unit Price: ₹${item.price}`);
+    doc.text(`Item Total: ₹${(item.price * item.quantity).toFixed(2)}`);
+    doc.moveDown(1);
 
-    // Totals (showing full order totals)
-    doc.text(`Subtotal: ₹${order.subtotal?.toFixed(2) || "0.00"}`);
-    doc.text(`Tax: ₹${order.tax?.toFixed(2) || "0.00"}`);
-    doc.text(`Shipping Fee: ₹${order.shippingFee?.toFixed(2) || "0.00"}`);
+    // ORDER TOTALS
+    doc.text(`Subtotal: ₹${order.subtotal.toFixed(2)}`);
+    doc.text(`Tax: ₹${order.tax.toFixed(2)}`);
+    doc.text(`Shipping: ₹${order.shippingFee.toFixed(2)}`);
     doc.moveDown();
-    doc.fontSize(14).text(`Grand Total: ₹${order.totalAmount?.toFixed(2) || "0.00"}`, { underline: true });
+    doc.fontSize(14).text(`Grand Total: ₹${order.totalAmount.toFixed(2)}`);
 
     doc.end();
   } catch (err) {
-    console.error("downloadInvoice error:", err);
+    console.error("downloadInvoice Error:", err);
     res.status(500).send("Could not generate invoice");
   }
 };
+
 
 // Cancel item (already have similar — ensure field names match)
 export const cancelItem = async (req, res) => {

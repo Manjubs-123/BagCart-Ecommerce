@@ -50,10 +50,36 @@
       transform: translateY(-2px);
       box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
     }
+
+    /* Professional enhancements */
+    .glass-effect {
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
+    .gradient-bg {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    }
+
+    .professional-shadow {
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    }
+
+    .elegant-border {
+      border: 1px solid #e5e7eb;
+    }
+
+    .status-badge {
+      padding: 8px 16px;
+      border-radius: 20px;
+      font-weight: 600;
+      font-size: 0.875rem;
+    }
   </style>
 </head>
 
-<body class="bg-gray-50 min-h-screen">
+<body class="bg-gradient-to-br from-blue-50 to-indigo-100 min-h-screen">
 
   <%- include('../partials/landingheader') %>
 
@@ -63,36 +89,37 @@
   <div class="container mx-auto px-4 py-8">
     <div class="max-w-6xl mx-auto">
       
-      <!-- Success Header -->
-      <div class="bg-white rounded-2xl shadow-lg p-8 mb-8 text-center relative z-10">
+      <!-- Success Header - Enhanced -->
+      <div class="glass-effect rounded-2xl professional-shadow p-8 mb-8 text-center relative z-10 elegant-border">
         <div class="success-circle mb-6">
           <i class="fas fa-check text-white text-4xl"></i>
         </div>
         
-        <h1 class="text-3xl md:text-4xl font-bold text-green-600 mb-4">
+        <h1 class="text-3xl md:text-4xl font-bold text-gray-800 mb-4">
           Order Confirmed Successfully!
         </h1>
         
-        <p class="text-gray-600 text-lg mb-6">
-          Thank you for your purchase. Your order has been confirmed and will be processed shortly.
+        <p class="text-gray-600 text-lg mb-6 max-w-2xl mx-auto leading-relaxed">
+          Thank you for your purchase. Your order has been confirmed and will be processed shortly. We've sent the order details to your registered email address.
         </p>
 
-        <!-- Order Summary Box -->
-        <div class="bg-blue-50 border border-blue-200 rounded-xl p-6 max-w-2xl mx-auto">
+        <!-- Order Summary Box - Enhanced -->
+        <div class="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-xl p-6 max-w-2xl mx-auto professional-shadow">
           <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div class="text-left">
-              <h2 class="text-xl font-bold text-gray-900">Order Summary</h2>
-              <p class="text-gray-600">We've sent the order details to your email</p>
+              <h2 class="text-xl font-bold text-gray-900 mb-2">Order Summary</h2>
+              <p class="text-gray-600 text-sm">Order details have been sent to your email</p>
             </div>
             <div class="text-right">
-              <p class="text-sm text-gray-600">Main Order ID</p>
-              <p class="text-2xl font-bold text-blue-600 font-mono">
+              <p class="text-sm text-gray-600 mb-1">Order Reference</p>
+              <p class="text-2xl font-bold text-blue-600 font-mono tracking-tight">
                 <%= order._id %>
               </p>
-              <p class="text-sm text-gray-600 mt-1">
+              <p class="text-sm text-gray-500 mt-2">
+                <i class="far fa-clock mr-1"></i>
                 <%= order.createdAt.toLocaleDateString('en-US', { 
                   year: 'numeric', 
-                  month: 'long', 
+                  month: 'short', 
                   day: 'numeric',
                   hour: '2-digit',
                   minute: '2-digit'
@@ -103,79 +130,100 @@
         </div>
       </div>
 
-      <!-- Individual Order Items -->
+      <!-- Individual Order Items - Enhanced -->
       <div class="space-y-6 mb-8">
-        <h2 class="text-2xl font-bold text-gray-900 mb-4">Your Order Items</h2>
+        <div class="flex items-center justify-between mb-6">
+          <h2 class="text-2xl font-bold text-gray-800">Order Items</h2>
+          <span class="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-medium">
+            <%= order.items.length %> item<%= order.items.length > 1 ? 's' : '' %>
+          </span>
+        </div>
         
         <% order.items.forEach((item, index) => { %>
-          <div class="order-item-card bg-white rounded-xl shadow-sm p-6">
+          <div class="order-item-card bg-white rounded-xl professional-shadow p-6 elegant-border">
             <div class="flex flex-col lg:flex-row gap-6">
               
               <!-- Product Image -->
               <div class="flex-shrink-0">
-                <img src="<%= item.image || '/images/no-image.jpg' %>" 
-                     alt="<%= item.product.name %>"
-                     class="w-32 h-32 object-cover rounded-lg">
+                <div class="relative">
+                  <img src="<%= item.image || '/images/no-image.jpg' %>" 
+                       alt="<%= item.product.name %>"
+                       class="w-32 h-32 object-cover rounded-lg border border-gray-200">
+                  <div class="absolute -top-2 -right-2 bg-blue-600 text-white rounded-full w-8 h-8 flex items-center justify-center text-sm font-bold">
+                    <%= index + 1 %>
+                  </div>
+                </div>
               </div>
 
               <!-- Product Details -->
               <div class="flex-grow">
                 <div class="flex flex-col md:flex-row md:items-start justify-between gap-4 mb-4">
-                  <div>
-                    <h3 class="text-xl font-bold text-gray-900 mb-2">
+                  <div class="flex-grow">
+                    <h3 class="text-xl font-semibold text-gray-900 mb-3">
                       <%= item.product.name %>
                     </h3>
                     
-                    <!-- Individual Item Order ID -->
-                    <div class="bg-gray-100 rounded-lg p-3 mb-3">
-                      <p class="text-sm text-gray-600">Item Order ID</p>
-                      <p class="font-mono text-lg font-bold text-gray-900">
+                    <!-- Individual Item Order ID - Enhanced -->
+                    <div class="bg-gray-50 rounded-lg p-4 mb-4 border border-gray-200">
+                      <p class="text-xs text-gray-500 uppercase tracking-wide mb-1">Item Reference</p>
+                      <p class="font-mono text-lg font-bold text-gray-800">
                         <%= order._id %>-<%= index + 1 %>
                       </p>
                     </div>
 
-                    <!-- Product Specifications -->
-                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-                      <div>
-                        <p class="text-sm text-gray-600">Color</p>
-                        <p class="font-medium"><%= item.color %></p>
+                    <!-- Product Specifications - Enhanced -->
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+                      <div class="bg-white p-3 rounded-lg border border-gray-200">
+                        <p class="text-xs text-gray-500 mb-1">Color</p>
+                        <p class="font-medium text-gray-900"><%= item.color %></p>
                       </div>
-                      <div>
-                        <p class="text-sm text-gray-600">Quantity</p>
-                        <p class="font-medium"><%= item.quantity %></p>
+                      <div class="bg-white p-3 rounded-lg border border-gray-200">
+                        <p class="text-xs text-gray-500 mb-1">Quantity</p>
+                        <p class="font-medium text-gray-900"><%= item.quantity %></p>
                       </div>
-                      <div>
-                        <p class="text-sm text-gray-600">Unit Price</p>
-                        <p class="font-medium">₹<%= item.price %></p>
+                      <div class="bg-white p-3 rounded-lg border border-gray-200">
+                        <p class="text-xs text-gray-500 mb-1">Unit Price</p>
+                        <p class="font-medium text-gray-900">₹<%= item.price %></p>
                       </div>
-                      <div>
-                        <p class="text-sm text-gray-600">Item Total</p>
-                        <p class="font-medium">₹<%= (item.price * item.quantity).toFixed(2) %></p>
+                      <div class="bg-white p-3 rounded-lg border border-gray-200">
+                        <p class="text-xs text-gray-500 mb-1">Item Total</p>
+                        <p class="font-medium text-blue-600">₹<%= (item.price * item.quantity).toFixed(2) %></p>
                       </div>
                     </div>
                   </div>
 
-                  <!-- Status Badge -->
+                  <!-- Status Badge - Enhanced -->
                   <div class="flex-shrink-0">
-                    <span class="inline-flex items-center px-4 py-2 rounded-full text-sm font-semibold
-                                <%= getStatusColor(item.status || order.orderStatus) %>">
-                      <i class="fas <%= getStatusIcon(item.status || order.orderStatus) %> mr-2"></i>
-                      <%= (item.status || order.orderStatus).charAt(0).toUpperCase() + (item.status || order.orderStatus).slice(1) %>
-                    </span>
+                    <span class="status-badge <%= getStatusColor(item.status || order.orderStatus || 'pending') %>">
+  <i class="fas <%= getStatusIcon(item.status || order.orderStatus || 'pending') %> mr-2"></i>
+  <%= (item.status || order.orderStatus || 'pending').charAt(0).toUpperCase() + (item.status || order.orderStatus || 'pending').slice(1) %>
+</span>
+
                   </div>
                 </div>
 
-                <!-- Progress Bar -->
-                <div class="mt-4">
+                <!-- Progress Bar - Enhanced -->
+                <div class="mt-6">
                   <div class="flex justify-between text-sm text-gray-600 mb-2">
-                    <span>Order Placed</span>
-                    <span>Processing</span>
-                    <span>Shipped</span>
-                    <span>Delivered</span>
+                    <span class="text-xs font-medium">Order Placed</span>
+                    <span class="text-xs font-medium">Processing</span>
+                    <span class="text-xs font-medium">Shipped</span>
+                    <span class="text-xs font-medium">Delivered</span>
                   </div>
-                  <div class="w-full bg-gray-200 rounded-full h-2">
-                    <div class="<%= getProgressBarClass(item.status || order.orderStatus) %> h-2 rounded-full transition-all duration-500"></div>
+                  <div class="w-full bg-gray-200 rounded-full h-2.5">
+                    <div class="<%= getProgressBarClass(item.status || order.orderStatus) %> h-2.5 rounded-full transition-all duration-500"></div>
                   </div>
+                </div>
+
+                <!-- Download Invoice Button for this specific item - Enhanced -->
+                <div class="mt-6 pt-4 border-t border-gray-200">
+                  <button 
+                    onclick="downloadInvoice('<%= order._id %>', '<%= item._id %>', '<%= item.product.name %>', this)"
+                    class="bg-gradient-to-r from-green-600 to-green-700 text-white px-6 py-3 rounded-lg font-semibold hover:from-green-700 hover:to-green-800 transition-all duration-300 flex items-center gap-3 professional-shadow"
+                  >
+                    <i class="fas fa-file-invoice"></i>
+                    Download Invoice for <%= item.product.name %>
+                  </button>
                 </div>
               </div>
             </div>
@@ -183,29 +231,29 @@
         <% }) %>
       </div>
 
-      <!-- Order Summary -->
+      <!-- Order Summary - Enhanced -->
       <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
         <!-- Price Summary -->
-        <div class="bg-white rounded-xl shadow-sm p-6">
-          <h3 class="text-lg font-semibold text-gray-900 mb-4">Price Summary</h3>
-          <div class="space-y-3">
-            <div class="flex justify-between">
+        <div class="bg-white rounded-xl professional-shadow p-6 elegant-border">
+          <h3 class="text-lg font-semibold text-gray-900 mb-6 pb-2 border-b border-gray-200">Price Summary</h3>
+          <div class="space-y-4">
+            <div class="flex justify-between items-center py-2">
               <span class="text-gray-600">Subtotal (<%= order.items.length %> items)</span>
-              <span class="font-medium">₹<%= order.subtotal.toFixed(2) %></span>
+              <span class="font-medium text-gray-900">₹<%= order.subtotal.toFixed(2) %></span>
             </div>
-            <div class="flex justify-between">
+            <div class="flex justify-between items-center py-2">
               <span class="text-gray-600">Tax (10%)</span>
-              <span class="font-medium">₹<%= order.tax.toFixed(2) %></span>
+              <span class="font-medium text-gray-900">₹<%= order.tax.toFixed(2) %></span>
             </div>
-            <div class="flex justify-between">
+            <div class="flex justify-between items-center py-2">
               <span class="text-gray-600">Shipping</span>
               <span class="font-medium text-green-600">
                 <%= order.shippingFee === 0 ? 'FREE' : `₹${order.shippingFee.toFixed(2)}` %>
               </span>
             </div>
-            <div class="border-t pt-3">
-              <div class="flex justify-between text-lg font-bold">
-                <span>Total Amount</span>
+            <div class="border-t border-gray-200 pt-4 mt-2">
+              <div class="flex justify-between items-center text-lg font-bold">
+                <span class="text-gray-800">Total Amount</span>
                 <span class="text-blue-600">₹<%= order.totalAmount.toFixed(2) %></span>
               </div>
             </div>
@@ -213,41 +261,52 @@
         </div>
 
         <!-- Shipping Address -->
-        <div class="bg-white rounded-xl shadow-sm p-6">
-          <h3 class="text-lg font-semibold text-gray-900 mb-4">Shipping Address</h3>
-          <div class="text-gray-600">
-            <p class="font-medium text-gray-900"><%= order.shippingAddress.fullName %></p>
-            <p class="mt-1"><%= order.shippingAddress.addressLine1 %></p>
-            <% if (order.shippingAddress.addressLine2) { %>
-              <p><%= order.shippingAddress.addressLine2 %></p>
-            <% } %>
-            <p>
-              <%= order.shippingAddress.city %>, 
-              <%= order.shippingAddress.state %> - 
-              <%= order.shippingAddress.pincode %>
-            </p>
-            <p><%= order.shippingAddress.country %></p>
-            <p class="mt-2 font-medium">Phone: <%= order.shippingAddress.phone %></p>
+        <div class="bg-white rounded-xl professional-shadow p-6 elegant-border">
+          <h3 class="text-lg font-semibold text-gray-900 mb-6 pb-2 border-b border-gray-200">Shipping Address</h3>
+          <div class="text-gray-600 space-y-3">
+            <div class="flex items-start gap-3">
+              <i class="fas fa-user text-blue-600 mt-1"></i>
+              <p class="font-medium text-gray-900"><%= order.shippingAddress.fullName %></p>
+            </div>
+            <div class="flex items-start gap-3">
+              <i class="fas fa-map-marker-alt text-blue-600 mt-1"></i>
+              <div>
+                <p class="text-gray-900"><%= order.shippingAddress.addressLine1 %></p>
+                <% if (order.shippingAddress.addressLine2) { %>
+                  <p class="text-gray-900"><%= order.shippingAddress.addressLine2 %></p>
+                <% } %>
+                <p class="text-gray-900">
+                  <%= order.shippingAddress.city %>, 
+                  <%= order.shippingAddress.state %> - 
+                  <%= order.shippingAddress.pincode %>
+                </p>
+                <p class="text-gray-900"><%= order.shippingAddress.country %></p>
+              </div>
+            </div>
+            <div class="flex items-center gap-3 pt-2">
+              <i class="fas fa-phone text-blue-600"></i>
+              <p class="font-medium text-gray-900"><%= order.shippingAddress.phone %></p>
+            </div>
           </div>
         </div>
 
         <!-- Payment Information -->
-        <div class="bg-white rounded-xl shadow-sm p-6">
-          <h3 class="text-lg font-semibold text-gray-900 mb-4">Payment Information</h3>
-          <div class="space-y-3 text-gray-600">
-            <div class="flex justify-between">
+        <div class="bg-white rounded-xl professional-shadow p-6 elegant-border">
+          <h3 class="text-lg font-semibold text-gray-900 mb-6 pb-2 border-b border-gray-200">Payment Information</h3>
+          <div class="space-y-4 text-gray-600">
+            <div class="flex justify-between items-center py-2">
               <span>Payment Method:</span>
-              <span class="font-medium capitalize">
+              <span class="font-medium text-gray-900 capitalize">
                 <%= order.paymentMethod === 'cod' ? 'Cash on Delivery' : order.paymentMethod %>
               </span>
             </div>
-            <div class="flex justify-between">
+            <div class="flex justify-between items-center py-2">
               <span>Payment Status:</span>
               <span class="font-medium text-green-600 capitalize">
                 <%= order.paymentStatus %>
               </span>
             </div>
-            <div class="flex justify-between">
+            <div class="flex justify-between items-center py-2">
               <span>Order Status:</span>
               <span class="font-medium text-blue-600 capitalize">
                 <%= order.orderStatus %>
@@ -257,24 +316,23 @@
         </div>
       </div>
 
-      <!-- Action Buttons -->
-      <div class="bg-white rounded-xl shadow-sm p-8 text-center">
+      <!-- Main Action Buttons - Enhanced -->
+      <div class="bg-white rounded-xl professional-shadow p-8 text-center elegant-border">
+        <h3 class="text-lg font-semibold text-gray-900 mb-6">Next Steps</h3>
         <div class="flex flex-col sm:flex-row gap-4 justify-center">
+          <!-- View all orders -->
           <a href="/user/orders" 
-             class="bg-blue-600 text-white px-8 py-4 rounded-xl font-semibold hover:bg-blue-700 transition-colors flex items-center justify-center gap-3">
-            <i class="fas fa-list"></i>
-            View All Orders
+            class="bg-gradient-to-r from-blue-600 to-blue-700 text-white px-8 py-4 rounded-xl font-semibold hover:from-blue-700 hover:to-blue-800 transition-all duration-300 flex items-center justify-center gap-3 professional-shadow">
+            <i class="fas fa-list"></i> 
+            <span>View All Orders</span>
           </a>
+
+          <!-- Continue shopping -->
           <a href="/" 
-             class="bg-white border border-gray-300 text-gray-700 px-8 py-4 rounded-xl font-semibold hover:bg-gray-50 transition-colors flex items-center justify-center gap-3">
-            <i class="fas fa-shopping-bag"></i>
-            Continue Shopping
+            class="bg-white border border-gray-300 text-gray-700 px-8 py-4 rounded-xl font-semibold hover:bg-gray-50 hover:border-gray-400 transition-all duration-300 flex items-center justify-center gap-3 professional-shadow">
+            <i class="fas fa-shopping-bag"></i> 
+            <span>Continue Shopping</span>
           </a>
-          <button onclick="downloadInvoice('<%= order._id %>')" 
-                  class="bg-green-600 text-white px-8 py-4 rounded-xl font-semibold hover:bg-green-700 transition-colors flex items-center justify-center gap-3">
-            <i class="fas fa-file-invoice"></i>
-            Download Invoice
-          </button>
         </div>
       </div>
 
@@ -297,14 +355,30 @@
       }
     }
 
-    // Download invoice function
-    function downloadInvoice(orderId) {
-      // Implement your invoice download logic here
-      window.open(`/order/${orderId}/invoice`, '_blank');
+    // Download invoice function for individual items
+    function downloadInvoice(orderId, itemId, productName, btn) {
+      const button = btn; 
+      const originalHtml = button.innerHTML;
+
+      button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Generating...';
+      button.disabled = true;
+
+      const invoiceUrl = `/order/${orderId}/item/${itemId}/invoice`;
+
+      const link = document.createElement("a");
+      link.href = invoiceUrl;
+      link.target = "_blank";
+      link.click();
+
+      setTimeout(() => {
+        button.innerHTML = originalHtml;
+        button.disabled = false;
+      }, 1500);
     }
 
     document.addEventListener("DOMContentLoaded", launchConfetti);
   </script>
+ 
 </body>
 </html>
 
@@ -312,13 +386,13 @@
   // Helper functions for dynamic styling
   function getStatusColor(status) {
     const statusColors = {
-      'pending': 'bg-yellow-100 text-yellow-800',
-      'processing': 'bg-blue-100 text-blue-800',
-      'shipped': 'bg-purple-100 text-purple-800',
-      'delivered': 'bg-green-100 text-green-800',
-      'cancelled': 'bg-red-100 text-red-800'
+      'pending': 'bg-yellow-100 text-yellow-800 border border-yellow-200',
+      'processing': 'bg-blue-100 text-blue-800 border border-blue-200',
+      'shipped': 'bg-purple-100 text-purple-800 border border-purple-200',
+      'delivered': 'bg-green-100 text-green-800 border border-green-200',
+      'cancelled': 'bg-red-100 text-red-800 border border-red-200'
     };
-    return statusColors[status] || 'bg-gray-100 text-gray-800';
+    return statusColors[status] || 'bg-gray-100 text-gray-800 border border-gray-200';
   }
 
   function getStatusIcon(status) {
