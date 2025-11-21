@@ -614,7 +614,7 @@ async function updateCartItem(itemId, newQuantity) {
             try {
                 setLoading(true);
                 // Redirect to checkout page
-                window.location.href = '/checkout';
+                window.location.href = '/user/checkout';
             } catch (error) {
                 console.error('Error during checkout:', error);
                 showNotification('Checkout failed. Please try again.', 'error');

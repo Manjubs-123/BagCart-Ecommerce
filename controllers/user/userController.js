@@ -120,54 +120,7 @@ export const getVerifyOtp = (req, res) => {
   });
 };
 
-// export const postVerifyOtp = async (req, res) => {
-//   try {
-//     const { otp } = req.body;
-//     const { otp: storedOtp, otpExpires, pendingEmail } = req.session;
-//     const email = pendingEmail;
 
-//     if (!storedOtp || Date.now() > otpExpires) {
-//       return res.render("user/verifyOtp", { email, error: "OTP expired. Please sign up again." });
-//     }
-
-//     if (otp !== storedOtp) {
-//       return res.render("user/verifyOtp", { email, error: "Invalid OTP. Please try again." });
-//     }
-
-//     const user = await User.findOne({ email });
-//     if (!user) return res.render("user/signup", { error: "User not found. Please sign up again." });
-
-//     user.isVerified = true;
-//     //default profile img setup
-//      const DEFAULT_URL = "https://res.cloudinary.com/db5uwjwdv/image/upload/v1763442856/AdobeStock_1185421594_Preview_cvfm1v.jpg";
-//     const DEFAULT_ID = "AdobeStock_1185421594_Preview_cvfm1v";
-
-//     if (!user.profileImage || !user.profileImage.url) {
-//       user.profileImage = {
-//         url: DEFAULT_URL,
-//         public_id: DEFAULT_ID
-//       };
-//     }
-//     await user.save();
-
-//     req.session.isLoggedIn = true;
-//     req.session.user = { id: user._id, name: user.name, email: user.email, profileImage: user.profileImage,        //  FIXED
-//       wishlistCount: user.wishlist?.length || 0,
-//       cartCount: user.cart?.items?.length || 0};
-
-//     // Clean up
-//     delete req.session.otp;
-//     delete req.session.otpExpires;
-//     delete req.session.pendingEmail;
-//     delete req.session.cooldown;
-
-
-//     res.redirect("/user/home");
-//   } catch (err) {
-//     console.error("OTP Verification Error:", err);
-//     res.status(500).render("user/verifyOtp", { email: req.session.pendingEmail || "", error: "Something went wrong." });
-//   }
-// };
 
 export const postVerifyOtp = async (req, res) => {
   try {
@@ -409,57 +362,8 @@ export const updateUserProfile = async (req, res) => {
 };
 
 
-// export const updateUserProfile = async (req, res) => {
-//   try {
-//     const userId = req.session.user.id;
-//     const user = await User.findById(userId);
-
-//     const { name, phone } = req.body;
-
-//     // If user uploaded a new cropped image
-//     if (req.file) {
-      
-//       // 1️⃣ Delete old image from Cloudinary (if exists)
-//       if (user.profileImage?.public_id) {
-//         await cloudinary.uploader.destroy(user.profileImage.public_id);
-//       }
-
-//       // 2️⃣ Upload new cropped image to Cloudinary
-//       const uploadResult = await cloudinary.uploader.upload(req.file.path, {
-//         folder: "profiles",
-//       });
-
-//       // 3️⃣ Update DB with new image info
-//       user.profileImage = {
-//         url: uploadResult.secure_url,
-//         public_id: uploadResult.public_id,
-//       };
-
-//       // 4️⃣ Remove temp file from disk
-//       fs.unlinkSync(req.file.path);
-//     }
-
-//     // 5️⃣ Update other profile details
-//     user.name = name;
-//     user.phone = phone;
-
-//     // 6️⃣ Save user
-//     await user.save();
-
-//     return res.json({ success: true, message: "Profile updated" });
-
-//   } catch (err) {
-//     console.error("PROFILE UPDATE ERROR:", err);
-//     res.status(500).json({ success: false, message: "Error updating profile" });
-//   }
-// };
 
 
-
-
-//  Logout User
-
-// Page to enter new email
 export const getChangeEmailPage = (req, res) => {
   const user=req.user;
   if(!user) return res.redirect("/user/login")
@@ -471,29 +375,6 @@ export const getChangeEmailPage = (req, res) => {
 };
 
 // Send OTP to new email
-// export const sendChangeEmailOtp = async (req, res) => {
-//   const { newEmail } = req.body;
-
-//   if (!newEmail.endsWith("@gmail.com")) {
-//     return res.render("user/changeEmail", { error: "Only Gmail addresses allowed." });
-//   }
-
-//   // OTP
-//   const otp = Math.floor(100000 + Math.random() * 900000).toString();
-
-//   req.session.changeEmailOtp = otp;
-//   req.session.changeEmail = newEmail;
-//   req.session.otpExpires = Date.now() + 3 * 60 * 1000; // 3 min
-
-//   await transporter.sendMail({
-//     from: process.env.EMAIL_USER,
-//     to: newEmail,
-//     subject: "OTP for Changing Your Email",
-//     html: `<p>Your OTP is <b>${otp}</b>. Valid for 3 minutes.</p>`,
-//   });
-
-//   return res.render("user/verifyEmailChangeOtp", { error: null });
-// };
 
 export const sendChangeEmailOtp = async (req, res) => {
   try {
@@ -538,32 +419,7 @@ export const sendChangeEmailOtp = async (req, res) => {
 };
 
 // Verify OTP
-// export const verifyChangedEmailOtp = async (req, res) => {
-//   const { otp } = req.body;
 
-//   if (!req.session.changeEmailOtp || Date.now() > req.session.otpExpires) {
-//     return res.render("user/verifyEmailChangeOtp", { error: "OTP expired" });
-//   }
-
-//   if (otp !== req.session.changeEmailOtp) {
-//     return res.render("user/verifyEmailChangeOtp", { error: "Incorrect OTP" });
-//   }
-
-//   // Update email
-//   await User.findByIdAndUpdate(req.session.user.id, {
-//     email: req.session.changeEmail,
-//     isVerified: true
-//   });
-
-//   // Cleanup
-//   delete req.session.changeEmailOtp;
-//   delete req.session.changeEmail;
-//   delete req.session.otpExpires;
-
-//   req.session.destroy(() => {
-//     res.redirect("/user/login");
-//   });
-// };
 
 export const verifyChangedEmailOtp = async (req, res) => {
   try {
@@ -692,7 +548,7 @@ export const addAddress = async (req, res) => {
             fullName: req.body.fullName,
             phone: req.body.phone,
             addressLine1: req.body.addressLine1,
-            addressLine2: req.body.addressLine2,
+            addressLine2: req.body.addressLine2||"",
             city: req.body.city,
             state: req.body.state,
             pincode: req.body.pincode,
@@ -837,76 +693,6 @@ export const setDefaultAddress = async (req, res) => {
 };
 
 
-// export const getSecuritySettings=async (req,res)=>{
-
-//      try {
-//         if (!req.session.user) return res.redirect('/user/login');
-
-//         const user = await User.findById(req.session.user._id);
-
-//         res.render('user/changepassword', { user });
-//     } catch (err) {
-//         console.log("Error loading security page:", err);
-//         res.status(500).send("Server error");
-//     }
-// };
-
-
-// export const getSecuritySettings = async (req, res) => {
-//   try {
-//     if (!req.session.user) {
-//       return res.redirect('/user/login');
-//     }
-
-//     const userId = req.session.user._id || req.session.userId;
-
-//     if (!userId) {
-//       return res.redirect('/user/login');
-//     }
-
-//     const user = await User.findById(userId);
-
-//     if (!user) {
-//       return res.redirect('/user/login');
-//     }
-
-//     res.render('user/changepassword', { user });
-
-//   } catch (err) {
-//     console.log("Error loading security page:", err);
-//     res.status(500).send("Server error");
-//   }
-// };
-
-
-// export const getSecuritySettings = async (req, res) => {
-//   try {
-//     if (!req.session.user) return res.redirect('/user/login');
-
-//     const userId = req.session.user._id;
-//     const user = await User.findById(userId);
-
-//     res.render('user/changepassword', { user });
-//   } catch (err) {
-//     console.log("Error loading security page:", err);
-//     res.status(500).send("Server error");
-//   }
-// };
-
-// export const getSecuritySettings = async (req, res) => {
-//   try {
-//     if (!req.session.user) return res.redirect('/user/login');
-
-//     const userId = req.session.user._id;
-//     const user = await User.findById(userId);
-
-//     res.render('user/changepassword', { user });
-//   } catch (err) {
-//     console.log("Error loading security page:", err);
-//     res.status(500).send("Server error");
-//   }
-// };
-
 
 
 export const getSecuritySettings = async (req, res) => {
@@ -934,53 +720,6 @@ export const getSecuritySettings = async (req, res) => {
     res.status(500).send("Server error");
   }
 };
-
-// export const checkCurrentPassword = async (req, res) => {
-//     try {
-//         const user = await User.findById(req.session.user.id);
-
-//         if (!user) return res.json({ valid: false });
-
-//         const isMatch = await bcrypt.compare(req.body.currentPassword, user.password);
-
-//         res.json({ valid: isMatch });
-
-//     } catch (err) {
-//         console.error("Password check error:", err);
-//         res.json({ valid: false });
-//     }
-// };
-
-// export const changePassword = async (req, res) => {
-//     try {
-//         const { currentPassword, newPassword } = req.body;
-
-//         const user = await User.findById(req.session.user.id);
-//         if (!user) {
-//             return res.json({ success: false, message: "User not found" });
-//         }
-
-//         // Compare old password
-//         const isMatch = await bcrypt.compare(currentPassword, user.password);
-//         if (!isMatch) {
-//             return res.json({ success: false, message: "Incorrect current password" });
-//         }
-
-//         // Hash new password
-//         const salt = await bcrypt.genSalt(10);
-//         const hashed = await bcrypt.hash(newPassword, salt);
-
-//         // Save new password
-//         user.password = hashed;
-//         await user.save();
-
-//         return res.json({ success: true, message: "Password updated successfully" });
-
-//     } catch (err) {
-//         console.log("Error updating password:", err);
-//         return res.json({ success: false, message: "Internal server error" });
-//     }
-// };
 
 export const checkCurrentPassword = async (req, res) => {
     try {
@@ -1040,54 +779,6 @@ export const changePassword = async (req, res) => {
 };
 
 
-// export const getWishlistPage = async (req, res) => {
-//     try {
-//         const user = await User.findById(req.session.user._id)
-//             .populate("wishlist");
-
-//         res.render("user/wishlist", {
-//             activePage: "wishlist",
-//             wishlist: user.wishlist,
-//             wishlistCount: user.wishlist.length
-//         });
-//     } catch (err) {
-//         console.log(err);
-//         res.status(500).send("Error loading wishlist");
-//     }
-// };
-
-
-
-
-
-// export const getWishlistPage = async (req, res) => {
-//     try {
-//         if (!req.session.user || !req.session.user.id) {
-//             return res.redirect("/login");
-//         }
-
-//         const user = await User.findById(req.session.user.id)
-//             .populate("wishlist");
-
-//         const wishlistItems = user.wishlist; // ARRAY OF PRODUCTS
-
-//         const ordersCount = 0;
-//         const unreadNotifications = 0;
-
-//         res.render("user/wishlist", {
-//             activePage: "wishlist",
-//             user,
-//             wishlistItems,
-//             wishlistCount: wishlistItems.length,
-//             ordersCount,
-//             unreadNotifications
-//         });
-
-//     } catch (err) {
-//         console.log("WISHLIST ERROR:", err);
-//         return res.status(500).send("Error loading wishlist");
-//     }
-// };
 
 export const getWishlistPage = async (req, res) => {
     try {
@@ -1121,45 +812,6 @@ export const getWishlistPage = async (req, res) => {
 
 
 
-// export const addToWishlist = async (req, res) => {
-//   try {
-//     const userId = req.session.user._id;
-//     const productId = req.params.productId;
-
-//     const user = await User.findById(userId);
-
-//     if (!user.wishlist.includes(productId)) {
-//       user.wishlist.push(productId);
-//     }
-
-//     await user.save();
-
-//     return res.json({ success: true, message: "Added to wishlist" });
-
-//   } catch (err) {
-//     console.log(err);
-//     return res.json({ success: false });
-//   }
-// };
-
-
-// export const removeFromWishlist = async (req, res) => {
-//   try {
-//     const userId = req.session.user._id;
-//     const productId = req.params.productId;
-
-//     await User.findByIdAndUpdate(userId, {
-//       $pull: { wishlist: productId }
-//     });
-
-//     return res.json({ success: true });
-
-//   } catch (err) {
-//     console.log(err);
-//     return res.json({ success: false });
-//   }
-// };
-
 
 export const addToWishlist = async (req, res) => {
   try {
@@ -1181,33 +833,6 @@ export const addToWishlist = async (req, res) => {
   }
 };
 
-// export const removeFromWishlist = async (req, res) => {
-//   try {
-//     const userId = req.session.user.id;  // ✔ FIXED (was _id)
-//     const productId = req.params.productId;
-
-//     console.log("Removing product:", productId);
-
-//     const user = await User.findByIdAndUpdate(
-//       userId,
-//       { $pull: { wishlist: productId } },
-//       { new: true }
-//     );
-
-//     if (!user) {
-//       return res.json({ success: false, message: "User not found" });
-//     }
-
-//     // update wishlist count in session
-//     req.session.user.wishlistCount = user.wishlist.length;
-
-//     return res.json({ success: true });
-
-//   } catch (err) {
-//     console.log("REMOVE ERROR:", err);
-//     return res.json({ success: false, message: "Server error" });
-//   }
-// };
 
 export const removeFromWishlist = async (req, res) => {
   try {
@@ -1252,6 +877,16 @@ export const toggleWishlist = async (req, res) => {
         res.json({ success: false, message: "Something went wrong" });
     }
 };
+
+export const getCheckoutPage = (req, res) => {
+    res.render("user/checkout", {
+        user: req.session.user,
+        ordersCount: 0,
+        wishlistCount: req.session.user?.wishlistCount || 0,
+        unreadNotifications: 0
+    });
+};
+
 
 
 

@@ -159,21 +159,22 @@ export const addToCart = async (req, res) => {
 
 export const updateCartQuantity = async (req, res) => {
   try {
+    const itemId = req.params.id;               // <-- correct param
     const { quantity } = req.body;
-    const itemId = req.params.id;
     const userId = req.session.user.id;
 
-    let cart = await Cart.findOne({ user: userId }).populate("items.product");
+    const cart = await Cart.findOne({ user: userId }).populate("items.product");
+    if (!cart) return res.json({ success: false, message: "Cart not found" });
 
     const item = cart.items.id(itemId);
-    if (!item) 
-      return res.json({ success: false, message: "Item not found" });
+    if (!item) return res.json({ success: false, message: "Item not found" });
 
+    // Validate stock
     const product = item.product;
+    const variant = product.variants[item.variantIndex];
 
-    const variant = product.variants[item.variantIndex] || product.variants[0];
+    if (!variant) return res.json({ success: false, message: "Variant missing" });
 
-    // ✅ STOCK VALIDATION — PLACE HERE
     if (quantity > variant.stock) {
       return res.json({
         success: false,
@@ -197,20 +198,23 @@ export const updateCartQuantity = async (req, res) => {
 export const removeCartItem = async (req, res) => {
   try {
     const userId = req.session.user.id;
-    const itemId = req.params.id;
+    const itemId = req.params.itemId;       // <-- correct param name
 
     const cart = await Cart.findOne({ user: userId });
-    if (!cart) return res.json({ success: false });
+    if (!cart) return res.json({ success: false, message: "Cart not found" });
 
-    cart.items = cart.items.filter((i) => i._id.toString() !== itemId);
+    cart.items = cart.items.filter(i => i._id.toString() !== itemId);
 
     await cart.save();
+
     res.json({ success: true });
 
   } catch (err) {
+    console.error(err);
     res.json({ success: false, message: "Cannot remove item" });
   }
 };
+
 
 
 export const clearCart = async (req, res) => {
