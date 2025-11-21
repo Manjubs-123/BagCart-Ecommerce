@@ -1,82 +1,86 @@
 import mongoose from "mongoose";
 
+// Individual item schema
 const orderItemSchema = new mongoose.Schema({
-    product: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "Product",
-        required: true
-    },
+  itemOrderId: {
+    type: String,
+    required: false, // generated later
+  },
 
-    variantIndex: {
-        type: Number,
-        required: true
-    },
+  product: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Product",
+    required: true,
+  },
 
-    quantity: {
-        type: Number,
-        required: true,
-        min: 1
-    },
+  variantIndex: { type: Number, required: true },
+  quantity: { type: Number, required: true },
+  price: { type: Number, required: true },
 
-    price: {
-        type: Number,
-        required: true
-    },
+  color: String,
+  size: String,
+  image: String,
 
-    color: { type: String },
+  status: {
+    type: String,
+    enum: ["pending", "processing", "shipped", "delivered", "cancelled", "returned"],
+    default: "pending"
+  },
 
-    // snapshot of product image
-    image: { type: String }
+  // Return & Cancel
+  cancelReason: String,
+  returnReason: String,
+  returnDetails: String,
+
+  // Timeline tracking
+  shippedDetails: {
+    courier: String,
+    trackingId: String,
+    expectedDate: Date
+  },
+
+  estimatedDelivery: Date,
+  deliveredDate: Date,
+  cancelledDate: Date,
+  returnedDate: Date
 });
 
-const orderSchema = new mongoose.Schema(
-{
-    user: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "User",
-        required: true
-    },
+// Main order schema
+const orderSchema = new mongoose.Schema({
+  orderId: { 
+    type: String, 
+    required: false // Generated in controller 
+  },
 
-    // snapshot of address
-    shippingAddress: {
-        fullName: { type: String, required: true },
-        phone: { type: String, required: true },
-        addressLine1: { type: String, required: true },
-        addressLine2: { type: String, default: "" },
-        city: { type: String, required: true },
-        state: { type: String, required: true },
-        pincode: { type: String, required: true },
-        country: { type: String, default: "India" }
-    },
+  user: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "User",
+    required: true
+  },
 
-    items: [orderItemSchema],
+  shippingAddress: {
+    fullName: String,
+    phone: String,
+    addressLine1: String,
+    addressLine2: String,
+    city: String,
+    state: String,
+    pincode: String,
+    country: { type: String, default: "India" },
+  },
 
-    paymentMethod: {
-        type: String,
-        enum: ["cod", "wallet"],
-        default: "cod"
-    },
+  items: [orderItemSchema],
 
-    paymentStatus: {
-        type: String,
-        enum: ["pending", "paid", "failed"],
-        default: "pending"
-    },
+  paymentMethod: { type: String, default: "cod" },
+  paymentStatus: { type: String, default: "pending" },
 
-    orderStatus: {
-        type: String,
-        enum: ["pending", "confirmed", "shipped", "delivered", "cancelled"],
-        default: "pending"
-    },
+  subtotal: Number,
+  tax: Number,
+  shippingFee: Number,
+  totalAmount: Number,
 
-    subtotal: { type: Number, required: true },
-    tax: { type: Number, required: true },
-    shippingFee: { type: Number, required: true },
-    totalAmount: { type: Number, required: true },
-
-    // tracking ID, razorpay id if added later
-    transactionId: { type: String }
-},
+  transactionId: String,
+}, 
 { timestamps: true }
 );
 

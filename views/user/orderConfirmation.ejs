@@ -1,555 +1,345 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Order Confirmed - BagHub</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <style>
-        :root {
-            --primary: #1a56db;
-            --primary-dark: #1e429f;
-            --success: #10b981;
-            --success-light: #d1fae5;
-        }
-        
-        .confetti {
-            position: absolute;
-            width: 10px;
-            height: 10px;
-            background-color: #f59e0b;
-            border-radius: 50%;
-            animation: confetti-fall 5s linear infinite;
-        }
-        
-        @keyframes confetti-fall {
-            0% {
-                transform: translateY(-100px) rotate(0deg);
-                opacity: 1;
-            }
-            100% {
-                transform: translateY(100vh) rotate(360deg);
-                opacity: 0;
-            }
-        }
-        
-        .success-checkmark {
-            width: 80px;
-            height: 80px;
-            border-radius: 50%;
-            display: block;
-            stroke-width: 2;
-            stroke: #fff;
-            stroke-miterlimit: 10;
-            box-shadow: inset 0px 0px 0px #10b981;
-            animation: fill .4s ease-in-out .4s forwards, scale .3s ease-in-out .9s both;
-        }
-        
-        .success-checkmark__circle {
-            stroke-dasharray: 166;
-            stroke-dashoffset: 166;
-            stroke-width: 2;
-            stroke-miterlimit: 10;
-            stroke: #10b981;
-            fill: none;
-            animation: stroke 0.6s cubic-bezier(0.65, 0, 0.45, 1) forwards;
-        }
-        
-        .success-checkmark__check {
-            transform-origin: 50% 50%;
-            stroke-dasharray: 48;
-            stroke-dashoffset: 48;
-            animation: stroke 0.3s cubic-bezier(0.65, 0, 0.45, 1) 0.8s forwards;
-        }
-        
-        @keyframes stroke {
-            100% {
-                stroke-dashoffset: 0;
-            }
-        }
-        
-        @keyframes scale {
-            0%, 100% {
-                transform: none;
-            }
-            50% {
-                transform: scale3d(1.1, 1.1, 1);
-            }
-        }
-        
-        @keyframes fill {
-            100% {
-                box-shadow: inset 0px 0px 0px 40px #10b981;
-            }
-        }
-        
-        .progress-bar {
-            height: 6px;
-            border-radius: 3px;
-            overflow: hidden;
-            background-color: #e5e7eb;
-        }
-        
-        .progress-fill {
-            height: 100%;
-            transition: width 0.5s ease;
-            background-color: #10b981;
-            width: 25%;
-        }
-        
-        .order-item {
-            transition: all 0.2s ease;
-        }
-        
-        .order-item:hover {
-            background-color: #f9fafb;
-        }
-        
-        .btn-primary {
-            background-color: var(--primary);
-            transition: all 0.3s ease;
-        }
-        
-        .btn-primary:hover {
-            background-color: var(--primary-dark);
-            transform: translateY(-1px);
-        }
-        
-        .btn-secondary {
-            background-color: white;
-            border: 1px solid #d1d5db;
-            transition: all 0.3s ease;
-        }
-        
-        .btn-secondary:hover {
-            background-color: #f9fafb;
-        }
-        
-        .pulse {
-            animation: pulse 2s infinite;
-        }
-        
-        @keyframes pulse {
-            0% {
-                transform: scale(1);
-            }
-            50% {
-                transform: scale(1.05);
-            }
-            100% {
-                transform: scale(1);
-            }
-        }
-        
-        .truck-animation {
-            animation: moveTruck 3s ease-in-out infinite;
-        }
-        
-        @keyframes moveTruck {
-            0%, 100% {
-                transform: translateX(0);
-            }
-            50% {
-                transform: translateX(10px);
-            }
-        }
-    </style>
+  <meta charset="UTF-8">
+  <title>Order Confirmed - BagHub</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    :root {
+      --primary: #1a56db;
+      --success: #10b981;
+    }
+    
+    .confetti {
+      position: absolute;
+      width: 10px;
+      height: 10px;
+      border-radius: 2px;
+      animation: fall 4s linear infinite;
+    }
+    
+    @keyframes fall {
+      0% { transform: translateY(-50px) rotate(0deg); }
+      100% { transform: translateY(100vh) rotate(180deg); }
+    }
+    
+    .success-circle {
+      width: 90px;
+      height: 90px;
+      border-radius: 50%;
+      background: var(--success);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: auto;
+      animation: pop 0.5s ease-in-out forwards;
+    }
+    
+    @keyframes pop {
+      0% { transform: scale(0.5); opacity: 0; }
+      100% { transform: scale(1); opacity: 1; }
+    }
+    
+    .order-item-card {
+      border-left: 4px solid #1a56db;
+      transition: all 0.3s ease;
+    }
+    
+    .order-item-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+    }
+  </style>
 </head>
+
 <body class="bg-gray-50 min-h-screen">
-    <!-- Confetti Effect -->
-    <div id="confettiContainer" class="fixed inset-0 pointer-events-none z-0"></div>
 
-    <!-- Header -->
-    <header class="bg-white shadow-sm relative z-10">
-        <div class="container mx-auto px-4 py-4">
-            <div class="flex items-center justify-between">
-                <div class="flex items-center gap-3">
-                    <div class="w-10 h-10 rounded-lg bg-blue-600 flex items-center justify-center">
-                        <i class="fas fa-shopping-bag text-white"></i>
-                    </div>
-                    <h1 class="text-xl font-bold text-gray-900">BagHub</h1>
-                </div>
-                <div class="flex items-center gap-4">
-                    <button class="p-2 text-gray-600 hover:text-blue-600 transition-colors">
-                        <i class="fas fa-search"></i>
-                    </button>
-                    <button class="p-2 text-gray-600 hover:text-blue-600 transition-colors">
-                        <i class="far fa-heart"></i>
-                    </button>
-                    <button class="p-2 text-gray-600 hover:text-blue-600 transition-colors relative">
-                        <i class="fas fa-shopping-cart"></i>
-                        <span class="absolute -top-1 -right-1 bg-blue-600 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">0</span>
-                    </button>
-                    <div class="relative">
-                        <button class="flex items-center gap-2 text-gray-700">
-                            <div class="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-600">
-                                <i class="fas fa-user"></i>
-                            </div>
-                            <span class="hidden md:inline">John Doe</span>
-                            <i class="fas fa-chevron-down text-xs"></i>
-                        </button>
-                    </div>
-                </div>
-            </div>
+  <%- include('../partials/landingheader') %>
+
+  <!-- Confetti Effect -->
+  <div id="confettiContainer" class="fixed inset-0 pointer-events-none z-0"></div>
+
+  <div class="container mx-auto px-4 py-8">
+    <div class="max-w-6xl mx-auto">
+      
+      <!-- Success Header -->
+      <div class="bg-white rounded-2xl shadow-lg p-8 mb-8 text-center relative z-10">
+        <div class="success-circle mb-6">
+          <i class="fas fa-check text-white text-4xl"></i>
         </div>
-    </header>
+        
+        <h1 class="text-3xl md:text-4xl font-bold text-green-600 mb-4">
+          Order Confirmed Successfully!
+        </h1>
+        
+        <p class="text-gray-600 text-lg mb-6">
+          Thank you for your purchase. Your order has been confirmed and will be processed shortly.
+        </p>
 
-    <!-- Main Content -->
-    <main class="container mx-auto px-4 py-8 relative z-10">
-        <!-- Success Header -->
-        <div class="text-center mb-12">
-            <div class="flex justify-center mb-6">
-                <div class="relative">
-                    <svg class="success-checkmark" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 52 52">
-                        <circle class="success-checkmark__circle" cx="26" cy="26" r="25" fill="none"/>
-                        <path class="success-checkmark__check" fill="none" d="M14.1 27.2l7.1 7.2 16.7-16.8"/>
-                    </svg>
-                </div>
+        <!-- Order Summary Box -->
+        <div class="bg-blue-50 border border-blue-200 rounded-xl p-6 max-w-2xl mx-auto">
+          <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div class="text-left">
+              <h2 class="text-xl font-bold text-gray-900">Order Summary</h2>
+              <p class="text-gray-600">We've sent the order details to your email</p>
             </div>
-            <h1 class="text-3xl md:text-4xl font-bold text-gray-900 mb-4">Order Confirmed!</h1>
-            <p class="text-xl text-gray-600 max-w-2xl mx-auto">Thank you for your purchase. Your order has been successfully placed and is being processed.</p>
+            <div class="text-right">
+              <p class="text-sm text-gray-600">Main Order ID</p>
+              <p class="text-2xl font-bold text-blue-600 font-mono">
+                <%= order._id %>
+              </p>
+              <p class="text-sm text-gray-600 mt-1">
+                <%= order.createdAt.toLocaleDateString('en-US', { 
+                  year: 'numeric', 
+                  month: 'long', 
+                  day: 'numeric',
+                  hour: '2-digit',
+                  minute: '2-digit'
+                }) %>
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Individual Order Items -->
+      <div class="space-y-6 mb-8">
+        <h2 class="text-2xl font-bold text-gray-900 mb-4">Your Order Items</h2>
+        
+        <% order.items.forEach((item, index) => { %>
+          <div class="order-item-card bg-white rounded-xl shadow-sm p-6">
+            <div class="flex flex-col lg:flex-row gap-6">
+              
+              <!-- Product Image -->
+              <div class="flex-shrink-0">
+                <img src="<%= item.image || '/images/no-image.jpg' %>" 
+                     alt="<%= item.product.name %>"
+                     class="w-32 h-32 object-cover rounded-lg">
+              </div>
+
+              <!-- Product Details -->
+              <div class="flex-grow">
+                <div class="flex flex-col md:flex-row md:items-start justify-between gap-4 mb-4">
+                  <div>
+                    <h3 class="text-xl font-bold text-gray-900 mb-2">
+                      <%= item.product.name %>
+                    </h3>
+                    
+                    <!-- Individual Item Order ID -->
+                    <div class="bg-gray-100 rounded-lg p-3 mb-3">
+                      <p class="text-sm text-gray-600">Item Order ID</p>
+                      <p class="font-mono text-lg font-bold text-gray-900">
+                        <%= order._id %>-<%= index + 1 %>
+                      </p>
+                    </div>
+
+                    <!-- Product Specifications -->
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                      <div>
+                        <p class="text-sm text-gray-600">Color</p>
+                        <p class="font-medium"><%= item.color %></p>
+                      </div>
+                      <div>
+                        <p class="text-sm text-gray-600">Quantity</p>
+                        <p class="font-medium"><%= item.quantity %></p>
+                      </div>
+                      <div>
+                        <p class="text-sm text-gray-600">Unit Price</p>
+                        <p class="font-medium">₹<%= item.price %></p>
+                      </div>
+                      <div>
+                        <p class="text-sm text-gray-600">Item Total</p>
+                        <p class="font-medium">₹<%= (item.price * item.quantity).toFixed(2) %></p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Status Badge -->
+                  <div class="flex-shrink-0">
+                    <span class="inline-flex items-center px-4 py-2 rounded-full text-sm font-semibold
+                                <%= getStatusColor(item.status || order.orderStatus) %>">
+                      <i class="fas <%= getStatusIcon(item.status || order.orderStatus) %> mr-2"></i>
+                      <%= (item.status || order.orderStatus).charAt(0).toUpperCase() + (item.status || order.orderStatus).slice(1) %>
+                    </span>
+                  </div>
+                </div>
+
+                <!-- Progress Bar -->
+                <div class="mt-4">
+                  <div class="flex justify-between text-sm text-gray-600 mb-2">
+                    <span>Order Placed</span>
+                    <span>Processing</span>
+                    <span>Shipped</span>
+                    <span>Delivered</span>
+                  </div>
+                  <div class="w-full bg-gray-200 rounded-full h-2">
+                    <div class="<%= getProgressBarClass(item.status || order.orderStatus) %> h-2 rounded-full transition-all duration-500"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        <% }) %>
+      </div>
+
+      <!-- Order Summary -->
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
+        <!-- Price Summary -->
+        <div class="bg-white rounded-xl shadow-sm p-6">
+          <h3 class="text-lg font-semibold text-gray-900 mb-4">Price Summary</h3>
+          <div class="space-y-3">
+            <div class="flex justify-between">
+              <span class="text-gray-600">Subtotal (<%= order.items.length %> items)</span>
+              <span class="font-medium">₹<%= order.subtotal.toFixed(2) %></span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-gray-600">Tax (10%)</span>
+              <span class="font-medium">₹<%= order.tax.toFixed(2) %></span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-gray-600">Shipping</span>
+              <span class="font-medium text-green-600">
+                <%= order.shippingFee === 0 ? 'FREE' : `₹${order.shippingFee.toFixed(2)}` %>
+              </span>
+            </div>
+            <div class="border-t pt-3">
+              <div class="flex justify-between text-lg font-bold">
+                <span>Total Amount</span>
+                <span class="text-blue-600">₹<%= order.totalAmount.toFixed(2) %></span>
+              </div>
+            </div>
+          </div>
         </div>
 
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            <!-- Order Summary -->
-            <div class="lg:col-span-2 space-y-6">
-                <!-- Order Details Card -->
-                <div class="bg-white rounded-xl shadow-sm p-6">
-                    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
-                        <div>
-                            <h2 class="text-xl font-bold text-gray-900">Order #BGH-2023-0785</h2>
-                            <p class="text-gray-600 mt-1">Placed on October 20, 2023 at 2:30 PM</p>
-                        </div>
-                        <div class="bg-green-50 border border-green-200 rounded-lg px-4 py-2">
-                            <p class="text-green-800 font-medium">Estimated Delivery: Oct 25, 2023</p>
-                        </div>
-                    </div>
-
-                    <!-- Order Progress -->
-                    <div class="mb-6">
-                        <div class="progress-bar">
-                            <div class="progress-fill"></div>
-                        </div>
-                        <div class="flex justify-between text-sm text-gray-600 mt-2">
-                            <span class="text-green-600 font-medium">Order Placed</span>
-                            <span>Processing</span>
-                            <span>Shipped</span>
-                            <span>Delivered</span>
-                        </div>
-                    </div>
-
-                    <!-- Order Items -->
-                    <h3 class="text-lg font-semibold text-gray-900 mb-4">Order Items (3)</h3>
-                    <div class="space-y-4">
-                        <!-- Item 1 -->
-                        <div class="order-item border border-gray-200 rounded-lg p-4">
-                            <div class="flex flex-col md:flex-row gap-4">
-                                <div class="flex-shrink-0">
-                                    <img src="https://images.unsplash.com/photo-1542291026-7eec264c27ff?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mnx8c2hvZXN8ZW58MHx8MHx8fDA%3D&auto=format&fit=crop&w=500&q=60" alt="Product" class="w-20 h-20 object-cover rounded-lg">
-                                </div>
-                                <div class="flex-grow">
-                                    <div class="flex flex-col md:flex-row md:items-start justify-between gap-2">
-                                        <div>
-                                            <h4 class="font-semibold text-gray-900">Nike Air Max 270</h4>
-                                            <p class="text-gray-600 text-sm mt-1">Size: 9, Color: Black/White</p>
-                                            <p class="text-gray-600 text-sm">Seller: Nike Official</p>
-                                        </div>
-                                        <div class="text-right">
-                                            <p class="font-semibold text-gray-900">₹2,499.00</p>
-                                            <p class="text-gray-600 text-sm">Qty: 1</p>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Item 2 -->
-                        <div class="order-item border border-gray-200 rounded-lg p-4">
-                            <div class="flex flex-col md:flex-row gap-4">
-                                <div class="flex-shrink-0">
-                                    <img src="https://images.unsplash.com/photo-1525966222134-fcfa99b8ae77?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8M3x8c2hvZXN8ZW58MHx8MHx8fDA%3D&auto=format&fit=crop&w=500&q=60" alt="Product" class="w-20 h-20 object-cover rounded-lg">
-                                </div>
-                                <div class="flex-grow">
-                                    <div class="flex flex-col md:flex-row md:items-start justify-between gap-2">
-                                        <div>
-                                            <h4 class="font-semibold text-gray-900">Adidas Ultraboost</h4>
-                                            <p class="text-gray-600 text-sm mt-1">Size: 8, Color: Blue/White</p>
-                                            <p class="text-gray-600 text-sm">Seller: Adidas Store</p>
-                                        </div>
-                                        <div class="text-right">
-                                            <p class="font-semibold text-gray-900">₹1,299.00</p>
-                                            <p class="text-gray-600 text-sm">Qty: 1</p>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Item 3 -->
-                        <div class="order-item border border-gray-200 rounded-lg p-4">
-                            <div class="flex flex-col md:flex-row gap-4">
-                                <div class="flex-shrink-0">
-                                    <img src="https://images.unsplash.com/photo-1606107557195-0e29a4b5b4aa?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8NXx8c2hvZXN8ZW58MHx8MHx8fDA%3D&auto=format&fit=crop&w=500&q=60" alt="Product" class="w-20 h-20 object-cover rounded-lg">
-                                </div>
-                                <div class="flex-grow">
-                                    <div class="flex flex-col md:flex-row md:items-start justify-between gap-2">
-                                        <div>
-                                            <h4 class="font-semibold text-gray-900">Puma RS-X</h4>
-                                            <p class="text-gray-600 text-sm mt-1">Size: 9, Color: Red/Black</p>
-                                            <p class="text-gray-600 text-sm">Seller: Puma Official</p>
-                                        </div>
-                                        <div class="text-right">
-                                            <p class="font-semibold text-gray-900">₹1,499.00</p>
-                                            <p class="text-gray-600 text-sm">Qty: 1</p>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Delivery & Payment Info -->
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <!-- Delivery Address -->
-                    <div class="bg-white rounded-xl shadow-sm p-6">
-                        <div class="flex items-center gap-3 mb-4">
-                            <div class="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600">
-                                <i class="fas fa-map-marker-alt"></i>
-                            </div>
-                            <h3 class="text-lg font-semibold text-gray-900">Delivery Address</h3>
-                        </div>
-                        <div class="text-gray-600">
-                            <p class="font-medium">John Doe</p>
-                            <p class="mt-1">123 Main Street, Apt 4B</p>
-                            <p>Mumbai, Maharashtra 400001</p>
-                            <p class="mt-2">Phone: +91 98765 43210</p>
-                        </div>
-                    </div>
-
-                    <!-- Payment Information -->
-                    <div class="bg-white rounded-xl shadow-sm p-6">
-                        <div class="flex items-center gap-3 mb-4">
-                            <div class="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center text-green-600">
-                                <i class="fas fa-credit-card"></i>
-                            </div>
-                            <h3 class="text-lg font-semibold text-gray-900">Payment Information</h3>
-                        </div>
-                        <div class="text-gray-600">
-                            <div class="flex justify-between mb-2">
-                                <span>Payment Method:</span>
-                                <span class="font-medium">Credit Card</span>
-                            </div>
-                            <div class="flex justify-between mb-2">
-                                <span>Card Number:</span>
-                                <span class="font-medium">**** **** **** 4242</span>
-                            </div>
-                            <div class="flex justify-between mb-2">
-                                <span>Payment Status:</span>
-                                <span class="font-medium text-green-600">Paid</span>
-                            </div>
-                            <div class="flex justify-between">
-                                <span>Total Amount:</span>
-                                <span class="font-medium text-lg">₹5,297.00</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Order Summary & Actions -->
-            <div class="space-y-6">
-                <!-- Order Summary -->
-                <div class="bg-white rounded-xl shadow-sm p-6">
-                    <h3 class="text-lg font-semibold text-gray-900 mb-4">Order Summary</h3>
-                    <div class="space-y-3">
-                        <div class="flex justify-between">
-                            <span class="text-gray-600">Subtotal (3 items)</span>
-                            <span class="font-medium">₹5,297.00</span>
-                        </div>
-                        <div class="flex justify-between">
-                            <span class="text-gray-600">Shipping</span>
-                            <span class="font-medium text-green-600">FREE</span>
-                        </div>
-                        <div class="flex justify-between">
-                            <span class="text-gray-600">Tax</span>
-                            <span class="font-medium">₹529.70</span>
-                        </div>
-                        <div class="border-t pt-3">
-                            <div class="flex justify-between text-lg font-bold">
-                                <span>Total</span>
-                                <span>₹5,826.70</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Order Actions -->
-                <div class="bg-white rounded-xl shadow-sm p-6">
-                    <h3 class="text-lg font-semibold text-gray-900 mb-4">Order Actions</h3>
-                    <div class="space-y-3">
-                        <button class="btn-primary text-white w-full py-3 rounded-lg flex items-center justify-center gap-2">
-                            <i class="fas fa-truck"></i>
-                            <span>Track Your Order</span>
-                        </button>
-                        <button class="btn-secondary w-full py-3 rounded-lg flex items-center justify-center gap-2">
-                            <i class="fas fa-file-invoice"></i>
-                            <span>Download Invoice</span>
-                        </button>
-                        <button class="btn-secondary w-full py-3 rounded-lg flex items-center justify-center gap-2">
-                            <i class="fas fa-shopping-bag"></i>
-                            <span>Continue Shopping</span>
-                        </button>
-                    </div>
-                </div>
-
-                <!-- Support Card -->
-                <div class="bg-blue-50 border border-blue-200 rounded-xl p-6">
-                    <div class="flex items-center gap-3 mb-3">
-                        <div class="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600">
-                            <i class="fas fa-headset"></i>
-                        </div>
-                        <h3 class="text-lg font-semibold text-gray-900">Need Help?</h3>
-                    </div>
-                    <p class="text-gray-600 mb-4">Our customer support team is here to help with any questions about your order.</p>
-                    <div class="space-y-2">
-                        <div class="flex items-center gap-2 text-gray-700">
-                            <i class="fas fa-phone text-blue-600"></i>
-                            <span>+1 (555) 123-4567</span>
-                        </div>
-                        <div class="flex items-center gap-2 text-gray-700">
-                            <i class="fas fa-envelope text-blue-600"></i>
-                            <span>support@baghub.com</span>
-                        </div>
-                        <div class="flex items-center gap-2 text-gray-700">
-                            <i class="fas fa-comment text-blue-600"></i>
-                            <span>Live Chat</span>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Delivery Tracking -->
-                <div class="bg-white rounded-xl shadow-sm p-6">
-                    <div class="flex items-center gap-3 mb-4">
-                        <div class="w-10 h-10 rounded-full bg-orange-100 flex items-center justify-center text-orange-600 truck-animation">
-                            <i class="fas fa-truck"></i>
-                        </div>
-                        <h3 class="text-lg font-semibold text-gray-900">Delivery Updates</h3>
-                    </div>
-                    <p class="text-gray-600 mb-4">We'll send you email and SMS updates about your order delivery.</p>
-                    <div class="bg-gray-50 rounded-lg p-4">
-                        <div class="flex items-center gap-3">
-                            <div class="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center text-green-600">
-                                <i class="fas fa-check text-sm"></i>
-                            </div>
-                            <div>
-                                <p class="font-medium text-gray-900">Order Confirmed</p>
-                                <p class="text-sm text-gray-600">Just now</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
+        <!-- Shipping Address -->
+        <div class="bg-white rounded-xl shadow-sm p-6">
+          <h3 class="text-lg font-semibold text-gray-900 mb-4">Shipping Address</h3>
+          <div class="text-gray-600">
+            <p class="font-medium text-gray-900"><%= order.shippingAddress.fullName %></p>
+            <p class="mt-1"><%= order.shippingAddress.addressLine1 %></p>
+            <% if (order.shippingAddress.addressLine2) { %>
+              <p><%= order.shippingAddress.addressLine2 %></p>
+            <% } %>
+            <p>
+              <%= order.shippingAddress.city %>, 
+              <%= order.shippingAddress.state %> - 
+              <%= order.shippingAddress.pincode %>
+            </p>
+            <p><%= order.shippingAddress.country %></p>
+            <p class="mt-2 font-medium">Phone: <%= order.shippingAddress.phone %></p>
+          </div>
         </div>
-    </main>
 
-    <!-- Footer -->
-    <footer class="bg-gray-900 text-white mt-12 relative z-10">
-        <div class="container mx-auto px-4 py-8">
-            <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
-                <div>
-                    <h3 class="text-lg font-bold mb-4">BagHub</h3>
-                    <p class="text-gray-400">Your one-stop destination for premium footwear and accessories.</p>
-                </div>
-                <div>
-                    <h4 class="font-semibold mb-4">Shop</h4>
-                    <ul class="space-y-2 text-gray-400">
-                        <li><a href="#" class="hover:text-white transition-colors">Men's Shoes</a></li>
-                        <li><a href="#" class="hover:text-white transition-colors">Women's Shoes</a></li>
-                        <li><a href="#" class="hover:text-white transition-colors">New Arrivals</a></li>
-                        <li><a href="#" class="hover:text-white transition-colors">Best Sellers</a></li>
-                    </ul>
-                </div>
-                <div>
-                    <h4 class="font-semibold mb-4">Support</h4>
-                    <ul class="space-y-2 text-gray-400">
-                        <li><a href="#" class="hover:text-white transition-colors">Contact Us</a></li>
-                        <li><a href="#" class="hover:text-white transition-colors">FAQs</a></li>
-                        <li><a href="#" class="hover:text-white transition-colors">Shipping & Returns</a></li>
-                        <li><a href="#" class="hover:text-white transition-colors">Order Tracking</a></li>
-                    </ul>
-                </div>
-                <div>
-                    <h4 class="font-semibold mb-4">Stay Connected</h4>
-                    <div class="flex gap-4 mb-4">
-                        <a href="#" class="w-10 h-10 rounded-full bg-gray-800 flex items-center justify-center hover:bg-blue-600 transition-colors">
-                            <i class="fab fa-facebook-f"></i>
-                        </a>
-                        <a href="#" class="w-10 h-10 rounded-full bg-gray-800 flex items-center justify-center hover:bg-blue-400 transition-colors">
-                            <i class="fab fa-twitter"></i>
-                        </a>
-                        <a href="#" class="w-10 h-10 rounded-full bg-gray-800 flex items-center justify-center hover:bg-pink-600 transition-colors">
-                            <i class="fab fa-instagram"></i>
-                        </a>
-                    </div>
-                    <p class="text-gray-400">Subscribe to our newsletter for updates</p>
-                </div>
+        <!-- Payment Information -->
+        <div class="bg-white rounded-xl shadow-sm p-6">
+          <h3 class="text-lg font-semibold text-gray-900 mb-4">Payment Information</h3>
+          <div class="space-y-3 text-gray-600">
+            <div class="flex justify-between">
+              <span>Payment Method:</span>
+              <span class="font-medium capitalize">
+                <%= order.paymentMethod === 'cod' ? 'Cash on Delivery' : order.paymentMethod %>
+              </span>
             </div>
-            <div class="border-t border-gray-800 mt-8 pt-8 text-center text-gray-400">
-                <p>&copy; 2023 BagHub. All rights reserved.</p>
+            <div class="flex justify-between">
+              <span>Payment Status:</span>
+              <span class="font-medium text-green-600 capitalize">
+                <%= order.paymentStatus %>
+              </span>
             </div>
+            <div class="flex justify-between">
+              <span>Order Status:</span>
+              <span class="font-medium text-blue-600 capitalize">
+                <%= order.orderStatus %>
+              </span>
+            </div>
+          </div>
         </div>
-    </footer>
+      </div>
 
-    <script>
-        // Create confetti effect
-        function createConfetti() {
-            const container = document.getElementById('confettiContainer');
-            const colors = ['#f59e0b', '#10b981', '#3b82f6', '#ef4444', '#8b5cf6'];
-            
-            for (let i = 0; i < 50; i++) {
-                const confetti = document.createElement('div');
-                confetti.className = 'confetti';
-                confetti.style.left = Math.random() * 100 + 'vw';
-                confetti.style.animationDelay = Math.random() * 5 + 's';
-                confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
-                container.appendChild(confetti);
-            }
-        }
-        
-        // Download invoice
-        function downloadInvoice() {
-            // In a real application, this would trigger a PDF download
-            alert('Your invoice is being downloaded...');
-        }
-        
-        // Track order
-        function trackOrder() {
-            // In a real application, this would redirect to tracking page
-            alert('Redirecting to order tracking...');
-        }
-        
-        // Continue shopping
-        function continueShopping() {
-            window.location.href = '/';
-        }
-        
-        // Initialize page
-        document.addEventListener('DOMContentLoaded', function() {
-            createConfetti();
-            
-            // Add event listeners to buttons
-            document.querySelector('button:first-child').addEventListener('click', trackOrder);
-            document.querySelectorAll('button')[1].addEventListener('click', downloadInvoice);
-            document.querySelectorAll('button')[2].addEventListener('click', continueShopping);
-            
-            // Auto progress animation
-            setTimeout(() => {
-                const progressFill = document.querySelector('.progress-fill');
-                progressFill.style.width = '40%';
-            }, 1000);
-        });
-    </script>
+      <!-- Action Buttons -->
+      <div class="bg-white rounded-xl shadow-sm p-8 text-center">
+        <div class="flex flex-col sm:flex-row gap-4 justify-center">
+          <a href="/user/orders" 
+             class="bg-blue-600 text-white px-8 py-4 rounded-xl font-semibold hover:bg-blue-700 transition-colors flex items-center justify-center gap-3">
+            <i class="fas fa-list"></i>
+            View All Orders
+          </a>
+          <a href="/" 
+             class="bg-white border border-gray-300 text-gray-700 px-8 py-4 rounded-xl font-semibold hover:bg-gray-50 transition-colors flex items-center justify-center gap-3">
+            <i class="fas fa-shopping-bag"></i>
+            Continue Shopping
+          </a>
+          <button onclick="downloadInvoice('<%= order._id %>')" 
+                  class="bg-green-600 text-white px-8 py-4 rounded-xl font-semibold hover:bg-green-700 transition-colors flex items-center justify-center gap-3">
+            <i class="fas fa-file-invoice"></i>
+            Download Invoice
+          </button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <script>
+    // Confetti animation
+    function launchConfetti() {
+      const container = document.getElementById("confettiContainer");
+      const colors = ["#10b981", "#3b82f6", "#f59e0b", "#ef4444", "#8b5cf6"];
+
+      for (let i = 0; i < 50; i++) {
+        let div = document.createElement("div");
+        div.classList.add("confetti");
+        div.style.left = Math.random() * 100 + "vw";
+        div.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+        div.style.animationDelay = Math.random() * 3 + "s";
+        container.appendChild(div);
+      }
+    }
+
+    // Download invoice function
+    function downloadInvoice(orderId) {
+      // Implement your invoice download logic here
+      window.open(`/order/${orderId}/invoice`, '_blank');
+    }
+
+    document.addEventListener("DOMContentLoaded", launchConfetti);
+  </script>
 </body>
 </html>
+
+<%
+  // Helper functions for dynamic styling
+  function getStatusColor(status) {
+    const statusColors = {
+      'pending': 'bg-yellow-100 text-yellow-800',
+      'processing': 'bg-blue-100 text-blue-800',
+      'shipped': 'bg-purple-100 text-purple-800',
+      'delivered': 'bg-green-100 text-green-800',
+      'cancelled': 'bg-red-100 text-red-800'
+    };
+    return statusColors[status] || 'bg-gray-100 text-gray-800';
+  }
+
+  function getStatusIcon(status) {
+    const statusIcons = {
+      'pending': 'fa-clock',
+      'processing': 'fa-cog',
+      'shipped': 'fa-truck',
+      'delivered': 'fa-check',
+      'cancelled': 'fa-times'
+    };
+    return statusIcons[status] || 'fa-info-circle';
+  }
+
+  function getProgressBarClass(status) {
+    const progressClasses = {
+      'pending': 'bg-yellow-500 w-1/4',
+      'processing': 'bg-blue-500 w-2/4',
+      'shipped': 'bg-purple-500 w-3/4',
+      'delivered': 'bg-green-500 w-full',
+      'cancelled': 'bg-red-500 w-full'
+    };
+    return progressClasses[status] || 'bg-gray-500 w-1/4';
+  }
+%>
