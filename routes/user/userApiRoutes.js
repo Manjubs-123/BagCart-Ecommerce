@@ -2,26 +2,32 @@ import express from "express";
 import User from "../../models/userModel.js";
 import Cart from "../../models/cartModel.js";
 import Product from "../../models/productModel.js";
+import Order from "../../models/orderModel.js";
 
 const router = express.Router();
 
 /* -----------------------------------------------------------
-   GET CART – required for checkout page
+   GET CART (for checkout)
 ----------------------------------------------------------- */
 router.get("/cart", async (req, res) => {
     try {
         const userId = req.session.user?.id;
-        if (!userId) return res.json({ success: false, message: "Not logged in" });
+        if (!userId) return res.json({ success: false });
 
         const cart = await Cart.findOne({ user: userId })
             .populate("items.product");
 
-        return res.json({ success: true, cart });
+        return res.json({
+            success: true,
+            cart: cart || { items: [] }
+        });
+
     } catch (err) {
         console.error("API CART ERROR:", err);
         return res.json({ success: false });
     }
 });
+
 
 /* -----------------------------------------------------------
    GET ADDRESSES
@@ -31,133 +37,135 @@ router.get("/addresses", async (req, res) => {
         const userId = req.session.user?.id;
         if (!userId) return res.json({ success: false });
 
-        const user = await User.findById(userId);
-        return res.json({ success: true, addresses: user.addresses });
+        const user = await User.findById(userId).lean();
+
+        return res.json({
+            success: true,
+            addresses: user.addresses || []
+        });
+
     } catch (err) {
-        console.error("API ADDRESS ERROR:", err);
+        console.log("ADDRESS ERROR:", err);
         return res.json({ success: false });
     }
 });
+
 
 /* -----------------------------------------------------------
    ADD ADDRESS
 ----------------------------------------------------------- */
 router.post("/addresses", async (req, res) => {
     try {
-        const userId = req.session.user?.id;
-        if (!userId) return res.json({ success: false });
-
+        const userId = req.session.user.id;
         const user = await User.findById(userId);
 
-        // If setting as default → remove previous default
-        if (req.body.isDefault) {
+        const newAddress = req.body;
+
+        if (newAddress.isDefault) {
             user.addresses.forEach(a => (a.isDefault = false));
         }
 
-        user.addresses.push(req.body);
+        user.addresses.push(newAddress);
         await user.save();
 
-        const newAddress = user.addresses[user.addresses.length - 1];
-
-        return res.json({ success: true, address: newAddress });
+        return res.json({
+            success: true,
+            address: user.addresses[user.addresses.length - 1]
+        });
 
     } catch (err) {
-        console.error("ADD ADDRESS ERROR:", err);
+        console.error("ADD ADDRESS ERROR", err);
         return res.json({ success: false });
     }
 });
 
+
 /* -----------------------------------------------------------
-   SET DEFAULT ADDRESS
+   WALLET BALANCE
 ----------------------------------------------------------- */
-router.patch("/addresses/:id/default", async (req, res) => {
+router.get("/wallet/balance", async (req, res) => {
     try {
-        const userId = req.session.user?.id;
-        if (!userId) return res.json({ success: false });
-
-        const user = await User.findById(userId);
-
-        user.addresses.forEach(addr => {
-            addr.isDefault = addr._id.toString() === req.params.id;
-        });
-
-        await user.save();
-        res.json({ success: true });
-
-    } catch (err) {
-        console.error("DEFAULT ADDRESS ERROR:", err);
-        res.json({ success: false });
-    }
-});
-
-/* -----------------------------------------------------------
-   DELETE ADDRESS
------------------------------------------------------------ */
-router.delete("/addresses/:id", async (req, res) => {
-    try {
-        const userId = req.session.user?.id;
-        const addressId = req.params.id;
-
-        const user = await User.findById(userId);
-
-        user.addresses = user.addresses.filter(
-            a => a._id.toString() !== addressId
-        );
-
-        await user.save();
-        res.json({ success: true });
-
-    } catch (err) {
-        console.error("DELETE ADDRESS ERROR:", err);
-        res.json({ success: false });
-    }
-});
-
-/* -----------------------------------------------------------
-   WALLET BALANCE (TEMP – returns 0)
------------------------------------------------------------ */
-router.get("/wallet/balance", (req, res) => {
-    return res.json({ success: true, balance: 0 });
-});
-
-/* -----------------------------------------------------------
-   PLACE ORDER
------------------------------------------------------------ */
-router.post("/orders", async (req, res) => {
-    try {
-        const userId = req.session.user?.id;
-        if (!userId) return res.json({ success: false });
-
-        const { addressId, paymentMethod, items, totalAmount } = req.body;
-
-        if (!addressId || !paymentMethod || !items?.length) {
-            return res.json({
-                success: false,
-                message: "Missing order details"
-            });
-        }
-
-        // 🔥 Create simple order object (no model)
-        const order = {
-            _id: new Date().getTime(),  // temporary ID
-            userId,
-            items,
-            paymentMethod,
-            addressId,
-            totalAmount,
-            status: "Placed"
-        };
-
-        // ❗ Clear cart after placing order
-        await Cart.findOneAndUpdate(
-            { user: userId },
-            { $set: { items: [] } }
-        );
+        const userId = req.session.user.id;
+        const user = await User.findById(userId).lean();
 
         return res.json({
             success: true,
-            message: "Order placed",
-            order
+            balance: user.walletBalance || 0
+        });
+
+    } catch (err) {
+        return res.json({ success: true, balance: 0 });
+    }
+});
+
+
+/* -----------------------------------------------------------
+   PLACE ORDER — SAFE VERSION
+----------------------------------------------------------- */
+router.post("/orders", async (req, res) => {
+    try {
+        const userId = req.session.user.id;
+        const { addressId, paymentMethod } = req.body;
+
+        if (!addressId || !paymentMethod) {
+            return res.json({ success: false, message: "Missing data" });
+        }
+
+        const cart = await Cart.findOne({ user: userId })
+            .populate("items.product");
+
+        if (!cart || cart.items.length === 0) {
+            return res.json({ success: false, message: "Cart empty" });
+        }
+
+        // Get selected shipping address
+        const user = await User.findById(userId);
+        const address = user.addresses.id(addressId);
+
+        if (!address) {
+            return res.json({ success: false, message: "Address not found" });
+        }
+
+        // Build order items
+        const orderItems = cart.items.map(item => {
+            const variant = item.product.variants[item.variantIndex];
+
+            return {
+                product: item.product._id,
+                variantIndex: item.variantIndex,
+                quantity: item.quantity,
+                price: variant.price,
+                color: variant.color,
+                image: variant.images[0]?.url || ""
+            };
+        });
+
+        // Calculate totals
+        const subtotal = orderItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
+        const tax = subtotal * 0.1;
+        const shippingFee = subtotal > 500 ? 0 : 50;
+        const totalAmount = subtotal + tax + shippingFee;
+
+        // Create order
+        const order = await Order.create({
+            user: userId,
+            items: orderItems,
+            shippingAddress: address,
+            paymentMethod,
+            subtotal,
+            tax,
+            shippingFee,
+            totalAmount,
+            paymentStatus: paymentMethod === "cod" ? "pending" : "paid"
+        });
+
+        // Clear cart
+        cart.items = [];
+        await cart.save();
+
+        return res.json({
+            success: true,
+            orderId: order._id
         });
 
     } catch (err) {

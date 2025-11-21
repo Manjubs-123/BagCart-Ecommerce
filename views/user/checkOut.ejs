@@ -549,7 +549,7 @@
                 const walletResponse = await axios.get('/api/wallet/balance');
                 if (walletResponse.data.success) {
                     checkoutState.walletBalance = walletResponse.data.balance || 0;
-                    document.getElementById('walletBalance').textContent = checkoutState.walletBalance.toFixed(2);
+                    // document.getElementById('walletBalance').textContent = checkoutState.walletBalance.toFixed(2);
                 }
 
             } catch (error) {
@@ -1005,51 +1005,38 @@
        
        
         // Handle place order
-        async function handlePlaceOrder() {
-            // Validation
-            if (!checkoutState.selectedAddress) {
-                showNotification('Please select a shipping address', 'error');
-                return;
-            }
+      async function handlePlaceOrder() {
+    if (!checkoutState.selectedAddress) {
+        showNotification('Please select a shipping address', 'error');
+        return;
+    }
 
-            if (!checkoutState.selectedPaymentMethod) {
-                showNotification('Please select a payment method', 'error');
-                return;
-            }
+    if (!checkoutState.selectedPaymentMethod) {
+        showNotification('Please select a payment method', 'error');
+        return;
+    }
 
-            if (checkoutState.cartItems.length === 0) {
-                showNotification('Your cart is empty', 'error');
-                return;
-            }
+    try {
+        const orderData = {
+            addressId: checkoutState.selectedAddress,
+            paymentMethod: checkoutState.selectedPaymentMethod
+        };
 
-            try {
-                const orderData = {
-                    addressId: checkoutState.selectedAddress,
-                    paymentMethod: checkoutState.selectedPaymentMethod,
-                    items: checkoutState.cartItems.map(item => ({
-                        productId: item.product._id,
-                        quantity: item.quantity,
-                        color: item.color,
-                        price: item.product.variants[0].price
-                    })),
-                    totalAmount: checkoutState.orderSummary.total
-                };
+        const response = await axios.post('/api/orders', orderData);
 
-                const response = await axios.post('/api/orders', orderData);
-
-                if (response.data.success) {
-                    showNotification('Order placed successfully!', 'success');
-                    setTimeout(() => {
-                        window.location.href = `/order/confirmation/${response.data.order._id}`;
-                    }, 2000);
-                } else {
-                    showNotification(response.data.message || 'Failed to place order', 'error');
-                }
-            } catch (error) {
-                console.error('Error placing order:', error);
-                showNotification('Failed to place order', 'error');
-            }
+        if (response.data.success) {
+            showNotification('Order placed successfully!', 'success');
+            setTimeout(() => {
+                window.location.href = `/order/confirmation/${response.data.orderId}`;
+            }, 1500);
+        } else {
+            showNotification(response.data.message || 'Failed to place order', 'error');
         }
+    } catch (error) {
+        console.error('Order Error:', error);
+        showNotification('Failed to place order', 'error');
+    }
+}
 
         // Modal functions
         function openAddressModal(addressId = null) {
