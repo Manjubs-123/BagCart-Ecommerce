@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Checkout - BagHub</title>
+    <title>Address Modal - BagHub</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
@@ -84,6 +84,66 @@
         
         .default-badge {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        .inputBox {
+            width: 100%;
+            border: 1px solid #d1d5db;
+            border-radius: 0.5rem;
+            padding: 0.75rem 1rem;
+            font-size: 0.875rem;
+            transition: all 0.2s;
+        }
+
+        .inputBox:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+
+        .btnCancel {
+            flex: 1;
+            padding: 0.75rem 1rem;
+            border: 1px solid #d1d5db;
+            color: #374151;
+            border-radius: 0.5rem;
+            background: white;
+            transition: all 0.2s;
+        }
+
+        .btnCancel:hover {
+            background-color: #f9fafb;
+        }
+
+        .btnPrimary {
+            flex: 1;
+            padding: 0.75rem 1rem;
+            background: #1a56db;
+            color: white;
+            border-radius: 0.5rem;
+            transition: all 0.2s;
+        }
+
+        .btnPrimary:hover {
+            background: #1e429f;
+        }
+
+        .shake {
+            animation: shake 0.5s ease-in-out;
+        }
+        
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-5px); }
+            75% { transform: translateX(5px); }
+        }
+        
+        .error-border {
+            border-color: #ef4444 !important;
+        }
+        
+        .success-border {
+            border-color: #10b981 !important;
         }
     </style>
 </head>
@@ -182,7 +242,7 @@
                         </div>
 
                         <!-- Wallet Payment -->
-                        <div class="payment-method p-4 border border-gray-200 rounded-xl cursor-pointer"
+                        <!-- <div class="payment-method p-4 border border-gray-200 rounded-xl cursor-pointer"
                              data-method="wallet">
                             <div class="flex items-center gap-4">
                                 <div class="w-12 h-12 rounded-full bg-purple-100 flex items-center justify-center text-purple-600">
@@ -199,7 +259,7 @@
                                     <div class="w-3 h-3 rounded-full bg-blue-600 hidden"></div>
                                 </div>
                             </div>
-                        </div>
+                        </div> -->
                     </div>
                 </div>
 
@@ -281,74 +341,163 @@
         </div>
     </div>
 
-    <!-- Add Address Modal -->
-    <div id="addressModal" class="fixed inset-0 bg-black/50 hidden items-center justify-center z-50 p-4">
-        <div class="bg-white rounded-2xl p-6 w-full max-w-md">
-            <h3 class="text-xl font-bold text-gray-900 mb-4">Add New Address</h3>
-            
-            <form id="addressForm" class="space-y-4">
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2">Full Name</label>
-                    <input type="text" name="fullName" required 
-                           class="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                </div>
-                
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2">Phone Number</label>
-                    <input type="tel" name="phone" required 
-                           class="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                </div>
-                
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2">Address</label>
-                    <textarea name="address" rows="3" required 
-                              class="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"></textarea>
-                </div>
-                
-                <div class="grid grid-cols-2 gap-4">
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">City</label>
-                        <input type="text" name="city" required 
-                               class="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                    </div>
-                    
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">Pincode</label>
-                        <input type="text" name="pincode" required 
-                               class="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                    </div>
-                </div>
-                
-                <div class="grid grid-cols-2 gap-4">
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">State</label>
-                        <input type="text" name="state" required 
-                               class="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                    </div>
-                    
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">Country</label>
-                        <input type="text" name="country" value="India" readonly 
-                               class="w-full border border-gray-300 rounded-lg px-4 py-3 bg-gray-100">
-                    </div>
-                </div>
-                
-                <div class="flex items-center gap-2">
-                    <input type="checkbox" id="setDefault" name="isDefault" class="rounded text-blue-600">
-                    <label for="setDefault" class="text-sm text-gray-700">Set as default address</label>
-                </div>
-                
-                <div class="flex gap-3 pt-4">
-                    <button type="button" onclick="closeAddressModal()" 
-                            class="flex-1 px-4 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors">
-                        Cancel
-                    </button>
-                    <button type="submit" 
-                            class="flex-1 px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
-                        Save Address
+    <!-- Unified Address Modal -->
+    <div id="addressModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden items-center justify-center p-4">
+        <div class="bg-white rounded-xl w-full max-w-md max-h-[90vh] overflow-y-auto">
+            <div class="p-6">
+                <!-- Modal Header -->
+                <div class="flex items-center justify-between mb-6">
+                    <h3 id="modalTitle" class="text-xl font-bold text-gray-900">Add New Address</h3>
+                    <button onclick="closeAddressModal()" class="text-gray-400 hover:text-gray-600 transition-colors">
+                        <i class="fas fa-times text-lg"></i>
                     </button>
                 </div>
-            </form>
+
+                <!-- Address Form -->
+                <form id="addressForm" class="space-y-4">
+                    <input type="hidden" id="addressId" name="addressId">
+                    
+                    <!-- Address Type -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Address Type</label>
+                        <div class="grid grid-cols-3 gap-3">
+                            <label class="flex items-center">
+                                <input type="radio" name="addressType" value="home" class="sr-only peer" checked>
+                                <div class="w-full p-3 border border-gray-300 rounded-lg text-center cursor-pointer peer-checked:border-blue-500 peer-checked:bg-blue-50">
+                                    <i class="fas fa-home text-gray-600 mb-1"></i>
+                                    <div class="text-sm font-medium">Home</div>
+                                </div>
+                            </label>
+                            <label class="flex items-center">
+                                <input type="radio" name="addressType" value="work" class="sr-only peer">
+                                <div class="w-full p-3 border border-gray-300 rounded-lg text-center cursor-pointer peer-checked:border-blue-500 peer-checked:bg-blue-50">
+                                    <i class="fas fa-briefcase text-gray-600 mb-1"></i>
+                                    <div class="text-sm font-medium">Work</div>
+                                </div>
+                            </label>
+                            <label class="flex items-center">
+                                <input type="radio" name="addressType" value="other" class="sr-only peer">
+                                <div class="w-full p-3 border border-gray-300 rounded-lg text-center cursor-pointer peer-checked:border-blue-500 peer-checked:bg-blue-50">
+                                    <i class="fas fa-map-marker-alt text-gray-600 mb-1"></i>
+                                    <div class="text-sm font-medium">Other</div>
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Full Name -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Full Name</label>
+                        <input type="text" name="fullName" required 
+                               class="inputBox" placeholder="Enter your full name">
+                        <div id="fullNameError" class="text-red-500 text-sm mt-2 hidden">
+                            <i class="fas fa-exclamation-circle mr-1"></i>
+                            <span id="fullNameErrorText"></span>
+                        </div>
+                    </div>
+                    
+                    <!-- Phone Number -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Phone Number</label>
+                        <input type="tel" name="phone" required 
+                               class="inputBox" placeholder="Enter your phone number" maxlength="10">
+                        <div id="phoneError" class="text-red-500 text-sm mt-2 hidden">
+                            <i class="fas fa-exclamation-circle mr-1"></i>
+                            <span id="phoneErrorText"></span>
+                        </div>
+                    </div>
+                    
+                    <!-- Address Line 1 -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Address Line 1</label>
+                        <input type="text" name="addressLine1" required 
+                               class="inputBox" placeholder="House no., Building, Street">
+                        <div id="addressLine1Error" class="text-red-500 text-sm mt-2 hidden">
+                            <i class="fas fa-exclamation-circle mr-1"></i>
+                            <span id="addressLine1ErrorText"></span>
+                        </div>
+                    </div>
+                    
+                    <!-- Address Line 2 (Optional) -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Address Line 2 (Optional)</label>
+                        <input type="text" name="addressLine2" 
+                               class="inputBox" placeholder="Area, Landmark">
+                    </div>
+                    
+                    <!-- City & Pincode -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">City</label>
+                            <input type="text" name="city" required 
+                                   class="inputBox" placeholder="Enter city">
+                            <div id="cityError" class="text-red-500 text-sm mt-2 hidden">
+                                <i class="fas fa-exclamation-circle mr-1"></i>
+                                <span id="cityErrorText"></span>
+                            </div>
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Pincode</label>
+                            <input type="text" name="pincode" required 
+                                   class="inputBox" placeholder="Enter pincode" maxlength="6">
+                            <div id="pincodeError" class="text-red-500 text-sm mt-2 hidden">
+                                <i class="fas fa-exclamation-circle mr-1"></i>
+                                <span id="pincodeErrorText"></span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- State & Country -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">State</label>
+                            <input type="text" name="state" required 
+                                   class="inputBox" placeholder="Enter state">
+                            <div id="stateError" class="text-red-500 text-sm mt-2 hidden">
+                                <i class="fas fa-exclamation-circle mr-1"></i>
+                                <span id="stateErrorText"></span>
+                            </div>
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Country</label>
+                            <select name="country" class="inputBox">
+                                <option value="India" selected>India</option>
+                                <option value="United States">United States</option>
+                                <option value="United Kingdom">United Kingdom</option>
+                                <option value="Canada">Canada</option>
+                                <option value="Australia">Australia</option>
+                            </select>
+                            <div id="countryError" class="text-red-500 text-sm mt-2 hidden">
+                                <i class="fas fa-exclamation-circle mr-1"></i>
+                                <span id="countryErrorText"></span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Set as Default -->
+                    <!-- <div class="flex items-center gap-3 pt-2">
+                        <input type="checkbox" id="setDefault" name="isDefault" 
+                               class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2">
+                        <label for="setDefault" class="text-sm text-gray-700 cursor-pointer">
+                            Set as default address
+                        </label>
+                    </div> -->
+                    
+                    <!-- Action Buttons -->
+                    <div class="flex gap-3 pt-6">
+                        <button type="button" onclick="closeAddressModal()" 
+                                class="btnCancel">
+                            Cancel
+                        </button>
+                        <button type="submit" id="submitAddressBtn"
+                                class="btnPrimary">
+                            Save Address
+                        </button>
+                    </div>
+                </form>
+            </div>
         </div>
     </div>
 
@@ -375,6 +524,7 @@
         document.addEventListener('DOMContentLoaded', function() {
             loadCheckoutData();
             setupEventListeners();
+            setupAddressModalValidation();
         });
 
         // Load checkout data
@@ -399,7 +549,7 @@
                 const walletResponse = await axios.get('/api/wallet/balance');
                 if (walletResponse.data.success) {
                     checkoutState.walletBalance = walletResponse.data.balance || 0;
-                    document.getElementById('walletBalance').textContent = checkoutState.walletBalance.toFixed(2);
+                    // document.getElementById('walletBalance').textContent = checkoutState.walletBalance.toFixed(2);
                 }
 
             } catch (error) {
@@ -409,149 +559,206 @@
         }
 
         // Render addresses
-        function renderAddresses() {
-            const container = document.getElementById('addressesContainer');
-            
-            if (checkoutState.addresses.length === 0) {
-                container.innerHTML = `
-                    <div class="col-span-2 text-center py-8">
-                        <i class="fas fa-map-marker-alt text-gray-400 text-4xl mb-4"></i>
-                        <p class="text-gray-600 mb-4">No addresses found</p>
-                        <button onclick="openAddressModal()" class="text-blue-600 hover:text-blue-800 transition-colors">
-                            Add your first address
-                        </button>
-                    </div>
-                `;
-                return;
-            }
+       function renderAddresses() {
+    const container = document.getElementById('addressesContainer');
 
-            container.innerHTML = checkoutState.addresses.map(address => `
-                <div class="address-card p-4 border border-gray-200 rounded-xl cursor-pointer ${address.isDefault ? 'selected' : ''}"
-                     data-address-id="${address._id}">
-                    <div class="flex items-start justify-between mb-2">
-                        <h3 class="font-bold text-gray-900">${address.fullName}</h3>
-                        ${address.isDefault ? `
-                            <span class="default-badge text-white text-xs px-2 py-1 rounded-full flex items-center gap-1">
-                                <i class="fas fa-star text-xs"></i>
-                                Default
-                            </span>
-                        ` : ''}
-                    </div>
-                    <p class="text-gray-600 text-sm mb-2">${address.phone}</p>
-                    <p class="text-gray-600 text-sm mb-2">${address.address}</p>
-                    <p class="text-gray-600 text-sm">
-                        ${address.city}, ${address.state} - ${address.pincode}
-                    </p>
-                    <div class="flex gap-2 mt-3">
-                        <button onclick="setDefaultAddress('${address._id}')" 
-                                class="text-blue-600 hover:text-blue-800 text-sm ${address.isDefault ? 'hidden' : ''}">
-                            Set as Default
-                        </button>
-                        <button onclick="deleteAddress('${address._id}')" 
-                                class="text-red-600 hover:text-red-800 text-sm ml-auto">
-                            Delete
-                        </button>
-                    </div>
-                </div>
-            `).join('');
+    if (checkoutState.addresses.length === 0) {
+        container.innerHTML = `
+            <div class="col-span-2 text-center py-8">
+                <i class="fas fa-map-marker-alt text-gray-400 text-4xl mb-4"></i>
+                <p class="text-gray-600 mb-4">No addresses found</p>
+                <button onclick="openAddressModal()" class="text-blue-600 hover:text-blue-800 transition-colors">
+                    Add your first address
+                </button>
+            </div>
+        `;
+        return;
+    }
 
-            // Select default address
-            const defaultAddress = checkoutState.addresses.find(addr => addr.isDefault);
-            if (defaultAddress) {
-                checkoutState.selectedAddress = defaultAddress._id;
-            }
-        }
+    container.innerHTML = checkoutState.addresses.map(address => `
+        <div class="address-card p-4 border border-gray-200 rounded-xl cursor-pointer 
+                    ${address.isDefault ? 'selected' : ''}"
+             data-address-id="${address._id}">
+
+            <div class="flex items-start justify-between mb-2">
+                <h3 class="font-bold text-gray-900">${address.fullName}</h3>
+
+                ${address.isDefault ? `
+                    <span class="default-badge text-white text-xs px-2 py-1 rounded-full">
+                        Default
+                    </span>
+                ` : ``}
+            </div>
+
+            <p class="text-gray-600 text-sm mb-2">${address.phone}</p>
+            <p class="text-gray-600 text-sm mb-2">${address.addressLine1}</p>
+
+            ${address.addressLine2 
+                ? `<p class="text-gray-600 text-sm mb-2">${address.addressLine2}</p>` 
+                : ''}
+
+            <p class="text-gray-600 text-sm">
+                ${address.city}, ${address.state} - ${address.pincode}
+            </p>
+
+            <div class="text-sm text-blue-600 mt-3">
+                Click to select for delivery
+            </div>
+        </div>
+    `).join('');
+
+    // Auto-select default address
+    const defaultAddress = checkoutState.addresses.find(addr => addr.isDefault);
+    if (defaultAddress) {
+        document.querySelector(`[data-address-id="${defaultAddress._id}"]`)?.classList.add('selected');
+        checkoutState.selectedAddress = defaultAddress._id;
+    }
+}
 
         // Render order items
-        function renderOrderItems() {
-            const container = document.getElementById('orderItemsContainer');
-            const previewContainer = document.getElementById('orderPreviewContainer');
+       function renderOrderItems() {
+    const container = document.getElementById('orderItemsContainer');
+    const previewContainer = document.getElementById('orderPreviewContainer');
 
-            if (checkoutState.cartItems.length === 0) {
-                container.innerHTML = `
-                    <div class="text-center py-8">
-                        <i class="fas fa-shopping-cart text-gray-400 text-4xl mb-4"></i>
-                        <p class="text-gray-600">Your cart is empty</p>
+    if (checkoutState.cartItems.length === 0) {
+        container.innerHTML = `
+            <div class="text-center py-8">
+                <i class="fas fa-shopping-cart text-gray-400 text-4xl mb-4"></i>
+                <p class="text-gray-600">Your cart is empty</p>
+            </div>
+        `;
+        previewContainer.innerHTML = '<p class="text-gray-600 text-sm">No items in cart</p>';
+        return;
+    }
+
+    container.innerHTML = checkoutState.cartItems.map(item => {
+
+        const product = item.product;
+        const variant = product.variants[item.variantIndex];
+
+        const available = variant?.stock ?? 0;
+        const isOutOfStock = available <= 0;
+        const isLowStock = available > 0 && available < 5;
+
+        const totalPrice = variant.price * item.quantity;
+
+        return `
+            <div class="checkout-item bg-white border border-gray-200 rounded-xl p-4 flex flex-col md:flex-row gap-4"
+                 data-item-id="${item._id}"
+                 data-price="${variant.price}"
+                 data-qty="${item.quantity}"
+                 data-available="${available}">
+                 
+                <!-- IMAGE -->
+                <div class="flex-shrink-0">
+                    <img src="${variant?.images?.[0]?.url || '/images/no-image.jpg'}"
+                         alt="${product.name}"
+                         class="w-24 h-24 md:w-32 md:h-32 object-cover rounded-lg">
+                </div>
+
+                <div class="flex-grow">
+
+                    <!-- NAME -->
+                    <h3 class="font-bold text-gray-900 text-lg">${product.name}</h3>
+
+                    <!-- COLOR -->
+                    <p class="text-gray-600 text-sm mt-1">
+                        Color: ${variant.color}
+                    </p>
+
+                    <!-- STOCK DISPLAY -->
+                    <div class="mt-2 flex items-center gap-4">
+                        ${isOutOfStock ? `
+                            <span class="text-red-600 font-medium flex items-center gap-1">
+                                <i class="fas fa-times-circle"></i> Out of stock
+                            </span>
+                            <span class="text-gray-500 text-sm ml-3">
+                                <i class="fas fa-box mr-1"></i> 0 left
+                            </span>
+                        ` : `
+                            <span class="${isLowStock ? 'text-red-600 font-semibold' : 'text-green-600 font-medium'} flex items-center gap-1">
+                                <i class="fas ${isLowStock ? 'fa-exclamation-circle' : 'fa-check-circle'}"></i>
+                                ${isLowStock ? 'Low stock' : 'In Stock'}
+                            </span>
+
+                            <span class="text-gray-500 text-sm ml-3 flex items-center gap-1">
+                                <i class="fas fa-box mr-1"></i>
+                                <span class="${isLowStock ? 'text-red-600' : ''}">${available} left</span>
+                            </span>
+                        `}
                     </div>
-                `;
-                previewContainer.innerHTML = '<p class="text-gray-600 text-sm">No items in cart</p>';
-                return;
-            }
 
-            container.innerHTML = checkoutState.cartItems.map(item => {
-                const product = item.product;
-                const variant = product.variants[0];
-                const totalPrice = variant.price * item.quantity;
+                    <!-- PRICE -->
+                    <div class="mt-3 md:text-right">
+                        <p class="text-2xl font-bold text-gray-900">₹${variant.price}</p>
+                    </div>
 
-                return `
-                    <div class="checkout-item bg-gray-50 rounded-xl p-4 flex gap-4" data-item-id="${item._id}">
-                        <div class="flex-shrink-0">
-                            <img src="${variant?.images?.[0]?.url || '/images/no-image.jpg'}" 
-                                 alt="${product.name}"
-                                 class="w-20 h-20 object-cover rounded-lg">
-                        </div>
-                        <div class="flex-grow">
-                            <div class="flex flex-col md:flex-row md:justify-between">
-                                <div>
-                                    <h3 class="font-bold text-gray-900">${product.name}</h3>
-                                    <p class="text-gray-600 text-sm mt-1">
-                                        ${item.color ? 'Color: ' + item.color : ''}
-                                    </p>
-                                    <p class="text-green-600 font-medium mt-2">₹${variant.price}</p>
-                                </div>
-                                <div class="mt-2 md:mt-0">
-                                    <div class="flex items-center gap-3">
-                                        <span class="text-gray-700 font-medium">Quantity:</span>
-                                        <div class="flex items-center border border-gray-300 rounded-lg">
-                                            <button class="quantity-btn px-3 py-1 text-gray-600 hover:bg-gray-100" 
-                                                    data-item-id="${item._id}" 
-                                                    data-action="decrease">
-                                                <i class="fas fa-minus"></i>
-                                            </button>
-                                            <span class="px-3 py-1 border-l border-r border-gray-300 w-12 text-center font-medium">
-                                                ${item.quantity}
-                                            </span>
-                                            <button class="quantity-btn px-3 py-1 text-gray-600 hover:bg-gray-100" 
-                                                    data-item-id="${item._id}" 
-                                                    data-action="increase">
-                                                <i class="fas fa-plus"></i>
-                                            </button>
-                                        </div>
-                                        <button class="remove-item-btn text-red-600 hover:text-red-800 transition-colors flex items-center gap-1 ml-4"
-                                                data-item-id="${item._id}">
-                                            <i class="fas fa-trash"></i>
-                                            <span class="hidden md:inline">Remove</span>
-                                        </button>
-                                    </div>
-                                    <p class="text-lg font-bold text-gray-900 mt-2 text-right">
-                                        Total: ₹${totalPrice.toFixed(2)}
-                                    </p>
-                                </div>
+                    <!-- QUANTITY + REMOVE + TOTAL -->
+                    <div class="flex flex-col md:flex-row md:items-center justify-between mt-4">
+
+                        <div class="flex items-center gap-3">
+
+                            <span class="text-gray-700 font-medium">Quantity:</span>
+
+                            <div class="flex items-center border border-gray-300 rounded-lg">
+
+                                <!-- decrease -->
+                                <button class="quantity-btn px-3 py-1 text-gray-600 hover:bg-gray-100"
+                                        data-item-id="${item._id}"
+                                        data-action="decrease"
+                                        ${item.quantity <= 1 ? 'disabled' : ''}>
+                                    <i class="fas fa-minus"></i>
+                                </button>
+
+                                <!-- QTY VALUE -->
+                                <span class="px-3 py-1 border-l border-r border-gray-300 w-12 text-center font-medium qty-value">
+                                    ${item.quantity}
+                                </span>
+
+                                <!-- increase -->
+                                <button class="quantity-btn px-3 py-1 text-gray-600 hover:bg-gray-100"
+                                        data-item-id="${item._id}"
+                                        data-action="increase"
+                                        ${isOutOfStock || item.quantity >= available ? 'disabled' : ''}>
+                                    <i class="fas fa-plus"></i>
+                                </button>
+
                             </div>
-                        </div>
-                    </div>
-                `;
-            }).join('');
 
-            // Render order preview
-            previewContainer.innerHTML = checkoutState.cartItems.map(item => {
-                const product = item.product;
-                const variant = product.variants[0];
-                
-                return `
-                    <div class="flex items-center gap-3">
-                        <img src="${variant?.images?.[0]?.url || '/images/no-image.jpg'}" 
-                             alt="${product.name}"
-                             class="w-12 h-12 object-cover rounded-lg">
-                        <div class="flex-grow">
-                            <p class="text-sm font-medium text-gray-900 truncate">${product.name}</p>
-                            <p class="text-xs text-gray-600">Qty: ${item.quantity} × ₹${variant.price}</p>
+                            <!-- REMOVE -->
+                            <button class="remove-item-btn text-red-500 hover:text-red-700 transition-colors flex items-center gap-1 ml-4"
+                                    data-item-id="${item._id}">
+                                <i class="fas fa-trash"></i> Remove
+                            </button>
                         </div>
-                        <p class="text-sm font-bold text-gray-900">₹${(variant.price * item.quantity).toFixed(2)}</p>
+
+                        <!-- TOTAL -->
+                        <div class="mt-3 md:mt-0 md:text-right">
+                            <p class="text-xl font-bold text-gray-900">₹${totalPrice.toFixed(2)}</p>
+                        </div>
+
                     </div>
-                `;
-            }).join('');
-        }
+                </div>
+            </div>
+        `;
+    }).join('');
+
+    // ORDER PREVIEW (RIGHT SIDEBAR)
+    previewContainer.innerHTML = checkoutState.cartItems.map(item => {
+        const variant = item.product.variants[item.variantIndex];
+        return `
+            <div class="flex items-center gap-3">
+                <img src="${variant?.images?.[0]?.url || '/images/no-image.jpg'}"
+                     class="w-12 h-12 object-cover rounded-lg">
+                <div class="flex-grow">
+                    <p class="text-sm font-medium text-gray-900">${item.product.name}</p>
+                    <p class="text-xs text-gray-600">Qty: ${item.quantity} × ₹${variant.price}</p>
+                </div>
+                <p class="text-sm font-bold text-gray-900">₹${(variant.price * item.quantity).toFixed(2)}</p>
+            </div>
+        `;
+    }).join('');
+}
 
         // Update order summary
         function updateOrderSummary() {
@@ -579,21 +786,25 @@
         // Setup event listeners
         function setupEventListeners() {
             // Address selection
-            document.addEventListener('click', function(e) {
-                if (e.target.closest('.address-card')) {
-                    const addressCard = e.target.closest('.address-card');
-                    const addressId = addressCard.getAttribute('data-address-id');
-                    
-                    // Remove selection from all addresses
-                    document.querySelectorAll('.address-card').forEach(card => {
-                        card.classList.remove('selected');
-                    });
-                    
-                    // Add selection to clicked address
-                    addressCard.classList.add('selected');
-                    checkoutState.selectedAddress = addressId;
-                }
-            });
+           document.addEventListener('click', function(e) {
+    const card = e.target.closest('.address-card');
+    if (!card) return;
+
+    const addressId = card.getAttribute('data-address-id');
+
+    // Remove selected class from all
+    document.querySelectorAll('.address-card').forEach(c => {
+        c.classList.remove('selected');
+    });
+
+    // Add selected class to clicked card
+    card.classList.add('selected');
+
+    // Save selected address ID
+    checkoutState.selectedAddress = addressId;
+
+    console.log("Selected address:", addressId);
+});
 
             // Payment method selection
             document.addEventListener('click', function(e) {
@@ -637,7 +848,29 @@
             document.getElementById('placeOrderBtn').addEventListener('click', handlePlaceOrder);
 
             // Address form submission
-            document.getElementById('addressForm').addEventListener('submit', handleAddAddress);
+            document.getElementById('addressForm').addEventListener('submit', handleAddOrUpdateAddress);
+
+            // Close modal when clicking outside
+            document.getElementById('addressModal').addEventListener('click', function(e) {
+                if (e.target === this) {
+                    closeAddressModal();
+                }
+            });
+        }
+
+        // Setup address modal validation
+        function setupAddressModalValidation() {
+            const inputs = document.querySelectorAll('#addressForm input, #addressForm select');
+            inputs.forEach(input => {
+                input.addEventListener('input', function() {
+                    validateField(this.name, this.value);
+                    hideError(this.name + 'Error');
+                });
+                
+                input.addEventListener('blur', function() {
+                    validateField(this.name, this.value);
+                });
+            });
         }
 
         // Handle quantity changes
@@ -699,135 +932,390 @@
             }
         }
 
-        // Handle add address
-        async function handleAddAddress(e) {
+        // Handle add or update address
+        async function handleAddOrUpdateAddress(e) {
             e.preventDefault();
+            
+            if (!validateAddressForm()) {
+                showNotification('Please fix the validation errors before saving', 'error');
+                return;
+            }
             
             try {
                 const formData = new FormData(e.target);
                 const addressData = {
                     fullName: formData.get('fullName'),
                     phone: formData.get('phone'),
-                    address: formData.get('address'),
+                    addressLine1: formData.get('addressLine1'),
+                    addressLine2: formData.get('addressLine2'),
                     city: formData.get('city'),
                     state: formData.get('state'),
                     pincode: formData.get('pincode'),
                     country: formData.get('country'),
+                    addressType: formData.get('addressType'),
                     isDefault: formData.get('isDefault') === 'on'
                 };
 
-                const response = await axios.post('/api/addresses', addressData);
+                const addressId = document.getElementById('addressId').value;
+                let response;
+
+                // Update button state
+                const submitBtn = document.getElementById('submitAddressBtn');
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i><span>Saving...</span>';
+
+                if (addressId) {
+                    // Update existing address
+                    response = await axios.put(`/api/addresses/${addressId}`, addressData);
+                } else {
+                    // Add new address
+                    response = await axios.post('/api/addresses', addressData);
+                }
 
                 if (response.data.success) {
-                    checkoutState.addresses.push(response.data.address);
+                    if (addressId) {
+                        // Update local state for edit
+                        const index = checkoutState.addresses.findIndex(addr => addr._id === addressId);
+                        if (index !== -1) {
+                            checkoutState.addresses[index] = response.data.address;
+                        }
+                    } else {
+                        // Add to local state for new address
+                        checkoutState.addresses.push(response.data.address);
+                    }
+                    
                     renderAddresses();
                     closeAddressModal();
                     e.target.reset();
-                    showNotification('Address added successfully', 'success');
+                    showNotification(`Address ${addressId ? 'updated' : 'added'} successfully`, 'success');
                 } else {
-                    showNotification('Failed to add address', 'error');
+                    showNotification(`Failed to ${addressId ? 'update' : 'add'} address`, 'error');
                 }
             } catch (error) {
-                console.error('Error adding address:', error);
-                showNotification('Failed to add address', 'error');
+                console.error(`Error ${addressId ? 'updating' : 'adding'} address:`, error);
+                showNotification(`Failed to ${addressId ? 'update' : 'add'} address`, 'error');
+            } finally {
+                // Reset button state
+                const submitBtn = document.getElementById('submitAddressBtn');
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = 'Save Address';
             }
         }
 
-        // Set default address
-        async function setDefaultAddress(addressId) {
-            try {
-                const response = await axios.patch(`/api/addresses/${addressId}/default`);
-
-                if (response.data.success) {
-                    // Update local state
-                    checkoutState.addresses.forEach(addr => {
-                        addr.isDefault = addr._id === addressId;
-                    });
-                    renderAddresses();
-                    showNotification('Default address updated', 'success');
-                } else {
-                    showNotification('Failed to update default address', 'error');
-                }
-            } catch (error) {
-                console.error('Error setting default address:', error);
-                showNotification('Failed to update default address', 'error');
-            }
-        }
-
-        // Delete address
-        async function deleteAddress(addressId) {
-            if (!confirm('Delete this address?')) return;
-
-            try {
-                const response = await axios.delete(`/api/addresses/${addressId}`);
-
-                if (response.data.success) {
-                    checkoutState.addresses = checkoutState.addresses.filter(addr => addr._id !== addressId);
-                    renderAddresses();
-                    showNotification('Address deleted', 'success');
-                } else {
-                    showNotification('Failed to delete address', 'error');
-                }
-            } catch (error) {
-                console.error('Error deleting address:', error);
-                showNotification('Failed to delete address', 'error');
-            }
-        }
-
+       
+       
         // Handle place order
-        async function handlePlaceOrder() {
-            // Validation
-            if (!checkoutState.selectedAddress) {
-                showNotification('Please select a shipping address', 'error');
-                return;
-            }
+      async function handlePlaceOrder() {
+    if (!checkoutState.selectedAddress) {
+        showNotification('Please select a shipping address', 'error');
+        return;
+    }
 
-            if (!checkoutState.selectedPaymentMethod) {
-                showNotification('Please select a payment method', 'error');
-                return;
-            }
+    if (!checkoutState.selectedPaymentMethod) {
+        showNotification('Please select a payment method', 'error');
+        return;
+    }
 
-            if (checkoutState.cartItems.length === 0) {
-                showNotification('Your cart is empty', 'error');
-                return;
-            }
+    try {
+        const orderData = {
+            addressId: checkoutState.selectedAddress,
+            paymentMethod: checkoutState.selectedPaymentMethod
+        };
 
-            try {
-                const orderData = {
-                    addressId: checkoutState.selectedAddress,
-                    paymentMethod: checkoutState.selectedPaymentMethod,
-                    items: checkoutState.cartItems.map(item => ({
-                        productId: item.product._id,
-                        quantity: item.quantity,
-                        color: item.color,
-                        price: item.product.variants[0].price
-                    })),
-                    totalAmount: checkoutState.orderSummary.total
-                };
+        const response = await axios.post('/api/orders', orderData);
 
-                const response = await axios.post('/api/orders', orderData);
-
-                if (response.data.success) {
-                    showNotification('Order placed successfully!', 'success');
-                    setTimeout(() => {
-                        window.location.href = `/order/confirmation/${response.data.order._id}`;
-                    }, 2000);
-                } else {
-                    showNotification(response.data.message || 'Failed to place order', 'error');
-                }
-            } catch (error) {
-                console.error('Error placing order:', error);
-                showNotification('Failed to place order', 'error');
-            }
+        if (response.data.success) {
+            showNotification('Order placed successfully!', 'success');
+            setTimeout(() => {
+                window.location.href = `/order/confirmation/${response.data.orderId}`;
+            }, 1500);
+        } else {
+            showNotification(response.data.message || 'Failed to place order', 'error');
         }
+    } catch (error) {
+        console.error('Order Error:', error);
+        showNotification('Failed to place order', 'error');
+    }
+}
 
         // Modal functions
-        function openAddressModal() {
+        function openAddressModal(addressId = null) {
+            if (addressId) {
+                // Edit mode
+                const address = checkoutState.addresses.find(addr => addr._id === addressId);
+                if (address) {
+                    document.getElementById('modalTitle').textContent = 'Edit Address';
+                    document.getElementById('addressId').value = address._id;
+                    document.getElementById('addressForm').fullName.value = address.fullName;
+                    document.getElementById('addressForm').phone.value = address.phone;
+                    document.getElementById('addressForm').addressLine1.value = address.addressLine1;
+                    document.getElementById('addressForm').addressLine2.value = address.addressLine2 || '';
+                    document.getElementById('addressForm').city.value = address.city;
+                    document.getElementById('addressForm').state.value = address.state;
+                    document.getElementById('addressForm').pincode.value = address.pincode;
+                    document.getElementById('addressForm').country.value = address.country;
+                    
+                    // Set address type
+                    document.querySelectorAll('input[name="addressType"]').forEach(radio => {
+                        if (radio.value === address.addressType) {
+                            radio.checked = true;
+                        }
+                    });
+                    
+                    // Set default checkbox
+                    document.getElementById('setDefault').checked = address.isDefault;
+                }
+            } else {
+                // Add mode
+                document.getElementById('modalTitle').textContent = 'Add New Address';
+                document.getElementById('addressId').value = '';
+                document.getElementById('addressForm').reset();
+            }
+            
             document.getElementById('addressModal').classList.remove('hidden');
+            document.body.style.overflow = 'hidden'; // Prevent background scrolling
         }
 
         function closeAddressModal() {
             document.getElementById('addressModal').classList.add('hidden');
+            document.body.style.overflow = ''; // Restore scrolling
+            document.getElementById('addressForm').reset();
+            hideAllErrors();
+        }
+
+        
+
+        // Validation functions
+        function validateAddressForm() {
+            const formData = new FormData(document.getElementById('addressForm'));
+            const data = Object.fromEntries(formData);
+            
+            hideAllErrors();
+            
+            let isValid = true;
+            
+            isValid = validateFullName(data.fullName) && isValid;
+            isValid = validatePhone(data.phone) && isValid;
+            isValid = validateAddressLine1(data.addressLine1) && isValid;
+            isValid = validateCity(data.city) && isValid;
+            isValid = validateState(data.state) && isValid;
+            isValid = validatePincode(data.pincode) && isValid;
+            isValid = validateCountry(data.country) && isValid;
+            
+            return isValid;
+        }
+
+        function validateField(fieldName, value) {
+            switch(fieldName) {
+                case 'fullName':
+                    return validateFullName(value);
+                case 'phone':
+                    return validatePhone(value);
+                case 'addressLine1':
+                    return validateAddressLine1(value);
+                case 'city':
+                    return validateCity(value);
+                case 'state':
+                    return validateState(value);
+                case 'pincode':
+                    return validatePincode(value);
+                case 'country':
+                    return validateCountry(value);
+                default:
+                    return true;
+            }
+        }
+
+        function validateFullName(value) {
+            if (!value.trim()) {
+                showError('fullNameError', 'Full name is required');
+                return false;
+            }
+            if (value.trim().length < 2) {
+                showError('fullNameError', 'Full name must be at least 2 characters');
+                return false;
+            }
+            hideError('fullNameError');
+            return true;
+        }
+
+        function validatePhone(value) {
+            const phone = value.replace(/\D/g, '');
+            
+            if (!phone) {
+                showError('phoneError', 'Phone number is required');
+                return false;
+            }
+            
+            if (phone.length !== 10) {
+                showError('phoneError', 'Phone number must be 10 digits');
+                return false;
+            }
+            
+            // Check for repeated digits (like 1111111111)
+            if (/^(\d)\1{9}$/.test(phone)) {
+                showError('phoneError', 'Please enter a valid phone number');
+                return false;
+            }
+            
+            // Check for sequential digits (like 1234567890)
+            if (isSequential(phone)) {
+                showError('phoneError', 'Please enter a valid phone number');
+                return false;
+            }
+            
+            hideError('phoneError');
+            return true;
+        }
+
+        function validateAddressLine1(value) {
+            if (!value.trim()) {
+                showError('addressLine1Error', 'Address line 1 is required');
+                return false;
+            }
+            if (value.trim().length < 5) {
+                showError('addressLine1Error', 'Address must be at least 5 characters');
+                return false;
+            }
+            hideError('addressLine1Error');
+            return true;
+        }
+
+        function validateCity(value) {
+            if (!value.trim()) {
+                showError('cityError', 'City is required');
+                return false;
+            }
+            if (value.trim().length < 2) {
+                showError('cityError', 'Please enter a valid city name');
+                return false;
+            }
+            hideError('cityError');
+            return true;
+        }
+
+        function validateState(value) {
+            if (!value.trim()) {
+                showError('stateError', 'State is required');
+                return false;
+            }
+            if (value.trim().length < 2) {
+                showError('stateError', 'Please enter a valid state name');
+                return false;
+            }
+            hideError('stateError');
+            return true;
+        }
+
+        function validatePincode(value) {
+            const pincode = value.replace(/\D/g, '');
+            
+            if (!pincode) {
+                showError('pincodeError', 'Pincode is required');
+                return false;
+            }
+            
+            if (pincode.length !== 6) {
+                showError('pincodeError', 'Pincode must be 6 digits');
+                return false;
+            }
+            
+            // Check for repeated digits (like 111111)
+            if (/^(\d)\1{5}$/.test(pincode)) {
+                showError('pincodeError', 'Please enter a valid pincode');
+                return false;
+            }
+            
+            // Check for sequential digits (like 123456)
+            if (isSequential(pincode)) {
+                showError('pincodeError', 'Please enter a valid pincode');
+                return false;
+            }
+            
+            hideError('pincodeError');
+            return true;
+        }
+
+        function validateCountry(value) {
+            if (!value) {
+                showError('countryError', 'Please select a country');
+                return false;
+            }
+            hideError('countryError');
+            return true;
+        }
+
+        // Helper function to check sequential numbers
+        function isSequential(str) {
+            const digits = str.split('').map(Number);
+            
+            // Check ascending sequence
+            let ascending = true;
+            for (let i = 1; i < digits.length; i++) {
+                if (digits[i] !== digits[i-1] + 1) {
+                    ascending = false;
+                    break;
+                }
+            }
+            
+            // Check descending sequence
+            let descending = true;
+            for (let i = 1; i < digits.length; i++) {
+                if (digits[i] !== digits[i-1] - 1) {
+                    descending = false;
+                    break;
+                }
+            }
+            
+            return ascending || descending;
+        }
+
+        // Show error message
+        function showError(elementId, message) {
+            const errorElement = document.getElementById(elementId);
+            const errorText = document.getElementById(elementId + 'Text');
+            
+            if (errorElement && errorText) {
+                errorText.textContent = message;
+                errorElement.classList.remove('hidden');
+                
+                // Add shake animation and red border to corresponding input
+                const inputName = elementId.replace('Error', '');
+                const input = document.querySelector(`[name="${inputName}"]`);
+                if (input) {
+                    input.classList.add('shake', 'error-border');
+                    setTimeout(() => input.classList.remove('shake'), 500);
+                }
+            }
+        }
+
+        // Hide error message
+        function hideError(elementId) {
+            const errorElement = document.getElementById(elementId);
+            if (errorElement) {
+                errorElement.classList.add('hidden');
+                
+                // Remove red border from input
+                const inputName = elementId.replace('Error', '');
+                const input = document.querySelector(`[name="${inputName}"]`);
+                if (input) {
+                    input.classList.remove('error-border');
+                }
+            }
+        }
+
+        // Hide all errors
+        function hideAllErrors() {
+            const errorElements = document.querySelectorAll('[id$="Error"]');
+            errorElements.forEach(element => {
+                element.classList.add('hidden');
+            });
+            
+            // Remove all error borders
+            const inputs = document.querySelectorAll('#addressForm input, #addressForm select');
+            inputs.forEach(input => {
+                input.classList.remove('error-border');
+            });
         }
 
         // Notification system

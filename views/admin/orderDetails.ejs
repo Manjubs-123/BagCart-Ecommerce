@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Order Details | Admin Dashboard</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    .status-pending { background-color: #fef3c7; color: #92400e; }
+    .status-processing { background-color: #dbeafe; color: #1e40af; }
+    .status-shipped { background-color: #e0e7ff; color: #3730a3; }
+    .status-out_for_delivery { background-color: #fce7f3; color: #be185d; }
+    .status-delivered { background-color: #dcfce7; color: #166534; }
+    .status-cancelled { background-color: #fee2e2; color: #991b1b; }
+    .status-returned { background-color: #f3e8ff; color: #7c3aed; }
+
+    .status-badge {
+      padding: 0.25rem 0.75rem;
+      border-radius: 9999px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.25rem;
+    }
+
+    .card-hover {
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    }
+  </style>
+</head>
+
+<body class="bg-gray-50 text-gray-900 flex min-h-screen">
+  <!-- Sidebar -->
+  <%- include('../partials/sidebar', { currentPage: 'orders' }) %>
+
+  <!-- Main Content -->
+  <main class="ml-64 flex-1 p-8">
+    <!-- Header Section -->
+    <div class="mb-8">
+      <div class="flex justify-between items-center mb-2">
+        <div>
+          <h1 class="text-3xl font-bold text-gray-900">Order Details</h1>
+          <p class="text-gray-600 mt-1">Order ID: <span class="font-mono font-bold"><%= order.orderId || order._id %></span></p>
+        </div>
+        <a href="/admin/orders" class="bg-gray-600 text-white px-6 py-3 rounded-lg hover:bg-gray-700 transition flex items-center gap-2">
+          <i class="fas fa-arrow-left"></i>
+          Back to Orders
+        </a>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <!-- Left Column - Order Items & Status Management -->
+      <div class="lg:col-span-2 space-y-6">
+        <!-- Order Items -->
+        <div class="bg-white rounded-xl p-6 card-hover">
+          <h2 class="text-xl font-bold text-gray-900 mb-6">Order Items</h2>
+          <div class="space-y-4">
+            <% order.items.forEach((item, index) => { %>
+              <div class="border border-gray-200 rounded-lg p-4">
+                <div class="flex gap-4">
+                  <!-- Product Image -->
+                  <div class="flex-shrink-0">
+                    <img src="<%= item.image || '/images/no-image.jpg' %>" 
+                         alt="<%= item.product?.name || 'Product' %>"
+                         class="w-20 h-20 object-cover rounded-lg border border-gray-200">
+                  </div>
+                  
+                  <!-- Product Details -->
+                  <div class="flex-grow">
+                    <div class="flex justify-between items-start mb-2">
+                      <div>
+                        <h3 class="font-semibold text-gray-900">
+                          <%= item.product?.name || 'Product Name' %>
+                        </h3>
+                        <p class="text-sm text-gray-600">Item ID: <span class="font-mono"><%= item.itemOrderId || `${order.orderId}-${index+1}` %></span></p>
+                      </div>
+                      <span class="status-badge <%= getStatusClass(item.status || order.orderStatus || 'pending') %>">
+  <i class="fas <%= getStatusIcon(item.status || order.orderStatus || 'pending') %>"></i>
+  <%= (item.status || order.orderStatus || "pending").charAt(0).toUpperCase() + (item.status || order.orderStatus || "pending").slice(1) %>
+</span>
+
+                     
+                    </div>
+                    
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm mb-4">
+                      <div>
+                        <span class="text-gray-600">Color:</span>
+                        <span class="font-medium"><%= item.color || 'N/A' %></span>
+                      </div>
+                      <div>
+                        <span class="text-gray-600">Quantity:</span>
+                        <span class="font-medium"><%= item.quantity %></span>
+                      </div>
+                      <div>
+                        <span class="text-gray-600">Price:</span>
+                        <span class="font-medium">₹<%= item.price %></span>
+                      </div>
+                      <div>
+                        <span class="text-gray-600">Total:</span>
+                        <span class="font-medium">₹<%= (item.price * item.quantity).toFixed(2) %></span>
+                      </div>
+                    </div>
+
+                    <!-- Status Update Form -->
+                    <!-- Status Update Form -->
+<form class="item-status-form" data-item-id="<%= item._id %>">
+  <div class="flex items-center gap-3">
+    <label class="text-sm font-medium text-gray-700">Update Status:</label>
+    <select name="status" class="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+      <% 
+        const currentStatus = item.status || 'pending';
+        const statusOptions = [
+          { value: 'pending', label: 'Pending', disabled: currentStatus !== 'pending' },
+          { value: 'processing', label: 'Processing', disabled: !['pending'].includes(currentStatus) },
+          { value: 'shipped', label: 'Shipped', disabled: !['processing'].includes(currentStatus) },
+          { value: 'out_for_delivery', label: 'Out for Delivery', disabled: !['shipped'].includes(currentStatus) },
+          { value: 'delivered', label: 'Delivered', disabled: !['out_for_delivery'].includes(currentStatus) },
+          { value: 'cancelled', label: 'Cancelled', disabled: !['pending', 'processing', 'shipped'].includes(currentStatus) },
+          { value: 'returned', label: 'Returned', disabled: currentStatus !== 'delivered' }
+        ];
+      %>
+      <% statusOptions.forEach(option => { %>
+        <option 
+          value="<%= option.value %>" 
+          <%= currentStatus === option.value ? 'selected' : '' %>
+          <%= option.disabled ? 'disabled' : '' %>
+        >
+          <%= option.label %>
+        </option>
+      <% }) %>
+    </select>
+    <button 
+      type="submit" 
+      class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition text-sm font-medium disabled:bg-gray-400 disabled:cursor-not-allowed"
+      <%= currentStatus === 'cancelled' || currentStatus === 'returned' ? 'disabled' : '' %>
+    >
+      Update
+    </button>
+  </div>
+</form>
+                  </div>
+                </div>
+              </div>
+            <% }) %>
+          </div>
+        </div>
+
+       
+      </div>
+
+      <!-- Right Column - Order Summary & Customer Info -->
+      <div class="space-y-6">
+        <!-- Order Summary -->
+        <div class="bg-white rounded-xl p-6 card-hover">
+          <h2 class="text-xl font-bold text-gray-900 mb-6">Order Summary</h2>
+          <div class="space-y-3">
+            <div class="flex justify-between">
+              <span class="text-gray-600">Subtotal (<%= order.items.length %> items)</span>
+              <span class="font-medium">₹<%= order.subtotal.toFixed(2) %></span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-gray-600">Tax (10%)</span>
+              <span class="font-medium">₹<%= order.tax.toFixed(2) %></span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-gray-600">Shipping Fee</span>
+              <span class="font-medium <%= order.shippingFee === 0 ? 'text-green-600' : '' %>">
+                <%= order.shippingFee === 0 ? 'FREE' : `₹${order.shippingFee.toFixed(2)}` %>
+              </span>
+            </div>
+            <div class="border-t pt-3">
+              <div class="flex justify-between text-lg font-bold">
+                <span>Total Amount</span>
+                <span class="text-blue-600">₹<%= order.totalAmount.toFixed(2) %></span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Customer Information -->
+        <div class="bg-white rounded-xl p-6 card-hover">
+          <h2 class="text-xl font-bold text-gray-900 mb-6">Customer Information</h2>
+          <div class="space-y-3">
+            <div>
+              <p class="text-sm text-gray-600">Customer Name</p>
+              <p class="font-medium"><%= order.user?.name || 'N/A' %></p>
+            </div>
+            <div>
+              <p class="text-sm text-gray-600">Email</p>
+              <p class="font-medium"><%= order.user?.email || 'N/A' %></p>
+            </div>
+            <div>
+              <p class="text-sm text-gray-600">Phone</p>
+              <p class="font-medium"><%= order.shippingAddress?.phone || 'N/A' %></p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Shipping Address -->
+        <div class="bg-white rounded-xl p-6 card-hover">
+          <h2 class="text-xl font-bold text-gray-900 mb-6">Shipping Address</h2>
+          <div class="space-y-2 text-gray-700">
+            <p class="font-medium"><%= order.shippingAddress.fullName %></p>
+            <p><%= order.shippingAddress.addressLine1 %></p>
+            <% if (order.shippingAddress.addressLine2) { %>
+              <p><%= order.shippingAddress.addressLine2 %></p>
+            <% } %>
+            <p>
+              <%= order.shippingAddress.city %>, 
+              <%= order.shippingAddress.state %> - 
+              <%= order.shippingAddress.pincode %>
+            </p>
+            <p><%= order.shippingAddress.country %></p>
+          </div>
+        </div>
+
+        <!-- Payment Information -->
+        <div class="bg-white rounded-xl p-6 card-hover">
+          <h2 class="text-xl font-bold text-gray-900 mb-6">Payment Information</h2>
+          <div class="space-y-3">
+            <div class="flex justify-between">
+              <span class="text-gray-600">Payment Method:</span>
+              <span class="font-medium capitalize">
+                <%= order.paymentMethod === 'cod' ? 'Cash on Delivery' : order.paymentMethod %>
+              </span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-gray-600">Payment Status:</span>
+              <span class="font-medium text-green-600 capitalize">
+                <%= order.paymentStatus || 'Pending' %>
+              </span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-gray-600">Order Date:</span>
+              <span class="font-medium">
+                <%= new Date(order.createdAt).toLocaleDateString() %>
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    // Handle item status updates
+    document.querySelectorAll('.item-status-form').forEach(form => {
+      form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        
+        const itemId = form.dataset.itemId;
+        const orderId = '<%= order._id %>';
+        const newStatus = form.querySelector('select[name="status"]').value;
+        const submitBtn = form.querySelector('button[type="submit"]');
+        
+        const originalText = submitBtn.innerHTML;
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Updating...';
+        submitBtn.disabled = true;
+        
+        try {
+          const response = await fetch(`/admin/orders/${orderId}/item/${itemId}/status`, {
+            method: 'PATCH',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ status: newStatus })
+          });
+          
+          const result = await response.json();
+          
+          if (result.success) {
+            // Show success message
+            showNotification('Status updated successfully!', 'success');
+            // Reload page after a short delay to show updated status
+            setTimeout(() => {
+              location.reload();
+            }, 1500);
+          } else {
+            throw new Error(result.message || 'Failed to update status');
+          }
+        } catch (error) {
+          console.error('Error updating status:', error);
+          showNotification('Failed to update status: ' + error.message, 'error');
+          submitBtn.innerHTML = originalText;
+          submitBtn.disabled = false;
+        }
+      });
+    });
+
+    function showNotification(message, type) {
+      const notification = document.createElement('div');
+      notification.className = `fixed top-4 right-4 p-4 rounded-lg shadow-lg z-50 ${
+        type === 'success' ? 'bg-green-500 text-white' : 'bg-red-500 text-white'
+      }`;
+      notification.innerHTML = `
+        <div class="flex items-center gap-3">
+          <i class="fas fa-${type === 'success' ? 'check' : 'exclamation'}-circle"></i>
+          <span>${message}</span>
+        </div>
+      `;
+      
+      document.body.appendChild(notification);
+      
+      setTimeout(() => {
+        notification.remove();
+      }, 3000);
+    }
+  </script>
+</body>
+</html>
+
+<%
+  function getStatusClass(status) {
+    const statusClasses = {
+      'pending': 'status-pending',
+      'processing': 'status-processing',
+      'out_for_delivery': 'status-out_for_delivery', 
+      'shipped': 'status-shipped',
+      'delivered': 'status-delivered',
+      'cancelled': 'status-cancelled',
+      'returned': 'status-returned'
+    };
+    return statusClasses[status] || 'status-pending';
+  }
+
+  function getStatusIcon(status) {
+    const statusIcons = {
+      'pending': 'fa-clock',
+      'processing': 'fa-cog',
+      'out_for_delivery': 'fa-truck-fast',
+      'shipped': 'fa-truck',
+      'delivered': 'fa-check',
+      'cancelled': 'fa-times',
+      'returned': 'fa-undo'
+    };
+    return statusIcons[status] || 'fa-info-circle';
+  }
+
+  function getProgressBarClass(status) {
+  const progressClasses = {
+    'pending': 'bg-yellow-500 w-1/5',
+    'processing': 'bg-blue-500 w-2/5',
+    'shipped': 'bg-purple-500 w-3/5',
+    'out_for_delivery': 'bg-pink-500 w-4/5',
+    'delivered': 'bg-green-500 w-full',
+    'cancelled': 'bg-red-500 w-full',
+    'returned': 'bg-purple-500 w-full'
+  };
+  return progressClasses[status] || 'bg-gray-500 w-1/5';
+}
+
+%>

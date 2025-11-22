@@ -1,0 +1,235 @@
+import Order from "../../models/orderModel.js";
+import Product from "../../models/productModel.js";
+import mongoose from "mongoose";
+
+// Helper to build filter
+function buildFilter({ search, status, fromDate, toDate }) {
+  const filter = {};
+  if (status) filter.orderStatus = status;
+  if (fromDate || toDate) {
+    filter.createdAt = {};
+    if (fromDate) filter.createdAt.$gte = new Date(fromDate);
+    if (toDate) filter.createdAt.$lte = new Date(toDate);
+  }
+if (search) {
+  const regex = new RegExp(search, "i");
+
+  filter.$or = [
+    { orderId: regex },
+    { "items.itemOrderId": regex },
+
+    // Search inner item ObjectId safely
+    mongoose.isValidObjectId(search)
+      ? { "items._id": new mongoose.Types.ObjectId(search) }
+      : {}
+  ];
+}
+
+  return filter;
+}
+
+export const adminListOrders = async (req, res) => {
+  try {
+    const page = parseInt(req.query.page) || 1;
+    const limit = 10;
+    const skip = (page - 1) * limit;
+
+    const { search, status } = req.query;
+
+    // --------------------------------
+    // FILTER
+    // --------------------------------
+    let filter = {};
+
+    if (search) {
+      filter.$or = [
+        { orderId: new RegExp(search, "i") },
+        { "items.itemOrderId": new RegExp(search, "i") }
+      ];
+    }
+
+    if (status) {
+      filter.orderStatus = status;
+    }
+
+    // --------------------------------
+    // FETCH TOTALS FOR DASHBOARD CARDS
+    // --------------------------------
+    const totalOrders = await Order.countDocuments(filter);
+
+    const deliveredOrders = await Order.countDocuments({
+      ...filter,
+      orderStatus: "delivered"
+    });
+
+    const cancelledOrders = await Order.countDocuments({
+      ...filter,
+      orderStatus: "cancelled"
+    });
+
+    const inProgressOrders = await Order.countDocuments({
+      ...filter,
+      orderStatus: { $in: ["pending", "processing", "shipped", "out_for_delivery"] }
+    });
+
+    // --------------------------------
+    // FETCH LIST
+    // --------------------------------
+    const orders = await Order.find(filter)
+      .populate("user", "name email")
+      .populate("items.product", "name")
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit)
+      .lean();
+
+    // --------------------------------
+    // RENDER PAGE
+    // --------------------------------
+    res.render("admin/orderList", {
+      orders,
+      totalOrders,
+      deliveredOrders,
+      inProgressOrders,
+      cancelledOrders,
+      page,
+      pages: Math.ceil(totalOrders / limit),
+      query: req.query
+    });
+
+  } catch (err) {
+    console.error("adminListOrders Error:", err);
+
+    res.render("admin/orderList", {
+      orders: [],
+      totalOrders: 0,
+      deliveredOrders: 0,
+      inProgressOrders: 0,
+      cancelledOrders: 0,
+      page: 1,
+      pages: 1,
+      query: req.query
+    });
+  }
+};
+
+export const adminGetOrder = async (req, res) => {
+  try {
+    let order = await Order.findById(req.params.id)
+      .populate("user", "name email phone")
+      .populate("items.product")
+      .lean();
+
+    if (!order) return res.status(404).send("Order not found");
+
+    // 🔥 FIX ITEM ORDER ID FOR ADMIN VIEW
+    order.items = order.items.map((item, index) => ({
+      ...item,
+      itemOrderId: item.itemOrderId || `${order._id}-${index + 1}`
+    }));
+
+    res.render("admin/orderDetails", { order });
+
+  } catch (err) {
+    console.error("adminGetOrder:", err);
+    res.status(500).send("Server error");
+  }
+};
+
+// Update status and adjust inventory accordingly
+export const adminUpdateOrderStatus = async (req, res) => {
+  const session = await mongoose.startSession();
+  session.startTransaction();
+  try {
+    const { orderId, itemId } = req.params;
+    const { status } = req.body;
+
+    const order = await Order.findById(orderId).session(session);
+    if (!order) {
+      await session.abortTransaction();
+      session.endSession();
+      return res.status(404).json({ success: false, message: "Order not found" });
+    }
+
+    const item = order.items.id(itemId);
+    if (!item) {
+      await session.abortTransaction();
+      session.endSession();
+      return res.status(404).json({ success: false, message: "Item not found" });
+    }
+
+
+    
+const prevStatus = item.status;
+// Normalize DB and incoming UI statuses
+const normalize = (s) =>
+  s.toLowerCase()
+   .replace(/ /g, "_")
+   .replace(/-/g, "_")
+   .trim();
+
+// Normalized versions
+const prev = normalize(prevStatus);
+const next = normalize(status);
+
+// Allowed transitions
+const allowedFlow = {
+  pending: ["processing"],
+  processing: ["shipped"],
+  shipped: ["out_for_delivery"],
+  out_for_delivery: ["delivered"],
+  delivered: [],
+  cancelled: [],
+  returned: []
+};
+
+// Stop invalid transitions
+if (!allowedFlow[prev] || !allowedFlow[prev].includes(next)) {
+  await session.abortTransaction();
+  session.endSession();
+  return res.status(400).json({
+    success: false,
+    message: `Cannot change status from '${prevStatus}' to '${status}'`
+  });
+}
+
+// Save normalized status
+item.status = next;
+
+
+    // inventory restock if cancelled
+    if (status === "cancelled" && prevStatus !== "delivered" && prevStatus !== "cancelled") {
+      const product = await Product.findById(item.product).session(session);
+      if (product?.variants?.[item.variantIndex]) {
+        product.variants[item.variantIndex].stock += item.quantity;
+        await product.save({ session });
+      }
+    }
+
+    // delivered rule
+    if (status === "delivered") {
+      item.deliveredDate = new Date();
+    }
+
+    // update specific item only
+    item.status = status;
+
+    // if ALL items delivered → mark order as delivered
+    if (order.items.every(i => i.status === "delivered")) {
+      order.orderStatus = "delivered";
+    }
+
+    await order.save({ session });
+    await session.commitTransaction();
+    session.endSession();
+
+    return res.json({ success: true, message: "Item status updated", itemId });
+
+  } catch (err) {
+    await session.abortTransaction();
+    session.endSession();
+    console.error("adminUpdateOrderStatus:", err);
+    return res.status(500).json({ success: false, message: "Error updating item status" });
+  }
+};
+

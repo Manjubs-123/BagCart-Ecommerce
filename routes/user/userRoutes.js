@@ -13,7 +13,7 @@ import {
   renderUserProfile,
   updateUserProfile,
   getChangeEmailPage,sendChangeEmailOtp,verifyChangedEmailOtp,getAddressPage,addAddress,
-  updateAddress,deleteAddress,setDefaultAddress,getSecuritySettings,checkCurrentPassword,changePassword,getWishlistPage,addToWishlist,removeFromWishlist,toggleWishlist
+  updateAddress,deleteAddress,setDefaultAddress,getSecuritySettings,checkCurrentPassword,changePassword,getWishlistPage,addToWishlist,removeFromWishlist,toggleWishlist,getCheckoutPage
 } from "../../controllers/user/userController.js";
 
 import { renderForgotPassword, postForgotPassword, renderForgotVerifyOtp, postForgotVerifyOtp, resendForgotOtp, renderResetPassword, postResetPassword } from "../../controllers/user/authForgotController.js";
@@ -111,6 +111,8 @@ router.post('/wishlist/add/:productId',isUserLoggedIn, addToWishlist);
 router.post('/wishlist/remove/:productId',isUserLoggedIn, removeFromWishlist);
 router.post("/wishlist/toggle/:productId", toggleWishlist);
 
+//checkout
+router.get("/checkout",isUserLoggedIn,getCheckoutPage);
 
 // Logout
 router.get("/logout", isUserLoggedIn, logoutUser);
