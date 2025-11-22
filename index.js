@@ -22,6 +22,7 @@ import {renderHomePage} from "./controllers/user/productController.js";
 import cartRoutes from "./routes/user/cartRoutes.js"
 import userApiRoutes from './routes/user/userApiRoutes.js';
 import orderRoutes from './routes/user/orderRoutes.js'
+import adminOrderRoutes from "./routes/admin/adminOrderRoutes.js"
 const app = express();
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -134,6 +135,7 @@ app.use("/admin/users", usersRoutes);
 app.get("/", renderHomePage);
 app.use("/api", userApiRoutes);
 app.use('/order',orderRoutes);
+app.use('/admin/orders',adminOrderRoutes)
 
 
 
