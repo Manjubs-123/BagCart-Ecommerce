@@ -118,7 +118,6 @@ router.post("/orders", async (req, res) => {
             return res.json({ success: false, message: "Cart empty" });
         }
 
-        // Get selected shipping address
         const user = await User.findById(userId);
         const address = user.addresses.id(addressId);
 
@@ -126,10 +125,8 @@ router.post("/orders", async (req, res) => {
             return res.json({ success: false, message: "Address not found" });
         }
 
-        // Build order items
         const orderItems = cart.items.map(item => {
             const variant = item.product.variants[item.variantIndex];
-
             return {
                 product: item.product._id,
                 variantIndex: item.variantIndex,
@@ -140,13 +137,11 @@ router.post("/orders", async (req, res) => {
             };
         });
 
-        // Calculate totals
         const subtotal = orderItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
         const tax = subtotal * 0.1;
         const shippingFee = subtotal > 500 ? 0 : 50;
         const totalAmount = subtotal + tax + shippingFee;
 
-        // Create order
         const order = await Order.create({
             user: userId,
             items: orderItems,
@@ -158,6 +153,20 @@ router.post("/orders", async (req, res) => {
             totalAmount,
             paymentStatus: paymentMethod === "cod" ? "pending" : "paid"
         });
+
+        // ✅ STOCK REDUCTION LOGIC HERE
+        for (let item of cart.items) {
+            const product = await Product.findById(item.product._id);
+            if (!product) continue;
+
+            const variant = product.variants[item.variantIndex];
+            if (!variant) continue;
+
+            variant.stock -= item.quantity;
+            product.markModified(`variants.${item.variantIndex}.stock`);
+
+            await product.save();
+        }
 
         // Clear cart
         cart.items = [];
@@ -173,5 +182,6 @@ router.post("/orders", async (req, res) => {
         return res.json({ success: false, message: "Order failed" });
     }
 });
+
 
 export default router;

@@ -233,3 +233,33 @@ item.status = next;
   }
 };
 
+export const adminGetCancelledItems = async (req, res) => {
+  try {
+    const order = await Order.findById(req.params.id)
+      .populate("items.product")
+      .lean();
+
+    if (!order) {
+      return res.status(404).json({ success: false, message: "Order not found" });
+    }
+
+    const cancelledItems = order.items
+      .filter(i => i.status === "cancelled")
+      .map(i => ({
+        productName: i.product?.name || "Unknown Product",
+        cancelReason: i.cancelReason || "No reason provided",
+        cancelDetails: i.cancelDetails || "",
+        cancelledDate: i.cancelledDate,
+        quantity: i.quantity,
+        image: i.image,
+        itemOrderId: i.itemOrderId
+      }));
+
+    return res.json({ success: true, items: cancelledItems });
+
+  } catch (err) {
+    console.error("Cancelled list error:", err);
+    res.status(500).json({ success: false, message: "Server error" });
+  }
+};
+

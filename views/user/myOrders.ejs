@@ -474,6 +474,26 @@
       }, 1500);
     }
 
+    function validateCancelInputs() {
+  const reason = document.getElementById("cancelReasonSelect").value;
+  const details = document.getElementById("cancelOtherText").value.trim();
+
+  // Patterns not allowed
+  const invalidPatterns = /(\)\))|(&&&)|[0-9]/;
+
+  if (invalidPatterns.test(reason)) {
+    alert("Reason contains invalid characters!");
+    return false;
+  }
+
+  if (details && invalidPatterns.test(details)) {
+    alert("Details cannot contain numbers, '))', or '&&&'");
+    return false;
+  }
+
+  return true;
+}
+
     // Cancel modal functions
     function showCancelModal(orderId, itemId, productName) {
       document.getElementById('cancelOrderId').value = orderId;
@@ -501,6 +521,10 @@
     // Form submissions
     document.getElementById('cancelForm')?.addEventListener('submit', async function(e) {
       e.preventDefault();
+      // Validation before sending request
+  if (!validateCancelInputs()) {
+    return;
+  }
       await submitAction(this, '/order/' + this.orderId.value + '/item/' + this.itemId.value + '/cancel', 'cancel');
     });
 
