@@ -766,10 +766,11 @@
             let itemCount = 0;
 
             checkoutState.cartItems.forEach(item => {
-                const variant = item.product.variants[0];
-                subtotal += variant.price * item.quantity;
-                itemCount += item.quantity;
-            });
+    const variant = item.product.variants[item.variantIndex];  
+    subtotal += variant.price * item.quantity;
+    itemCount += item.quantity;
+});
+
 
             const tax = subtotal * 0.10; // 10% tax
             const shipping = subtotal > 500 ? 0 : 50; // Free shipping above ₹500

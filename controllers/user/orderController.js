@@ -5,136 +5,168 @@ import User from "../../models/userModel.js";
 import PDFDocument from "pdfkit";
 import fs from "fs";
 
-export const placeOrder = async (req, res) => {
-  try {
-    const userId = req.session.user.id;
-    const { addressId, paymentMethod } = req.body;
+// export const placeOrder = async (req, res) => {
+//   try {
+//     const userId = req.session.user.id;
+//     const { addressId, paymentMethod } = req.body;
 
-    // 1️⃣ Load user & find selected address
-    const user = await User.findById(userId);
-    if (!user) return res.json({ success: false, message: "User not found" });
+//     // 1️⃣ Load user & find selected address
+//     const user = await User.findById(userId);
+//     if (!user) return res.json({ success: false, message: "User not found" });
 
-    const address = user.addresses.id(addressId);
-    if (!address) {
-      return res.json({ success: false, message: "Invalid address" });
-    }
+//     const address = user.addresses.id(addressId);
+//     if (!address) {
+//       return res.json({ success: false, message: "Invalid address" });
+//     }
 
-    // 2️⃣ Load cart
-    const cart = await Cart.findOne({ user: userId }).populate("items.product");
-    if (!cart || cart.items.length === 0) {
-      return res.json({ success: false, message: "Cart is empty" });
-    }
+//     // 2️⃣ Load cart
+//     const cart = await Cart.findOne({ user: userId }).populate("items.product");
+//     if (!cart || cart.items.length === 0) {
+//       return res.json({ success: false, message: "Cart is empty" });
+//     }
 
-    // 3️⃣ Validate stock & prepare order items
-    let subtotal = 0;
-    let orderItems = [];
-    let itemCount = 1;
+//     // 3️⃣ Validate stock & prepare order items
+//     let subtotal = 0;
+//     let orderItems = [];
+//     let itemCount = 1;
 
-    // Generate OrderId: BGH-2025-001
-    const year = new Date().getFullYear();
-    const count = await Order.countDocuments() + 1;
-    const newOrderId = `BGH-${year}-${String(count).padStart(3, "0")}`;
+//     // Generate OrderId: BGH-2025-001
+//     const year = new Date().getFullYear();
+//     const count = await Order.countDocuments() + 1;
+//     const newOrderId = `BGH-${year}-${String(count).padStart(3, "0")}`;
 
-    for (let item of cart.items) {
-      const product = item.product;
-      const variant = product.variants[item.variantIndex];
+//     for (let item of cart.items) {
+//       const product = item.product;
+//       const variant = product.variants[item.variantIndex];
 
-      if (!variant || variant.stock < item.quantity) {
-        return res.json({
-          success: false,
-          message: `${product.name} has only ${variant.stock} left`
-        });
-      }
+//       if (!variant || variant.stock < item.quantity) {
+//         return res.json({
+//           success: false,
+//           message: `${product.name} has only ${variant.stock} left`
+//         });
+//       }
 
-      const price = variant.price;
-      subtotal += price * item.quantity;
+//       const price = variant.price;
+//       subtotal += price * item.quantity;
 
-   orderItems.push({
-  itemOrderId: `${newOrderId}/${itemCount}`,
-  product: product._id,
-  variantIndex: item.variantIndex,
-  quantity: item.quantity,
-  price,
-  color: variant.color,
-  image: variant.images?.[0]?.url || "",
-  status: "pending"
-});
+//    orderItems.push({
+//   itemOrderId: `${newOrderId}/${itemCount}`,
+//   product: product._id,
+//   variantIndex: item.variantIndex,
+//   quantity: item.quantity,
+//   price,
+//   color: variant.color,
+//   image: variant.images?.[0]?.url || "",
+//   status: "pending"
+// });
 
-itemCount++;
-
-
-
-    }
-
-    // 4️⃣ Tax + shipping
-    const tax = subtotal * 0.1;
-    const shippingFee = subtotal > 500 ? 0 : 50;
-    const totalAmount = subtotal + tax + shippingFee;
-
-    // 5️⃣ Create order
-    const order = await Order.create({
-      orderId: newOrderId,
-      user: userId,
-      shippingAddress: {
-        fullName: address.fullName,
-        phone: address.phone,
-        addressLine1: address.addressLine1,
-        addressLine2: address.addressLine2,
-        city: address.city,
-        state: address.state,
-        pincode: address.pincode,
-        country: address.country
-      },
-      items: orderItems,
-      paymentMethod,
-      subtotal,
-      tax,
-      shippingFee,
-      totalAmount,
-      orderStatus: "pending"
-    });
-  // 🔥 Generate readable orderId if missing
-if (!order.orderId) {
-  order.orderId = `BGH-${Date.now()}`;
-}
-
-// 🔥 Assign itemOrderId → BGH-123456789/1, /2, /3
-// 🔥 Assign itemOrderId → BGH-123456789/1, /2, /3
-order.items.forEach((item, index) => {
-  item.itemOrderId = `${order.orderId}/${index + 1}`;
-});
-
-// Force Mongoose to detect nested changes
-order.markModified("items");
-
-await order.save();
+// itemCount++;
 
 
 
+//     }
 
-    // 6️⃣ Reduce stock
-    for (let item of cart.items) {
-      const product = await Product.findById(item.product._id);
-      product.variants[item.variantIndex].stock -= item.quantity;
-      await product.save();
-    }
+//     // 4️⃣ Tax + shipping
+//     const tax = subtotal * 0.1;
+//     const shippingFee = subtotal > 500 ? 0 : 50;
+//     const totalAmount = subtotal + tax + shippingFee;
 
-    // 7️⃣ Clear cart
-    cart.items = [];
-    await cart.save();
+//     // 5️⃣ Create order
+//     const order = await Order.create({
+//       orderId: newOrderId,
+//       user: userId,
+//       shippingAddress: {
+//         fullName: address.fullName,
+//         phone: address.phone,
+//         addressLine1: address.addressLine1,
+//         addressLine2: address.addressLine2,
+//         city: address.city,
+//         state: address.state,
+//         pincode: address.pincode,
+//         country: address.country
+//       },
+//       items: orderItems,
+//       paymentMethod,
+//       subtotal,
+//       tax,
+//       shippingFee,
+//       totalAmount,
+//       orderStatus: "pending"
+//     });
+//   // 🔥 Generate readable orderId if missing
+// if (!order.orderId) {
+//   order.orderId = `BGH-${Date.now()}`;
+// }
 
-    return res.json({
-      success: true,
-      message: "Order placed successfully!",
-      orderId: order._id,
-      displayOrderId: newOrderId
-    });
+// // 🔥 Assign itemOrderId → BGH-123456789/1, /2, /3
+// // 🔥 Assign itemOrderId → BGH-123456789/1, /2, /3
+// order.items.forEach((item, index) => {
+//   item.itemOrderId = `${order.orderId}/${index + 1}`;
+// });
 
-  } catch (err) {
-    console.error("Order Error:", err);
-    res.json({ success: false, message: "Something went wrong placing the order" });
-  }
-};
+// // Force Mongoose to detect nested changes
+// order.markModified("items");
+
+// await order.save();
+
+
+
+
+//     // 6️⃣ Reduce stock
+// // 6️⃣ Reduce stock
+// for (let item of cart.items) {
+
+//   console.log("🔥 REDUCING STOCK FOR:", {
+//     productId: item.product._id,
+//     variantIndex: item.variantIndex,
+//     quantity: item.quantity
+//   });
+
+//   const product = await Product.findById(item.product._id);
+
+//   if (!product) {
+//     console.log("❌ Product not found:", item.product._id);
+//     continue;
+//   }
+
+//   const variant = product.variants[item.variantIndex];
+
+//   if (!variant) {
+//     console.log("❌ Variant not found:", item.variantIndex);
+//     continue;
+//   }
+
+//   console.log("📉 Stock before:", variant.stock);
+
+//   // ---- REAL STOCK REDUCTION ----
+//   variant.stock -= item.quantity;
+
+//   // Force mongoose to detect nested change
+//   product.markModified(`variants.${item.variantIndex}.stock`);
+
+//   await product.save();
+
+//   console.log("📈 Stock after:", variant.stock);
+// }
+
+
+//     // 7️⃣ Clear cart
+//     cart.items = [];
+//     await cart.save();
+
+//     return res.json({
+//       success: true,
+//       message: "Order placed successfully!",
+//       orderId: order._id,
+//       displayOrderId: newOrderId
+//     });
+
+//   } catch (err) {
+//     console.error("Order Error:", err);
+//     res.json({ success: false, message: "Something went wrong placing the order" });
+//   }
+// };
+
 export const getOrderConfirmation = async (req, res) => {
   const orderId = req.params.id;
 
@@ -305,44 +337,88 @@ export const downloadInvoice = async (req, res) => {
 
 
 // Cancel item (already have similar — ensure field names match)
+// export const cancelItem = async (req, res) => {
+//   try {
+//     const { orderId, itemId } = req.params;
+//     const { reason } = req.body;
+//     const userId = req.session.user.id;
+
+//     const order = await Order.findOne({ _id: orderId, user: userId });
+//     if (!order) return res.json({ success: false, message: "Order not found" });
+
+//     const item = order.items.id(itemId) || order.items.find(i => i._id.toString() === itemId);
+//     if (!item) return res.json({ success: false, message: "Item not found" });
+
+//     if (item.status === "delivered" || item.status === "cancelled" || item.status === "returned") {
+//       return res.json({ success: false, message: "Cannot cancel this item" });
+//     }
+
+//     // increase stock back
+//     const product = await Product.findById(item.product);
+//     if (product && product.variants[item.variantIndex]) {
+//       product.variants[item.variantIndex].stock += item.quantity;
+//       await product.save();
+//     }
+
+//     item.status = "cancelled";
+//     item.cancelReason = reason || "No reason provided";
+//     item.cancelDetails = req.body.details || "";
+//     item.cancelledDate = new Date();
+
+//     // optional: update order-level status if all items cancelled/returned
+//     const allCancelledOrReturned = order.items.every(i => ["cancelled", "returned"].includes(i.status));
+//     if (allCancelledOrReturned) order.orderStatus = "cancelled";
+
+//     await order.save();
+//     return res.json({ success: true, message: "Item cancelled" });
+//   } catch (err) {
+//     console.error("cancelItem error:", err);
+//     return res.json({ success: false, message: "Error cancelling item" });
+//   }
+// };
+
 export const cancelItem = async (req, res) => {
   try {
     const { orderId, itemId } = req.params;
-    const { reason } = req.body;
+    const { reason, details } = req.body;
     const userId = req.session.user.id;
 
     const order = await Order.findOne({ _id: orderId, user: userId });
     if (!order) return res.json({ success: false, message: "Order not found" });
 
-    const item = order.items.id(itemId) || order.items.find(i => i._id.toString() === itemId);
+    const item = order.items.id(itemId);
     if (!item) return res.json({ success: false, message: "Item not found" });
 
-    if (item.status === "delivered" || item.status === "cancelled" || item.status === "returned") {
+    if (["delivered", "cancelled", "returned"].includes(item.status)) {
       return res.json({ success: false, message: "Cannot cancel this item" });
     }
 
-    // increase stock back
+    // 🔼 Add stock back
     const product = await Product.findById(item.product);
-    if (product && product.variants[item.variantIndex]) {
+    if (product) {
       product.variants[item.variantIndex].stock += item.quantity;
       await product.save();
     }
 
+    // 🔥 THIS IS THE IMPORTANT PART — YOU MISSED THIS EARLIER
     item.status = "cancelled";
-    item.cancelReason = reason || "No reason provided";
+    item.cancelReason = reason;
+    item.cancelDetails = details || "";
     item.cancelledDate = new Date();
 
-    // optional: update order-level status if all items cancelled/returned
-    const allCancelledOrReturned = order.items.every(i => ["cancelled", "returned"].includes(i.status));
-    if (allCancelledOrReturned) order.orderStatus = "cancelled";
+    const allCancelled = order.items.every(i => ["cancelled", "returned"].includes(i.status));
+    if (allCancelled) order.orderStatus = "cancelled";
 
     await order.save();
-    return res.json({ success: true, message: "Item cancelled" });
+
+    return res.json({ success: true, message: "Item cancelled successfully" });
+
   } catch (err) {
-    console.error("cancelItem error:", err);
-    return res.json({ success: false, message: "Error cancelling item" });
+    console.error("Cancel Error:", err);
+    res.json({ success: false, message: "Something went wrong" });
   }
 };
+
 
 // Return item
 export const returnItem = async (req, res) => {

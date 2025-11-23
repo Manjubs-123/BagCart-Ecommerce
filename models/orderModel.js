@@ -23,14 +23,26 @@ const orderItemSchema = new mongoose.Schema({
 
   status: {
     type: String,
-    enum: ["pending", "processing", "shipped","out_for_delivery", "delivered", "cancelled", "returned"],
+    enum: ["pending", "processing",
+      "shipped",
+      "out_for_delivery",
+      "delivered",
+      "cancelled",
+      "return-requested",
+      "return-approved",
+      "return-rejected",
+      "returned"],
     default: "pending"
   },
 
   // Return & Cancel
   cancelReason: String,
+  cancelDetails: String,
   returnReason: String,
   returnDetails: String,
+  returnRequestedDate: Date,
+  returnApprovedDate: Date,
+  returnRejectedDate: Date,
 
   // Timeline tracking
   shippedDetails: {
@@ -47,8 +59,8 @@ const orderItemSchema = new mongoose.Schema({
 
 // Main order schema
 const orderSchema = new mongoose.Schema({
-  orderId: { 
-    type: String, 
+  orderId: {
+    type: String,
     required: false // Generated in controller 
   },
 
@@ -71,7 +83,7 @@ const orderSchema = new mongoose.Schema({
 
   items: [orderItemSchema],
 
-    orderStatus: {
+  orderStatus: {
     type: String,
     enum: ["pending", "processing", "shipped", "out_for_delivery", "delivered", "cancelled"],
     default: "pending"
@@ -86,8 +98,8 @@ const orderSchema = new mongoose.Schema({
   totalAmount: Number,
 
   transactionId: String,
-}, 
-{ timestamps: true }
+},
+  { timestamps: true }
 );
 
 export default mongoose.model("Order", orderSchema);
