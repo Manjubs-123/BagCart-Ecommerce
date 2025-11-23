@@ -353,6 +353,16 @@ export const updateUserProfile = async (req, res) => {
 
     await user.save();
 
+    // 🔥 IMPORTANT FIX: Update session so header uses new image
+    // req.session.user.profileImage = {
+    //   url: user.profileImage.url,
+    //   public_id: user.profileImage.public_id
+    // };
+    // req.session.user.name = user.name;
+
+        req.session.user.name = user.name;
+    req.session.user.phone = user.phone;
+    req.session.user.profileImage = user.profileImage;
     return res.json({ success: true });
 
   } catch (err) {
@@ -886,9 +896,6 @@ export const getCheckoutPage = (req, res) => {
         unreadNotifications: 0
     });
 };
-
-
-
 
 
 

@@ -21,7 +21,7 @@ router.get("/:orderId/item/:itemId/invoice", isUserLoggedIn, downloadInvoice);
 // cancel / return
 router.patch("/:orderId/item/:itemId/cancel", isUserLoggedIn, cancelItem);
 
-router.patch("/order/:orderId/item/:itemId/return", isUserLoggedIn, returnItem);
-
+// router.patch("/order/:orderId/item/:itemId/return", isUserLoggedIn, returnItem);
+router.patch("/:orderId/item/:itemId/return", returnItem);
  
 export default router;

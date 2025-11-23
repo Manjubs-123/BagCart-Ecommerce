@@ -94,7 +94,8 @@
 </head>
 <body class="bg-gray-50">
     <!-- Header -->
-    <%- include('../partials/landingheader') %>
+    <%- include('../partials/landingheader', { user: user }) %>
+
 
     <div class="container mx-auto px-4 py-8">
         <!-- Page Header -->
@@ -152,9 +153,7 @@
                                                 class="filter-checkbox h-4 w-4 text-blue-600 rounded"
                                             >
                                             <span class="text-sm text-gray-700 flex-1"><%= cat.name %></span>
-                                            <span class="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
-                                                <%= cat.productCount || 0 %>
-                                            </span>
+                                            
                                         </label>
                                     <% }) %>
                                 </div>
@@ -310,10 +309,16 @@
                                         <!-- Product Image -->
                                         <div class="relative">
                                             <% 
-                                                let mainImage = '/images/placeholder.jpg';
-                                                if (product.variants && product.variants.length > 0 && product.variants[0].images.length > 0) {
-                                                    mainImage = product.variants[0].images[0].url;
-                                                }
+                                              let mainImage = '/images/placeholder.jpg';
+
+if (product.variants && product.variants.length > 0) {
+    const firstVariantWithImage = product.variants.find(v => v.images && v.images.length > 0);
+
+    if (firstVariantWithImage) {
+        mainImage = firstVariantWithImage.images[0].url;
+    }
+}
+  
                                             %>
                                             <img 
                                                 src="<%= mainImage %>" 
@@ -607,39 +612,33 @@ function applyFilters() {
         // }
 
         // Load more functionality
-     function sortAndDisplayProducts(sortValue, products) {
+    function sortAndDisplayProducts(sortValue, products) {
     const visibleProducts = products.filter(p => p.style.display !== 'none');
 
     if (sortValue) {
         visibleProducts.sort((a, b) => {
-            const cardA = a.querySelector('.product-card');
-            const cardB = b.querySelector('.product-card');
 
-            const priceA = parseFloat(cardA.dataset.price) || 0;
-            const priceB = parseFloat(cardB.dataset.price) || 0;
-
-            const nameA = cardA.dataset.name;
-            const nameB = cardB.dataset.name;
-
-            const dateA = new Date(cardA.dataset.created);
-            const dateB = new Date(cardB.dataset.created);
-
-            const featuredA = cardA.dataset.featured === 'true' ? 1 : 0;
-            const featuredB = cardB.dataset.featured === 'true' ? 1 : 0;
+            const cardA = a.querySelector('.product-card').dataset;
+            const cardB = b.querySelector('.product-card').dataset;
 
             switch (sortValue) {
-                case 'price-low': return priceA - priceB;
-                case 'price-high': return priceB - priceA;
-                case 'name-asc': return nameA.localeCompare(nameB);
-                case 'name-desc': return nameB.localeCompare(nameA);
-                case 'new': return dateB - dateA;
-                case 'featured': return featuredB - featuredA;
-                default: return 0;
+                case 'price-low':
+                    return parseFloat(cardA.price) - parseFloat(cardB.price);
+                case 'price-high':
+                    return parseFloat(cardB.price) - parseFloat(cardA.price);
+                case 'name-asc':
+                    return cardA.name.localeCompare(cardB.name);
+                case 'name-desc':
+                    return cardB.name.localeCompare(cardA.name);
+                case 'new':
+                    return new Date(cardB.created) - new Date(cardA.created);
+                default:
+                    return 0;
             }
         });
 
         const grid = document.getElementById('productsGrid');
-        visibleProducts.forEach(product => grid.appendChild(product));
+        visibleProducts.forEach(p => grid.appendChild(p));
     }
 }
 
@@ -648,24 +647,36 @@ function applyFilters() {
             applyLoadMore();
         }
 
-        function applyLoadMore() {
-            const visibleProducts = Array.from(document.querySelectorAll('.product-card')).filter(p => p.style.display !== 'none');
-            
-            visibleProducts.forEach((product, index) => {
-                product.style.display = index < currentlyShown ? 'block' : 'none';
-            });
+       function applyLoadMore() {
+    const visibleProducts = Array.from(
+        document.querySelectorAll('#productsGrid > a')  // ← FIXED
+    ).filter(p => p.style.display !== 'none');
 
-            const loadMoreBtn = document.getElementById('loadMoreBtn');
-            loadMoreBtn.style.display = currentlyShown >= visibleProducts.length ? 'none' : 'inline-flex';
-            updateResultsCount();
-        }
+    visibleProducts.forEach((product, index) => {
+        product.style.display = index < currentlyShown ? 'block' : 'none';
+    });
+
+    const loadMoreBtn = document.getElementById('loadMoreBtn');
+    loadMoreBtn.style.display = 
+        currentlyShown >= visibleProducts.length ? 'none' : 'inline-flex';
+
+    updateResultsCount();
+}
+function loadMore() {
+    currentlyShown += loadMoreIncrement;
+    applyLoadMore();
+}
+
 
         function updateResultsCount() {
-            const allProducts = document.querySelectorAll('.product-card');
-            const visibleProducts = Array.from(allProducts).filter(p => {
-                return window.getComputedStyle(p).display !== 'none';
-            });
+const allProducts = document.querySelectorAll('#productsGrid > a');
+            // const visibleProducts = Array.from(allProducts).filter(p => {
+            //     return window.getComputedStyle(p).display !== 'none';
+            // });
             
+
+            const visibleProducts = Array.from(allProducts).filter(p => p.style.display !== 'none');
+
             const showing = Math.min(currentlyShown, visibleProducts.length);
             document.getElementById('currentCount').textContent = showing;
             document.getElementById('totalCount').textContent = visibleProducts.length;

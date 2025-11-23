@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>My Wallet - BagHub</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+
+<body class="bg-gray-100">
+
+    <div class="max-w-3xl mx-auto mt-10 bg-white shadow-lg p-8 rounded-xl">
+        <h1 class="text-3xl font-bold mb-4">My Wallet</h1>
+
+        <div class="p-4 bg-blue-50 border border-blue-300 rounded-lg mb-6">
+            <p class="text-gray-700 text-xl font-semibold">
+                Wallet Balance:
+            </p>
+            <p class="text-4xl font-bold text-blue-700 mt-2">
+                ₹<%= wallet.balance.toFixed(2) %>
+            </p>
+        </div>
+
+        <h2 class="text-xl font-semibold mb-3">Transaction History</h2>
+
+        <% if (wallet.transactions.length === 0) { %>
+            <p class="text-gray-500">No transactions yet.</p>
+        <% } else { %>
+            <div class="space-y-3">
+                <% wallet.transactions.forEach(tx => { %>
+                    <div class="p-4 rounded-lg border bg-gray-50 flex justify-between">
+                        <div>
+                            <p class="font-medium">
+                                <%= tx.type === 'credit' ? '💚 Credited' : '❤️ Debited' %>
+                            </p>
+                            <p class="text-gray-600 text-sm"><%= tx.description %></p>
+                        </div>
+
+                        <div class="text-right">
+                            <p class="font-bold">
+                                <%= tx.type === 'credit' ? '+' : '-' %> ₹<%= tx.amount %>
+                            </p>
+                            <p class="text-gray-500 text-xs">
+                                <%= new Date(tx.date).toLocaleString() %>
+                            </p>
+                        </div>
+                    </div>
+                <% }) %>
+            </div>
+        <% } %>
+    </div>
+
+</body>
+</html>

@@ -114,6 +114,8 @@ router.post("/wishlist/toggle/:productId", toggleWishlist);
 //checkout
 router.get("/checkout",isUserLoggedIn,getCheckoutPage);
 
+
+
 // Logout
 router.get("/logout", isUserLoggedIn, logoutUser);
 

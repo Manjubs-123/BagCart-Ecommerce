@@ -72,10 +72,14 @@ import User from "../../models/userModel.js";
 export const getShopPage = async (req, res) => {
   try {
 
+
+
     // If user not logged in, redirect to login
     if (!req.session.user) {
       return res.redirect("/user/login");
     }
+
+
 
     // ⭐⭐⭐ ADD THIS PART HERE (STEP 1)
     let userWishlistIds = [];
@@ -87,6 +91,7 @@ export const getShopPage = async (req, res) => {
       }
     }
     // ⭐⭐⭐ END OF ADDED BLOCK
+console.log("SESSION USER DATA:", req.session.user);
 
 
     // CATEGORY SELECTION FROM QUERY

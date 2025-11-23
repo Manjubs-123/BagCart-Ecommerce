@@ -3,6 +3,8 @@ import Cart from "../../models/cartModel.js";
 import Product from "../../models/productModel.js";
 import User from "../../models/userModel.js";
 import PDFDocument from "pdfkit";
+import path from "path";
+import { fileURLToPath } from "url";
 import fs from "fs";
 
 // export const placeOrder = async (req, res) => {
@@ -287,8 +289,22 @@ export const downloadInvoice = async (req, res) => {
     res.setHeader("Content-Type", "application/pdf");
     res.setHeader("Content-Disposition", `attachment; filename="${fileName}"`);
 
-    const doc = new PDFDocument({ margin: 40 });
-    doc.pipe(res);
+ const doc = new PDFDocument({ margin: 40 });
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// correct font path
+    const fontPath = path.join(__dirname, "../../public/fonts/DejaVuSans.ttf");
+
+
+doc.registerFont("Unicode", fontPath);
+doc.font("Unicode");
+
+doc.pipe(res);
+
+
+
 
     // HEADER
     doc.fontSize(22).text("BagHub", { align: "center" });
@@ -430,20 +446,26 @@ export const returnItem = async (req, res) => {
     const order = await Order.findOne({ _id: orderId, user: userId });
     if (!order) return res.json({ success: false, message: "Order not found" });
 
-    const item = order.items.id(itemId) || order.items.find(i => i._id.toString() === itemId);
+    const item = order.items.id(itemId);
     if (!item) return res.json({ success: false, message: "Item not found" });
 
     if (item.status !== "delivered") {
       return res.json({ success: false, message: "Only delivered items can be returned" });
     }
 
-    item.status = "returned";
+    // USER SHOULD ONLY REQUEST RETURN
+    item.status = "return-requested";
     item.returnReason = reason;
     item.returnDetails = details;
-    item.returnedDate = new Date();
+    item.returnRequestedDate = new Date();
 
     await order.save();
-    return res.json({ success: true, message: "Return request submitted" });
+
+    return res.json({
+      success: true,
+      message: "Return request submitted. Waiting for admin approval."
+    });
+
   } catch (err) {
     console.error("returnItem error:", err);
     return res.json({ success: false, message: "Error submitting return" });
