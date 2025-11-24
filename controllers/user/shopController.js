@@ -364,47 +364,85 @@ if (req.session.user && req.session.user.id) {
 };
 
 
+// export const getVariantByColor = async (req, res) => {
+//   try {
+//     const { productId } = req.params;
+//     const { color } = req.query;
+
+//     const product = await Product.findById(productId)
+//       .populate("brand", "name") // make sure brand is populated
+//       .lean();
+
+//     if (!product) {
+//       return res.status(404).json({ success: false, message: "Product not found" });
+//     }
+
+//     const variant = (product.variants || []).find(
+//       v => v.color && v.color.toLowerCase() === color.toLowerCase()
+//     );
+
+//     if (!variant) {
+//       return res.status(404).json({ success: false, message: "Variant not found" });
+//     }
+
+//     //  Ensure brand is taken from populated object or fallback
+//     const brandName =
+//       (product.brand && (product.brand.name || product.brand)) || "BagHub";
+
+//     res.json({
+//       success: true,
+//       variant: {
+//         color: variant.color,
+//         price: variant.price,
+//         mrp: variant.mrp,
+//         stock: variant.stock,
+//         images: (variant.images || []).map(img => img.url),
+//         brand: brandName,
+//       },
+//     });
+//   } catch (error) {
+//     console.error("Error fetching variant:", error);
+//     res.status(500).json({ success: false, message: "Server error" });
+//   }
+// };
+
 export const getVariantByColor = async (req, res) => {
   try {
     const { productId } = req.params;
     const { color } = req.query;
 
-    const product = await Product.findById(productId)
-      .populate("brand", "name") // make sure brand is populated
-      .lean();
-
+    const product = await Product.findById(productId).lean();
     if (!product) {
-      return res.status(404).json({ success: false, message: "Product not found" });
+      return res.json({ success: false, message: "Product not found" });
     }
 
-    const variant = (product.variants || []).find(
-      v => v.color && v.color.toLowerCase() === color.toLowerCase()
+    const variantIndex = product.variants.findIndex(
+      v => v.color.toLowerCase() === color.toLowerCase()
     );
 
-    if (!variant) {
-      return res.status(404).json({ success: false, message: "Variant not found" });
+    if (variantIndex === -1) {
+      return res.json({ success: false, message: "Variant not found" });
     }
 
-    //  Ensure brand is taken from populated object or fallback
-    const brandName =
-      (product.brand && (product.brand.name || product.brand)) || "BagHub";
+    const variant = product.variants[variantIndex];
 
-    res.json({
+    return res.json({
       success: true,
+      variantIndex,     // 🔥 REQUIRED
       variant: {
         color: variant.color,
         price: variant.price,
         mrp: variant.mrp,
         stock: variant.stock,
-        images: (variant.images || []).map(img => img.url),
-        brand: brandName,
-      },
+        images: variant.images.map(img => img.url)
+      }
     });
+
   } catch (error) {
-    console.error("Error fetching variant:", error);
-    res.status(500).json({ success: false, message: "Server error" });
+    return res.json({ success: false, message: "Server error" });
   }
 };
+
 
 
 

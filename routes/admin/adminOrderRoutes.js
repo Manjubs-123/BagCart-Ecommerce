@@ -5,7 +5,8 @@ import {
   adminUpdateOrderStatus,
   adminGetCancelledItems,
   getReturnRequests,
-  approveReturn
+  approveReturn,
+  rejectReturn
 } from "../../controllers/admin/adminOrderController.js";
 import { isAdminAuthenticated } from "../../middlewares/adminAuth.js";
 
@@ -21,7 +22,7 @@ router.get("/:id", isAdminAuthenticated, adminGetOrder);
 router.patch("/:orderId/item/:itemId/status", isAdminAuthenticated, adminUpdateOrderStatus);
 // { status: 'shipped' }
 router.post("/returns/:orderId/item/:itemId/approve", approveReturn);
-// router.post("/returns/:orderId/item/:itemId/reject", rejectReturn);
+router.post("/returns/:orderId/item/:itemId/reject", rejectReturn);
 
 
 

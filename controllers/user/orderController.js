@@ -215,17 +215,61 @@ export const getOrderConfirmation = async (req, res) => {
 //     });
 //   }
 // };
+// export const getMyOrders = async (req, res) => {
+//   try {
+//     const userId = req.session.user?.id;
+//     if (!userId) return res.redirect("/user/login");
+
+//     let orders = await Order.find({ user: userId })
+//       .populate("items.product")
+//       .sort({ createdAt: -1 })
+//       .lean();
+
+//     // 🔥 FIX itemOrderId MISSING
+//     orders = orders.map(order => {
+//       const fixedItems = order.items.map((item, index) => ({
+//         ...item,
+//         itemOrderId: item.itemOrderId || `${order.orderId || order._id}/${index + 1}`
+//       }));
+
+//       return {
+//         ...order,
+//         items: fixedItems
+//       };
+//     });
+
+//     res.render("user/myOrders", {
+//       orders,
+//       user: req.session.user,
+//       wishlistCount: req.session.user?.wishlistCount || 0,
+//       unreadNotifications: 0,
+//       currentPage: "orders"
+//     });
+
+//   } catch (err) {
+//     console.error("getMyOrders Error:", err);
+//     res.status(500).render("user/myOrders", {
+//       orders: [],
+//       user: req.session.user,
+//       wishlistCount: 0,
+//       unreadNotifications: 0,
+//       currentPage: "orders"
+//     });
+//   }
+// };
+
 export const getMyOrders = async (req, res) => {
   try {
     const userId = req.session.user?.id;
     if (!userId) return res.redirect("/user/login");
 
+    // Fetch orders
     let orders = await Order.find({ user: userId })
       .populate("items.product")
       .sort({ createdAt: -1 })
       .lean();
 
-    // 🔥 FIX itemOrderId MISSING
+    // 🔥 FIX itemOrderId if missing
     orders = orders.map(order => {
       const fixedItems = order.items.map((item, index) => ({
         ...item,
@@ -238,26 +282,28 @@ export const getMyOrders = async (req, res) => {
       };
     });
 
+    // Add Order Count
+    const ordersCount = orders.length;
+
+    // FINAL RENDER (clean — NO notifications)
     res.render("user/myOrders", {
       orders,
       user: req.session.user,
-      wishlistCount: req.session.user?.wishlistCount || 0,
-      unreadNotifications: 0,
+      ordersCount,        // ✔ added
       currentPage: "orders"
     });
 
   } catch (err) {
     console.error("getMyOrders Error:", err);
+
     res.status(500).render("user/myOrders", {
       orders: [],
       user: req.session.user,
-      wishlistCount: 0,
-      unreadNotifications: 0,
+      ordersCount: 0,     // ✔ added
       currentPage: "orders"
     });
   }
 };
-
 
 
 export const downloadInvoice = async (req, res) => {
@@ -437,37 +483,65 @@ export const cancelItem = async (req, res) => {
 
 
 // Return item
-export const returnItem = async (req, res) => {
+// export const returnItem = async (req, res) => {
+//   try {
+//     const { orderId, itemId } = req.params;
+//     const { reason, details } = req.body;
+//     const userId = req.session.user.id;
+
+//     const order = await Order.findOne({ _id: orderId, user: userId });
+//     if (!order) return res.json({ success: false, message: "Order not found" });
+
+//     const item = order.items.id(itemId);
+//     if (!item) return res.json({ success: false, message: "Item not found" });
+
+//     if (item.status !== "delivered") {
+//       return res.json({ success: false, message: "Only delivered items can be returned" });
+//     }
+
+//     // USER SHOULD ONLY REQUEST RETURN
+//     item.status = "return-requested";
+//     item.returnReason = reason;
+//     item.returnDetails = details;
+//     item.returnRequestedDate = new Date();
+
+//     await order.save();
+
+//     return res.json({
+//       success: true,
+//       message: "Return request submitted. Waiting for admin approval."
+//     });
+
+//   } catch (err) {
+//     console.error("returnItem error:", err);
+//     return res.json({ success: false, message: "Error submitting return" });
+//   }
+// };
+export const returnItem= async (req, res) => {
   try {
     const { orderId, itemId } = req.params;
-    const { reason, details } = req.body;
-    const userId = req.session.user.id;
+    const { rejectionReason } = req.body;
 
-    const order = await Order.findOne({ _id: orderId, user: userId });
-    if (!order) return res.json({ success: false, message: "Order not found" });
+    const order = await Order.findById(orderId);
+    if (!order) return res.status(404).json({ success: false, message: "Order not found" });
 
     const item = order.items.id(itemId);
-    if (!item) return res.json({ success: false, message: "Item not found" });
+    if (!item) return res.status(404).json({ success: false, message: "Item not found" });
 
-    if (item.status !== "delivered") {
-      return res.json({ success: false, message: "Only delivered items can be returned" });
-    }
-
-    // USER SHOULD ONLY REQUEST RETURN
-    item.status = "return-requested";
-    item.returnReason = reason;
-    item.returnDetails = details;
-    item.returnRequestedDate = new Date();
+    item.status = "return-rejected";
+    item.returnRejectReason = rejectionReason || "Rejected by admin";
+    item.returnRejectedDate = new Date();
 
     await order.save();
 
     return res.json({
       success: true,
-      message: "Return request submitted. Waiting for admin approval."
+      message: "Return rejected successfully"
     });
 
-  } catch (err) {
-    console.error("returnItem error:", err);
-    return res.json({ success: false, message: "Error submitting return" });
+  } catch (error) {
+    console.error("Reject return error:", error);
+    return res.status(500).json({ success: false, message: "Internal error" });
   }
 };
+

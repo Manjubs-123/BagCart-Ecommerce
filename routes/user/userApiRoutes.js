@@ -51,9 +51,187 @@ router.get("/addresses", async (req, res) => {
 });
 
 
+function isValidName(str) {
+    return /^[A-Za-z ]{2,}$/.test(str);
+}
+
+function isValidCityOrState(str) {
+    return /^[A-Za-z ]{2,}$/.test(str);
+}
+
+function isValidPhone(str) {
+    return /^[6-9]\d{9}$/.test(str) &&
+           !/^(\d)\1{9}$/.test(str) &&
+           !isSequential(str);
+}
+
+function isValidPincode(str) {
+    return /^\d{6}$/.test(str) &&
+           !/^(\d)\1{5}$/.test(str) &&
+           !isSequential(str);
+}
+
+function isSequential(str) {
+    const nums = str.split("").map(Number);
+    let asc = true, desc = true;
+
+    for (let i = 1; i < nums.length; i++) {
+        if (nums[i] !== nums[i - 1] + 1) asc = false;
+        if (nums[i] !== nums[i - 1] - 1) desc = false;
+    }
+    return asc || desc;
+}
+
+/* -----------------------------------------------------------
+   UPDATE ADDRESS (EDIT)
+----------------------------------------------------------- */
+// router.put("/addresses/:id", async (req, res) => {
+//     try {
+//         const userId = req.session.user?.id;
+//         const addressId = req.params.id;
+
+//         if (!userId) {
+//             return res.json({ success: false, message: "Not logged in" });
+//         }
+
+//         const user = await User.findById(userId);
+//         if (!user) {
+//             return res.json({ success: false, message: "User not found" });
+//         }
+
+//         const updatedData = req.body;
+
+
+
+//         // Make sure only 1 default exists
+//         if (updatedData.isDefault) {
+//             user.addresses.forEach(a => (a.isDefault = false));  
+//         }
+
+//         const address = user.addresses.id(addressId);
+//         if (!address) {
+//             return res.json({ success: false, message: "Address not found" });
+//         }
+
+//         // Update fields
+//         address.fullName = updatedData.fullName;
+//         address.phone = updatedData.phone;
+//         address.addressLine1 = updatedData.addressLine1;
+//         address.addressLine2 = updatedData.addressLine2;
+//         address.city = updatedData.city;
+//         address.state = updatedData.state;
+//         address.pincode = updatedData.pincode;
+//         address.country = updatedData.country;
+//         address.addressType = updatedData.addressType;
+//         address.isDefault = updatedData.isDefault;
+
+//         await user.save();
+
+//         return res.json({
+//             success: true,
+//             address
+//         });
+
+//     } catch (err) {
+//         console.log("UPDATE ADDRESS ERROR:", err);
+//         return res.json({ success: false });
+//     }
+// });
+
+router.put("/addresses/:id", async (req, res) => {
+    try {
+        const userId = req.session.user?.id;
+        const addressId = req.params.id;
+
+        if (!userId) {
+            return res.json({ success: false, message: "Not logged in" });
+        }
+
+        const user = await User.findById(userId);
+        if (!user) {
+            return res.json({ success: false, message: "User not found" });
+        }
+
+        const updatedData = req.body;
+
+        // VALIDATION HERE
+        if (!isValidName(updatedData.fullName))
+            return res.json({ success: false, message: "Invalid full name" });
+
+        if (!isValidPhone(updatedData.phone))
+            return res.json({ success: false, message: "Invalid phone number" });
+
+        if (!isValidCityOrState(updatedData.city))
+            return res.json({ success: false, message: "Invalid city name" });
+
+        if (!isValidCityOrState(updatedData.state))
+            return res.json({ success: false, message: "Invalid state name" });
+
+        if (!isValidPincode(updatedData.pincode))
+            return res.json({ success: false, message: "Invalid pincode" });
+
+        // Ensure only one default address
+        if (updatedData.isDefault) {
+            user.addresses.forEach(a => (a.isDefault = false));
+        }
+
+        const address = user.addresses.id(addressId);
+        if (!address) {
+            return res.json({ success: false, message: "Address not found" });
+        }
+
+        // Update fields
+        address.fullName = updatedData.fullName;
+        address.phone = updatedData.phone;
+        address.addressLine1 = updatedData.addressLine1;
+        address.addressLine2 = updatedData.addressLine2;
+        address.city = updatedData.city;
+        address.state = updatedData.state;
+        address.pincode = updatedData.pincode;
+        address.country = updatedData.country;
+        address.addressType = updatedData.addressType;
+        address.isDefault = updatedData.isDefault;
+
+        await user.save();
+
+        return res.json({ success: true, address });
+
+    } catch (err) {
+        console.log("UPDATE ADDRESS ERROR:", err);
+        return res.json({ success: false });
+    }
+});
+
+
+
 /* -----------------------------------------------------------
    ADD ADDRESS
 ----------------------------------------------------------- */
+// router.post("/addresses", async (req, res) => {
+//     try {
+//         const userId = req.session.user.id;
+//         const user = await User.findById(userId);
+
+//         const newAddress = req.body;
+
+//         if (newAddress.isDefault) {
+//             user.addresses.forEach(a => (a.isDefault = false));
+//         }
+
+//         user.addresses.push(newAddress);
+//         await user.save();
+
+//         return res.json({
+//             success: true,
+//             address: user.addresses[user.addresses.length - 1]
+//         });
+
+//     } catch (err) {
+//         console.error("ADD ADDRESS ERROR", err);
+//         return res.json({ success: false });
+//     }
+// });
+
 router.post("/addresses", async (req, res) => {
     try {
         const userId = req.session.user.id;
@@ -61,6 +239,23 @@ router.post("/addresses", async (req, res) => {
 
         const newAddress = req.body;
 
+        // VALIDATION HERE
+        if (!isValidName(newAddress.fullName))
+            return res.json({ success: false, message: "Invalid full name" });
+
+        if (!isValidPhone(newAddress.phone))
+            return res.json({ success: false, message: "Invalid phone number" });
+
+        if (!isValidCityOrState(newAddress.city))
+            return res.json({ success: false, message: "Invalid city name" });
+
+        if (!isValidCityOrState(newAddress.state))
+            return res.json({ success: false, message: "Invalid state name" });
+
+        if (!isValidPincode(newAddress.pincode))
+            return res.json({ success: false, message: "Invalid pincode" });
+
+        // Ensure only one default
         if (newAddress.isDefault) {
             user.addresses.forEach(a => (a.isDefault = false));
         }

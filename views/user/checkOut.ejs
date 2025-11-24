@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Address Modal - BagHub</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
     <style>
@@ -477,13 +479,13 @@
                     </div>
                     
                     <!-- Set as Default -->
-                    <!-- <div class="flex items-center gap-3 pt-2">
+                    <div class="flex items-center gap-3 pt-2">
                         <input type="checkbox" id="setDefault" name="isDefault" 
                                class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2">
                         <label for="setDefault" class="text-sm text-gray-700 cursor-pointer">
                             Set as default address
                         </label>
-                    </div> -->
+                    </div>
                     
                     <!-- Action Buttons -->
                     <div class="flex gap-3 pt-6">
@@ -697,32 +699,7 @@
                     <div class="flex flex-col md:flex-row md:items-center justify-between mt-4">
 
                         <div class="flex items-center gap-3">
-
-                            <span class="text-gray-700 font-medium">Quantity:</span>
-
                             <div class="flex items-center border border-gray-300 rounded-lg">
-
-                                <!-- decrease -->
-                                <button class="quantity-btn px-3 py-1 text-gray-600 hover:bg-gray-100"
-                                        data-item-id="${item._id}"
-                                        data-action="decrease"
-                                        ${item.quantity <= 1 ? 'disabled' : ''}>
-                                    <i class="fas fa-minus"></i>
-                                </button>
-
-                                <!-- QTY VALUE -->
-                                <span class="px-3 py-1 border-l border-r border-gray-300 w-12 text-center font-medium qty-value">
-                                    ${item.quantity}
-                                </span>
-
-                                <!-- increase -->
-                                <button class="quantity-btn px-3 py-1 text-gray-600 hover:bg-gray-100"
-                                        data-item-id="${item._id}"
-                                        data-action="increase"
-                                        ${isOutOfStock || item.quantity >= available ? 'disabled' : ''}>
-                                    <i class="fas fa-plus"></i>
-                                </button>
-
                             </div>
 
                             <!-- REMOVE -->
@@ -913,25 +890,48 @@
         }
 
         // Handle remove item
-        async function handleRemoveItem(itemId) {
-            if (!confirm('Remove this item from your order?')) return;
+       async function handleRemoveItem(itemId) {
+    Swal.fire({
+        title: "Remove item?",
+        text: "Do you want to remove this item from your cart?",
+        icon: "warning",
+        showCancelButton: true,
+        confirmButtonColor: "#d33",
+        cancelButtonColor: "#3085d6",
+        confirmButtonText: "Yes, remove it"
+    }).then(async (result) => {
+        if (result.isConfirmed) {
 
             try {
                 const response = await axios.delete(`/user/cart/remove/${itemId}`);
 
-                if (response.data.success) {
-                    checkoutState.cartItems = checkoutState.cartItems.filter(item => item._id !== itemId);
-                    renderOrderItems();
-                    updateOrderSummary();
-                    showNotification('Item removed from cart', 'success');
-                } else {
-                    showNotification('Failed to remove item', 'error');
+                if (!response.data.success) {
+                    Swal.fire("Error", "Failed to remove item", "error");
+                    return;
                 }
+
+                checkoutState.cartItems = checkoutState.cartItems.filter(
+                    item => item._id !== itemId
+                );
+
+                renderOrderItems();
+                updateOrderSummary();
+
+                Swal.fire({
+                    title: "Removed!",
+                    text: "Item removed from cart",
+                    icon: "success",
+                    timer: 1500,
+                    showConfirmButton: false
+                });
+
             } catch (error) {
-                console.error('Error removing item:', error);
-                showNotification('Failed to remove item', 'error');
+                console.error(error);
+                Swal.fire("Error", "Something went wrong", "error");
             }
         }
+    });
+}
 
         // Handle add or update address
         async function handleAddOrUpdateAddress(e) {
@@ -944,18 +944,19 @@
             
             try {
                 const formData = new FormData(e.target);
-                const addressData = {
-                    fullName: formData.get('fullName'),
-                    phone: formData.get('phone'),
-                    addressLine1: formData.get('addressLine1'),
-                    addressLine2: formData.get('addressLine2'),
-                    city: formData.get('city'),
-                    state: formData.get('state'),
-                    pincode: formData.get('pincode'),
-                    country: formData.get('country'),
-                    addressType: formData.get('addressType'),
-                    isDefault: formData.get('isDefault') === 'on'
-                };
+const addressData = {
+    fullName: formData.get('fullName'),
+    phone: formData.get('phone'),
+    addressLine1: formData.get('addressLine1'),
+    addressLine2: formData.get('addressLine2') || "",
+    city: formData.get('city'),
+    state: formData.get('state'),
+    pincode: formData.get('pincode'),
+    country: formData.get('country'),
+    addressType: formData.get('addressType'),
+    isDefault: formData.get('isDefault') === 'on'
+};
+
 
                 const addressId = document.getElementById('addressId').value;
                 let response;
@@ -1127,19 +1128,29 @@
             }
         }
 
-        function validateFullName(value) {
-            if (!value.trim()) {
-                showError('fullNameError', 'Full name is required');
-                return false;
-            }
-            if (value.trim().length < 2) {
-                showError('fullNameError', 'Full name must be at least 2 characters');
-                return false;
-            }
-            hideError('fullNameError');
-            return true;
-        }
+      function validateFullName(value) {
+    if (!value.trim()) {
+        showError('fullNameError', 'Full name is required');
+        return false;
+    }
 
+    // Must contain only letters and spaces
+    if (!/^[A-Za-z ]+$/.test(value.trim())) {
+        showError('fullNameError', 'Name should only contain alphabets and spaces');
+        return false;
+    }
+
+    // Must be at least 2 characters
+    if (value.trim().length < 2) {
+        showError('fullNameError', 'Full name must be at least 2 characters');
+        return false;
+    }
+
+    hideError('fullNameError');
+    return true;
+}
+
+        
         function validatePhone(value) {
             const phone = value.replace(/\D/g, '');
             
@@ -1182,31 +1193,37 @@
             return true;
         }
 
-        function validateCity(value) {
-            if (!value.trim()) {
-                showError('cityError', 'City is required');
-                return false;
-            }
-            if (value.trim().length < 2) {
-                showError('cityError', 'Please enter a valid city name');
-                return false;
-            }
-            hideError('cityError');
-            return true;
-        }
+       function validateCity(value) {
+    if (!value.trim()) {
+        showError('cityError', 'City is required');
+        return false;
+    }
 
-        function validateState(value) {
-            if (!value.trim()) {
-                showError('stateError', 'State is required');
-                return false;
-            }
-            if (value.trim().length < 2) {
-                showError('stateError', 'Please enter a valid state name');
-                return false;
-            }
-            hideError('stateError');
-            return true;
-        }
+    if (!/^[A-Za-z ]+$/.test(value.trim())) {
+        showError('cityError', 'City must contain only alphabets');
+        return false;
+    }
+
+    hideError('cityError');
+    return true;
+}
+
+
+function validateState(value) {
+    if (!value.trim()) {
+        showError('stateError', 'State is required');
+        return false;
+    }
+
+    if (!/^[A-Za-z ]+$/.test(value.trim())) {
+        showError('stateError', 'State must contain only alphabets');
+        return false;
+    }
+
+    hideError('stateError');
+    return true;
+}
+
 
         function validatePincode(value) {
             const pincode = value.replace(/\D/g, '');

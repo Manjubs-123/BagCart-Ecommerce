@@ -423,73 +423,73 @@ console.log("Return page loaded");
 
 
 
-export const approveReturn = async (req, res) => {
-  try {
-    const { orderId, itemId } = req.params;
+// export const approveReturn = async (req, res) => {
+//   try {
+//     const { orderId, itemId } = req.params;
 
-    const order = await Order.findById(orderId);
-    if (!order) return res.redirect("/admin/returns");
+//     const order = await Order.findById(orderId);
+//     if (!order) return res.redirect("/admin/returns");
 
-    const item = order.items.id(itemId);
-    if (!item) return res.redirect("/admin/returns");
+//     const item = order.items.id(itemId);
+//     if (!item) return res.redirect("/admin/returns");
 
-    // Only return-requested items
-    if (item.status !== "return-requested") {
-      return res.redirect("/admin/returns");
-    }
+//     // Only return-requested items
+//     if (item.status !== "return-requested") {
+//       return res.redirect("/admin/returns");
+//     }
 
-    // -------------------------------------
-    // 1️⃣ UPDATE ITEM STATUS
-    // -------------------------------------
-    item.status = "returned";
-    item.returnApprovedDate = new Date();
+//     // -------------------------------------
+//     // 1️⃣ UPDATE ITEM STATUS
+//     // -------------------------------------
+//     item.status = "returned";
+//     item.returnApprovedDate = new Date();
 
-    // -------------------------------------
-    // 2️⃣ RESTOCK PRODUCT
-    // -------------------------------------
-    const product = await Product.findById(item.product);
+//     // -------------------------------------
+//     // 2️⃣ RESTOCK PRODUCT
+//     // -------------------------------------
+//     const product = await Product.findById(item.product);
 
-    if (product && product.variants[item.variantIndex]) {
-      product.variants[item.variantIndex].stock += item.quantity;
-      await product.save();
-    }
+//     if (product && product.variants[item.variantIndex]) {
+//       product.variants[item.variantIndex].stock += item.quantity;
+//       await product.save();
+//     }
 
-    // -------------------------------------
-    // 3️⃣ REFUND INTO WALLET
-    // -------------------------------------
-    const userId = order.user;
-    const refundAmount = item.price * item.quantity;
+//     // -------------------------------------
+//     // 3️⃣ REFUND INTO WALLET
+//     // -------------------------------------
+//     const userId = order.user;
+//     const refundAmount = item.price * item.quantity;
 
-    let wallet = await Wallet.findOne({ user: userId });
+//     let wallet = await Wallet.findOne({ user: userId });
 
-    if (!wallet) {
-      wallet = await Wallet.create({
-        user: userId,
-        balance: 0,
-        transactions: []
-      });
-    }
+//     if (!wallet) {
+//       wallet = await Wallet.create({
+//         user: userId,
+//         balance: 0,
+//         transactions: []
+//       });
+//     }
 
-    wallet.balance += refundAmount;
+//     wallet.balance += refundAmount;
 
-    wallet.transactions.push({
-      type: "credit",
-      amount: refundAmount,
-      description: `Refund for returned item (${item.product})`,
-      date: new Date()
-    });
+//     wallet.transactions.push({
+//       type: "credit",
+//       amount: refundAmount,
+//       description: `Refund for returned item (${item.product})`,
+//       date: new Date()
+//     });
 
-    await wallet.save();
+//     await wallet.save();
 
-    await order.save();
+//     await order.save();
 
-    return res.redirect("/admin/returns");
+//     return res.redirect("/admin/returns");
 
-  } catch (err) {
-    console.error("Approve Return Error:", err);
-    res.redirect("/admin/returns");
-  }
-};
+//   } catch (err) {
+//     console.error("Approve Return Error:", err);
+//     res.redirect("/admin/returns");
+//   }
+// };
 
 // export const rejectReturn = async (req, res) => {
 //   try {
@@ -511,24 +511,111 @@ export const approveReturn = async (req, res) => {
 //   }
 // };
 
-export const rejectReturn = async (req, res) => {
+
+export const approveReturn = async (req, res) => {
   try {
     const { orderId, itemId } = req.params;
 
     const order = await Order.findById(orderId);
+    if (!order) return res.status(404).json({ success: false, message: "Order not found" });
+
     const item = order.items.id(itemId);
+    if (!item) return res.status(404).json({ success: false, message: "Item not found" });
+
+    if (item.status !== "return-requested") {
+      return res.status(400).json({ success: false, message: "Invalid return status" });
+    }
+
+    // 1️⃣ Update Status
+    item.status = "returned";
+    item.returnApprovedDate = new Date();
+
+    // 2️⃣ Restock Product
+    const product = await Product.findById(item.product);
+    if (product?.variants[item.variantIndex]) {
+      product.variants[item.variantIndex].stock += item.quantity;
+      await product.save();
+    }
+
+    // 3️⃣ Refund Money
+    const userId = order.user._id;
+    const refundAmount = item.price * item.quantity;
+
+    let wallet = await Wallet.findOne({ user: userId });
+    if (!wallet) {
+      wallet = await Wallet.create({
+        user: userId,
+        balance: 0,
+        transactions: []
+      });
+    }
+
+    wallet.balance += refundAmount;
+    wallet.transactions.push({
+      type: "credit",
+      amount: refundAmount,
+      description: `Refund for returned item (${item.product})`,
+      date: new Date()
+    });
+
+    await wallet.save();
+    await order.save();
+
+    // ⭐⭐⭐ IMPORTANT ⭐⭐⭐
+    return res.json({ 
+      success: true,
+      message: "Return approved & refunded",
+      refund: refundAmount
+    });
+
+  } catch (err) {
+    console.error("Approve Return Error:", err);
+    return res.status(500).json({ success: false, message: "Server error" });
+  }
+};
+
+// export const rejectReturn = async (req, res) => {
+//   try {
+//     const { orderId, itemId } = req.params;
+
+//     const order = await Order.findById(orderId);
+//     const item = order.items.id(itemId);
+
+//     item.status = "return-rejected";
+//     item.returnRejectReason = "Return request rejected by admin";
+
+//     await order.save();
+
+//     return res.redirect("/admin/orders/returns");
+//   } catch (err) {
+//     console.error(err);
+//     res.status(500).send("Reject return error");
+//   }
+// };
+
+export const rejectReturn = async (req, res) => {
+  try {
+    const { orderId, itemId } = req.params;
+    const { rejectionReason } = req.body;
+
+    const order = await Order.findById(orderId);
+    if (!order) return res.status(404).json({ success: false, message: "Order not found" });
+
+    const item = order.items.id(itemId);
+    if (!item) return res.status(404).json({ success: false, message: "Item not found" });
 
     item.status = "return-rejected";
-    item.returnRejectReason = "Return request rejected by admin";
+    item.returnRejectReason = rejectionReason || "Return request rejected";
 
     await order.save();
 
-    return res.redirect("/admin/orders/returns");
+    return res.json({ success: true });
   } catch (err) {
     console.error(err);
-    res.status(500).send("Reject return error");
+    res.status(500).json({ success: false, message: "Reject return error" });
   }
 };
+
 
 
 

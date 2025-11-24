@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Shopping Cart - BagHub</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
     <style>
@@ -404,27 +406,27 @@
             });
             
             // Clear cart button
-            const clearCartBtn = document.getElementById('clearCartBtn');
-            if (clearCartBtn) {
-                clearCartBtn.addEventListener('click', function() {
-                    if (confirm('Are you sure you want to clear your cart?')) {
-                        handleClearCart();
-                    }
-                });
-            }
-            
+            // Clear Cart Button (SweetAlert integrated)
+const clearCartBtn = document.getElementById('clearCartBtn');
+if (clearCartBtn) {
+    clearCartBtn.addEventListener('click', function () {
+        handleClearCart(); // Directly call SweetAlert version
+    });
+}
+
             // Checkout button
             document.getElementById('checkoutBtn').addEventListener('click', handleCheckout);
         }
 
-        // Handle quantity changes
-       async function handleQuantityChange(itemId, action) {
+      // Handle quantity changes
+async function handleQuantityChange(itemId, action) {
     const itemEl = document.querySelector(`[data-item-id="${itemId}"]`);
     const currentQty = parseInt(itemEl.querySelector('.qty-value').textContent);
-    const available = parseInt(itemEl.getAttribute('data-available')); // Add this attribute
+    const available = parseInt(itemEl.getAttribute('data-available'));
 
     let newQty = currentQty;
 
+    // INCREASE
     if (action === "increase") {
         if (currentQty >= available) {
             showNotification(`Only ${available} available`, "error");
@@ -433,22 +435,34 @@
         newQty++;
     }
 
+    // DECREASE
     if (action === "decrease") {
-        if (currentQty <= 1) return;
+        if (currentQty <= 1) return; // Prevent zero
         newQty--;
     }
 
     const success = await updateCartItem(itemId, newQty);
 
     if (success) {
-        // Update UI
+        // Update UI quantity text
         itemEl.querySelector('.qty-value').textContent = newQty;
         itemEl.setAttribute('data-qty', newQty);
+
+        // Update item total price
         updateItemTotal(itemId, newQty);
 
-        // Disable/Enable +
+        // Get BOTH buttons
         const plusBtn = itemEl.querySelector('[data-action="increase"]');
+        const minusBtn = itemEl.querySelector('[data-action="decrease"]');
+
+        // Disable PLUS when reaching stock
         plusBtn.disabled = newQty >= available;
+
+        // Disable MINUS when reaching 1
+        minusBtn.disabled = newQty <= 1;
+
+        // Recalculate totals
+        updateCartSummary();
     }
 }
 
@@ -517,65 +531,127 @@ async function updateCartItem(itemId, newQuantity) {
         }
 
         // Handle remove item
-        async function handleRemoveItem(itemId) {
-            if (!confirm("Remove this item from cart?")) return;
+       async function handleRemoveItem(itemId) {
 
-            try {
-                const response = await axios.delete(`/user/cart/remove/${itemId}`);
+    const result = await Swal.fire({
+        title: "Remove Item?",
+        text: "Are you sure you want to remove this item from your cart?",
+        icon: "warning",
+        showCancelButton: true,
+        confirmButtonColor: "#d33",
+        cancelButtonColor: "#3085d6",
+        confirmButtonText: "Yes, remove it",
+        cancelButtonText: "Cancel"
+    });
 
-                if (response.data.success) {
-                    // Remove from UI
-                    const itemElement = document.querySelector(`[data-item-id="${itemId}"]`);
-                    if (itemElement) {
-                        itemElement.style.opacity = '0';
-                        itemElement.style.transform = 'translateX(100%)';
-                        setTimeout(() => {
-                            itemElement.remove();
-                            updateCartSummary();
-                        }, 300);
-                    }
+    if (!result.isConfirmed) return;
 
-                    showNotification("Item removed from cart", "success");
+    try {
+        const response = await axios.delete(`/user/cart/remove/${itemId}`);
 
-                } else {
-                    showNotification(response.data.message || "Failed to remove item", "error");
-                }
+        if (response.data.success) {
 
-            } catch (err) {
-                console.error("Remove error:", err);
-                showNotification("Error removing item", "error");
+            // Animate and remove
+            const itemElement = document.querySelector(`[data-item-id="${itemId}"]`);
+            if (itemElement) {
+                itemElement.style.opacity = '0';
+                itemElement.style.transform = 'translateX(100%)';
+                setTimeout(() => {
+                    itemElement.remove();
+                    updateCartSummary();
+                }, 300);
             }
+
+            Swal.fire({
+                title: "Removed!",
+                text: "Item removed from your cart.",
+                icon: "success",
+                timer: 1200,
+                showConfirmButton: false
+            });
+
+        } else {
+            Swal.fire({
+                title: "Error!",
+                text: response.data.message || "Failed to remove item",
+                icon: "error"
+            });
         }
+
+    } catch (err) {
+        console.error(err);
+        Swal.fire({
+            title: "Error!",
+            text: "Something went wrong while removing the item.",
+            icon: "error"
+        });
+    }
+}
 
         // Handle clear cart
-        async function handleClearCart() {
-            try {
-                const response = await axios.delete(API_ENDPOINTS.clearCart);
+      async function handleClearCart() {
 
-                if (response.data.success) {
-                    document.getElementById('cartItems').innerHTML = `
-                        <div class="empty-state text-center py-12">
-                            <div class="w-24 h-24 mx-auto bg-gray-100 rounded-full flex items-center justify-center mb-4">
-                                <i class="fas fa-shopping-cart text-gray-400 text-3xl"></i>
-                            </div>
-                            <h3 class="text-xl font-bold text-gray-700 mb-2">Your cart is empty</h3>
-                            <p class="text-gray-500 mb-6">Add some products to your cart to continue shopping</p>
-                            <a href="/user/shop" class="btn-primary text-white px-6 py-3 rounded-lg inline-flex items-center gap-2">
-                                <i class="fas fa-shopping-bag"></i>
-                                <span>Continue Shopping</span>
-                            </a>
-                        </div>
-                    `;
-                    updateCartSummary();
-                    showNotification('Cart cleared successfully', 'success');
-                } else {
-                    showNotification(response.data.message || 'Failed to clear cart', 'error');
-                }
-            } catch (error) {
-                console.error('Error clearing cart:', error);
-                showNotification('Failed to clear cart', 'error');
-            }
+    const result = await Swal.fire({
+        title: "Clear Entire Cart?",
+        text: "This will remove all items from your cart.",
+        icon: "warning",
+        showCancelButton: true,
+        confirmButtonColor: "#d33",
+        cancelButtonColor: "#3085d6",
+        confirmButtonText: "Yes, clear it",
+        cancelButtonText: "Cancel"
+    });
+
+    if (!result.isConfirmed) return;
+
+    try {
+        const response = await axios.delete(API_ENDPOINTS.clearCart);
+
+        if (response.data.success) {
+
+            // Update UI to empty cart
+            document.getElementById('cartItems').innerHTML = `
+                <div class="empty-state text-center py-12">
+                    <div class="w-24 h-24 mx-auto bg-gray-100 rounded-full flex items-center justify-center mb-4">
+                        <i class="fas fa-shopping-cart text-gray-400 text-3xl"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-gray-700 mb-2">Your cart is empty</h3>
+                    <p class="text-gray-500 mb-6">Add some products to your cart to continue shopping</p>
+                    <a href="/user/shop" class="btn-primary text-white px-6 py-3 rounded-lg inline-flex items-center gap-2">
+                        <i class="fas fa-shopping-bag"></i>
+                        <span>Continue Shopping</span>
+                    </a>
+                </div>
+            `;
+
+            updateCartSummary();
+
+            Swal.fire({
+                title: "Cleared!",
+                text: "Your cart has been emptied.",
+                icon: "success",
+                timer: 1300,
+                showConfirmButton: false
+            });
+
+        } else {
+            Swal.fire({
+                title: "Error!",
+                text: response.data.message || "Failed to clear cart",
+                icon: "error"
+            });
         }
+
+    } catch (error) {
+        console.error(error);
+        Swal.fire({
+            title: "Error!",
+            text: "Something went wrong while clearing the cart.",
+            icon: "error"
+        });
+    }
+}
+
 
         // Update cart summary
       function updateCartSummary() {
