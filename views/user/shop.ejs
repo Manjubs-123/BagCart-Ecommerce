@@ -647,7 +647,9 @@ function applyFilters() {
             applyLoadMore();
         }
 
-       function applyLoadMore() {
+     
+     
+        function applyLoadMore() {
     const visibleProducts = Array.from(
         document.querySelectorAll('#productsGrid > a')  // ← FIXED
     ).filter(p => p.style.display !== 'none');
@@ -662,6 +664,7 @@ function applyFilters() {
 
     updateResultsCount();
 }
+
 function loadMore() {
     currentlyShown += loadMoreIncrement;
     applyLoadMore();

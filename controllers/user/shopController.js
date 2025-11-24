@@ -81,7 +81,7 @@ export const getShopPage = async (req, res) => {
 
 
 
-    // ⭐⭐⭐ ADD THIS PART HERE (STEP 1)
+    //  ADD THIS PART HERE (STEP 1)
     let userWishlistIds = [];
 
     if (req.session.user) {

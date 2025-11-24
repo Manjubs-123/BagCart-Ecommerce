@@ -153,7 +153,7 @@ export const adminListOrders = async (req, res) => {
       orderStatus: { $in: ["pending", "processing", "shipped", "out_for_delivery"] }
     });
 
-    // 🔥 RETURN REQUEST COUNT
+    //  RETURN REQUEST COUNT
     const returnCount = await Order.countDocuments({
       "items.status": "return-requested"
     });
