@@ -1,6 +1,6 @@
 import Wallet from "../../models/walletModel.js";
 
-// 📌 Render Wallet Page
+// Render Wallet Page
 export const getWalletPage = async (req, res) => {
   try {
     const userId = req.session.user.id;
@@ -23,7 +23,7 @@ export const getWalletPage = async (req, res) => {
   }
 };
 
-// 📌 CREDIT Money to Wallet (Used for Refunds)
+// CREDIT Money to Wallet (Used for Refunds)
 // export const creditToWallet = async (userId, amount, description) => {
 //   let wallet = await Wallet.findOne({ user: userId });
 
@@ -46,7 +46,7 @@ export const getWalletPage = async (req, res) => {
 //   await wallet.save();
 // };
 
-// // 📌 DEBIT Money
+// // DEBIT Money
 // export const debitFromWallet = async (userId, amount, description) => {
 //   const wallet = await Wallet.findOne({ user: userId });
 

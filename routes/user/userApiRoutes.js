@@ -349,7 +349,7 @@ router.post("/orders", async (req, res) => {
             paymentStatus: paymentMethod === "cod" ? "pending" : "paid"
         });
 
-        // ✅ STOCK REDUCTION LOGIC HERE
+        //  STOCK REDUCTION LOGIC HERE
         for (let item of cart.items) {
             const product = await Product.findById(item.product._id);
             if (!product) continue;

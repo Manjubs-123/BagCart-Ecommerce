@@ -1,5 +1,4 @@
 import express from "express";
-// import * as userController from "../../controllers/user/userController.js";
 import {
   getSignup,
   signupUser,
@@ -67,8 +66,6 @@ router.get("/product/:id", isUserLoggedIn, getProductDetails);
 // // Home
 router.get("/home", isUserLoggedIn, showHomePage);
 
-//update profile
-// router.post("/updateProfile", profileUpload.single("profileImage"),updateUserProfile);
 
 //profile
 router.get('/profile',isUserLoggedIn,renderUserProfile);
@@ -84,7 +81,6 @@ router.post("/change-email/send-otp",isUserLoggedIn,sendChangeEmailOtp);
 router.post("/change-email/verify",isUserLoggedIn,verifyChangedEmailOtp);
 
 router.get('/profile/addresses',isAuthenticated,getAddressPage)
-// router.get('/profile/addresses', isAuthenticated, userController.getAddressPage);
 
 
 // create address

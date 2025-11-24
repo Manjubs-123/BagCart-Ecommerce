@@ -1,46 +1,3 @@
-// import express from 'express';
-// import { 
-//   getProductById,
-//   getActiveCategories,
-//   addProduct, 
-//   updateProduct, 
-//   deleteProduct,
-//   uploadImage,
-//   deleteImage,
-//   renderAddProduct,
-//   renderEditProduct,
-//   toggleProductStatus,
-//   listProducts
-// } from '../../controllers/admin/productController.js';
-// import { isAdminAuthenticated } from '../../middlewares/adminAuth.js';  
-// import { upload } from "../../config/cloudinary.js";
-// const router = express.Router();
-
-
-// router.get('/', isAdminAuthenticated, listProducts);
-// router.get('/add', isAdminAuthenticated, renderAddProduct);
-
-// router.post('/add', isAdminAuthenticated,upload.array('images', 20) , addProduct);
-// // router.get('/', isAdminAuthenticated, getProducts);
-
-// // Show the Edit Product page (
-// router.get('/edit/:id', isAdminAuthenticated, renderEditProduct);
-// // router.get('/:id', isAdminAuthenticated, getProductById);
-
-// router.put('/edit/:id', isAdminAuthenticated, upload.array('images', 20), updateProduct);
-
-// router.delete('/:id', isAdminAuthenticated, deleteProduct);
-// router.post('/delete/:id', isAdminAuthenticated, deleteProduct);
-
-// // Category routes
-// // router.get('/categories/active', getActiveCategories);
-
-// // Image routes
-// router.post('/upload-image', upload.single('image'), uploadImage);
-// router.delete('/delete-image', deleteImage);
-
-// router.post('/toggle-status/:id', isAdminAuthenticated, toggleProductStatus);
-// export default router;
 
 
 import express from 'express';
@@ -88,7 +45,7 @@ router.get('/categories/active', getActiveCategories);
 router.post('/upload-image', upload.single('image'), uploadImage);
 router.delete('/delete-image', deleteImage);
 
-/* -------------------- GET PRODUCT BY ID (KEEP LAST!) -------------------- */
+/* -------------------- GET PRODUCT BY ID (-------------------- */
 router.get('/:id', isAdminAuthenticated, getProductById);
 
 export default router;

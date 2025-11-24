@@ -2,84 +2,14 @@ import Product from "../../models/productModel.js";
 import Category from "../../models/category.js";
 import User from "../../models/userModel.js";
 
-// export const getShopPage = async (req, res) => {
-//   try {
-
-//     //If user not logged in, redirect to login
-//     if (!req.session.user) {
-//       return res.redirect("/user/login");
-//     }
-
-//     // CATEGORY SELECTION FROM QUERY
-//     const selectedCategories = Array.isArray(req.query.category)
-//       ? req.query.category
-//       : req.query.category
-//         ? [req.query.category]
-//         : [];
-
-//     // --- BUILD FILTER FIRST ---
-//     const filter = { isDeleted: false, isActive: true };
-
-//     if (selectedCategories.length > 0) {
-//       filter.category = { $in: selectedCategories };
-//     }
-
-//     // ---- FETCH PRODUCTS ----
-//     const products = await Product.find(filter)
-//       .populate({
-//         path: "category",
-//         match: { isDeleted: false, isActive: true }
-//       })
-//       .sort({ createdAt: -1 })
-//       .lean();
-
-//     // CLEAN PRODUCTS (remove invalid category)
-//     const cleanedProducts = products.filter((p) => p.category);
-
-//     // ---- GET UNIQUE COLORS FROM ALL VARIANTS ----
-//     const colors = [
-//       ...new Set(
-//         cleanedProducts.flatMap((p) =>
-//           p.variants
-//             ?.map(v => v.color?.trim())
-//             .filter(Boolean) || []
-//         )
-//       )
-//     ];
-
-//     // ---- FETCH CATEGORIES ----
-//     const categories = await Category.find({ isDeleted: false ,isActive:true})
-//       .sort({ name: 1 })
-//       .lean();
-
-//     // RENDER SHOP PAGE
-//     res.render("user/shop", {
-//       title: "Shop | BagHub",
-//       products: cleanedProducts,
-//       categories,
-//       selectedCategories,
-//       colors,  // sending colors to EJS
-//       user: req.session.user || null,
-//     });
-
-//   } catch (error) {
-//     console.error("Error rendering shop page:", error);
-//     res.status(500).send("Failed to load shop page");
-//   }
-// };
-
 
 export const getShopPage = async (req, res) => {
   try {
-
-
 
     // If user not logged in, redirect to login
     if (!req.session.user) {
       return res.redirect("/user/login");
     }
-
-
 
     //  ADD THIS PART HERE (STEP 1)
     let userWishlistIds = [];
@@ -90,7 +20,7 @@ export const getShopPage = async (req, res) => {
         userWishlistIds = user.wishlist.map(id => id.toString());
       }
     }
-    // ⭐⭐⭐ END OF ADDED BLOCK
+    //  END OF ADDED BLOCK
 console.log("SESSION USER DATA:", req.session.user);
 
 
@@ -134,14 +64,14 @@ console.log("SESSION USER DATA:", req.session.user);
       .sort({ name: 1 })
       .lean();
 
-    // ⭐⭐⭐ PASS userWishlistIds TO SHOP PAGE (STEP 2)
+    // PASS userWishlistIds TO SHOP PAGE (STEP 2)
     res.render("user/shop", {
       title: "Shop | BagHub",
       products: cleanedProducts,
       categories,
       selectedCategories,
       colors,
-      userWishlistIds,     // <--- SUPER IMPORTANT
+      userWishlistIds,     
       user: req.session.user || null,
     });
 
@@ -323,7 +253,7 @@ const formattedRelated = relatedProducts.map(p => {
   };
 });
 
-// ⭐ FETCH USER WISHLIST IDS
+//  FETCH USER WISHLIST IDS
 let userWishlist = [];
 
 if (req.session.user && req.session.user.id) {
@@ -364,48 +294,6 @@ if (req.session.user && req.session.user.id) {
 };
 
 
-// export const getVariantByColor = async (req, res) => {
-//   try {
-//     const { productId } = req.params;
-//     const { color } = req.query;
-
-//     const product = await Product.findById(productId)
-//       .populate("brand", "name") // make sure brand is populated
-//       .lean();
-
-//     if (!product) {
-//       return res.status(404).json({ success: false, message: "Product not found" });
-//     }
-
-//     const variant = (product.variants || []).find(
-//       v => v.color && v.color.toLowerCase() === color.toLowerCase()
-//     );
-
-//     if (!variant) {
-//       return res.status(404).json({ success: false, message: "Variant not found" });
-//     }
-
-//     //  Ensure brand is taken from populated object or fallback
-//     const brandName =
-//       (product.brand && (product.brand.name || product.brand)) || "BagHub";
-
-//     res.json({
-//       success: true,
-//       variant: {
-//         color: variant.color,
-//         price: variant.price,
-//         mrp: variant.mrp,
-//         stock: variant.stock,
-//         images: (variant.images || []).map(img => img.url),
-//         brand: brandName,
-//       },
-//     });
-//   } catch (error) {
-//     console.error("Error fetching variant:", error);
-//     res.status(500).json({ success: false, message: "Server error" });
-//   }
-// };
-
 export const getVariantByColor = async (req, res) => {
   try {
     const { productId } = req.params;
@@ -428,7 +316,7 @@ export const getVariantByColor = async (req, res) => {
 
     return res.json({
       success: true,
-      variantIndex,     // 🔥 REQUIRED
+      variantIndex,     
       variant: {
         color: variant.color,
         price: variant.price,

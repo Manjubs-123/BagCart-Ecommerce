@@ -16,11 +16,11 @@ router.get("/", isAdminAuthenticated, adminListOrders);
 
 router.get("/returns", isAdminAuthenticated, getReturnRequests);
 router.get("/cancelled/:id", adminGetCancelledItems);
-// /admin/orders?search=&status=&page=&sort=
+
 router.get("/:id", isAdminAuthenticated, adminGetOrder); 
        // detail view
 router.patch("/:orderId/item/:itemId/status", isAdminAuthenticated, adminUpdateOrderStatus);
-// { status: 'shipped' }
+
 router.post("/returns/:orderId/item/:itemId/approve", approveReturn);
 router.post("/returns/:orderId/item/:itemId/reject", rejectReturn);
 

@@ -29,92 +29,6 @@ if (search) {
   return filter;
 }
 
-// export const adminListOrders = async (req, res) => {
-//   try {
-//     const page = parseInt(req.query.page) || 1;
-//     const limit = 10;
-//     const skip = (page - 1) * limit;
-
-//     const { search, status } = req.query;
-
-//     // --------------------------------
-//     // FILTER
-//     // --------------------------------
-//     let filter = {};
-
-//     if (search) {
-//       filter.$or = [
-//         { orderId: new RegExp(search, "i") },
-//         { "items.itemOrderId": new RegExp(search, "i") }
-//       ];
-//     }
-
-//     if (status) {
-//       filter.orderStatus = status;
-//     }
-
-//     // --------------------------------
-//     // FETCH TOTALS FOR DASHBOARD CARDS
-//     // --------------------------------
-//     const totalOrders = await Order.countDocuments(filter);
-
-//     const deliveredOrders = await Order.countDocuments({
-//       ...filter,
-//       orderStatus: "delivered"
-//     });
-
-//     const cancelledOrders = await Order.countDocuments({
-//       ...filter,
-//       orderStatus: "cancelled"
-//     });
-
-//     const inProgressOrders = await Order.countDocuments({
-//       ...filter,
-//       orderStatus: { $in: ["pending", "processing", "shipped", "out_for_delivery"] }
-//     });
-
-//     // --------------------------------
-//     // FETCH LIST
-//     // --------------------------------
-//     const orders = await Order.find(filter)
-//       .populate("user", "name email")
-//       .populate("items.product", "name")
-//       .sort({ createdAt: -1 })
-//       .skip(skip)
-//       .limit(limit)
-//       .lean();
-
-//     // --------------------------------
-//     // RENDER PAGE
-//     // --------------------------------
-//     res.render("admin/orderList", {
-//       orders,
-//       totalOrders,
-//       deliveredOrders,
-//       inProgressOrders,
-//       cancelledOrders,
-//       page,
-//       pages: Math.ceil(totalOrders / limit),
-//       query: req.query
-//     });
-
-//   } catch (err) {
-//     console.error("adminListOrders Error:", err);
-
-//     res.render("admin/orderList", {
-//       orders: [],
-//       totalOrders: 0,
-//       deliveredOrders: 0,
-//       inProgressOrders: 0,
-//       cancelledOrders: 0,
-//       page: 1,
-//       pages: 1,
-//       query: req.query
-//     });
-//   }
-// };
-
-
 export const adminListOrders = async (req, res) => {
   try {
     const page = parseInt(req.query.page) || 1;
@@ -175,7 +89,7 @@ export const adminListOrders = async (req, res) => {
       page,
       pages: Math.ceil(totalOrders / limit),
       query: req.query,
-      returnCount   // <-- REQUIRED
+      returnCount  
     });
 
   } catch (err) {
@@ -190,7 +104,7 @@ export const adminListOrders = async (req, res) => {
       page: 1,
       pages: 1,
       query: req.query,
-      returnCount: 0   // <-- ALSO REQUIRED
+      returnCount: 0   
     });
   }
 };
@@ -204,7 +118,7 @@ export const adminGetOrder = async (req, res) => {
 
     if (!order) return res.status(404).send("Order not found");
 
-    // 🔥 FIX ITEM ORDER ID FOR ADMIN VIEW
+    //  FIX ITEM ORDER ID FOR ADMIN VIEW
     order.items = order.items.map((item, index) => ({
       ...item,
       itemOrderId: item.itemOrderId || `${order._id}-${index + 1}`
@@ -296,7 +210,7 @@ item.status = next;
     // update specific item only
     item.status = status;
 
-    // if ALL items delivered → mark order as delivered
+    // if ALL items delivered  mark order as delivered
     if (order.items.every(i => i.status === "delivered")) {
       order.orderStatus = "delivered";
     }
@@ -363,154 +277,6 @@ console.log("Return page loaded");
   }
 };
 
-// export const approveReturn = async (req, res) => {
-//   try {
-//     const { orderId, itemId } = req.params;
-
-//     const order = await Order.findById(orderId).populate("user");
-//     if (!order) return res.status(404).send("Order not found");
-
-//     const item = order.items.id(itemId);
-//     if (!item) return res.status(404).send("Item not found");
-
-//     // Ensure only return-requested items can be approved
-//     if (item.status !== "return-requested") {
-//       return res.status(400).send("Return cannot be approved");
-//     }
-
-//     // Calculate refund amount
-//     const refundAmount = item.price * item.quantity;
-
-//     // Wallet update
-//     const user = await User.findById(order.user._id);
-//     if (!user.wallet) {
-//       user.wallet = { balance: 0, transactions: [] };
-//     }
-
-//     // Add refund to wallet
-//     user.wallet.balance += refundAmount;
-
-//     user.wallet.transactions.push({
-//       type: "credit",
-//       amount: refundAmount,
-//       description: `Refund for Order ${order.orderId}`,
-//       date: new Date()
-//     });
-
-//     await user.save();
-
-//     // Update item status
-//     item.status = "return-approved";
-//     item.returnApprovedDate = new Date();
-
-//     // Restore product stock
-//     const product = await Product.findById(item.product);
-//     const variant = product.variants[item.variantIndex];
-
-//     variant.stock += item.quantity;
-//     product.markModified(`variants.${item.variantIndex}.stock`);
-//     await product.save();
-
-//     await order.save();
-
-//     res.redirect("/admin/returns");
-
-//   } catch (err) {
-//     console.log("Approve Return Error:", err);
-//     res.status(500).send("Server Error");
-//   }
-// };
-
-
-
-// export const approveReturn = async (req, res) => {
-//   try {
-//     const { orderId, itemId } = req.params;
-
-//     const order = await Order.findById(orderId);
-//     if (!order) return res.redirect("/admin/returns");
-
-//     const item = order.items.id(itemId);
-//     if (!item) return res.redirect("/admin/returns");
-
-//     // Only return-requested items
-//     if (item.status !== "return-requested") {
-//       return res.redirect("/admin/returns");
-//     }
-
-//     // -------------------------------------
-//     // 1️⃣ UPDATE ITEM STATUS
-//     // -------------------------------------
-//     item.status = "returned";
-//     item.returnApprovedDate = new Date();
-
-//     // -------------------------------------
-//     // 2️⃣ RESTOCK PRODUCT
-//     // -------------------------------------
-//     const product = await Product.findById(item.product);
-
-//     if (product && product.variants[item.variantIndex]) {
-//       product.variants[item.variantIndex].stock += item.quantity;
-//       await product.save();
-//     }
-
-//     // -------------------------------------
-//     // 3️⃣ REFUND INTO WALLET
-//     // -------------------------------------
-//     const userId = order.user;
-//     const refundAmount = item.price * item.quantity;
-
-//     let wallet = await Wallet.findOne({ user: userId });
-
-//     if (!wallet) {
-//       wallet = await Wallet.create({
-//         user: userId,
-//         balance: 0,
-//         transactions: []
-//       });
-//     }
-
-//     wallet.balance += refundAmount;
-
-//     wallet.transactions.push({
-//       type: "credit",
-//       amount: refundAmount,
-//       description: `Refund for returned item (${item.product})`,
-//       date: new Date()
-//     });
-
-//     await wallet.save();
-
-//     await order.save();
-
-//     return res.redirect("/admin/returns");
-
-//   } catch (err) {
-//     console.error("Approve Return Error:", err);
-//     res.redirect("/admin/returns");
-//   }
-// };
-
-// export const rejectReturn = async (req, res) => {
-//   try {
-//     const { orderId, itemId } = req.params;
-
-//     const order = await Order.findById(orderId);
-//     const item = order.items.id(itemId);
-
-//     item.status = "return-rejected";
-//     item.returnRejectedDate = new Date();
-
-//     await order.save();
-
-//     res.redirect("/admin/returns");
-
-//   } catch (err) {
-//     console.log("Reject Return Error:", err);
-//     res.status(500).send("Server Error");
-//   }
-// };
-
 
 export const approveReturn = async (req, res) => {
   try {
@@ -526,18 +292,18 @@ export const approveReturn = async (req, res) => {
       return res.status(400).json({ success: false, message: "Invalid return status" });
     }
 
-    // 1️⃣ Update Status
+    // Update Status
     item.status = "returned";
     item.returnApprovedDate = new Date();
 
-    // 2️⃣ Restock Product
+    //  Restock Product
     const product = await Product.findById(item.product);
     if (product?.variants[item.variantIndex]) {
       product.variants[item.variantIndex].stock += item.quantity;
       await product.save();
     }
 
-    // 3️⃣ Refund Money
+    // Refund Money
     const userId = order.user._id;
     const refundAmount = item.price * item.quantity;
 
@@ -561,7 +327,7 @@ export const approveReturn = async (req, res) => {
     await wallet.save();
     await order.save();
 
-    // ⭐⭐⭐ IMPORTANT ⭐⭐⭐
+    
     return res.json({ 
       success: true,
       message: "Return approved & refunded",
@@ -574,24 +340,6 @@ export const approveReturn = async (req, res) => {
   }
 };
 
-// export const rejectReturn = async (req, res) => {
-//   try {
-//     const { orderId, itemId } = req.params;
-
-//     const order = await Order.findById(orderId);
-//     const item = order.items.id(itemId);
-
-//     item.status = "return-rejected";
-//     item.returnRejectReason = "Return request rejected by admin";
-
-//     await order.save();
-
-//     return res.redirect("/admin/orders/returns");
-//   } catch (err) {
-//     console.error(err);
-//     res.status(500).send("Reject return error");
-//   }
-// };
 
 export const rejectReturn = async (req, res) => {
   try {

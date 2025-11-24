@@ -314,57 +314,7 @@
     </div>
 
     <!-- Footer -->
-    <footer class="bg-gray-800 text-white mt-12">
-        <div class="container mx-auto px-4 py-8">
-            <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
-                <div>
-                    <div class="flex items-center gap-2 mb-4">
-                        <i class="fas fa-shopping-bag text-blue-400 text-2xl"></i>
-                        <span class="text-xl font-bold">BagHub</span>
-                    </div>
-                    <p class="text-gray-400">Your one-stop shop for quality bags and accessories.</p>
-                </div>
-                <div>
-                    <h3 class="font-bold text-lg mb-4">Quick Links</h3>
-                    <ul class="space-y-2 text-gray-400">
-                        <li><a href="/" class="hover:text-white transition-colors">Home</a></li>
-                        <li><a href="/products" class="hover:text-white transition-colors">Products</a></li>
-                        <li><a href="/about" class="hover:text-white transition-colors">About Us</a></li>
-                        <li><a href="/contact" class="hover:text-white transition-colors">Contact</a></li>
-                    </ul>
-                </div>
-                <div>
-                    <h3 class="font-bold text-lg mb-4">Customer Service</h3>
-                    <ul class="space-y-2 text-gray-400">
-                        <li><a href="/shipping" class="hover:text-white transition-colors">Shipping Info</a></li>
-                        <li><a href="/returns" class="hover:text-white transition-colors">Returns</a></li>
-                        <li><a href="/faq" class="hover:text-white transition-colors">FAQ</a></li>
-                        <li><a href="/privacy" class="hover:text-white transition-colors">Privacy Policy</a></li>
-                    </ul>
-                </div>
-                <div>
-                    <h3 class="font-bold text-lg mb-4">Contact Us</h3>
-                    <ul class="space-y-2 text-gray-400">
-                        <li class="flex items-center gap-2">
-                            <i class="fas fa-map-marker-alt"></i>
-                            <span>123 Bag Street, City</span>
-                        </li>
-                        <li class="flex items-center gap-2">
-                            <i class="fas fa-phone"></i>
-                            <span>+1 (555) 123-4567</span>
-                        </li>
-                        <li class="flex items-center gap-2">
-                            <i class="fas fa-envelope"></i>
-                            <span>support@baghub.com</span>
-                        </li>
-                    </ul>
-                </div>
-            </div>
-            <div class="border-t border-gray-700 mt-8 pt-6 text-center text-gray-400">
-                <p>&copy; 2023 BagHub. All rights reserved.</p>
-            </div>
-        </div>
-    </footer>
+     <%- include('../partials/footer') %>
 
     <!-- Notification Container -->
     <div id="notificationContainer" class="fixed top-4 right-4 z-50 space-y-2"></div>
@@ -407,7 +357,7 @@
             });
             
             // Clear cart button
-            // Clear Cart Button (SweetAlert integrated)
+            
 const clearCartBtn = document.getElementById('clearCartBtn');
 if (clearCartBtn) {
     clearCartBtn.addEventListener('click', function () {
@@ -467,32 +417,7 @@ async function handleQuantityChange(itemId, action) {
     }
 }
 
-        // Update cart item quantity using PUT
-//         async function updateCartItem(itemId, newQuantity) {
-//             try {
-//                 setLoading(true);
-
-//                const response = await axios.put(`/user/cart/update/${itemId}`, {
-//     quantity: newQuantity
-// });
-
-
-//                 if (response.data.success) {
-//                     updateCartSummary();
-//                     showNotification('Cart updated successfully', 'success');
-//                     return true;
-//                 } else {
-//                     showNotification(response.data.message || 'Failed to update cart', 'error');
-//                     return false;
-//                 }
-//             } catch (error) {
-//                 console.error('Error updating cart item:', error);
-//                 showNotification('Failed to update cart item', 'error');
-//                 return false;
-//             } finally {
-//                 setLoading(false);
-//             }
-//         }
+        
 
 async function updateCartItem(itemId, newQuantity) {
     try {

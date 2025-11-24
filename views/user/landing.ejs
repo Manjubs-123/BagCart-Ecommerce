@@ -463,29 +463,7 @@
       }
       loadProducts();
       
-      // Add to cart animation
-   
-// function addToCartFrontend(productId) {
-//     fetch("/user/cart/add", {
-//         method: "POST",
-//         headers: { "Content-Type": "application/json" },
-//         body: JSON.stringify({
-//             productId: productId,
-//             quantity: 1,
-//             color: null
-//         })
-//     })
-//     .then(res => res.json())
-//     .then(data => {
-//         if (data.success) {
-//             updateCartCount();
-
-//             showNotification("Added to Cart", "success");
-//         } else {
-//             showNotification("Failed to add to cart", "error");
-//         }
-//     });
-// }
+      
 function addToCartFrontend(productId) {
   fetch("/user/cart/add", {
     method: "POST",

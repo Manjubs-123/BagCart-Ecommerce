@@ -9,7 +9,7 @@ const cartItemSchema = new mongoose.Schema({
 
   variantIndex: {
     type: Number,
-    required: true      // <- IMPORTANT
+    required: true 
   },
 
   quantity: {

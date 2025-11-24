@@ -53,26 +53,6 @@ export const renderHomePage = async (req, res) => {
   }
 };
 
-// export const renderLandingPage = async (req, res) => {
-//   try {
-//     const { featuredProducts, favouriteProducts, handpickedProducts, trendingProducts } = await loadHomeProducts();
-
-//     res.render("user/landing", {
-//       title: "BagHub | Explore Premium Bags",
-//       currentPage: "home",
-//       featuredProducts,
-//       favouriteProducts,
-//       handpickedProducts,
-//       trendingProducts,
-//       user: req.session.user || null,  // add user data if logged in
-//     });
-//   } catch (error) {
-//     console.error("Error rendering landing page:", error);
-//     res.status(500).send("Failed to load landing page");
-//   }
-// };
-
-
 export const renderLandingPage = async (req, res) => {
   try {
     const { featuredProducts, favouriteProducts, handpickedProducts, trendingProducts } = await loadHomeProducts();
@@ -94,7 +74,7 @@ export const renderLandingPage = async (req, res) => {
       favouriteProducts,
       handpickedProducts,
       trendingProducts,
-      userWishlistIds,              // 👈 IMPORTANT
+      userWishlistIds,              
       user: req.session.user || null
     });
 

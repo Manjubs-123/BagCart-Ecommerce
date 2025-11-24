@@ -563,17 +563,17 @@ async function selectColor(color) {
       return;
     }
 
-    // 🔥 SET CORRECT VARIANT INDEX
+    //  SET CORRECT VARIANT INDEX
     variantIndex = data.variantIndex;
 
     const variant = data.variant;
 
-    // ⭐ Update main image
+    //  Update main image
     if (variant.images && variant.images.length > 0) {
       changeMainImage(variant.images[0]);
     }
 
-    // ⭐ Update thumbnails
+    // Update thumbnails
     document.getElementById("thumbnailContainer").innerHTML =
       variant.images.map((img, i) => `
         <button onclick="changeMainImage('${img}', this)"
@@ -582,7 +582,7 @@ async function selectColor(color) {
         </button>
       `).join("");
 
-    // ⭐ Update prices
+    //  Update prices
     document.getElementById("productPrice").textContent = `₹${variant.price}`;
     if (variant.mrp) {
       const discount = Math.round(((variant.mrp - variant.price) / variant.mrp) * 100);
@@ -590,11 +590,11 @@ async function selectColor(color) {
       document.getElementById("productDiscount").textContent = `Save ${discount}%`;
     }
 
-    // ⭐ Update stock
+    // Update stock
     document.getElementById("stockText").textContent = `${variant.stock} available in stock`;
     document.getElementById("quantity").max = variant.stock;
 
-    // ⭐⭐⭐ UPDATE WISHLIST HEART (ALWAYS BASED ON PRODUCT ID)
+    //  UPDATE WISHLIST HEART (ALWAYS BASED ON PRODUCT ID)
     const heart = document.querySelector(".wishlist-btn i");
 
     if (userWishlist.includes("<%= product._id.toString() %>")) {
