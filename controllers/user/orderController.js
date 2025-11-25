@@ -1,11 +1,9 @@
 import Order from "../../models/orderModel.js";
-import Cart from "../../models/cartModel.js";
 import Product from "../../models/productModel.js";
-import User from "../../models/userModel.js";
 import PDFDocument from "pdfkit";
 import path from "path";
 import { fileURLToPath } from "url";
-import fs from "fs";
+
 
 
 export const getOrderConfirmation = async (req, res) => {
@@ -14,7 +12,7 @@ export const getOrderConfirmation = async (req, res) => {
  const order = await Order.findById(orderId)
   .populate({
     path: "items.product",
-    select: "name brand variants images"   // safe selection
+    select: "name brand variants images"  
   })
   .lean();
 
@@ -30,13 +28,13 @@ export const getMyOrders = async (req, res) => {
     const userId = req.session.user?.id;
     if (!userId) return res.redirect("/user/login");
 
-    // Fetch orders
+    
     let orders = await Order.find({ user: userId })
       .populate("items.product")
       .sort({ createdAt: -1 })
       .lean();
 
-    // FIX itemOrderId if missing
+    //  itemOrderId if missing
     orders = orders.map(order => {
       const fixedItems = order.items.map((item, index) => ({
         ...item,
@@ -49,10 +47,8 @@ export const getMyOrders = async (req, res) => {
       };
     });
 
-    // Add Order Count
     const ordersCount = orders.length;
 
-    // FINAL RENDER (clean — NO notifications)
     res.render("user/myOrders", {
       orders,
       user: req.session.user,
@@ -84,19 +80,17 @@ export const downloadInvoice = async (req, res) => {
 
     if (!order) return res.status(404).send("Order not found");
 
-    //  locate item
     const item = order.items.find(i => i._id.toString() === itemId);
     if (!item) return res.status(404).send("Order item not found");
 
-    //  always show correct Order ID
     const displayOrderId = order.orderId || order._id.toString();
 
-    // FIXE always show correct item-order-id
+   
     const displayItemOrderId =
       item.itemOrderId ||
       `${displayOrderId}/${order.items.indexOf(item) + 1}`;
 
-    // Good filename
+ 
     const fileName = `Invoice-${displayOrderId}-${displayItemOrderId}.pdf`;
 
     res.setHeader("Content-Type", "application/pdf");
@@ -107,7 +101,7 @@ export const downloadInvoice = async (req, res) => {
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// correct font path
+
     const fontPath = path.join(__dirname, "../../public/fonts/DejaVuSans.ttf");
 
 
@@ -188,7 +182,7 @@ export const cancelItem = async (req, res) => {
       await product.save();
     }
 
-    //  THIS IS THE IMPORTANT PART — YOU MISSED THIS EARLIER
+   
     item.status = "cancelled";
     item.cancelReason = reason;
     item.cancelDetails = details || "";

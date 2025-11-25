@@ -33,7 +33,11 @@ export const signupUser = async (req, res) => {
     if (name.trim().length < 6) return res.render("user/signup", { error: "Name must be at least 6 characters." });
     if (!/^[a-zA-Z\s]+$/.test(name)) return res.render("user/signup", { error: "Name can contain only alphabets." });
 
-    if (!email?.endsWith("@gmail.com")) return res.render("user/signup", { error: "Enter a valid Gmail address." });
+const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+if (!emailRegex.test(email)) {
+  return res.render("user/signup", { error: "Enter a valid email address." });
+}
 
     const passwordRegex = /^(?=.*[A-Z])(?=.*[0-9])(?=.*[!@#$%^&*]).{6,}$/;
     if (!passwordRegex.test(password)) {
@@ -68,7 +72,7 @@ export const signupUser = async (req, res) => {
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
     req.session.otp = otp;
     req.session.email = email;
-    req.session.otpExpires = Date.now() + 5 * 60 * 1000; // 5 minutes
+    req.session.otpExpires = Date.now() + 1 * 60 * 1000; // 5 minutes
     req.session.pendingEmail = email;
 
     //  Send OTP via email 
@@ -90,7 +94,7 @@ export const getVerifyOtp = (req, res) => {
   if (!email) return res.redirect("/user/signup");
 
   const RESEND_COOLDOWN = 60;
-  const OTP_EXPIRY_MINUTES = 2;
+  const OTP_EXPIRY_MINUTES = 1;
   const cooldown = req.session.cooldown || 0;
 
   res.render("user/verifyOtp", {
@@ -115,7 +119,7 @@ export const postVerifyOtp = async (req, res) => {
         error: "OTP expired. Please sign up again.",
         cooldown: 0,
         RESEND_COOLDOWN: 60,
-        OTP_EXPIRY_MINUTES: 2
+        OTP_EXPIRY_MINUTES: 1
       });
     }
 
@@ -126,7 +130,7 @@ export const postVerifyOtp = async (req, res) => {
         error: "Invalid OTP. Please try again.",
         cooldown: 0,
         RESEND_COOLDOWN: 60,
-        OTP_EXPIRY_MINUTES: 2
+        OTP_EXPIRY_MINUTES: 1
       });
     }
 
@@ -174,10 +178,61 @@ export const postVerifyOtp = async (req, res) => {
       error: "Something went wrong.",
       cooldown: 0,
       RESEND_COOLDOWN: 60,
-      OTP_EXPIRY_MINUTES: 2
+      OTP_EXPIRY_MINUTES: 1
     });
   }
 };
+
+// export const resendOtp = async (req, res) => {
+//   try {
+//     const email = req.session.pendingEmail;
+//     if (!email) return res.redirect("/user/signup");
+
+//     const now = Date.now();
+//     const cooldown = req.session.cooldown || 0;
+
+//     // Prevent resend spam
+//     if (now < cooldown) {
+//       const remaining = Math.ceil((cooldown - now) / 1000);
+//       return res.render("user/verifyOtp", {
+//         email,
+//         error: `Please wait ${remaining}s before resending OTP.`,
+//         cooldown: remaining,
+//         RESEND_COOLDOWN: 60,
+//         OTP_EXPIRY_MINUTES: 1,
+//       });
+//     }
+
+//     // New OTP
+//     const newOtp = Math.floor(100000 + Math.random() * 900000).toString();
+//     req.session.otp = newOtp;
+//     req.session.otpExpires = now + 1 * 60 * 1000;
+//     req.session.cooldown = now + 60 * 1000;
+
+//     // FIXED: Use the imported sendOtpMail function directly
+//     await sendOtpMail(email, newOtp);
+
+//     console.log(`Resent OTP to ${email}: ${newOtp}`);
+
+//     res.render("user/verifyOtp", {
+//       email,
+//       error: null,
+//       cooldown: 60,
+//       RESEND_COOLDOWN: 60,
+//       OTP_EXPIRY_MINUTES: 1,
+//     });
+//   } catch (err) {
+//     console.error("Resend OTP Error:", err);
+//     res.render("user/verifyOtp", {
+//       email: req.session.pendingEmail || "",
+//       error: "Failed to resend OTP. Please try again.",
+//       cooldown: 0,
+//       RESEND_COOLDOWN: 60,
+//       OTP_EXPIRY_MINUTES: 1,
+//     });
+//   }
+// };
+
 
 export const resendOtp = async (req, res) => {
   try {
@@ -187,7 +242,6 @@ export const resendOtp = async (req, res) => {
     const now = Date.now();
     const cooldown = req.session.cooldown || 0;
 
-    // Prevent resend spam
     if (now < cooldown) {
       const remaining = Math.ceil((cooldown - now) / 1000);
       return res.render("user/verifyOtp", {
@@ -195,28 +249,40 @@ export const resendOtp = async (req, res) => {
         error: `Please wait ${remaining}s before resending OTP.`,
         cooldown: remaining,
         RESEND_COOLDOWN: 60,
-        OTP_EXPIRY_MINUTES: 2,
+        OTP_EXPIRY_MINUTES: 1,
       });
     }
 
-    // New OTP
     const newOtp = Math.floor(100000 + Math.random() * 900000).toString();
     req.session.otp = newOtp;
-    req.session.otpExpires = now + 5 * 60 * 1000;
+    req.session.otpExpires = now + 1 * 60 * 1000;
     req.session.cooldown = now + 60 * 1000;
 
-    // FIXED: Use the imported sendOtpMail function directly
     await sendOtpMail(email, newOtp);
+    console.log(`Resent Signup OTP to ${email}: ${newOtp}`);
 
-    console.log(`Resent OTP to ${email}: ${newOtp}`);
+    // IMPORTANT FIX
+    req.session.save((err) => {
+      if (err) {
+        console.error("Session save error:", err);
+        return res.render("user/verifyOtp", {
+          email,
+          error: "Failed to update session. Try again.",
+          cooldown: 0,
+          RESEND_COOLDOWN: 60,
+          OTP_EXPIRY_MINUTES: 1,
+        });
+      }
 
-    res.render("user/verifyOtp", {
-      email,
-      error: null,
-      cooldown: 60,
-      RESEND_COOLDOWN: 60,
-      OTP_EXPIRY_MINUTES: 2,
+      return res.render("user/verifyOtp", {
+        email,
+        error: null,
+        cooldown: 60,
+        RESEND_COOLDOWN: 60,
+        OTP_EXPIRY_MINUTES: 1,
+      });
     });
+
   } catch (err) {
     console.error("Resend OTP Error:", err);
     res.render("user/verifyOtp", {
@@ -224,7 +290,7 @@ export const resendOtp = async (req, res) => {
       error: "Failed to resend OTP. Please try again.",
       cooldown: 0,
       RESEND_COOLDOWN: 60,
-      OTP_EXPIRY_MINUTES: 2,
+      OTP_EXPIRY_MINUTES: 1,
     });
   }
 };
@@ -351,6 +417,50 @@ export const getChangeEmailPage = (req, res) => {
 
 // Send OTP to new email
 
+// export const sendChangeEmailOtp = async (req, res) => {
+//   try {
+//     const userId = req.session.user.id;
+//     const { newEmail } = req.body;
+
+//     if (!newEmail) {
+//       return res.json({ success: false, message: "Email is required" });
+//     }
+
+//     const user = await User.findById(userId);
+
+//     if (user.email === newEmail) {
+//       return res.json({
+//         success: false,
+//         message: "New email cannot be the same as current email"
+//       });
+//     }
+
+//     const existing = await User.findOne({ email: newEmail });
+//     if (existing) {
+//       return res.json({
+//         success: false,
+//         message: "Email already exists. Choose another."
+//       });
+//     }
+
+//     const otp = Math.floor(100000 + Math.random() * 900000).toString();
+
+//     req.session.changeEmailOtp = otp;
+//     req.session.changeEmailNewEmail = newEmail;
+//     req.session.changeEmailOtpExpires = Date.now() + (1* 60 * 1000);
+
+//     await sendOtpMail(newEmail, otp);
+
+//     return res.json({ success: true });
+
+//   } catch (err) {
+//     console.log(err);
+//     return res.json({ success: false, message: "Server error" });
+//   }
+// };
+// Send OTP to new email
+
+// Send OTP for Email Change
 export const sendChangeEmailOtp = async (req, res) => {
   try {
     const userId = req.session.user.id;
@@ -377,23 +487,71 @@ export const sendChangeEmailOtp = async (req, res) => {
       });
     }
 
+    // Generate OTP
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
 
+    // Store in session
     req.session.changeEmailOtp = otp;
     req.session.changeEmailNewEmail = newEmail;
-    req.session.changeEmailOtpExpires = Date.now() + (2 * 60 * 1000);
+    req.session.changeEmailOtpExpires = Date.now() + (1 * 60 * 1000); // 1 MINUTE
+    req.session.changeEmailCooldown = Date.now() + (60 * 1000); // RESEND COOLDOWN 1 MINUTE
 
+    // Send email
     await sendOtpMail(newEmail, otp);
+
+    // LOGGGG ❗This prints OTP in VS CODE TERMINAL
+    console.log("▶ Email Change OTP Sent");
+    console.log("New Email:", newEmail);
+    console.log("OTP:", otp);
+    console.log("Expires At:", new Date(req.session.changeEmailOtpExpires));
 
     return res.json({ success: true });
 
   } catch (err) {
-    console.log(err);
+    console.log("Send Change Email OTP Error:", err);
     return res.json({ success: false, message: "Server error" });
   }
 };
 
-// Verify OTP
+
+export const resendChangeEmailOtp = async (req, res) => {
+  try {
+    const now = Date.now();
+
+    // Cooldown not completed
+    if (now < req.session.changeEmailCooldown) {
+      const remaining = Math.ceil((req.session.changeEmailCooldown - now) / 1000);
+      return res.json({
+        success: false,
+        message: `Please wait ${remaining}s before resending`
+      });
+    }
+
+    const newEmail = req.session.changeEmailNewEmail;
+
+    if (!newEmail) {
+      return res.json({ success: false, message: "No email found in session" });
+    }
+
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+
+    req.session.changeEmailOtp = otp;
+    req.session.changeEmailOtpExpires = now + (1 * 60 * 1000);
+    req.session.changeEmailCooldown = now + (60 * 1000);
+
+    await sendOtpMail(newEmail, otp);
+
+    console.log("▶ RESEND Email Change OTP");
+    console.log("Email:", newEmail);
+    console.log("New OTP:", otp);
+
+    return res.json({ success: true });
+
+  } catch (err) {
+    console.log("Resend OTP Error:", err);
+    return res.json({ success: false, message: "Server error" });
+  }
+};
 
 
 export const verifyChangedEmailOtp = async (req, res) => {
@@ -405,33 +563,127 @@ export const verifyChangedEmailOtp = async (req, res) => {
       return res.json({ success: false, message: "OTP is required" });
     }
 
+    // Expired?
     if (Date.now() > req.session.changeEmailOtpExpires) {
       return res.json({ success: false, message: "OTP expired" });
     }
 
+    // Incorrect?
     if (otp !== req.session.changeEmailOtp) {
       return res.json({ success: false, message: "Invalid OTP" });
     }
 
     const newEmail = req.session.changeEmailNewEmail;
 
+    // Update DB
     await User.findByIdAndUpdate(userId, { email: newEmail });
 
-    // update session
+    // Update session user
     req.session.user.email = newEmail;
 
-    // clear session
+    // Clear OTP sessions
     delete req.session.changeEmailOtp;
     delete req.session.changeEmailNewEmail;
     delete req.session.changeEmailOtpExpires;
+    delete req.session.changeEmailCooldown;
+
+    console.log("✔ Email Updated Successfully to:", newEmail);
 
     return res.json({ success: true, newEmail });
 
   } catch (err) {
-    console.log(err);
+    console.log("Verify OTP Error:", err);
     return res.json({ success: false, message: "Something went wrong" });
   }
 };
+
+
+
+// Verify OTP
+
+
+// export const verifyChangedEmailOtp = async (req, res) => {
+//   try {
+//     const userId = req.session.user.id;
+//     const { otp } = req.body;
+
+//     if (!otp) {
+//       return res.json({ success: false, message: "OTP is required" });
+//     }
+
+//     if (Date.now() > req.session.changeEmailOtpExpires) {
+//       return res.json({ success: false, message: "OTP expired" });
+//     }
+
+//     if (otp !== req.session.changeEmailOtp) {
+//       return res.json({ success: false, message: "Invalid OTP" });
+//     }
+
+//     const newEmail = req.session.changeEmailNewEmail;
+
+//     await User.findByIdAndUpdate(userId, { email: newEmail });
+
+//     // update session
+//     req.session.user.email = newEmail;
+
+//     // clear session
+//     delete req.session.changeEmailOtp;
+//     delete req.session.changeEmailNewEmail;
+//     delete req.session.changeEmailOtpExpires;
+
+//     return res.json({ success: true, newEmail });
+
+//   } catch (err) {
+//     console.log(err);
+//     return res.json({ success: false, message: "Something went wrong" });
+//   }
+// };
+// Verify OTP & Update Email
+// export const verifyChangedEmailOtp = async (req, res) => {
+//   try {
+//     const userId = req.session.user.id;
+//     const { otp } = req.body;
+
+//     if (!otp) {
+//       return res.json({ success: false, message: "OTP is required" });
+//     }
+
+//     // Debug Logging
+//     console.log("Entered OTP:", otp);
+//     console.log("Stored OTP:", req.session.changeEmailOtp);
+
+//     // Expired?
+//     if (Date.now() > req.session.changeEmailOtpExpires) {
+//       return res.json({ success: false, message: "OTP expired" });
+//     }
+
+//     // Wrong?
+//     if (otp !== req.session.changeEmailOtp) {
+//       return res.json({ success: false, message: "Invalid OTP" });
+//     }
+
+//     const newEmail = req.session.changeEmailNewEmail;
+
+//     // Update in DB
+//     await User.findByIdAndUpdate(userId, { email: newEmail });
+
+//     // Update user session
+//     req.session.user.email = newEmail;
+
+//     // Cleanup
+//     delete req.session.changeEmailOtp;
+//     delete req.session.changeEmailNewEmail;
+//     delete req.session.changeEmailOtpExpires;
+//     delete req.session.changeEmailCooldown;
+
+//     return res.json({ success: true, newEmail });
+
+//   } catch (err) {
+//     console.log("Error in verifyChangedEmailOtp:", err);
+//     return res.json({ success: false, message: "Something went wrong" });
+//   }
+// };
+
 
 export const getAddressPage = async (req, res) => {
     try {
@@ -678,7 +930,7 @@ export const changePassword = async (req, res) => {
                 success: false,
                 message: "You logged in using Google. Password change is not required."
             });
-            
+
         }
 
         // Compare old password
@@ -789,6 +1041,7 @@ export const toggleWishlist = async (req, res) => {
             await user.save();
             return res.json({ success: true, added: true, message: "Added to wishlist" });
         }
+       
     } catch (err) {
         console.log(err);
         res.json({ success: false, message: "Something went wrong" });

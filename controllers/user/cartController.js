@@ -10,11 +10,10 @@ export const getCartPage = async (req, res) => {
 
     const userId = req.session.user.id;
 
-    //  Fetch cart WITHOUT .lean()
+    //  Fetch cart
     const cart = await Cart.findOne({ user: userId })
       .populate("items.product");   
 
-    // Sidebar related values (keep your logic)
     const ordersCount = 0;
     const wishlistCount = req.session.user.wishlistCount || 0;
     const unreadNotifications = 0;
@@ -26,8 +25,6 @@ export const getCartPage = async (req, res) => {
       ordersCount,
       wishlistCount,
       unreadNotifications,
-
-      // Pass real mongoose document (NOT lean object)
       cart: cart || { items: [] }
     });
 
@@ -45,13 +42,13 @@ export const addToCart = async (req, res) => {
     console.log("SESSION USER:", req.session.user);
     console.log("UserID:", req.session.user?.id);
 
-    // Validate product exists
+    // V.... product exists
     const product = await Product.findById(productId);
     if (!product) {
       return res.json({ success: false, message: "Product not found" });
     }
 
-    // Validate variant index
+    // V.. variant index
     if (variantIndex === undefined || variantIndex < 0 || variantIndex >= product.variants.length) {
       return res.json({ success: false, message: "Invalid variant selection" });
     }
@@ -61,7 +58,7 @@ export const addToCart = async (req, res) => {
       return res.json({ success: false, message: "Not enough stock" });
     }
 
-    // Find user's cart
+    // Find user cart
     let cart = await Cart.findOne({ user: userId });
 
     if (!cart) {
@@ -71,15 +68,15 @@ export const addToCart = async (req, res) => {
       });
     }
 
-    //  FIX OLD ITEMS BEFORE ADDING NEW ITEM 
+    //fix old cart
     cart.items = cart.items.map(i => {
       if (i.variantIndex === undefined) {
-        i.variantIndex = 0;   // default to first variant
+        i.variantIndex = 0;   
       }
       return i;
     });
 
-    //  Check if same product & variant already exists
+    //  Check  same product and variant already exists
     const existingItem = cart.items.find(
       item =>
         item.product.toString() === productId &&
@@ -104,8 +101,7 @@ export const addToCart = async (req, res) => {
         variantIndex
       });
     }
-
-    // Save cart (Now it will not fail!)
+ 
     await cart.save();
 
     return res.json({ success: true, message: "Item added to cart" });
@@ -142,7 +138,7 @@ export const updateCartQuantity = async (req, res) => {
       });
     }
 
-    // Update quantity
+  
     item.quantity = quantity;
     await cart.save();
 

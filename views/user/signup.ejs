@@ -133,7 +133,7 @@
                   type="email"
                   inputmode="email"
                   autocomplete="email"
-                  placeholder="Enter your Gmail address"
+                  placeholder="Enter your email address"
                   required
                   aria-required="true"
                   aria-invalid="false"
@@ -145,7 +145,7 @@
               </div>
               <p id="emailError" class="text-red-600 text-sm mt-2 hidden flex items-center" role="status">
                 <i class="fas fa-exclamation-circle mr-1 text-xs"></i>
-                <span>Please enter a valid Gmail address.</span>
+                <span>Please enter a valid email address.</span>
               </p>
             </div>
 
@@ -299,7 +299,7 @@
 
         // Patterns
         const namePattern = /^[a-zA-Z\s]{6,}$/;
-        const emailPattern = /^[a-zA-Z0-9._%+-]+@gmail\.com$/;
+        const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         const passwordPattern = /^(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*(),.?":{}|<>]).{6,}$/;
 
         // Track touched fields

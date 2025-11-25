@@ -11,7 +11,7 @@ import {
   logoutUser,
   renderUserProfile,
   updateUserProfile,
-  getChangeEmailPage,sendChangeEmailOtp,verifyChangedEmailOtp,getAddressPage,addAddress,
+  getChangeEmailPage,sendChangeEmailOtp,verifyChangedEmailOtp,getAddressPage,addAddress,resendChangeEmailOtp,
   updateAddress,deleteAddress,setDefaultAddress,getSecuritySettings,checkCurrentPassword,changePassword,getWishlistPage,addToWishlist,removeFromWishlist,toggleWishlist,getCheckoutPage
 } from "../../controllers/user/userController.js";
 
@@ -98,6 +98,8 @@ router.patch("/addresses/:id/default", isUserLoggedIn, setDefaultAddress);
 //security 
 router.get('/profile/changepassword',isUserLoggedIn,getSecuritySettings)
 router.post("/change-password", isUserLoggedIn, changePassword);
+router.post("/change-email/resend-otp",isUserLoggedIn, resendChangeEmailOtp);
+
 
 router.post("/check-current-password", isUserLoggedIn, checkCurrentPassword);
 

@@ -118,7 +118,7 @@ export const adminGetOrder = async (req, res) => {
 
     if (!order) return res.status(404).send("Order not found");
 
-    //  FIX ITEM ORDER ID FOR ADMIN VIEW
+    // ITEM ORDER ID FOR ADMIN VIEW
     order.items = order.items.map((item, index) => ({
       ...item,
       itemOrderId: item.itemOrderId || `${order._id}-${index + 1}`
@@ -132,7 +132,7 @@ export const adminGetOrder = async (req, res) => {
   }
 };
 
-// Update status and adjust inventory accordingly
+
 export const adminUpdateOrderStatus = async (req, res) => {
   const session = await mongoose.startSession();
   session.startTransaction();
@@ -164,11 +164,11 @@ const normalize = (s) =>
    .replace(/-/g, "_")
    .trim();
 
-// Normalized versions
+
 const prev = normalize(prevStatus);
 const next = normalize(status);
 
-// Allowed transitions
+
 const allowedFlow = {
   pending: ["processing"],
   processing: ["shipped"],
@@ -207,10 +207,9 @@ item.status = next;
       item.deliveredDate = new Date();
     }
 
-    // update specific item only
     item.status = status;
 
-    // if ALL items delivered  mark order as delivered
+   
     if (order.items.every(i => i.status === "delivered")) {
       order.orderStatus = "delivered";
     }

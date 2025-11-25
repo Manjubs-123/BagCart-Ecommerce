@@ -194,7 +194,7 @@
             disabled
           >
             <i class="fas fa-redo-alt mr-2"></i>
-            Resend OTP in <span id="countdown" class="font-bold ml-1"><%= typeof cooldown !== 'undefined' ? cooldown : 60 %></span>s
+            <span id="resendText">Resend OTP in <span id="countdown" class="font-bold ml-1">60</span>s</span>
           </button>
         </div>
 
@@ -202,7 +202,7 @@
         <div id="expiryWarning" class="mt-4 p-3 bg-amber-50 border border-amber-200 rounded-lg text-center hidden">
           <p class="text-amber-800 text-sm flex items-center justify-center">
             <i class="fas fa-exclamation-triangle mr-2"></i>
-            <span>Your OTP will expire in <span id="expiryCountdown" class="font-bold">02:00</span></span>
+            <span>Your OTP will expire in <span id="expiryCountdown" class="font-bold">01:00</span></span>
           </p>
         </div>
       </div>
@@ -228,17 +228,17 @@
       const form = document.getElementById('otpForm');
       const verifyBtn = document.getElementById('verifyBtn');
       const resendBtn = document.getElementById('resendBtn');
+      const resendText = document.getElementById('resendText');
       const countdownSpan = document.getElementById('countdown');
       const expiryWarning = document.getElementById('expiryWarning');
-                const expiryCountdown = document.getElementById('expiryCountdown');
-          //  OTP Configuration (using values from server)
-          const OTP_LENGTH = 6;
-          let RESEND_COOLDOWN = <%= JSON.stringify(typeof RESEND_COOLDOWN !== 'undefined' ? RESEND_COOLDOWN : 60) %>; // 60s = 1 min
-          let OTP_EXPIRY_MINUTES = <%= JSON.stringify(typeof OTP_EXPIRY_MINUTES !== 'undefined' ? OTP_EXPIRY_MINUTES : 2) %>; // 2 mins
-
-          let timeLeft = Number(<%= typeof cooldown !== 'undefined' ? JSON.stringify(cooldown) : 'RESEND_COOLDOWN' %>);
-
-
+      const expiryCountdown = document.getElementById('expiryCountdown');
+      
+      // OTP Configuration - Modified for 1 minute expiry
+      const OTP_LENGTH = 6;
+      const OTP_EXPIRY_MINUTES = 1; // 1 minute expiry
+      const RESEND_COOLDOWN = 60; // 60 seconds cooldown
+      
+      let timeLeft = RESEND_COOLDOWN;
       let otpExpiryTime = Date.now() + (OTP_EXPIRY_MINUTES * 60 * 1000);
       let resendInterval;
       let expiryInterval;
@@ -344,7 +344,7 @@
             clearInterval(resendInterval);
             resendBtn.disabled = false;
             resendBtn.classList.remove('countdown-pulse');
-            resendBtn.innerHTML = '<i class="fas fa-redo-alt mr-2"></i> Resend OTP';
+            resendText.innerHTML = 'Resend OTP';
           }
         }, 1000);
       }
@@ -358,6 +358,15 @@
           if (timeRemaining <= 0) {
             clearInterval(expiryInterval);
             expiryWarning.classList.add('hidden');
+            
+            // Enable resend button when OTP expires
+            if (resendBtn.disabled) {
+              clearInterval(resendInterval);
+              resendBtn.disabled = false;
+              resendBtn.classList.remove('countdown-pulse');
+              resendText.innerHTML = 'Resend OTP';
+            }
+            
             // Invalidate current OTP
             if (otpInput.value) {
               otpError.querySelector('span').textContent = 'OTP has expired. Please request a new one.';
@@ -381,12 +390,12 @@
         resendBtn.disabled = true;
 
         try {
-         const response = await fetch(`/user/resendForgotOtp?email=<%= email %>`, {
-  method: 'GET',
-  headers: {
-    'Content-Type': 'application/json',
-  }
-});
+          const response = await fetch(`/user/resendForgotOtp?email=<%= email %>`, {
+            method: 'GET',
+            headers: {
+              'Content-Type': 'application/json',
+            }
+          });
 
           if (!response.ok) {
             throw new Error('Failed to resend OTP');
@@ -407,6 +416,9 @@
           clearInterval(expiryInterval);
           startCountdown();
           startExpiryCountdown();
+
+          // Update resend button text
+          resendText.innerHTML = `Resend OTP in <span id="countdown" class="font-bold ml-1">${timeLeft}</span>s`;
 
           // Show success message
           const successMsg = document.createElement('div');
@@ -431,7 +443,7 @@
           // Re-enable after 3 seconds
           setTimeout(() => {
             resendBtn.disabled = false;
-            resendBtn.innerHTML = '<i class="fas fa-redo-alt mr-2"></i> Resend OTP';
+            resendText.innerHTML = 'Resend OTP';
           }, 3000);
         }
       });
