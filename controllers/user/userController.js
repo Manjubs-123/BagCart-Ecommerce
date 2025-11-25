@@ -71,8 +71,8 @@ export const signupUser = async (req, res) => {
     req.session.otpExpires = Date.now() + 5 * 60 * 1000; // 5 minutes
     req.session.pendingEmail = email;
 
-    // Send OTP via email 
-    await sendOtpMail(email, otp); //Directly use the imported function
+    //  Send OTP via email 
+    await sendOtpMail(email, otp); // Directly use the imported function
 
     console.log(`OTP sent to ${email}: ${otp}`);
     
@@ -440,7 +440,7 @@ export const getAddressPage = async (req, res) => {
 
         const addresses = user.addresses || [];
 
-        // Function for EJS
+        
         const getAddressTypeIcon = (type) => {
             switch (type) {
                 case "home": return "home";
@@ -455,7 +455,7 @@ export const getAddressPage = async (req, res) => {
             ordersCount: user.orders?.length || 0,
             wishlistCount: user.wishlist?.length || 0,
             unreadNotifications: user.notifications?.filter(n => !n.read).length || 0,
-            getAddressTypeIcon  // send function to EJS
+            getAddressTypeIcon  
         });
 
     } catch (err) {
@@ -483,12 +483,12 @@ export const addAddress = async (req, res) => {
 
         const user = await User.findById(userId);
 
-        // If first address → set default
+        // If first address set default
         if (user.addresses.length === 0) {
             newAddress.isDefault = true;
         }
 
-        // If setting new default → remove default from others
+        // If setting new default  remove default from others
         if (newAddress.isDefault) {
             user.addresses.forEach(addr => addr.isDefault = false);
         }
@@ -517,7 +517,7 @@ export const updateAddress = async (req, res) => {
         // update fields
         Object.assign(address, req.body);
 
-        // if default → update all
+        // if default  update all
         if (req.body.isDefault) {
             user.addresses.forEach(a => a.isDefault = false);
             address.isDefault = true;
@@ -538,8 +538,8 @@ export const deleteAddress = async (req, res) => {
         const addressId = req.params.id;
 
 
-        console.log("SESSION USER =", req.session.user);
-console.log("ADDRESS ID =", req.params.id);
+//         console.log("SESSION USER =", req.session.user);
+// console.log("ADDRESS ID =", req.params.id);
 
         const user = await User.findById(userId);
         if (!user) {
@@ -568,11 +568,9 @@ console.log("ADDRESS ID =", req.params.id);
     }
 };
 
-
-
 export const setDefaultAddress = async (req, res) => {
   try {
-    // Defensive checks
+   
     if (!req.user) {
       console.warn("setDefaultAddress: req.user is missing");
       return res.status(401).json({ success: false, message: "Unauthorized" });
@@ -597,7 +595,7 @@ export const setDefaultAddress = async (req, res) => {
     // Clear default flags
     user.addresses.forEach(a => { a.isDefault = false; });
 
-    // Mongoose subdoc lookup (works for arrays of subdocs)
+    // Mongoose subdoc lookup works for arrays of subdocs
     const target = user.addresses.id ? user.addresses.id(addressId) : user.addresses.find(a => a._id && a._id.toString() === addressId);
 
     if (!target) {
@@ -618,11 +616,9 @@ export const setDefaultAddress = async (req, res) => {
 };
 
 
-
-
 export const getSecuritySettings = async (req, res) => {
   try {
-    console.log("REACHED SECURITY PAGE");
+    // console.log("REACHED SECURITY PAGE");
 
     if (!req.session.user) return res.redirect('/user/login');
 
@@ -682,6 +678,7 @@ export const changePassword = async (req, res) => {
                 success: false,
                 message: "You logged in using Google. Password change is not required."
             });
+            
         }
 
         // Compare old password
@@ -702,8 +699,6 @@ export const changePassword = async (req, res) => {
         return res.json({ success: false, message: "Internal server error" });
     }
 };
-
-
 
 export const getWishlistPage = async (req, res) => {
     try {
@@ -733,9 +728,6 @@ export const getWishlistPage = async (req, res) => {
         return res.status(500).send("Error loading wishlist");
     }
 };
-
-
-
 
 
 export const addToWishlist = async (req, res) => {

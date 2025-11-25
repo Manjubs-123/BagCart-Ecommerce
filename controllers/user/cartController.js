@@ -12,7 +12,7 @@ export const getCartPage = async (req, res) => {
 
     //  Fetch cart WITHOUT .lean()
     const cart = await Cart.findOne({ user: userId })
-      .populate("items.product");   //  DO NOT USE .lean()
+      .populate("items.product");   
 
     // Sidebar related values (keep your logic)
     const ordersCount = 0;
