@@ -337,7 +337,11 @@ router.post("/orders", async (req, res) => {
         const shippingFee = subtotal > 500 ? 0 : 50;
         const totalAmount = subtotal + tax + shippingFee;
 
+        // ✅ Step 1: Make a new custom order ID (not MongoDB)
+const customOrderId = "BH-" + Math.floor(100000 + Math.random() * 900000).toString();
+
         const order = await Order.create({
+             orderId: customOrderId,
             user: userId,
             items: orderItems,
             shippingAddress: address,

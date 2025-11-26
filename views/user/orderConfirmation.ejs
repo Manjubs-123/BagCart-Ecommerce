@@ -128,7 +128,8 @@
               <div class="text-right">
                 <p class="text-sm text-gray-600 mb-1">Order Reference</p>
                 <p class="text-2xl font-bold text-blue-600 font-mono tracking-tight">
-                  <%= order._id %>
+          <%= orderDisplayId %>
+
                 </p>
                 <p class="text-sm text-gray-500 mt-2">
                   <i class="far fa-clock mr-1"></i>
@@ -183,7 +184,7 @@
                       <div class="bg-gray-50 rounded-lg p-4 mb-4 border border-gray-200">
                         <p class="text-xs text-gray-500 uppercase tracking-wide mb-1">Item Reference</p>
                         <p class="font-mono text-lg font-bold text-gray-800">
-                          <%= order._id %>-<%= index + 1 %>
+                          <%= orderDisplayId %>-<%= index + 1 %>
                         </p>
                       </div>
 
@@ -254,12 +255,19 @@
 
                   <!-- Download Invoice Button for this specific item - Enhanced -->
                   <div class="mt-6 pt-4 border-t border-gray-200">
-                    <button
-                      onclick="downloadInvoice('<%= order._id %>', '<%= item._id %>', '<%= item.product.name %>', this)"
+<button
+  onclick="downloadInvoice('<%= order._id %>', '<%= item._id %>', '<%= item.product.name %>', this)"
+  class="bg-gradient-to-r from-green-600 to-green-700 text-white px-6 py-3 rounded-lg font-semibold hover:from-green-700 hover:to-green-800 transition-all duration-300 flex items-center gap-3 professional-shadow">
+  <i class="fas fa-file-invoice"></i>
+  Download Invoice for <%= item.product.name %>
+</button>
+
+                    <!-- <button
+                      onclick="downloadInvoice('<%= orderDisplayId %>', '<%= item._id %>', '<%= item.product.name %>', this)"
                       class="bg-gradient-to-r from-green-600 to-green-700 text-white px-6 py-3 rounded-lg font-semibold hover:from-green-700 hover:to-green-800 transition-all duration-300 flex items-center gap-3 professional-shadow">
                       <i class="fas fa-file-invoice"></i>
                       Download Invoice for <%= item.product.name %>
-                    </button>
+                    </button> -->
                   </div>
                 </div>
               </div>
@@ -397,28 +405,77 @@
       }
 
       // Download invoice function for individual items
-      function downloadInvoice(orderId, itemId, productName, btn) {
-        const button = btn;
-        const originalHtml = button.innerHTML;
+      
+      // function downloadInvoice(orderId, itemId, productName, btn) {
+      //   const button = btn;
+      //   const originalHtml = button.innerHTML;
 
-        button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Generating...';
-        button.disabled = true;
+      //   button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Generating...';
+      //   button.disabled = true;
 
-        const invoiceUrl = `/order/${orderId}/item/${itemId}/invoice`;
+      //   const invoiceUrl = `/order/${orderId}/item/${itemId}/invoice`;
 
-        const link = document.createElement("a");
-        link.href = invoiceUrl;
-        link.target = "_blank";
-        link.click();
+      //   const link = document.createElement("a");
+      //   link.href = invoiceUrl;
+      //   link.target = "_blank";
+      //   link.click();
 
-        setTimeout(() => {
-          button.innerHTML = originalHtml;
-          button.disabled = false;
-        }, 1500);
-      }
+      //   setTimeout(() => {
+      //     button.innerHTML = originalHtml;
+      //     button.disabled = false;
+      //   }, 1500);
+      // }
 
       document.addEventListener("DOMContentLoaded", launchConfetti);
     </script>
+    <script>
+  // Download invoice function for individual items - FIXED
+  function downloadInvoice(displayOrderId, itemId, productName, btn) {
+    const button = btn;
+    const originalHtml = button.innerHTML;
+
+    button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Generating...';
+    button.disabled = true;
+
+    // ✅ Get the actual MongoDB order _id from the page data
+    // We need to find a way to pass the MongoDB _id to this function
+    // Since we don't have it directly, we need to modify the approach
+    
+    // Option 1: If you can pass MongoDB _id from EJS:
+    const mongoOrderId = '<%= order._id %>'; // This gets the MongoDB _id
+    
+    const invoiceUrl = `/order/${mongoOrderId}/item/${itemId}/invoice`;
+
+    console.log("📤 Downloading invoice:", { mongoOrderId, itemId, displayOrderId });
+
+    const link = document.createElement("a");
+    link.href = invoiceUrl;
+    link.target = "_blank";
+    link.click();
+
+    setTimeout(() => {
+      button.innerHTML = originalHtml;
+      button.disabled = false;
+    }, 1500);
+  }
+
+  // Confetti animation
+  function launchConfetti() {
+    const container = document.getElementById("confettiContainer");
+    const colors = ["#10b981", "#3b82f6", "#f59e0b", "#ef4444", "#8b5cf6"];
+
+    for (let i = 0; i < 50; i++) {
+      let div = document.createElement("div");
+      div.classList.add("confetti");
+      div.style.left = Math.random() * 100 + "vw";
+      div.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+      div.style.animationDelay = Math.random() * 3 + "s";
+      container.appendChild(div);
+    }
+  }
+
+  document.addEventListener("DOMContentLoaded", launchConfetti);
+</script>
 
 </body>
 

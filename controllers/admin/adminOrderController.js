@@ -319,7 +319,7 @@ export const approveReturn = async (req, res) => {
     wallet.transactions.push({
       type: "credit",
       amount: refundAmount,
-      description: `Refund for returned item (${item.product})`,
+      description: `Refund for returned item (${item.itemOrderId})`,
       date: new Date()
     });
 

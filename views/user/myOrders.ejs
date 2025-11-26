@@ -156,7 +156,9 @@
                   <div class="bg-gradient-to-r from-blue-50 to-indigo-50 px-4 sm:px-6 py-3 sm:py-4 border-b border-gray-200">
                     <div class="flex flex-col md:flex-row md:items-center justify-between gap-3 sm:gap-4 mobile-stack">
                       <div class="mobile-text-center md:text-left">
-                        <h2 class="text-lg sm:text-xl font-bold text-gray-900">Order #<%= order.orderId || order._id %></h2>
+                      <h2 class="text-lg sm:text-xl font-bold text-gray-900">Order #<%= order.orderId %></h2>
+
+
                         <p class="text-gray-600 text-xs sm:text-sm mt-1">
                           Placed on <%= new Date(order.createdAt).toLocaleDateString('en-US', { 
                             year: 'numeric', 
@@ -251,49 +253,50 @@
                             </div>
 
                             <!-- Action Buttons -->
-                            <div class="mt-4 sm:mt-6 pt-4 border-t border-gray-200 flex flex-wrap gap-2 sm:gap-3 action-buttons-mobile">
-                              <!-- Download Invoice Button -->
-                              <button 
-                                onclick="downloadInvoice('<%= order._id %>', '<%= item._id %>', '<%= item.product.name %>', this)"
-                                class="btn-primary text-white px-4 sm:px-6 py-2 sm:py-3 rounded-lg font-semibold flex items-center gap-2 sm:gap-3 professional-shadow text-sm sm:text-base mobile-full">
-                                <i class="fas fa-file-invoice"></i>
-                                <span>Download Invoice</span>
-                              </button>
+                            <!-- Action Buttons -->
+<div class="mt-4 sm:mt-6 pt-4 border-t border-gray-200 flex flex-wrap gap-2 sm:gap-3 action-buttons-mobile">
+  <!-- ✅ FIXED: Download Invoice Button -->
+  <button 
+    onclick="downloadInvoice('<%= order._id %>', '<%= item._id %>', '<%= item.product.name %>', this)"
+    class="btn-primary text-white px-4 sm:px-6 py-2 sm:py-3 rounded-lg font-semibold flex items-center gap-2 sm:gap-3 professional-shadow text-sm sm:text-base mobile-full">
+    <i class="fas fa-file-invoice"></i>
+    <span>Download Invoice</span>
+  </button>
 
-                              <!-- Cancel Button (Only show for eligible statuses) -->
-                              <% if (canCancelItem(item.status || order.orderStatus)) { %>
-                                <button 
-                                  onclick="showCancelModal('<%= order._id %>', '<%= item._id %>', '<%= item.product.name %>')"
-                                  class="btn-danger text-white px-4 sm:px-6 py-2 sm:py-3 rounded-lg font-semibold flex items-center gap-2 sm:gap-3 professional-shadow text-sm sm:text-base mobile-full">
-                                  <i class="fas fa-times-circle"></i>
-                                  <span>Cancel Item</span>
-                                </button>
-                              <% } else { %>
-                                <button 
-                                  disabled
-                                  class="bg-gray-400 text-white px-4 sm:px-6 py-2 sm:py-3 rounded-lg font-semibold flex items-center gap-2 sm:gap-3 professional-shadow cursor-not-allowed opacity-50 text-sm sm:text-base mobile-full">
-                                  <i class="fas fa-times-circle"></i>
-                                  <span>Cancel Not Available</span>
-                                </button>
-                              <% } %>
+  <!-- Cancel Button (Only show for eligible statuses) -->
+  <% if (canCancelItem(item.status || order.orderStatus)) { %>
+    <button 
+      onclick="showCancelModal('<%= order._id %>', '<%= item._id %>', '<%= item.product.name %>')"
+      class="btn-danger text-white px-4 sm:px-6 py-2 sm:py-3 rounded-lg font-semibold flex items-center gap-2 sm:gap-3 professional-shadow text-sm sm:text-base mobile-full">
+      <i class="fas fa-times-circle"></i>
+      <span>Cancel Item</span>
+    </button>
+  <% } else { %>
+    <button 
+      disabled
+      class="bg-gray-400 text-white px-4 sm:px-6 py-2 sm:py-3 rounded-lg font-semibold flex items-center gap-2 sm:gap-3 professional-shadow cursor-not-allowed opacity-50 text-sm sm:text-base mobile-full">
+      <i class="fas fa-times-circle"></i>
+      <span>Cancel Not Available</span>
+    </button>
+  <% } %>
 
-                              <!-- Return Button (Only show for delivered items) -->
-                              <% if (canReturnItem(item.status || order.orderStatus)) { %>
-                                <button 
-                                  onclick="showReturnModal('<%= order._id %>', '<%= item._id %>', '<%= item.product.name %>')"
-                                  class="btn-warning text-white px-4 sm:px-6 py-2 sm:py-3 rounded-lg font-semibold flex items-center gap-2 sm:gap-3 professional-shadow text-sm sm:text-base mobile-full">
-                                  <i class="fas fa-undo"></i>
-                                  <span>Return Item</span>
-                                </button>
-                              <% } else { %>
-                                <button 
-                                  disabled
-                                  class="bg-gray-400 text-white px-4 sm:px-6 py-2 sm:py-3 rounded-lg font-semibold flex items-center gap-2 sm:gap-3 professional-shadow cursor-not-allowed opacity-50 text-sm sm:text-base mobile-full">
-                                  <i class="fas fa-undo"></i>
-                                  <span>Return Not Available</span>
-                                </button>
-                              <% } %>
-                            </div>
+  <!-- Return Button (Only show for delivered items) -->
+  <% if (canReturnItem(item.status || order.orderStatus)) { %>
+    <button 
+      onclick="showReturnModal('<%= order._id %>', '<%= item._id %>', '<%= item.product.name %>')"
+      class="btn-warning text-white px-4 sm:px-6 py-2 sm:py-3 rounded-lg font-semibold flex items-center gap-2 sm:gap-3 professional-shadow text-sm sm:text-base mobile-full">
+      <i class="fas fa-undo"></i>
+      <span>Return Item</span>
+    </button>
+  <% } else { %>
+    <button 
+      disabled
+      class="bg-gray-400 text-white px-4 sm:px-6 py-2 sm:py-3 rounded-lg font-semibold flex items-center gap-2 sm:gap-3 professional-shadow cursor-not-allowed opacity-50 text-sm sm:text-base mobile-full">
+      <i class="fas fa-undo"></i>
+      <span>Return Not Available</span>
+    </button>
+  <% } %>
+</div>
                           </div>
                         </div>
                       </div>
@@ -545,38 +548,113 @@
     });
 
     async function submitAction(form, url, actionType) {
-      const formData = new FormData(form);
-      const submitBtn = form.querySelector('button[type="submit"]');
-      const originalText = submitBtn.innerHTML;
+  const formData = new FormData(form);
+  const submitBtn = form.querySelector('button[type="submit"]');
+  const originalText = submitBtn.innerHTML;
 
-      submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
-      submitBtn.disabled = true;
+  submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+  submitBtn.disabled = true;
 
-      try {
-        const response = await fetch(url, {
-          method: 'PATCH',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(Object.fromEntries(formData))
-        });
+  console.log("🔄 Submitting:", { url, actionType, formData: Object.fromEntries(formData) });
 
-        const result = await response.json();
+  try {
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(Object.fromEntries(formData))
+    });
 
-        if (result.success) {
-          showNotification(`${actionType.charAt(0).toUpperCase() + actionType.slice(1)} request submitted successfully!`, 'success');
-          setTimeout(() => {
-            location.reload();
-          }, 2000);
-        } else {
-          throw new Error(result.message);
-        }
-      } catch (error) {
-        showNotification('Error: ' + error.message, 'error');
-        submitBtn.innerHTML = originalText;
-        submitBtn.disabled = false;
-      }
+    console.log("📥 Response received:", response);
+
+    const result = await response.json();
+    console.log("📊 Result:", result);
+
+    if (result.success) {
+      showNotification(`${actionType.charAt(0).toUpperCase() + actionType.slice(1)} request submitted successfully!`, 'success');
+      setTimeout(() => {
+        location.reload();
+      }, 2000);
+    } else {
+      throw new Error(result.message);
     }
+  } catch (error) {
+    console.error("❌ Error:", error);
+    showNotification('Error: ' + error.message, 'error');
+    submitBtn.innerHTML = originalText;
+    submitBtn.disabled = false;
+  }
+}
+
+//     async function submitAction(form, url, actionType) {
+//   const formData = new FormData(form);
+//   const submitBtn = form.querySelector('button[type="submit"]');
+//   const originalText = submitBtn.innerHTML;
+
+//   submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+//   submitBtn.disabled = true;
+
+//   try {
+//     const response = await fetch(url, {
+//       method: 'POST', // ✅ CHANGE BACK TO POST (was PATCH)
+//       headers: {
+//         'Content-Type': 'application/json',
+//       },
+//       body: JSON.stringify(Object.fromEntries(formData))
+//     });
+
+//     const result = await response.json();
+
+//     if (result.success) {
+//       showNotification(`${actionType.charAt(0).toUpperCase() + actionType.slice(1)} request submitted successfully!`, 'success');
+//       setTimeout(() => {
+//         location.reload();
+//       }, 2000);
+//     } else {
+//       throw new Error(result.message);
+//     }
+//   } catch (error) {
+//     showNotification('Error: ' + error.message, 'error');
+//     submitBtn.innerHTML = originalText;
+//     submitBtn.disabled = false;
+//   }
+// }
+    
+// async function submitAction(form, url, actionType) {
+    //   const formData = new FormData(form);
+    //   const submitBtn = form.querySelector('button[type="submit"]');
+    //   const originalText = submitBtn.innerHTML;
+
+    //   submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+    //   submitBtn.disabled = true;
+
+    //   try {
+    //     const response = await fetch(url, {
+    //       method: 'PATCH',
+    //       headers: {
+    //         'Content-Type': 'application/json',
+    //       },
+    //       body: JSON.stringify(Object.fromEntries(formData))
+    //     });
+
+    //     const result = await response.json();
+
+    //     if (result.success) {
+    //       showNotification(`${actionType.charAt(0).toUpperCase() + actionType.slice(1)} request submitted successfully!`, 'success');
+    //       setTimeout(() => {
+    //         location.reload();
+    //       }, 2000);
+    //     } else {
+    //       throw new Error(result.message);
+    //     }
+    //   } catch (error) {
+    //     showNotification('Error: ' + error.message, 'error');
+    //     submitBtn.innerHTML = originalText;
+    //     submitBtn.disabled = false;
+    //   }
+    // }
+
 
     function showNotification(message, type) {
       const notification = document.createElement('div');
