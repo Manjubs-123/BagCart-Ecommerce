@@ -123,48 +123,70 @@
 
     <!-- Search and Filters -->
     <div class="bg-white rounded-xl p-6 card-hover mb-6">
-      <form method="GET" action="/admin/orders" class="flex flex-col md:flex-row gap-4 items-center justify-between">
-        <div class="flex flex-col md:flex-row gap-4 flex-1 w-full">
-          <div class="relative w-full md:w-64">
-            <input 
-              type="text" 
-              name="search" 
-              value="<%= query.search || '' %>" 
-              placeholder="Search order id / item id"
-              class="border border-gray-300 rounded-lg px-4 py-2.5 w-full 
-                    focus:outline-none focus:ring-2 focus:ring-blue-500 
-                    focus:border-transparent pl-10"
-            />
-            <i class="fas fa-search text-gray-400 absolute left-3 top-3.5"></i>
-          </div>
+  <form method="GET" action="/admin/orders" 
+        class="flex flex-col md:flex-row gap-4 items-center justify-between">
 
-          <select name="status" class="border border-gray-300 rounded-lg px-4 py-2.5 w-full md:w-48
-                    focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-            <option value="">All Statuses</option>
-            <option value="pending" <%= query.status=='pending'?'selected':'' %>>Pending</option>
-            <option value="processing" <%= query.status=='processing'?'selected':'' %>>Processing</option>
-            <option value="out_for_delivery" <%= query.status=='out_for_delivery'?'selected':'' %>>Out for Delivery</option>
-            <option value="shipped" <%= query.status=='shipped'?'selected':'' %>>Shipped</option>
-            <option value="delivered" <%= query.status=='delivered'?'selected':'' %>>Delivered</option>
-            <option value="cancelled" <%= query.status=='cancelled'?'selected':'' %>>Cancelled</option>
-          </select>
+    <!-- <div class="flex flex-col md:flex-row gap-4 flex-1 w-full">
+      
+      <div class="relative w-full md:w-64">
+        <input 
+          type="text" 
+          name="search" 
+          value="<%= query.search || '' %>" 
+          placeholder="Search order id / item id"
+          class="border border-gray-300 rounded-lg px-4 py-2.5 w-full 
+                focus:outline-none focus:ring-2 focus:ring-blue-500 
+                focus:border-transparent pl-10"
+        />
+        <i class="fas fa-search text-gray-400 absolute left-3 top-3.5"></i>
+      </div>
 
-          <button type="submit" 
-            class="bg-blue-600 text-white px-6 py-2.5 rounded-lg hover:bg-blue-700 
-                  transition-all flex items-center gap-2 font-medium">
-            <i class="fas fa-search"></i>
-            <span>Search</span>
-          </button>
+      <select name="status" 
+        class="border border-gray-300 rounded-lg px-4 py-2.5 w-full md:w-48
+              focus:outline-none focus:ring-2 focus:ring-blue-500">
+        <option value="">All Statuses</option>
+        <option value="pending" <%= query.status=='pending'?'selected':'' %>>Pending</option>
+        <option value="processing" <%= query.status=='processing'?'selected':'' %>>Processing</option>
+        <option value="shipped" <%= query.status=='shipped'?'selected':'' %>>Shipped</option>
+        <option value="out_for_delivery" <%= query.status=='out_for_delivery'?'selected':'' %>>Out for Delivery</option>
+        <option value="delivered" <%= query.status=='delivered'?'selected':'' %>>Delivered</option>
+        <option value="cancelled" <%= query.status=='cancelled'?'selected':'' %>>Cancelled</option>
+      </select>
 
-          <a href="/admin/orders" 
-            class="bg-gray-500 text-white px-6 py-2.5 rounded-lg hover:bg-gray-600 
-                  transition-all flex items-center gap-2 font-medium">
-            <i class="fas fa-times"></i>
-            <span>Clear</span>
-          </a>
-        </div>
-      </form>
-    </div>
+      <button type="submit" 
+        class="bg-blue-600 text-white px-6 py-2.5 rounded-lg hover:bg-blue-700 
+               transition-all flex items-center gap-2 font-medium">
+        <i class="fas fa-search"></i>
+        <span>Search</span>
+      </button>
+
+      <a href="/admin/orders" 
+        class="bg-gray-500 text-white px-6 py-2.5 rounded-lg hover:bg-gray-600 
+              transition-all flex items-center gap-2 font-medium">
+        <i class="fas fa-times"></i>
+        <span>Clear</span>
+      </a>
+    </div> -->
+
+    <!--  RETURN REQUESTS BUTTON WITH BADGE -->
+    <a href="/admin/orders/returns"
+      class="relative bg-emerald-600 text-white px-6 py-2.5 rounded-lg hover:bg-emerald-700 
+             transition-all flex items-center gap-2 font-medium shadow-md">
+      
+      <i class="fas fa-undo"></i>
+      <span>Return Requests</span>
+
+      <% if (returnCount > 0) { %>
+        <span class="absolute -top-2 -right-2 bg-red-600 text-white text-xs
+                    font-bold px-2 py-1 rounded-full shadow-md">
+          <%= returnCount %>
+        </span>
+      <% } %>
+    </a>
+
+  </form>
+</div>
+
 
     <!-- Orders Table -->
     <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden card-hover">

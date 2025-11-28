@@ -75,7 +75,7 @@
                         <h3 class="font-semibold text-gray-900">
                           <%= item.product?.name || 'Product Name' %>
                         </h3>
-                        <p class="text-sm text-gray-600">Item ID: <span class="font-mono"><%= item.itemOrderId || `${order.orderId}-${index+1}` %></span></p>
+                        <p class="text-sm text-gray-600">Item ID: <span class="font-mono"><%= `${order.orderId}-${index+1}` %></span></p>
                       </div>
                       <span class="status-badge <%= getStatusClass(item.status || order.orderStatus || 'pending') %>">
   <i class="fas <%= getStatusIcon(item.status || order.orderStatus || 'pending') %>"></i>

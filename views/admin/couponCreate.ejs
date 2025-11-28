@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Add New Coupon | Admin Dashboard</title>
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+  <style>
+    .input-error {
+      border-color: #ef4444 !important;
+      box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1) !important;
+    }
+    .error-message {
+      color: #ef4444;
+      font-size: 0.75rem;
+      margin-top: 0.25rem;
+    }
+    .success-border {
+      border-color: #10b981 !important;
+    }
+  </style>
+</head>
+
+<body class="bg-gray-50 text-gray-900 flex min-h-screen">
+  <!-- Sidebar -->
+  <%- include('../partials/sidebar') %>
+
+  <!-- Main Content -->
+  <main class="ml-64 flex-1 p-8">
+
+    <div class="mb-8 flex justify-between items-center">
+      <div>
+        <h1 class="text-3xl font-bold">Create Coupon</h1>
+        <p class="text-gray-600">Add a new percentage discount coupon</p>
+      </div>
+      <button onclick="window.location.href='/admin/coupon'" class="bg-gray-500 text-white px-6 py-3 rounded-lg font-semibold hover:bg-gray-600">
+        <i class="fas fa-arrow-left"></i> Back to Coupons
+      </button>
+    </div>
+
+    <!-- Display Server-side Errors -->
+    <% if (error && error.length > 0) { %>
+      <div class="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
+        <% error.forEach(err => { %>
+          <p class="text-red-700 text-sm">⚠️ <%= err %></p>
+        <% }); %>
+      </div>
+    <% } %>
+
+    <div class="bg-white rounded-lg border border-gray-200 p-6 shadow-sm">
+      <form id="couponForm" action="/admin/coupon/create" method="POST">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+          <!-- LEFT COLUMN -->
+          <div class="space-y-6">
+            
+            <!-- Coupon Code -->
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">
+                Coupon Code <span class="text-red-500">*</span>
+              </label>
+              <input type="text" id="code" name="code" maxlength="20"
+                value="<%= oldInput.code || '' %>"
+                class="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:border-blue-500 focus:ring-1 coupon-input"
+                placeholder="e.g., SUMMER25" required />
+              <div id="codeError" class="error-message"></div>
+            </div>
+
+            <!-- Discount % -->
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">
+                Discount Percentage <span class="text-red-500">*</span>
+              </label>
+              <input type="number" id="discountValue" name="discountValue" min="5" max="90" step="0.01"
+                value="<%= oldInput.discountValue || '' %>"
+                class="w-full border border-gray-300 rounded-lg px-4 py-2.5 pr-10 focus:border-blue-500 focus:ring-1 coupon-input"
+                placeholder="e.g., 25" required />
+              <div id="discountValueError" class="error-message"></div>
+            </div>
+
+            <!-- Max Discount -->
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">
+                Maximum Discount Amount (¥) <span class="text-red-500">*</span>
+              </label>
+              <input type="number" id="maxDiscountAmount" name="maxDiscountAmount" min="1" step="0.01"
+                value="<%= oldInput.maxDiscountAmount || '' %>"
+                class="w-full border border-gray-300 rounded-lg px-4 py-2.5 pr-10 focus:border-blue-500 focus:ring-1 coupon-input"
+                placeholder="e.g., 1000.00" required />
+              <div id="maxDiscountAmountError" class="error-message"></div>
+            </div>
+
+            <!-- Min Order -->
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">
+                Minimum Order Value (¥) <span class="text-red-500">*</span>
+              </label>
+              <input type="number" id="minOrderAmount" name="minOrderAmount" min="1" step="0.01"
+                value="<%= oldInput.minOrderAmount || '' %>"
+                class="w-full border border-gray-300 rounded-lg px-4 py-2.5 pr-10 focus:border-blue-500 focus:ring-1 coupon-input"
+                placeholder="e.g., 500.00" required />
+              <div id="minOrderAmountError" class="error-message"></div>
+            </div>
+
+          </div>
+
+          <!-- RIGHT COLUMN -->
+          <div class="space-y-6">
+
+            <!-- Valid From -->
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">
+                Valid From <span class="text-red-500">*</span>
+              </label>
+              <input type="datetime-local" id="validFrom" name="validFrom"
+                value="<%= oldInput.validFrom || defaultFrom %>"
+                class="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:border-blue-500 focus:ring-1 coupon-input"
+                required />
+              <div id="validFromError" class="error-message"></div>
+            </div>
+
+            <!-- Valid To -->
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">
+                Valid To <span class="text-red-500">*</span>
+              </label>
+              <input type="datetime-local" id="validTo" name="validTo"
+                value="<%= oldInput.validTo || defaultTo %>"
+                class="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:border-blue-500 focus:ring-1 coupon-input"
+                required />
+              <div id="validToError" class="error-message"></div>
+            </div>
+
+            <!-- Max Usage -->
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Maximum Usage</label>
+              <input type="number" id="maxUsage" name="maxUsage" min="1"
+                value="<%= oldInput.maxUsage || '' %>"
+                class="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:border-blue-500 focus:ring-1 coupon-input"
+                placeholder="Leave empty for unlimited" />
+              <div id="maxUsageError" class="error-message"></div>
+            </div>
+
+            <!-- Max Usage Per User -->
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Maximum Usage Per User</label>
+              <input type="number" id="maxUsagePerUser" name="maxUsagePerUser" min="1"
+                value="<%= oldInput.maxUsagePerUser || '' %>"
+                class="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:border-blue-500 focus:ring-1 coupon-input"
+                placeholder="Leave empty for unlimited" />
+              <div id="maxUsagePerUserError" class="error-message"></div>
+            </div>
+
+            <!-- Active -->
+            <div class="flex items-center">
+              <input type="checkbox" id="isActive" name="isActive"
+                <%= oldInput.isActive ? 'checked' : 'checked' %>
+                class="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500" />
+              <label class="ml-2 text-sm text-gray-700">Activate coupon immediately</label>
+            </div>
+
+          </div>
+
+        </div>
+
+        <!-- Buttons -->
+        <div class="mt-8 pt-6 border-t border-gray-200 flex justify-end gap-3">
+          <button type="button" onclick="window.location.href='/admin/coupon'"
+            class="bg-gray-500 text-white px-6 py-3 rounded-lg font-semibold hover:bg-gray-600">
+            Cancel
+          </button>
+          <button type="submit" id="submitBtn"
+            class="bg-blue-600 text-white px-6 py-3 rounded-lg font-semibold flex items-center gap-2 hover:shadow-lg">
+            <i class="fas fa-save"></i> Save Coupon
+          </button>
+        </div>
+      </form>
+    </div>
+  </main>
+
+  <script>
+document.addEventListener('DOMContentLoaded', function () {
+  const form = document.getElementById('couponForm');
+  const inputs = document.querySelectorAll('.coupon-input');
+  const submitBtn = document.getElementById('submitBtn');
+
+  // Set minimum datetime for date inputs (current time + 5 minutes)
+  const now = new Date();
+  const minDateTime = new Date(now.getTime() + 5 * 60 * 1000); // 5 minutes from now
+  const minDateTimeString = minDateTime.toISOString().slice(0, 16);
+
+  document.getElementById('validFrom').min = minDateTimeString;
+  document.getElementById('validTo').min = minDateTimeString;
+
+  // Real-time validation functions
+  function validateCode() {
+    const code = document.getElementById("code").value.trim().toUpperCase();
+    const errorElement = document.getElementById("codeError");
+    
+    if (code.length < 3) {
+      showError(errorElement, "Coupon code must be at least 3 characters");
+      return false;
+    } else {
+      clearError(errorElement);
+      return true;
+    }
+  }
+
+  function validateDiscount() {
+    const discountValue = Number(document.getElementById("discountValue").value);
+    const errorElement = document.getElementById("discountValueError");
+    
+    if (discountValue < 5 || discountValue > 90) {
+      showError(errorElement, "Discount must be between 5–90%");
+      return false;
+    } else {
+      clearError(errorElement);
+      return true;
+    }
+  }
+
+  function validateAmounts() {
+    const maxDiscountAmount = Number(document.getElementById("maxDiscountAmount").value);
+    const minOrderAmount = Number(document.getElementById("minOrderAmount").value);
+    const errorElement = document.getElementById("maxDiscountAmountError");
+    
+    if (maxDiscountAmount >= minOrderAmount) {
+      showError(errorElement, "Max discount must be LESS than minimum order amount");
+      return false;
+    } else {
+      clearError(errorElement);
+      return true;
+    }
+  }
+
+  function validateMinOrder() {
+    const minOrderAmount = Number(document.getElementById("minOrderAmount").value);
+    const errorElement = document.getElementById("minOrderAmountError");
+    
+    if (minOrderAmount < 1) {
+      showError(errorElement, "Minimum order must be at least 1");
+      return false;
+    } else {
+      clearError(errorElement);
+      return true;
+    }
+  }
+
+  function validateDates() {
+    const validFrom = new Date(document.getElementById("validFrom").value);
+    const validTo = new Date(document.getElementById("validTo").value);
+    const now = new Date();
+    const fromError = document.getElementById("validFromError");
+    const toError = document.getElementById("validToError");
+    let isValid = true;
+
+    // Clear previous errors
+    clearError(fromError);
+    clearError(toError);
+
+    if (validFrom < now) {
+      showError(fromError, "Valid From cannot be in the past");
+      isValid = false;
+    }
+
+    if (validTo <= validFrom) {
+      showError(toError, "Valid To must be later than Valid From");
+      isValid = false;
+    }
+
+    if (validTo <= now) {
+      showError(toError, "Valid To must be in the future");
+      isValid = false;
+    }
+
+    return isValid;
+  }
+
+  function validateUsage() {
+    const maxUsage = Number(document.getElementById("maxUsage").value || 0);
+    const maxUsagePerUser = Number(document.getElementById("maxUsagePerUser").value || 0);
+    const errorElement = document.getElementById("maxUsagePerUserError");
+    
+    if (maxUsage > 0 && maxUsagePerUser > maxUsage) {
+      showError(errorElement, "User usage limit must be ≤ total usage limit");
+      return false;
+    } else {
+      clearError(errorElement);
+      return true;
+    }
+  }
+
+  function showError(element, message) {
+    element.textContent = message;
+    element.style.display = 'block';
+    element.previousElementSibling.classList.add('input-error');
+    element.previousElementSibling.classList.remove('success-border');
+  }
+
+  function clearError(element) {
+    element.textContent = '';
+    element.style.display = 'none';
+    element.previousElementSibling.classList.remove('input-error');
+    element.previousElementSibling.classList.add('success-border');
+  }
+
+  // Add event listeners for real-time validation
+  document.getElementById('code').addEventListener('input', validateCode);
+  document.getElementById('code').addEventListener('blur', validateCode);
+  
+  document.getElementById('discountValue').addEventListener('input', validateDiscount);
+  document.getElementById('discountValue').addEventListener('blur', validateDiscount);
+  
+  document.getElementById('maxDiscountAmount').addEventListener('input', validateAmounts);
+  document.getElementById('maxDiscountAmount').addEventListener('blur', validateAmounts);
+  
+  document.getElementById('minOrderAmount').addEventListener('input', validateAmounts);
+  document.getElementById('minOrderAmount').addEventListener('blur', validateMinOrder);
+  
+  document.getElementById('validFrom').addEventListener('change', validateDates);
+  document.getElementById('validTo').addEventListener('change', validateDates);
+  
+  document.getElementById('maxUsage').addEventListener('input', validateUsage);
+  document.getElementById('maxUsagePerUser').addEventListener('input', validateUsage);
+
+  // Form submission handler
+  form.addEventListener('submit', function (e) {
+    e.preventDefault();
+
+    const isValid = 
+      validateCode() &&
+      validateDiscount() &&
+      validateAmounts() &&
+      validateMinOrder() &&
+      validateDates() &&
+      validateUsage();
+
+    if (isValid) {
+      // Disable submit button to prevent double submission
+      submitBtn.disabled = true;
+      submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+      
+      // Submit the form
+      form.submit();
+    } else {
+      Swal.fire("Validation Error", "Please fix all errors before submitting", "error");
+    }
+  });
+
+  // Auto-adjust Valid To when Valid From changes
+  document.getElementById('validFrom').addEventListener('change', function() {
+    const validFrom = this.value;
+    const validTo = document.getElementById('validTo');
+    
+    if (validFrom && (!validTo.value || new Date(validTo.value) <= new Date(validFrom))) {
+      // Set Valid To to 1 hour after Valid From
+      const fromDate = new Date(validFrom);
+      fromDate.setHours(fromDate.getHours() + 1);
+      validTo.value = fromDate.toISOString().slice(0, 16);
+    }
+    
+    validateDates();
+  });
+});
+</script>
+
+</body>
+</html>

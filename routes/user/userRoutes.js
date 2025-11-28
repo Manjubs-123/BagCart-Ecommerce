@@ -1,5 +1,4 @@
 import express from "express";
-// import * as userController from "../../controllers/user/userController.js";
 import {
   getSignup,
   signupUser,
@@ -12,7 +11,7 @@ import {
   logoutUser,
   renderUserProfile,
   updateUserProfile,
-  getChangeEmailPage,sendChangeEmailOtp,verifyChangedEmailOtp,getAddressPage,addAddress,
+  getChangeEmailPage,sendChangeEmailOtp,verifyChangedEmailOtp,getAddressPage,addAddress,resendChangeEmailOtp,
   updateAddress,deleteAddress,setDefaultAddress,getSecuritySettings,checkCurrentPassword,changePassword,getWishlistPage,addToWishlist,removeFromWishlist,toggleWishlist,getCheckoutPage
 } from "../../controllers/user/userController.js";
 
@@ -67,8 +66,6 @@ router.get("/product/:id", isUserLoggedIn, getProductDetails);
 // // Home
 router.get("/home", isUserLoggedIn, showHomePage);
 
-//update profile
-// router.post("/updateProfile", profileUpload.single("profileImage"),updateUserProfile);
 
 //profile
 router.get('/profile',isUserLoggedIn,renderUserProfile);
@@ -84,7 +81,6 @@ router.post("/change-email/send-otp",isUserLoggedIn,sendChangeEmailOtp);
 router.post("/change-email/verify",isUserLoggedIn,verifyChangedEmailOtp);
 
 router.get('/profile/addresses',isAuthenticated,getAddressPage)
-// router.get('/profile/addresses', isAuthenticated, userController.getAddressPage);
 
 
 // create address
@@ -102,6 +98,8 @@ router.patch("/addresses/:id/default", isUserLoggedIn, setDefaultAddress);
 //security 
 router.get('/profile/changepassword',isUserLoggedIn,getSecuritySettings)
 router.post("/change-password", isUserLoggedIn, changePassword);
+router.post("/change-email/resend-otp",isUserLoggedIn, resendChangeEmailOtp);
+
 
 router.post("/check-current-password", isUserLoggedIn, checkCurrentPassword);
 
@@ -113,6 +111,8 @@ router.post("/wishlist/toggle/:productId", toggleWishlist);
 
 //checkout
 router.get("/checkout",isUserLoggedIn,getCheckoutPage);
+
+
 
 // Logout
 router.get("/logout", isUserLoggedIn, logoutUser);

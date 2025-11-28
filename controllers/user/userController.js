@@ -1,33 +1,22 @@
-import User from "../../models/userModel.js";
+
+import dotenv from "dotenv";
+dotenv.config();
 import { sendOtpMail } from "../../utils/sendMail.js";
+import User from "../../models/userModel.js";
 import bcrypt from "bcryptjs";
 import cloudinary from "../../config/cloudinary.js";
 import fs from "fs";
-import nodemailer from "nodemailer";
 import mongoose from "mongoose";
-import dotenv from "dotenv";
-dotenv.config();
 import {loadHomeProducts,renderLandingPage} from "./productController.js"; 
-// import Order from "../../models/orderModel.js";
+import Order from "../../models/orderModel.js";
 
 
-// Email setup (Gmail SMTP)
-const transporter = nodemailer.createTransport({
-  host: "smtp.gmail.com",
-  port: 465,
-  secure: true,
-  auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS,
-  },
-});
 
-// Render Signup Page
 export const getSignup = (req, res) => {
   res.render("user/signup", { error: null });
 };
 
-// Handle Signup Submission
+// Handle Signup Submission 
 export const signupUser = async (req, res) => {
   try {
     if (mongoose.connection.readyState !== 1) {
@@ -39,12 +28,16 @@ export const signupUser = async (req, res) => {
 
     const { name, email, password, confirmPassword } = req.body;
 
-    // --- Validation ---
+    //  Validation 
     if (!name?.trim()) return res.render("user/signup", { error: "Name is required." });
     if (name.trim().length < 6) return res.render("user/signup", { error: "Name must be at least 6 characters." });
     if (!/^[a-zA-Z\s]+$/.test(name)) return res.render("user/signup", { error: "Name can contain only alphabets." });
 
-    if (!email?.endsWith("@gmail.com")) return res.render("user/signup", { error: "Enter a valid Gmail address." });
+const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+if (!emailRegex.test(email)) {
+  return res.render("user/signup", { error: "Enter a valid email address." });
+}
 
     const passwordRegex = /^(?=.*[A-Z])(?=.*[0-9])(?=.*[!@#$%^&*]).{6,}$/;
     if (!passwordRegex.test(password)) {
@@ -56,7 +49,7 @@ export const signupUser = async (req, res) => {
       return res.render("user/signup", { error: "Passwords do not match." });
     }
 
-    // --- Check existing user ---
+    //  Check existing user 
     const existingUser = await User.findOne({ email });
     if (existingUser && existingUser.isVerified) {
       return res.render("user/signup", { error: "Email already registered. Please login." });
@@ -64,7 +57,7 @@ export const signupUser = async (req, res) => {
       await User.deleteOne({ _id: existingUser._id });
     }
 
-    // --- Create new user ---
+    //  Create new user 
     const hashedPassword = await bcrypt.hash(password, 10);
 
     const newUser = new User({
@@ -75,42 +68,35 @@ export const signupUser = async (req, res) => {
     });
     await newUser.save();
 
-    // --- Generate OTP and store in session ---
+    //  Generate OTP and store in session 
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
     req.session.otp = otp;
     req.session.email = email;
-    req.session.otpExpires = Date.now() + 5 * 60 * 1000; // 5 minutes
+    req.session.otpExpires = Date.now() + 1 * 60 * 1000; // 5 minutes
+    req.session.pendingEmail = email;
 
-    // --- Send OTP via email ---
-    await transporter.sendMail({
-      from: process.env.EMAIL_USER,
-      to: email,
-      subject: "Your OTP for BagCart Signup",
-      html: `<p>Hello ${name},</p>
-             <p>Your OTP is <b>${otp}</b>. It will expire in 2 minutes.</p>`,
-    });
+    //  Send OTP via email 
+    await sendOtpMail(email, otp); // Directly use the imported function
 
-    console.log(` OTP sent to ${email}: ${otp}`);
-    req.session.pendingEmail = email; // store securely in session
+    console.log(`OTP sent to ${email}: ${otp}`);
+    
     res.redirect("/user/verifyOtp");
   } catch (err) {
-    console.error(" Signup error:", err);
+    console.error("Signup error:", err);
     res.status(500).render("user/signup", { error: "Something went wrong. Please try again later." });
   }
-}; 
+};
 
 
 export const getVerifyOtp = (req, res) => {
   const email = req.session.pendingEmail;
 
-  if (!email) return res.redirect("/user/signup"); // if session lost or expired
+  if (!email) return res.redirect("/user/signup");
 
-  // Add constants here 
-  const RESEND_COOLDOWN = 60; // seconds before user can resend OTP
-  const OTP_EXPIRY_MINUTES = 2; // OTP valid time (in minutes)
+  const RESEND_COOLDOWN = 60;
+  const OTP_EXPIRY_MINUTES = 1;
   const cooldown = req.session.cooldown || 0;
 
-  // Render page with all required variables
   res.render("user/verifyOtp", {
     email,
     error: null,
@@ -119,8 +105,6 @@ export const getVerifyOtp = (req, res) => {
     OTP_EXPIRY_MINUTES,  
   });
 };
-
-
 
 export const postVerifyOtp = async (req, res) => {
   try {
@@ -135,7 +119,7 @@ export const postVerifyOtp = async (req, res) => {
         error: "OTP expired. Please sign up again.",
         cooldown: 0,
         RESEND_COOLDOWN: 60,
-        OTP_EXPIRY_MINUTES: 2
+        OTP_EXPIRY_MINUTES: 1
       });
     }
 
@@ -146,7 +130,7 @@ export const postVerifyOtp = async (req, res) => {
         error: "Invalid OTP. Please try again.",
         cooldown: 0,
         RESEND_COOLDOWN: 60,
-        OTP_EXPIRY_MINUTES: 2
+        OTP_EXPIRY_MINUTES: 1
       });
     }
 
@@ -157,8 +141,7 @@ export const postVerifyOtp = async (req, res) => {
 
     user.isVerified = true;
 
-    const DEFAULT_URL =
-      "https://res.cloudinary.com/db5uwjwdv/image/upload/v1763442856/AdobeStock_1185421594_Preview_cvfm1v.jpg";
+    const DEFAULT_URL = "https://res.cloudinary.com/db5uwjwdv/image/upload/v1763442856/AdobeStock_1185421594_Preview_cvfm1v.jpg";
     const DEFAULT_ID = "AdobeStock_1185421594_Preview_cvfm1v";
 
     if (!user.profileImage || !user.profileImage.url) {
@@ -195,10 +178,60 @@ export const postVerifyOtp = async (req, res) => {
       error: "Something went wrong.",
       cooldown: 0,
       RESEND_COOLDOWN: 60,
-      OTP_EXPIRY_MINUTES: 2
+      OTP_EXPIRY_MINUTES: 1
     });
   }
 };
+
+// export const resendOtp = async (req, res) => {
+//   try {
+//     const email = req.session.pendingEmail;
+//     if (!email) return res.redirect("/user/signup");
+
+//     const now = Date.now();
+//     const cooldown = req.session.cooldown || 0;
+
+//     // Prevent resend spam
+//     if (now < cooldown) {
+//       const remaining = Math.ceil((cooldown - now) / 1000);
+//       return res.render("user/verifyOtp", {
+//         email,
+//         error: `Please wait ${remaining}s before resending OTP.`,
+//         cooldown: remaining,
+//         RESEND_COOLDOWN: 60,
+//         OTP_EXPIRY_MINUTES: 1,
+//       });
+//     }
+
+//     // New OTP
+//     const newOtp = Math.floor(100000 + Math.random() * 900000).toString();
+//     req.session.otp = newOtp;
+//     req.session.otpExpires = now + 1 * 60 * 1000;
+//     req.session.cooldown = now + 60 * 1000;
+
+//     // FIXED: Use the imported sendOtpMail function directly
+//     await sendOtpMail(email, newOtp);
+
+//     console.log(`Resent OTP to ${email}: ${newOtp}`);
+
+//     res.render("user/verifyOtp", {
+//       email,
+//       error: null,
+//       cooldown: 60,
+//       RESEND_COOLDOWN: 60,
+//       OTP_EXPIRY_MINUTES: 1,
+//     });
+//   } catch (err) {
+//     console.error("Resend OTP Error:", err);
+//     res.render("user/verifyOtp", {
+//       email: req.session.pendingEmail || "",
+//       error: "Failed to resend OTP. Please try again.",
+//       cooldown: 0,
+//       RESEND_COOLDOWN: 60,
+//       OTP_EXPIRY_MINUTES: 1,
+//     });
+//   }
+// };
 
 
 export const resendOtp = async (req, res) => {
@@ -209,7 +242,6 @@ export const resendOtp = async (req, res) => {
     const now = Date.now();
     const cooldown = req.session.cooldown || 0;
 
-    // Prevent resend spam
     if (now < cooldown) {
       const remaining = Math.ceil((cooldown - now) / 1000);
       return res.render("user/verifyOtp", {
@@ -217,32 +249,40 @@ export const resendOtp = async (req, res) => {
         error: `Please wait ${remaining}s before resending OTP.`,
         cooldown: remaining,
         RESEND_COOLDOWN: 60,
-        OTP_EXPIRY_MINUTES: 2,
+        OTP_EXPIRY_MINUTES: 1,
       });
     }
 
-    // New OTP
     const newOtp = Math.floor(100000 + Math.random() * 900000).toString();
     req.session.otp = newOtp;
-    req.session.otpExpires = now + 5 * 60 * 1000;
+    req.session.otpExpires = now + 1 * 60 * 1000;
     req.session.cooldown = now + 60 * 1000;
 
-    await transporter.sendMail({
-      from: process.env.EMAIL_USER,
-      to: email,
-      subject: "New OTP for BagCart Verification",
-      html: `<p>Your new OTP is <b>${newOtp}</b>. It will expire in 5 minutes.</p>`,
+    await sendOtpMail(email, newOtp);
+    console.log(`Resent Signup OTP to ${email}: ${newOtp}`);
+
+    // IMPORTANT FIX
+    req.session.save((err) => {
+      if (err) {
+        console.error("Session save error:", err);
+        return res.render("user/verifyOtp", {
+          email,
+          error: "Failed to update session. Try again.",
+          cooldown: 0,
+          RESEND_COOLDOWN: 60,
+          OTP_EXPIRY_MINUTES: 1,
+        });
+      }
+
+      return res.render("user/verifyOtp", {
+        email,
+        error: null,
+        cooldown: 60,
+        RESEND_COOLDOWN: 60,
+        OTP_EXPIRY_MINUTES: 1,
+      });
     });
 
-    console.log(` Resent OTP to ${email}: ${newOtp}`);
-
-    res.render("user/verifyOtp", {
-      email,
-      error: null,
-      cooldown: 60,
-      RESEND_COOLDOWN: 60,
-      OTP_EXPIRY_MINUTES: 2,
-    });
   } catch (err) {
     console.error("Resend OTP Error:", err);
     res.render("user/verifyOtp", {
@@ -250,10 +290,11 @@ export const resendOtp = async (req, res) => {
       error: "Failed to resend OTP. Please try again.",
       cooldown: 0,
       RESEND_COOLDOWN: 60,
-      OTP_EXPIRY_MINUTES: 2,
+      OTP_EXPIRY_MINUTES: 1,
     });
   }
 };
+
 
 
 export const getLogin = (req, res) => {
@@ -352,7 +393,9 @@ export const updateUserProfile = async (req, res) => {
     user.phone = phone;
 
     await user.save();
-
+    req.session.user.name = user.name;
+    req.session.user.phone = user.phone;
+    req.session.user.profileImage = user.profileImage;
     return res.json({ success: true });
 
   } catch (err) {
@@ -360,8 +403,6 @@ export const updateUserProfile = async (req, res) => {
     return res.json({ success: false, message: "Server Error" });
   }
 };
-
-
 
 
 export const getChangeEmailPage = (req, res) => {
@@ -376,6 +417,50 @@ export const getChangeEmailPage = (req, res) => {
 
 // Send OTP to new email
 
+// export const sendChangeEmailOtp = async (req, res) => {
+//   try {
+//     const userId = req.session.user.id;
+//     const { newEmail } = req.body;
+
+//     if (!newEmail) {
+//       return res.json({ success: false, message: "Email is required" });
+//     }
+
+//     const user = await User.findById(userId);
+
+//     if (user.email === newEmail) {
+//       return res.json({
+//         success: false,
+//         message: "New email cannot be the same as current email"
+//       });
+//     }
+
+//     const existing = await User.findOne({ email: newEmail });
+//     if (existing) {
+//       return res.json({
+//         success: false,
+//         message: "Email already exists. Choose another."
+//       });
+//     }
+
+//     const otp = Math.floor(100000 + Math.random() * 900000).toString();
+
+//     req.session.changeEmailOtp = otp;
+//     req.session.changeEmailNewEmail = newEmail;
+//     req.session.changeEmailOtpExpires = Date.now() + (1* 60 * 1000);
+
+//     await sendOtpMail(newEmail, otp);
+
+//     return res.json({ success: true });
+
+//   } catch (err) {
+//     console.log(err);
+//     return res.json({ success: false, message: "Server error" });
+//   }
+// };
+// Send OTP to new email
+
+// Send OTP for Email Change
 export const sendChangeEmailOtp = async (req, res) => {
   try {
     const userId = req.session.user.id;
@@ -402,23 +487,71 @@ export const sendChangeEmailOtp = async (req, res) => {
       });
     }
 
+    // Generate OTP
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
 
+    // Store in session
     req.session.changeEmailOtp = otp;
     req.session.changeEmailNewEmail = newEmail;
-    req.session.changeEmailOtpExpires = Date.now() + (2 * 60 * 1000);
+    req.session.changeEmailOtpExpires = Date.now() + (1 * 60 * 1000); // 1 MINUTE
+    req.session.changeEmailCooldown = Date.now() + (60 * 1000); // RESEND COOLDOWN 1 MINUTE
 
+    // Send email
     await sendOtpMail(newEmail, otp);
+
+    // LOGGGG ❗This prints OTP in VS CODE TERMINAL
+    console.log("▶ Email Change OTP Sent");
+    console.log("New Email:", newEmail);
+    console.log("OTP:", otp);
+    console.log("Expires At:", new Date(req.session.changeEmailOtpExpires));
 
     return res.json({ success: true });
 
   } catch (err) {
-    console.log(err);
+    console.log("Send Change Email OTP Error:", err);
     return res.json({ success: false, message: "Server error" });
   }
 };
 
-// Verify OTP
+
+export const resendChangeEmailOtp = async (req, res) => {
+  try {
+    const now = Date.now();
+
+    // Cooldown not completed
+    if (now < req.session.changeEmailCooldown) {
+      const remaining = Math.ceil((req.session.changeEmailCooldown - now) / 1000);
+      return res.json({
+        success: false,
+        message: `Please wait ${remaining}s before resending`
+      });
+    }
+
+    const newEmail = req.session.changeEmailNewEmail;
+
+    if (!newEmail) {
+      return res.json({ success: false, message: "No email found in session" });
+    }
+
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+
+    req.session.changeEmailOtp = otp;
+    req.session.changeEmailOtpExpires = now + (1 * 60 * 1000);
+    req.session.changeEmailCooldown = now + (60 * 1000);
+
+    await sendOtpMail(newEmail, otp);
+
+    console.log("▶ RESEND Email Change OTP");
+    console.log("Email:", newEmail);
+    console.log("New OTP:", otp);
+
+    return res.json({ success: true });
+
+  } catch (err) {
+    console.log("Resend OTP Error:", err);
+    return res.json({ success: false, message: "Server error" });
+  }
+};
 
 
 export const verifyChangedEmailOtp = async (req, res) => {
@@ -430,33 +563,127 @@ export const verifyChangedEmailOtp = async (req, res) => {
       return res.json({ success: false, message: "OTP is required" });
     }
 
+    // Expired?
     if (Date.now() > req.session.changeEmailOtpExpires) {
       return res.json({ success: false, message: "OTP expired" });
     }
 
+    // Incorrect?
     if (otp !== req.session.changeEmailOtp) {
       return res.json({ success: false, message: "Invalid OTP" });
     }
 
     const newEmail = req.session.changeEmailNewEmail;
 
+    // Update DB
     await User.findByIdAndUpdate(userId, { email: newEmail });
 
-    // update session
+    // Update session user
     req.session.user.email = newEmail;
 
-    // clear session
+    // Clear OTP sessions
     delete req.session.changeEmailOtp;
     delete req.session.changeEmailNewEmail;
     delete req.session.changeEmailOtpExpires;
+    delete req.session.changeEmailCooldown;
+
+    console.log("✔ Email Updated Successfully to:", newEmail);
 
     return res.json({ success: true, newEmail });
 
   } catch (err) {
-    console.log(err);
+    console.log("Verify OTP Error:", err);
     return res.json({ success: false, message: "Something went wrong" });
   }
 };
+
+
+
+// Verify OTP
+
+
+// export const verifyChangedEmailOtp = async (req, res) => {
+//   try {
+//     const userId = req.session.user.id;
+//     const { otp } = req.body;
+
+//     if (!otp) {
+//       return res.json({ success: false, message: "OTP is required" });
+//     }
+
+//     if (Date.now() > req.session.changeEmailOtpExpires) {
+//       return res.json({ success: false, message: "OTP expired" });
+//     }
+
+//     if (otp !== req.session.changeEmailOtp) {
+//       return res.json({ success: false, message: "Invalid OTP" });
+//     }
+
+//     const newEmail = req.session.changeEmailNewEmail;
+
+//     await User.findByIdAndUpdate(userId, { email: newEmail });
+
+//     // update session
+//     req.session.user.email = newEmail;
+
+//     // clear session
+//     delete req.session.changeEmailOtp;
+//     delete req.session.changeEmailNewEmail;
+//     delete req.session.changeEmailOtpExpires;
+
+//     return res.json({ success: true, newEmail });
+
+//   } catch (err) {
+//     console.log(err);
+//     return res.json({ success: false, message: "Something went wrong" });
+//   }
+// };
+// Verify OTP & Update Email
+// export const verifyChangedEmailOtp = async (req, res) => {
+//   try {
+//     const userId = req.session.user.id;
+//     const { otp } = req.body;
+
+//     if (!otp) {
+//       return res.json({ success: false, message: "OTP is required" });
+//     }
+
+//     // Debug Logging
+//     console.log("Entered OTP:", otp);
+//     console.log("Stored OTP:", req.session.changeEmailOtp);
+
+//     // Expired?
+//     if (Date.now() > req.session.changeEmailOtpExpires) {
+//       return res.json({ success: false, message: "OTP expired" });
+//     }
+
+//     // Wrong?
+//     if (otp !== req.session.changeEmailOtp) {
+//       return res.json({ success: false, message: "Invalid OTP" });
+//     }
+
+//     const newEmail = req.session.changeEmailNewEmail;
+
+//     // Update in DB
+//     await User.findByIdAndUpdate(userId, { email: newEmail });
+
+//     // Update user session
+//     req.session.user.email = newEmail;
+
+//     // Cleanup
+//     delete req.session.changeEmailOtp;
+//     delete req.session.changeEmailNewEmail;
+//     delete req.session.changeEmailOtpExpires;
+//     delete req.session.changeEmailCooldown;
+
+//     return res.json({ success: true, newEmail });
+
+//   } catch (err) {
+//     console.log("Error in verifyChangedEmailOtp:", err);
+//     return res.json({ success: false, message: "Something went wrong" });
+//   }
+// };
+
 
 export const getAddressPage = async (req, res) => {
     try {
@@ -465,7 +692,7 @@ export const getAddressPage = async (req, res) => {
 
         const addresses = user.addresses || [];
 
-        // Function for EJS
+        
         const getAddressTypeIcon = (type) => {
             switch (type) {
                 case "home": return "home";
@@ -480,7 +707,7 @@ export const getAddressPage = async (req, res) => {
             ordersCount: user.orders?.length || 0,
             wishlistCount: user.wishlist?.length || 0,
             unreadNotifications: user.notifications?.filter(n => !n.read).length || 0,
-            getAddressTypeIcon  // send function to EJS
+            getAddressTypeIcon  
         });
 
     } catch (err) {
@@ -488,56 +715,6 @@ export const getAddressPage = async (req, res) => {
         res.status(500).send("Server Error");
     }
 };
-
-// export const getAddressPage = async (req, res) => {
-//     try {
-//         const userId = req.session.user.id;
-
-//         const user = await User.findById(userId).lean();
-
-//         const addresses = user.addresses || [];
-
-//         const ordersCount = user.orders?.length || 0;
-//         const wishlistCount = user.wishlist?.length || 0;
-//         const unreadNotifications = user.notifications?.filter(n => !n.read).length || 0;
-
-//         res.render("user/addressList", {
-//             user,
-//             addresses,
-//             ordersCount,
-//             wishlistCount,
-//             unreadNotifications
-//         });
-
-//     } catch (error) {
-//         console.error("Error loading address page:", error);
-//         return res.status(500).send("Internal Server Error");
-//     }
-// };
-
-// export const getAddresses = async (req, res) => {
-//     try {
-//         const user = await User.findById(req.session.user.id).lean();
-
-//         res.json({
-//             success: true,
-//             addresses: user.addresses || []
-//         });
-
-//     } catch (err) {
-//         console.error("Address fetch error:", err);
-//         res.json({ success: false, addresses: [] });
-//     }
-// };
-
-// export const getAddressPage = async (req, res) => {
-//     try {
-//         const user = await User.findById(req.session.user.id).lean();
-//         res.json({ success: true, addresses: user.addresses || [] });
-//     } catch (err) {
-//         res.json({ success: false, addresses: [] });
-//     }
-// };
 
 export const addAddress = async (req, res) => {
     try {
@@ -558,12 +735,12 @@ export const addAddress = async (req, res) => {
 
         const user = await User.findById(userId);
 
-        // If first address → set default
+        // If first address set default
         if (user.addresses.length === 0) {
             newAddress.isDefault = true;
         }
 
-        // If setting new default → remove default from others
+        // If setting new default  remove default from others
         if (newAddress.isDefault) {
             user.addresses.forEach(addr => addr.isDefault = false);
         }
@@ -592,7 +769,7 @@ export const updateAddress = async (req, res) => {
         // update fields
         Object.assign(address, req.body);
 
-        // if default → update all
+        // if default  update all
         if (req.body.isDefault) {
             user.addresses.forEach(a => a.isDefault = false);
             address.isDefault = true;
@@ -609,12 +786,12 @@ export const updateAddress = async (req, res) => {
 };
 export const deleteAddress = async (req, res) => {
     try {
-        const userId = req.session.user.id;   // FIXED
+        const userId = req.session.user.id;   
         const addressId = req.params.id;
 
 
-        console.log("SESSION USER =", req.session.user);
-console.log("ADDRESS ID =", req.params.id);
+//         console.log("SESSION USER =", req.session.user);
+// console.log("ADDRESS ID =", req.params.id);
 
         const user = await User.findById(userId);
         if (!user) {
@@ -643,11 +820,9 @@ console.log("ADDRESS ID =", req.params.id);
     }
 };
 
-
-
 export const setDefaultAddress = async (req, res) => {
   try {
-    // Defensive checks
+   
     if (!req.user) {
       console.warn("setDefaultAddress: req.user is missing");
       return res.status(401).json({ success: false, message: "Unauthorized" });
@@ -672,7 +847,7 @@ export const setDefaultAddress = async (req, res) => {
     // Clear default flags
     user.addresses.forEach(a => { a.isDefault = false; });
 
-    // Mongoose subdoc lookup (works for arrays of subdocs)
+    // Mongoose subdoc lookup works for arrays of subdocs
     const target = user.addresses.id ? user.addresses.id(addressId) : user.addresses.find(a => a._id && a._id.toString() === addressId);
 
     if (!target) {
@@ -693,11 +868,9 @@ export const setDefaultAddress = async (req, res) => {
 };
 
 
-
-
 export const getSecuritySettings = async (req, res) => {
   try {
-    console.log("REACHED SECURITY PAGE");
+    // console.log("REACHED SECURITY PAGE");
 
     if (!req.session.user) return res.redirect('/user/login');
 
@@ -757,6 +930,7 @@ export const changePassword = async (req, res) => {
                 success: false,
                 message: "You logged in using Google. Password change is not required."
             });
+
         }
 
         // Compare old password
@@ -777,8 +951,6 @@ export const changePassword = async (req, res) => {
         return res.json({ success: false, message: "Internal server error" });
     }
 };
-
-
 
 export const getWishlistPage = async (req, res) => {
     try {
@@ -810,12 +982,9 @@ export const getWishlistPage = async (req, res) => {
 };
 
 
-
-
-
 export const addToWishlist = async (req, res) => {
   try {
-    const userId = req.session.user.id;   // ✔ ALWAYS USE id
+    const userId = req.session.user.id;  
     const productId = req.params.productId;
 
     const user = await User.findById(userId);
@@ -836,7 +1005,7 @@ export const addToWishlist = async (req, res) => {
 
 export const removeFromWishlist = async (req, res) => {
   try {
-    const userId = req.session.user.id;  // ✔ MATCH here
+    const userId = req.session.user.id;  
     const productId = req.params.productId;
 
     await User.findByIdAndUpdate(userId, {
@@ -872,6 +1041,7 @@ export const toggleWishlist = async (req, res) => {
             await user.save();
             return res.json({ success: true, added: true, message: "Added to wishlist" });
         }
+       
     } catch (err) {
         console.log(err);
         res.json({ success: false, message: "Something went wrong" });
@@ -886,9 +1056,6 @@ export const getCheckoutPage = (req, res) => {
         unreadNotifications: 0
     });
 };
-
-
-
 
 
 
