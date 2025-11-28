@@ -71,59 +71,7 @@ export const renderAddProduct = async (req, res) => {
   }
 };
   
-// Get all products 
-// export const getProducts = async (req, res) => {
-//   try {
-//     const { page = 1, limit = 10, search = '', category = '' } = req.query;
 
-//     const query = { isDeleted: false };
-
-//     if (search) {
-//       query.$or = [
-//         { name: { $regex: search, $options: 'i' } },
-//         { brand: { $regex: search, $options: 'i' } }
-//       ];
-//     }
-
-//     if (category) {
-//       query.category = category;
-//     }
-
-//     const skip = (page - 1) * limit;
-
-//     const [rawProducts, total] = await Promise.all([
-//       Product.find(query)
-//         .populate({ path: 'category', match: { isActive: true, isDeleted: false } })
-//         .sort({ createdAt: -1 })
-//         .skip(skip)
-//         .limit(parseInt(limit)),
-//       Product.countDocuments(query)
-//     ]);
-
-//     // Filter out products whose category was filtered out by populate (blocked/deleted categories)
-//     const products = rawProducts.filter(p => p.category != null);
-   
-//     // console.log(" Product image check:", products[0]?.variants?.[0]?.images);
-
-    
-//     res.render("admin/productList", {
-//       products,
-//       q: search,
-//       pagination: {
-//         total,
-//         page: parseInt(page),
-//         pages: Math.ceil(total / limit)
-//       },
-//     });
-
-//   } catch (error) {
-//     console.error('Get Products Error:', error);
-//     res.status(500).send("Failed to load products");
-//   }
-// };
-
-
-// Get single product by ID
 export const getProductById = async (req, res) => {
   try {
     const { id } = req.params;

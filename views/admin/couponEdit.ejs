@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Edit Coupon | Admin Dashboard</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+</head>
+
+<body class="bg-gray-50 flex min-h-screen">
+  <%- include('../partials/sidebar') %>
+
+  <main class="ml-64 flex-1 p-8">
+    <h1 class="text-3xl font-bold mb-6">Edit Coupon</h1>
+
+    <div class="bg-white p-6 rounded-lg border shadow-sm">
+      <form id="couponForm">
+
+        <input type="hidden" id="couponId" value="<%= coupon._id %>" />
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+          <div class="space-y-5">
+            <div>
+              <label class="text-sm font-medium">Coupon Code *</label>
+              <input id="code" name="code"
+                class="w-full border rounded-lg px-4 py-2.5"
+                value="<%= coupon.code %>" />
+            </div>
+
+            <div>
+              <label class="text-sm font-medium">Discount % *</label>
+              <input id="discountValue" name="discountValue" type="number"
+                class="w-full border rounded-lg px-4 py-2.5"
+                value="<%= coupon.discountValue %>" />
+            </div>
+
+            <div>
+              <label class="text-sm font-medium">Max Discount (₹) *</label>
+              <input id="maxDiscountAmount" name="maxDiscountAmount" type="number"
+                class="w-full border rounded-lg px-4 py-2.5"
+                value="<%= coupon.maxDiscountAmount %>" />
+            </div>
+
+            <div>
+              <label class="text-sm font-medium">Min Order Amount (₹)</label>
+              <input id="minOrderAmount" name="minOrderAmount" type="number"
+                class="w-full border rounded-lg px-4 py-2.5"
+                value="<%= coupon.minOrderAmount %>" />
+            </div>
+          </div>
+
+          <div class="space-y-5">
+            <div>
+              <label class="text-sm font-medium">Valid From *</label>
+              <input id="validFrom" name="validFrom" type="datetime-local"
+                class="w-full border rounded-lg px-4 py-2.5"
+                value="<%= new Date(coupon.validFrom).toISOString().slice(0,16) %>" />
+            </div>
+
+            <div>
+              <label class="text-sm font-medium">Valid To *</label>
+              <input id="validTo" name="validTo" type="datetime-local"
+                class="w-full border rounded-lg px-4 py-2.5"
+                value="<%= new Date(coupon.validTo).toISOString().slice(0,16) %>" />
+            </div>
+
+            <div>
+              <label class="text-sm font-medium">Max Usage</label>
+              <input id="maxUsage" name="maxUsage" type="number"
+                class="w-full border rounded-lg px-4 py-2.5"
+                value="<%= coupon.maxUsage || '' %>" />
+            </div>
+
+            <div>
+              <label class="text-sm font-medium">Max Usage Per User</label>
+              <input id="maxUsagePerUser" name="maxUsagePerUser" type="number"
+                class="w-full border rounded-lg px-4 py-2.5"
+                value="<%= coupon.maxUsagePerUser || '' %>" />
+            </div>
+
+            <div class="flex items-center gap-2">
+              <input id="isActive" type="checkbox" <%= coupon.isActive ? 'checked' : '' %> />
+              <label class="text-sm font-medium">Active</label>
+            </div>
+          </div>
+        </div>
+
+        <div class="mt-6 flex justify-end gap-3 border-t pt-5">
+          <button type="button" onclick="history.back()" class="bg-gray-500 text-white px-6 py-2.5 rounded-lg">Cancel</button>
+          <button type="button" onclick="saveCoupon()" class="bg-blue-600 text-white px-6 py-2.5 rounded-lg">Save Changes</button>
+        </div>
+      </form>
+    </div>
+  </main>
+
+  <script>
+    const nowLocal = () => new Date();
+
+    function validateForm() {
+      const now = nowLocal();
+      const errors = [];
+
+      const code = document.getElementById("code").value.trim();
+      const discount = parseFloat(document.getElementById("discountValue").value);
+      const maxDiscount = parseFloat(document.getElementById("maxDiscountAmount").value);
+      const minOrder = parseFloat(document.getElementById("minOrderAmount").value || 0);
+      const from = new Date(document.getElementById("validFrom").value);
+      const to = new Date(document.getElementById("validTo").value);
+      const max = document.getElementById("maxUsage").value;
+      const perUser = document.getElementById("maxUsagePerUser").value;
+
+      if (!code || code.length < 3 || code.length > 20)
+        errors.push("Coupon Code must be 3–20 characters!");
+
+      if (isNaN(discount) || discount < 1 || discount > 100)
+        errors.push("Discount % must be 1–100!");
+
+      if (isNaN(maxDiscount) || maxDiscount < 1)
+        errors.push("Max Discount must be at least ₹1!");
+
+      if (minOrder < 0)
+        errors.push("Min order cannot be negative!");
+
+      if (from < now)
+        errors.push("Valid From must be now or future!");
+
+      if (to <= from)
+        errors.push("Valid To must be after Valid From!");
+
+      if (to <= now)
+        errors.push("Valid To (expiry) must be future!");
+
+      if (max && Number(max) < 1)
+        errors.push("Max Usage must be ≥ 1!");
+
+      if (perUser && Number(perUser) < 1)
+        errors.push("Max Per User must be ≥ 1!");
+
+      return errors;
+    }
+
+    async function saveCoupon() {
+      const validateErrors = validateForm();
+      if (validateErrors.length > 0) {
+        Swal.fire({
+          icon: "error",
+          title: "Validation Failed",
+          html: validateErrors.join("<br>")
+        });
+        return;
+      }
+
+      const id = document.getElementById("couponId").value;
+
+     const payload = {
+  code: document.getElementById("code").value.trim().toUpperCase(),
+  discountValue: parseFloat(document.getElementById("discountValue").value),
+  maxDiscountAmount: parseFloat(document.getElementById("maxDiscountAmount").value),
+  minOrderAmount: parseFloat(document.getElementById("minOrderAmount").value || 0),
+  validFrom: document.getElementById("validFrom").value, // ✅ STRING
+  validTo: document.getElementById("validTo").value,   // ✅ STRING
+  expiryDate: document.getElementById("validTo").value, // ✅ Expiry string
+  maxUsage: document.getElementById("maxUsage").value || null,
+  maxUsagePerUser: document.getElementById("maxUsagePerUser").value || null,
+  isActive: document.getElementById("isActive").checked
+};
+
+await axios.patch(`/admin/coupon/update/${id}`, payload);
+
+
+      try {
+        const res = await axios.patch(`/admin/coupon/update/${id}`, payload);
+        Swal.fire({
+          icon: "success",
+          title: "Updated",
+          text: "Coupon updated successfully!",
+          timer: 1500,
+          showConfirmButton: false
+        }).then(() => window.location.href = "/admin/coupon");
+      } catch (err) {
+        Swal.fire({
+          icon:"error",
+          title:"Update Error",
+          html: err.response?.data?.message?.join("<br>") || "Failed updating coupon!"
+        });
+      }
+    }
+  </script>
+</body>
+</html>

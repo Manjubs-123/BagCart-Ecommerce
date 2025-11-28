@@ -19,6 +19,12 @@ import shopRoutes from "./routes/user/shopRoute.js";
 import { errorHandler } from "./middlewares/errorHandler.js";
 import User from "./models/userModel.js"
 import {renderHomePage} from "./controllers/user/productController.js";
+import cartRoutes from "./routes/user/cartRoutes.js"
+import userApiRoutes from './routes/user/userApiRoutes.js';
+import orderRoutes from './routes/user/orderRoutes.js'
+import adminOrderRoutes from "./routes/admin/adminOrderRoutes.js"
+import walletRoutes from "./routes/user/walletRoutes.js";
+import adminCouponRoutes from "./routes/admin/adminCouponRoutes.js"
 const app = express();
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -53,35 +59,35 @@ app.use(
   })
 );
 
-// app.use(async (req, res, next) => {
-//   try {
-//     if (req.session.user && req.session.user.id) {
-//       const dbUser = await User.findById(req.session.user.id).lean();
+app.use(async (req, res, next) => {
+  try {
+    if (req.session.user && req.session.user.id) {
+      const dbUser = await User.findById(req.session.user.id).lean();
 
-//       res.locals.user = dbUser;
+      res.locals.user = dbUser;
 
-//       // Also update session user (so it always stays fresh)
-//       req.session.user = {
-//         id: dbUser._id,
-//         name: dbUser.name,
-//         email: dbUser.email,
-//         profileImage: dbUser.profileImage, // ← IMPORTANT
-//         wishlistCount: dbUser.wishlist?.length || 0,
-//         cartCount: dbUser.cart?.items?.length || 0
-//       };
+      // Also update session user (so it always stays fresh)
+      req.session.user = {
+        id: dbUser._id,
+        name: dbUser.name,
+        email: dbUser.email,
+        profileImage: dbUser.profileImage, 
+        wishlistCount: dbUser.wishlist?.length || 0,
+        cartCount: dbUser.cart?.items?.length || 0
+      };
 
-//     } else {
-//       res.locals.user = null;
-//     }
-//     next();
-//   } catch (err) {
-//     console.log("User Load Error:", err);
-//     res.locals.user = null;
-//     next();
-//   }
-// });
+    } else {
+      res.locals.user = null;
+    }
+    next();
+  } catch (err) {
+    console.log("User Load Error:", err);
+    res.locals.user = null;
+    next();
+  }
+});
 
-// app.use(noCache);
+app.use(noCache);
 
 app.use(async (req, res, next) => {
   if (req.session.user && req.session.user.id) {
@@ -119,6 +125,8 @@ app.use(passport.session());
 //   next();
 // });
 
+
+app.use('/user/cart',cartRoutes);
 app.use("/admin", adminRoutes);
 app.use("/user", userRoutes);
 app.use("/user", shopRoutes);
@@ -127,7 +135,11 @@ app.use("/admin/category", categoryRoutes);
 app.use("/admin/products", productRoutes);
 app.use("/admin/users", usersRoutes); 
 app.get("/", renderHomePage);
-
+app.use("/api", userApiRoutes);
+app.use('/order',orderRoutes);
+app.use('/admin/orders',adminOrderRoutes)
+app.use('/user',walletRoutes)
+app.use('/admin/coupon', adminCouponRoutes);
 
 
 

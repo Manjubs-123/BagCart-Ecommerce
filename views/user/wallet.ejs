@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>My Wallet - BagHub</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+
+<body class="bg-gradient-to-br from-blue-50 to-indigo-100 min-h-screen">
+
+    <!-- HEADER -->
+    <%- include('../partials/landingheader') %>
+
+    <div class="container mx-auto px-4 py-8">
+        <div class="max-w-7xl mx-auto">
+
+            <!-- Responsive Layout Wrapper -->
+            <div class="flex flex-col lg:flex-row gap-6">
+
+                <!-- Sidebar -->
+                <div class="w-full lg:w-1/4">
+                    <%- include('../partials/userProfileSiderbar', { 
+                        activePage: 'wallet',
+                        user 
+                    }) %>
+                </div>
+
+                <!-- Main Content -->
+                <div class="flex-1">
+
+                    <!-- Wallet Header -->
+                    <div class="bg-white rounded-2xl p-8 shadow-md text-center mb-8">
+                        <h1 class="text-3xl md:text-4xl font-bold text-gray-800">My Wallet</h1>
+                        <p class="text-gray-600 mt-2">Manage your wallet balance and history</p>
+                    </div>
+
+                    <!-- Wallet Balance Box -->
+                    <div class="bg-blue-50 border border-blue-300 rounded-xl p-6 mb-8 shadow-md">
+                        <p class="text-lg text-gray-700 font-semibold">Wallet Balance:</p>
+                        <p class="text-4xl font-bold text-blue-700 mt-2">
+                            ₹<%= wallet.balance.toFixed(2) %>
+                        </p>
+                    </div>
+
+                    <!-- Transaction History -->
+                    <div class="bg-white rounded-xl shadow-md p-6">
+                        <h2 class="text-xl font-semibold mb-4">Transaction History</h2>
+
+                        <% if (wallet.transactions.length === 0) { %>
+                            <p class="text-gray-500">No transactions yet.</p>
+                        <% } else { %>
+
+                            <div class="space-y-4">
+
+                                <% wallet.transactions.forEach(tx => { %>
+                                    <div class="border bg-gray-50 rounded-xl p-4 flex flex-col md:flex-row justify-between gap-3">
+
+                                        <!-- Left side -->
+                                        <div>
+                                            <p class="font-medium text-lg">
+                                                <%= tx.type === 'credit' ? '💚 Credited' : '❤️ Debited' %>
+                                            </p>
+                                            <p class="text-gray-600 text-sm">
+                                                <%= tx.description %>
+                                            </p>
+                                        </div>
+
+                                        <!-- Right Side -->
+                                        <div class="text-right">
+                                            <p class="font-bold <%= tx.type === 'credit' ? 'text-green-600' : 'text-red-600' %>">
+                                                <%= tx.type === 'credit' ? '+' : '-' %> ₹<%= tx.amount %>
+                                            </p>
+                                            <p class="text-gray-500 text-xs">
+                                                <%= new Date(tx.date).toLocaleString() %>
+                                            </p>
+                                        </div>
+
+                                    </div>
+                                <% }) %>
+
+                            </div>
+
+                        <% } %>
+                    </div>
+
+                </div> <!-- end main content -->
+
+            </div> <!-- end flex wrapper -->
+
+        </div> <!-- end max-w-7xl -->
+
+    </div> <!-- end container -->
+
+    <!-- FOOTER -->
+    <%- include('../partials/footer') %>
+
+</body>
+</html>

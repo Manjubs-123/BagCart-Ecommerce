@@ -284,11 +284,11 @@
     <%- include('../partials/footer') %>
     
     <script>
-        // Global variables
-        let otpTimer;
-        let countdownSeconds = 300; // 5 minutes
-        let resendCooldown = 60; // 60 seconds
-        let currentEmail = '';
+      // Global variables
+let otpTimer;
+let countdownSeconds = 60; // OTP EXPIRES IN 1 MINUTE
+let resendCooldown = 60;   // RESEND AFTER 1 MINUTE
+let currentEmail = '';
         
         // DOM Elements
         const emailEntryCard = document.getElementById('emailEntryCard');
@@ -470,57 +470,33 @@
 
 
 
-        // Mock function to simulate sending OTP
-        function mockSendOTP(email) {
-            return new Promise((resolve) => {
-                setTimeout(() => {
-                    // Simulate success 90% of the time
-                    if (Math.random() > 0.1) {
-                        resolve({
-                            success: true,
-                            message: 'Verification code sent successfully'
-                        });
-                    } else {
-                        resolve({
-                            success: false,
-                            message: 'Failed to send verification code. Please try again.'
-                        });
-                    }
-                }, 1500);
-            });
-        }
-        
+      
         // Start OTP timer
-        function startOTPTimer() {
-            // Reset countdown
-            countdownSeconds = 300;
-            updateCountdownDisplay();
-            
-            // Start progress bar animation
-            progressFill.style.transition = 'none';
-            progressFill.style.width = '100%';
-            setTimeout(() => {
-                progressFill.style.transition = 'width 300s linear';
-                progressFill.style.width = '0%';
-            }, 100);
-            
-            // Start countdown
+function startOTPTimer() {
+    countdownSeconds = 60;
+    updateCountdownDisplay();
+
+    progressFill.style.transition = 'none';
+    progressFill.style.width = '100%';
+
+    setTimeout(() => {
+        progressFill.style.transition = 'width 60s linear';
+        progressFill.style.width = '0%';
+    }, 100);
+
+    clearInterval(otpTimer);
+    otpTimer = setInterval(() => {
+        countdownSeconds--;
+        updateCountdownDisplay();
+
+        if (countdownSeconds <= 0) {
             clearInterval(otpTimer);
-            otpTimer = setInterval(() => {
-                countdownSeconds--;
-                updateCountdownDisplay();
-                
-                if (countdownSeconds <= 0) {
-                    clearInterval(otpTimer);
-                    // Optionally disable verify button when OTP expires
-                    // verifyOtpBtn.disabled = true;
-                }
-            }, 1000);
-            
-            // Set up resend cooldown
-            startResendCooldown();
         }
-        
+    }, 1000);
+
+    startResendCooldown();
+}
+
         // Update countdown display
         function updateCountdownDisplay() {
             const minutes = Math.floor(countdownSeconds / 60);
@@ -703,43 +679,42 @@
         }
         
         // Resend OTP
-        async function resendOTP() {
-            try {
-                // Update button state
-                resendOtpBtn.disabled = true;
-                resendOtpBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i><span>Resending...</span>';
-                
-                // Simulate API call to resend OTP
-                const response = await mockSendOTP(currentEmail);
-                
-                if (response.success) {
-                    // Restart timer
-                    startOTPTimer();
-                    
-                    // Clear OTP inputs
-                    const otpInputs = document.querySelectorAll('.otp-input');
-                    otpInputs.forEach(input => {
-                        input.value = '';
-                        input.classList.remove('filled');
-                    });
-                    
-                    // Focus first input
-                    otpInputs[0].focus();
-                    
-                    // Show success message
-                    showNotification('New verification code sent!', 'success');
-                } else {
-                    showError('otpError', response.message || 'Failed to resend verification code');
-                }
-            } catch (error) {
-                console.error('Error resending OTP:', error);
-                showError('otpError', 'An error occurred. Please try again.');
-            } finally {
-                // Reset button state after cooldown
-                startResendCooldown();
-            }
+      async function resendOTP() {
+    try {
+        resendOtpBtn.disabled = true;
+        resendOtpBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i><span>Resending...</span>';
+
+        // REAL BACKEND CALL
+        const response = await axios.post("/user/change-email/resend-otp");
+
+        if (!response.data.success) {
+            showError("otpError", response.data.message);
+            resendOtpBtn.disabled = false;
+            resendOtpBtn.innerHTML = 'Resend Code';
+            return;
         }
-        
+
+        // SUCCESS
+        startOTPTimer();
+
+        // Clear OTP inputs
+        const otpInputs = document.querySelectorAll(".otp-input");
+        otpInputs.forEach(input => {
+            input.value = "";
+            input.classList.remove("filled");
+        });
+
+        otpInputs[0].focus();
+        showNotification("New verification code sent!", "success");
+
+    } catch (error) {
+        console.error(error);
+        showError("otpError", "Something went wrong");
+    }
+
+    resendOtpBtn.innerHTML = 'Resend Code';
+}
+
         // Go back to email entry
         function goBackToEmail() {
             otpVerificationCard.classList.add('hidden');

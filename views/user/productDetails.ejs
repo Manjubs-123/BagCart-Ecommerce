@@ -137,70 +137,22 @@
             background: linear-gradient(135deg, #f59e0b, #d97706);
         }
 
-        /* Responsive Zoom Styles */
-        .zoom-container {
-            position: relative;
-            overflow: hidden;
-            cursor: zoom-in;
+        /* Stock status styles */
+        .in-stock { color: #059669; }
+        .out-of-stock { color: #dc2626; }
+        
+        .stock-badge {
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.25rem;
         }
-
-        .zoom-lens {
-            position: absolute;
-            border: 2px solid #1a56db;
-            background: rgba(26, 86, 219, 0.1);
-            cursor: none;
-            display: none;
-            pointer-events: none;
-            z-index: 10;
-            width: 100px;
-            height: 100px;
-            border-radius: 8px;
-        }
-
-        .zoom-result {
-            position: absolute;
-            top: 0;
-            left: calc(100% + 10px);
-            width: 300px;
-            height: 300px;
-            border: 2px solid #e5e7eb;
-            background: white;
-            background-repeat: no-repeat;
-            display: none;
-            z-index: 100;
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
-            border-radius: 8px;
-            overflow: hidden;
-        }
-
-        @media (max-width: 768px) {
-            .zoom-result {
-                position: fixed;
-                top: 50%;
-                left: 50%;
-                transform: translate(-50%, -50%);
-                width: 90vw;
-                height: 90vw;
-                max-width: 400px;
-                max-height: 400px;
-                z-index: 1000;
-            }
-        }
-
-        .zoom-result.active {
-            display: block;
-        }
-
-        .zoom-image {
-            width: 100%;
-            height: 100%;
-            object-fit: contain;
-        }
-
-        .thumbnail-btn.active {
-            border-color: #1a56db;
-            border-width: 2px;
-        }
+        
+        .in-stock-badge { background-color: #dcfce7; color: #166534; }
+        .out-of-stock-badge { background-color: #fee2e2; color: #991b1b; }
 
         /* Responsive improvements */
         @media (max-width: 640px) {
@@ -241,16 +193,7 @@
             overflow: hidden;
         }
 
-        /* Stock info styles */
-        .stock-info {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            font-size: 0.875rem;
-            color: #059669;
-            font-weight: 600;
-        }
-
+        /* Rating badge styles */
         .rating-badge {
             background: #dbeafe;
             color: #1e40af;
@@ -259,10 +202,55 @@
             font-weight: 600;
             font-size: 0.875rem;
         }
+
+        /* Breadcrumb styles */
+        .breadcrumb {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.875rem;
+            color: #6b7280;
+            margin-bottom: 1rem;
+        }
+        
+        .breadcrumb a {
+            color: #6b7280;
+            text-decoration: none;
+            transition: color 0.2s ease;
+        }
+        
+        .breadcrumb a:hover {
+            color: var(--primary);
+        }
+        
+        .breadcrumb .separator {
+            color: #9ca3af;
+        }
+        /* Simple Hover Zoom */
+#mainImage {
+  transition: transform 0.3s ease-out;
+  cursor: zoom-in;
+}
+
     </style>
 </head>
 <body class="bg-gray-50">
    <%- include('../partials/landingheader') %>
+
+    <!-- Breadcrumb -->
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+        <div class="breadcrumb">
+            <a href="/">Home</a>
+            <span class="separator">/</span>
+            <a href="/shop">Shop</a>
+            <span class="separator">/</span>
+            <% if (product.category?.name) { %>
+                <a href="/shop?category=<%= product.category._id %>"><%= product.category.name %></a>
+                <span class="separator">/</span>
+            <% } %>
+            <span class="text-gray-900 font-medium"><%= product.productName %></span>
+        </div>
+    </div>
 
     <!-- Product Details Section -->
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 md:py-8 lg:py-12">
@@ -270,8 +258,8 @@
             <!-- Product Images Gallery -->
             <div class="flex flex-col gap-4">
                 <!-- Main Image with Zoom -->
-               <!-- Main Product Image with Hover Zoom -->
-<div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden h-72 sm:h-80 md:h-96 lg:h-[500px] relative">
+                <!-- Main Product Image with Hover Zoom -->
+<div class="bg-white rounded-xl shadow-sm border overflow-hidden relative">
   <div class="w-full h-full flex items-center justify-center bg-gray-50 overflow-hidden">
     <img 
       id="mainImage"
@@ -280,45 +268,18 @@
       class="w-full h-full object-contain p-4 transition-transform duration-300 ease-out"
     />
   </div>
-
-  <!-- Badges -->
-  <div class="absolute top-4 left-4 flex flex-col gap-2 z-10">
-    <% if (product.isFeatured) { %>
-      <span class="featured-badge text-white text-xs font-semibold px-3 py-1 rounded-full bg-yellow-500 shadow">
-        <i class="fas fa-star mr-1"></i>Featured
-      </span>
-    <% } %>
-    <% if (product.regularPrice && product.salePrice) { %>
-      <% let discount = Math.round(((product.regularPrice - product.salePrice) / product.regularPrice) * 100); %>
-      <span class="discount-badge text-white text-xs font-semibold px-3 py-1 rounded-full bg-red-500 shadow">
-        <i class="fas fa-tag mr-1"></i><%= discount %>% OFF
-      </span>
-    <% } %>
-  </div>
-
-  <!-- Wishlist Button -->
-  <div class="absolute top-4 right-4 z-10">
-    <button 
-      onclick="toggleWishlist('<%= product._id %>')" 
-      class="wishlist-btn bg-white rounded-full p-3 shadow-md hover:shadow-lg transition"
-      title="Add to Wishlist"
-    >
-      <i id="wishlistIcon" class="far fa-heart text-gray-400 text-lg"></i>
-    </button>
-  </div>
 </div>
-
 
                 <!-- Thumbnail Images -->
                 <div id="thumbnailContainer" class="grid grid-cols-4 gap-3 sm:gap-4">
-                  <% if (allProductImages && allProductImages.length > 0) { %>
-                    <% allProductImages.forEach((image, index) => { %>
-                      <button onclick="changeMainImage('<%= image %>', this)"
-                              class="thumbnail-btn bg-white rounded-lg overflow-hidden border-2 border-gray-200 hover:border-blue-500 transition-all h-16 sm:h-20 md:h-24 <%= index === 0 ? 'active border-blue-500' : '' %>">
-                        <img src="<%= image %>" alt="Product thumbnail <%= index + 1 %>" class="w-full h-full object-contain p-1 sm:p-2">
-                      </button>
-                    <% }); %>
-                  <% } %>
+                    <% if (allProductImages && allProductImages.length > 0) { %>
+                        <% allProductImages.forEach((image, index) => { %>
+                            <button onclick="changeMainImage('<%= image %>', this)"
+                                    class="thumbnail-btn bg-white rounded-lg overflow-hidden border-2 border-gray-200 hover:border-blue-500 transition-all h-16 sm:h-20 md:h-24 <%= index === 0 ? 'active border-blue-500' : '' %>">
+                                <img src="<%= image %>" alt="Product thumbnail <%= index + 1 %>" class="w-full h-full object-contain p-1 sm:p-2">
+                            </button>
+                        <% }); %>
+                    <% } %>
                 </div>
             </div>
 
@@ -348,7 +309,7 @@
                         </span>
                         
                         <!-- Stock Information -->
-                        <div class="stock-info">
+                        <div id="stockInfo" class="stock-info in-stock">
                             <i class="fas fa-check-circle"></i>
                             <span id="stockText"><%= product.stock || 100 %> available in stock</span>
                         </div>
@@ -400,24 +361,44 @@
                                 <i class="fas fa-plus"></i>
                             </button>
                         </div>
-                        <span class="text-sm text-green-600 font-semibold">
+                        <span id="stockStatus" class="text-sm font-semibold in-stock">
                             <i class="fas fa-check-circle mr-1"></i>In Stock
                         </span>
                     </div>
                 </div>
 
                 <!-- Action Buttons -->
-                <div class="flex flex-col sm:flex-row gap-3 md:gap-4">
+                <div id="actionButtons" class="flex flex-col sm:flex-row gap-3 md:gap-4">
                     <button onclick="addToCart()"
                             class="flex-1 btn-primary text-white py-3 md:py-4 rounded-xl font-semibold flex items-center justify-center gap-2 md:gap-3 text-base md:text-lg">
                         <i class="fas fa-shopping-cart"></i>
                         Add to Cart
                     </button>
-                    <button onclick="buyNow()"
+                    <!-- <button onclick="buyNow()"
                             class="flex-1 bg-gray-900 text-white py-3 md:py-4 rounded-xl font-semibold hover:bg-gray-800 transition flex items-center justify-center gap-2 md:gap-3 text-base md:text-lg">
                         <i class="fas fa-bolt"></i>
                         Buy Now
-                    </button>
+                    </button> -->
+      <button onclick="toggleWishlist('<%= product._id %>', this)"
+    class="flex-1 bg-red-500 text-white py-3 md:py-4 rounded-xl font-semibold 
+           hover:bg-red-600 transition flex items-center justify-center gap-2 
+           md:gap-3 text-base md:text-lg">
+    <i class="fas fa-heart"></i>
+    Add to Wishlist
+</button>
+
+
+                </div>
+
+                <!-- Out of Stock Message -->
+                <div id="outOfStockMessage" class="hidden info-card fade-in bg-red-50 border border-red-200">
+                    <div class="flex items-center gap-3">
+                        <i class="fas fa-exclamation-triangle text-red-500 text-xl"></i>
+                        <div>
+                            <h3 class="font-semibold text-red-800">Out of Stock</h3>
+                            <p class="text-red-700 text-sm">This product is currently unavailable.</p>
+                        </div>
+                    </div>
                 </div>
 
                 <!-- Product Features -->
@@ -451,7 +432,7 @@
                         </div>
                         <div class="flex justify-between items-center">
                             <span class="text-gray-600 text-sm md:text-base">Brand:</span>
-<span id="productBrand" class="font-semibold text-gray-900 text-sm md:text-base"><%= product.brand || 'BagHub' %></span>
+                            <span id="productBrand" class="font-semibold text-gray-900 text-sm md:text-base"><%= product.brand || 'BagHub' %></span>
                         </div>
                     </div>
                 </div>
@@ -459,304 +440,344 @@
         </div>
     </div>
 
-
-<!-- Similar Products Section -->
-<section class="bg-white py-12 md:py-16 border-t border-gray-200">
-  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-    
-    <!-- Section Header -->
-    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 md:mb-8">
-      <h2 class="text-2xl md:text-3xl font-bold text-gray-900">
-        Similar Products 
-        <% if (categoryName) { %>
-          in <span class="text-blue-600"><%= categoryName %></span>
-        <% } %>
-      </h2>
-      <a href="/shop" 
-         class="text-blue-600 hover:text-blue-800 font-semibold flex items-center gap-2 transition text-sm md:text-base">
-        View All <i class="fas fa-arrow-right"></i>
-      </a>
-    </div>
-
-    <!-- Products Grid -->
-    <div class="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
-      <% if (relatedProducts && relatedProducts.length > 0) { %>
-        <% relatedProducts.slice(0, 4).forEach(item => { %>
-          <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden card-hover h-full flex flex-col justify-between">
-            
-            <!-- Product Image -->
-            <div class="relative aspect-square bg-gray-50 overflow-hidden group">
-              <% const imageUrl = item?.productImage?.[0] || '/default-product.jpg'; %>
-              <img src="<%= imageUrl %>"
-                   alt="<%= item.name || 'Product' %>"
-                   class="w-full h-full object-contain p-4 group-hover:scale-110 transition-transform duration-300">
-
-              <!-- Wishlist Button -->
-              <button onclick="event.preventDefault(); toggleWishlist('<%= item._id %>')"
-                      class="absolute top-2 right-2 sm:top-3 sm:right-3 bg-white rounded-full p-1 sm:p-2 opacity-0 group-hover:opacity-100 transition-opacity shadow-md">
-                <i class="far fa-heart text-gray-400 text-sm sm:text-lg"></i>
-              </button>
-            </div>
-
-            <!-- Product Info -->
-            <div class="p-3 sm:p-4 flex flex-col flex-1 justify-between">
-              <div>
-                <h3 class="font-semibold text-gray-900 text-sm mb-1 line-clamp-2 leading-tight">
-                  <%= item.name || 'Unnamed Product' %>
-                </h3>
-                <p class="text-xs text-gray-500 mb-2 sm:mb-3"><%= item.brand || 'BagHub' %></p>
-                <div class="flex items-center gap-1 sm:gap-2">
-                  <% const price = item.salePrice || 0; %>
-                  <span class="text-base sm:text-lg font-bold text-gray-900">
-                    ₹<%= price %>
-                  </span>
-                  <% if (item.regularPrice) { %>
-                    <span class="text-xs sm:text-sm text-gray-500 line-through">
-                      ₹<%= item.regularPrice %>
-                    </span>
-                  <% } %>
-                </div>
-              </div>
-
-              <!-- View Button -->
-              <div class="mt-4">
-               <a href="/user/product/<%= item._id %>"
-                   class="inline-block w-full text-center bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-lg py-2 transition">
-                  View Details
+    <!-- Similar Products Section -->
+    <section class="bg-white py-12 md:py-16 border-t border-gray-200">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <!-- Section Header -->
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 md:mb-8">
+                <h2 class="text-2xl md:text-3xl font-bold text-gray-900">
+                    Similar Products 
+                    <% if (categoryName) { %>
+                    in <span class="text-blue-600"><%= categoryName %></span>
+                    <% } %>
+                </h2>
+                <a href="/user/shop" 
+                   class="text-blue-600 hover:text-blue-800 font-semibold flex items-center gap-2 transition text-sm md:text-base">
+                    View All <i class="fas fa-arrow-right"></i>
                 </a>
-              </div>
             </div>
-          </div>
-        <% }); %>
-      <% } else { %>
-        <div class="col-span-full text-center text-gray-500 py-10">
-          <i class="fas fa-box-open text-4xl mb-3 text-gray-400"></i>
-          <p>No similar products found right now. Check back later!</p>
+
+            <!-- Products Grid -->
+            <div class="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
+                <% if (relatedProducts && relatedProducts.length > 0) { %>
+                    <% relatedProducts.slice(0, 4).forEach(item => { %>
+                        <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden card-hover h-full flex flex-col justify-between">
+                            <!-- Product Image -->
+                            <div class="relative aspect-square bg-gray-50 overflow-hidden group">
+                                <% const imageUrl = item?.productImage?.[0] || '/default-product.jpg'; %>
+                                <img src="<%= imageUrl %>"
+                                     alt="<%= item.name || 'Product' %>"
+                                     class="w-full h-full object-contain p-4 group-hover:scale-110 transition-transform duration-300">
+
+                                <!-- Wishlist Button -->
+                                <button onclick="toggleWishlist('<%= item._id %>', this)" 
+                                        class="absolute top-2 right-2 bg-white rounded-full p-2 shadow-md hover:shadow-lg transition">
+                                    <i class="<%= userWishlist && userWishlist.includes(item._id.toString()) ? 'fas fa-heart text-red-500' : 'far fa-heart text-gray-400' %> text-sm"></i>
+                                </button>
+                            </div>
+
+                            <!-- Product Info -->
+                            <div class="p-3 sm:p-4 flex flex-col flex-1 justify-between">
+                                <div>
+                                    <h3 class="font-semibold text-gray-900 text-sm mb-1 line-clamp-2 leading-tight">
+                                        <%= item.name || 'Unnamed Product' %>
+                                    </h3>
+                                    <p class="text-xs text-gray-500 mb-2 sm:mb-3"><%= item.brand || 'BagHub' %></p>
+                                    <div class="flex items-center gap-1 sm:gap-2">
+                                        <% const price = item.salePrice || 0; %>
+                                        <span class="text-base sm:text-lg font-bold text-gray-900">
+                                            ₹<%= price %>
+                                        </span>
+                                        <% if (item.regularPrice) { %>
+                                            <span class="text-xs sm:text-sm text-gray-500 line-through">
+                                                ₹<%= item.regularPrice %>
+                                            </span>
+                                        <% } %>
+                                    </div>
+                                </div>
+
+                                <!-- View Button -->
+                                <div class="mt-4">
+                                    <a href="/user/product/<%= item._id %>"
+                                       class="inline-block w-full text-center bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-lg py-2 transition">
+                                        View Details
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    <% }); %>
+                <% } else { %>
+                    <div class="col-span-full text-center text-gray-500 py-10">
+                        <i class="fas fa-box-open text-4xl mb-3 text-gray-400"></i>
+                        <p>No similar products found right now. Check back later!</p>
+                    </div>
+                <% } %>
+            </div>
         </div>
-      <% } %>
-    </div>
-  </div>
-</section>
-
-
-
+    </section>
 
     <!-- Footer -->
     <%-include('../partials/footer')%>
 
-   <script>
-  let isWishlisted = false;
-  const variantImages = <%- JSON.stringify(variantImages || {}) %>;
+    <script>
+      let variantIndex = 0;
 
-  /* ----------------------------------------------------------
-     SIMPLE HOVER ZOOM
-  ---------------------------------------------------------- */
-  document.addEventListener("DOMContentLoaded", () => {
-    const mainImage = document.getElementById("mainImage");
-    if (!mainImage) return;
+        let selectedVariantId = "<%= product._id %>";
+        let currentStock = <%= product.stock || 100 %>;
+        let userWishlist = <%- JSON.stringify(userWishlist || []) %>;
 
-    mainImage.addEventListener("mousemove", (e) => {
-      const rect = mainImage.getBoundingClientRect();
-      const x = ((e.pageX - rect.left) / rect.width) * 100;
-      const y = ((e.pageY - rect.top) / rect.height) * 100;
-      mainImage.style.transformOrigin = `${x}% ${y}%`;
-      mainImage.style.transform = "scale(2)";
-      mainImage.style.cursor = "zoom-in";
-    });
+        document.addEventListener("DOMContentLoaded", () => {
+            // Initialize stock status
+            updateStockStatus(currentStock);
+            
+            // Auto-run selectColor() for the default selected color when page loads
+            const firstColorOption = document.querySelector(".color-option.selected") || document.querySelector(".color-option");
+            if (firstColorOption) {
+                const defaultColor = firstColorOption.dataset.color;
+                if (defaultColor) {
+                    selectColor(defaultColor);
+                }
+            }
+        });
 
-    mainImage.addEventListener("mouseleave", () => {
-      mainImage.style.transformOrigin = "center center";
-      mainImage.style.transform = "scale(1)";
-      mainImage.style.cursor = "default";
-    });
+        function changeMainImage(imgUrl, button) {
+            const mainImage = document.getElementById("mainImage");
+            if (!mainImage) return;
 
-    //  Auto-run selectColor() for the default selected color when page loads
-    const firstColorOption =
-      document.querySelector(".color-option.selected") ||
-      document.querySelector(".color-option");
-    if (firstColorOption) {
-      const defaultColor = firstColorOption.dataset.color;
-      if (defaultColor) {
-        selectColor(defaultColor);
-      }
+            mainImage.src = imgUrl;
+
+            // Update active thumbnail
+            document.querySelectorAll(".thumbnail-btn").forEach((btn) => {
+                btn.classList.remove("active", "border-blue-500");
+            });
+            if (button) button.classList.add("active", "border-blue-500");
+        }
+
+async function selectColor(color) {
+  try {
+    const res = await fetch(`/user/api/variant/${"<%= product._id %>"}?color=${color}`);
+    const data = await res.json();
+
+    if (!data.success) {
+      showNotification("Variant not found", "error");
+      return;
     }
+
+    //  SET CORRECT VARIANT INDEX
+    variantIndex = data.variantIndex;
+
+    const variant = data.variant;
+
+    //  Update main image
+    if (variant.images && variant.images.length > 0) {
+      changeMainImage(variant.images[0]);
+    }
+
+    // Update thumbnails
+    document.getElementById("thumbnailContainer").innerHTML =
+      variant.images.map((img, i) => `
+        <button onclick="changeMainImage('${img}', this)"
+                class="thumbnail-btn ${i === 0 ? 'active border-blue-500' : ''}">
+            <img src="${img}" class="w-full h-full object-contain p-2">
+        </button>
+      `).join("");
+
+    //  Update prices
+    document.getElementById("productPrice").textContent = `₹${variant.price}`;
+    if (variant.mrp) {
+      const discount = Math.round(((variant.mrp - variant.price) / variant.mrp) * 100);
+      document.getElementById("productMrp").textContent = `₹${variant.mrp}`;
+      document.getElementById("productDiscount").textContent = `Save ${discount}%`;
+    }
+
+    // Update stock
+    document.getElementById("stockText").textContent = `${variant.stock} available in stock`;
+    document.getElementById("quantity").max = variant.stock;
+
+    //  UPDATE WISHLIST HEART (ALWAYS BASED ON PRODUCT ID)
+    const heart = document.querySelector(".wishlist-btn i");
+
+    if (userWishlist.includes("<%= product._id.toString() %>")) {
+      heart.classList.remove("far", "text-gray-400");
+      heart.classList.add("fas", "text-red-500");
+    } else {
+      heart.classList.remove("fas", "text-red-500");
+      heart.classList.add("far", "text-gray-400");
+    }
+
+  } catch (err) {
+    console.error(err);
+  }
+}
+
+        function updateStockStatus(stock) {
+            const stockText = document.getElementById("stockText");
+            const stockStatus = document.getElementById("stockStatus");
+            const stockInfo = document.getElementById("stockInfo");
+            const qtyInput = document.getElementById("quantity");
+            const actionButtons = document.getElementById("actionButtons");
+            const outOfStockMessage = document.getElementById("outOfStockMessage");
+
+            if (stockText) stockText.textContent = `${stock} available in stock`;
+            if (qtyInput) {
+                qtyInput.max = stock;
+                if (parseInt(qtyInput.value) > stock) {
+                    qtyInput.value = stock;
+                }
+            }
+
+            if (stock <= 0) {
+                // Out of stock
+                if (stockStatus) {
+                    stockStatus.innerHTML = '<i class="fas fa-times-circle mr-1"></i>Out of Stock';
+                    stockStatus.className = "text-sm font-semibold out-of-stock";
+                }
+                if (stockInfo) {
+                    stockInfo.innerHTML = '<i class="fas fa-times-circle"></i><span id="stockText">Out of stock</span>';
+                    stockInfo.className = "stock-info out-of-stock";
+                }
+                if (actionButtons) actionButtons.classList.add("hidden");
+                if (outOfStockMessage) outOfStockMessage.classList.remove("hidden");
+            } else {
+                // In stock
+                if (stockStatus) {
+                    stockStatus.innerHTML = '<i class="fas fa-check-circle mr-1"></i>In Stock';
+                    stockStatus.className = "text-sm font-semibold in-stock";
+                }
+                if (stockInfo) {
+                    stockInfo.innerHTML = '<i class="fas fa-check-circle"></i><span id="stockText">' + stock + ' available in stock</span>';
+                    stockInfo.className = "stock-info in-stock";
+                }
+                if (actionButtons) actionButtons.classList.remove("hidden");
+                if (outOfStockMessage) outOfStockMessage.classList.add("hidden");
+            }
+        }
+
+        function increaseQty() {
+            const qtyInput = document.getElementById("quantity");
+            const max = parseInt(qtyInput.max);
+            if (parseInt(qtyInput.value) < max) {
+                qtyInput.value = parseInt(qtyInput.value) + 1;
+            }
+        }
+
+        function decreaseQty() {
+            const qtyInput = document.getElementById("quantity");
+            if (parseInt(qtyInput.value) > 1) {
+                qtyInput.value = parseInt(qtyInput.value) - 1;
+            }
+        }
+
+        async function toggleWishlist(productId, btn = null) {
+            const icon = btn ? btn.querySelector('i') : document.getElementById('wishlistIcon');
+            const currentlyWishlisted = icon.classList.contains('fas');
+
+            const url = currentlyWishlisted
+                ? `/user/wishlist/remove/${productId}`
+                : `/user/wishlist/add/${productId}`;
+
+            try {
+                const res = await fetch(url, { method: 'POST' });
+                const data = await res.json();
+                
+                if (data.success) {
+                    // Update local userWishlist array
+                    if (currentlyWishlisted) {
+                        userWishlist = userWishlist.filter(id => id !== productId);
+                        icon.classList.replace('fas', 'far');
+                        icon.classList.remove('text-red-500');
+                        icon.classList.add('text-gray-400');
+                        showNotification('Removed from wishlist', 'info');
+                    } else {
+                        userWishlist.push(productId);
+                        icon.classList.replace('far', 'fas');
+                        icon.classList.remove('text-gray-400');
+                        icon.classList.add('text-red-500');
+                        showNotification('Added to wishlist!', 'success');
+                    }
+                } else {
+                    showNotification(data.message || 'Something went wrong', 'error');
+                }
+            } catch (err) {
+                console.error(err);
+                showNotification('Server error', 'error');
+            }
+        }
+
+        function updateWishlistIcon(productId) {
+            const icon = document.getElementById('wishlistIcon');
+            if (icon) {
+                if (userWishlist.includes(productId)) {
+                    icon.classList.replace('far', 'fas');
+                    icon.classList.remove('text-gray-400');
+                    icon.classList.add('text-red-500');
+                } else {
+                    icon.classList.replace('fas', 'far');
+                    icon.classList.remove('text-red-500');
+                    icon.classList.add('text-gray-400');
+                }
+            }
+        }
+async function addToCart() {
+  const quantity = Number(document.getElementById("quantity").value);
+
+  const payload = {
+    productId: "<%= product._id %>",
+    quantity,
+    variantIndex   // 🔥 correct now
+  };
+
+  const res = await fetch("/user/cart/add", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload)
   });
 
-  /* ----------------------------------------------------------
-     CHANGE MAIN IMAGE
-  ---------------------------------------------------------- */
-  function changeMainImage(imgUrl, button) {
-    const mainImage = document.getElementById("mainImage");
-    if (!mainImage) return;
+  const data = await res.json();
+  showNotification(data.message, data.success ? "success" : "error");
+}
 
-    mainImage.src = imgUrl;
+        function showNotification(message, type = "info") {
+            const notification = document.createElement("div");
+            notification.className = `fixed top-4 right-4 z-50 px-4 py-3 sm:px-6 sm:py-4 rounded-lg shadow-lg text-white font-semibold transform translate-x-full transition-transform duration-300 text-sm sm:text-base ${
+                type === "success" ? "bg-green-500" :
+                type === "error" ? "bg-red-500" :
+                "bg-blue-500"
+            }`;
+            notification.textContent = message;
 
-    // Update active thumbnail
-    document.querySelectorAll(".thumbnail-btn").forEach((btn) => {
-      btn.classList.remove("active", "border-blue-500");
-    });
-    if (button) button.classList.add("active", "border-blue-500");
-  }
+            document.body.appendChild(notification);
 
-  /* ----------------------------------------------------------
-     SELECT COLOR VARIANT (MAIN FUNCTION)
-  ---------------------------------------------------------- */
-  async function selectColor(color) {
-    document.querySelectorAll(".color-option").forEach((option) => {
-      option.classList.remove("selected");
-    });
-    const selectedOption = document.querySelector(`[data-color="${color}"]`);
-    if (selectedOption) selectedOption.classList.add("selected");
-
-    try {
-      const res = await fetch(`/user/api/variant/${"<%= product._id %>"}?color=${color}`);
-      const data = await res.json();
-
-      if (data.success && data.variant) {
-        const { images, price, mrp, stock, brand } = data.variant;
-
-        //  Update main image
-        if (images && images.length > 0) {
-          changeMainImage(images[0], document.querySelector(".thumbnail-btn"));
+            setTimeout(() => notification.classList.remove("translate-x-full"), 100);
+            setTimeout(() => {
+                notification.classList.add("translate-x-full");
+                setTimeout(() => {
+                    if (document.body.contains(notification)) {
+                        document.body.removeChild(notification);
+                    }
+                }, 300);
+            }, 3000);
         }
 
-        //  Update thumbnails
-        const thumbnailContainer = document.getElementById("thumbnailContainer");
-        if (images && images.length > 0 && thumbnailContainer) {
-          thumbnailContainer.innerHTML = images
-            .map(
-              (img, index) => `
-              <button onclick="changeMainImage('${img}', this)"
-                      class="thumbnail-btn bg-white rounded-lg overflow-hidden border-2 border-gray-200 hover:border-blue-500 transition-all h-16 sm:h-20 md:h-24 ${
-                        index === 0 ? "active border-blue-500" : ""
-                      }">
-                <img src="${img}" alt="Product thumbnail ${
-                index + 1
-              }" class="w-full h-full object-contain p-1 sm:p-2">
-              </button>`
-            )
-            .join("");
-        }
+        /* SIMPLE HOVER ZOOM */
+document.addEventListener("DOMContentLoaded", () => {
+  const mainImage = document.getElementById("mainImage");
+  if (!mainImage) return;
 
-        //  Update prices
-        const priceEl = document.getElementById("productPrice");
-        const mrpEl = document.getElementById("productMrp");
-        const discountEl = document.getElementById("productDiscount");
+  mainImage.addEventListener("mousemove", (e) => {
+    const rect = mainImage.getBoundingClientRect();
+    const x = ((e.pageX - rect.left) / rect.width) * 100;
+    const y = ((e.pageY - rect.top) / rect.height) * 100;
+    mainImage.style.transformOrigin = `${x}% ${y}%`;
+    mainImage.style.transform = "scale(2)";
+  });
 
-        if (priceEl) priceEl.textContent = `₹${price}`;
-        if (mrpEl && mrp) {
-          mrpEl.textContent = `₹${mrp}`;
-          const discount = Math.round(((mrp - price) / mrp) * 100);
-          if (discountEl) discountEl.textContent = `Save ${discount}%`;
-        }
+  mainImage.addEventListener("mouseleave", () => {
+    mainImage.style.transformOrigin = "center center";
+    mainImage.style.transform = "scale(1)";
+  });
+});
 
-        //  Update stock info
-        const stockText = document.getElementById("stockText");
-        const qtyInput = document.getElementById("quantity");
-        if (stockText) stockText.textContent = `${stock} available in stock`;
-        if (qtyInput) qtyInput.max = stock;
-
-        // Update brand dynamically
-        const brandElement = document.getElementById("productBrand");
-        if (brandElement) {
-          if (brand && brand.trim() !== "") {
-            brandElement.textContent = brand;
-          } else {
-            brandElement.textContent = "BagHub";
-          }
-        }
-      }
-    } catch (error) {
-      console.error("Error fetching variant data:", error);
-    }
-  }
-
-  /* ----------------------------------------------------------
-     QUANTITY HANDLERS
-  ---------------------------------------------------------- */
-  function increaseQty() {
-    const qtyInput = document.getElementById("quantity");
-    const max = parseInt(qtyInput.max);
-    if (parseInt(qtyInput.value) < max) {
-      qtyInput.value = parseInt(qtyInput.value) + 1;
-    }
-  }
-
-  function decreaseQty() {
-    const qtyInput = document.getElementById("quantity");
-    if (parseInt(qtyInput.value) > 1) {
-      qtyInput.value = parseInt(qtyInput.value) - 1;
-    }
-  }
-
-  /* ----------------------------------------------------------
-     WISHLIST HANDLER
-  ---------------------------------------------------------- */
-  function toggleWishlist(productId) {
-    const wishlistIcon = document.getElementById("wishlistIcon");
-
-    if (isWishlisted) {
-      wishlistIcon.classList.replace("fas", "far");
-      wishlistIcon.style.color = "";
-    } else {
-      wishlistIcon.classList.replace("far", "fas");
-      wishlistIcon.style.color = "#ef4444";
-    }
-
-    isWishlisted = !isWishlisted;
-
-    showNotification(
-      isWishlisted
-        ? "Product added to wishlist!"
-        : "Product removed from wishlist!",
-      isWishlisted ? "success" : "info"
-    );
-  }
-
-  /* ----------------------------------------------------------
-     CART + BUY NOW
-  ---------------------------------------------------------- */
-  function addToCart() {
-    const quantity = document.getElementById("quantity").value;
-    const color =
-      document
-        .querySelector(".color-option.selected")
-        ?.querySelector(".color-name").textContent || "N/A";
-    showNotification(`Added ${quantity} item(s) to cart!`, "success");
-  }
-
-  function buyNow() {
-    const quantity = document.getElementById("quantity").value;
-    const color =
-      document
-        .querySelector(".color-option.selected")
-        ?.querySelector(".color-name").textContent || "N/A";
-    window.location.href = `/checkout?product=${"<%= product._id %>"}&quantity=${quantity}&color=${color}`;
-  }
-
-  /* ----------------------------------------------------------
-     NOTIFICATION SYSTEM
-  ---------------------------------------------------------- */
-  function showNotification(message, type = "info") {
-    const notification = document.createElement("div");
-    notification.className = `fixed top-4 right-4 z-50 px-4 py-3 sm:px-6 sm:py-4 rounded-lg shadow-lg text-white font-semibold transform translate-x-full transition-transform duration-300 text-sm sm:text-base ${
-      type === "success"
-        ? "bg-green-500"
-        : type === "error"
-        ? "bg-red-500"
-        : "bg-blue-500"
-    }`;
-    notification.textContent = message;
-
-    document.body.appendChild(notification);
-
-    setTimeout(() => notification.classList.remove("translate-x-full"), 100);
-    setTimeout(() => {
-      notification.classList.add("translate-x-full");
-      setTimeout(() => document.body.removeChild(notification), 300);
-    }, 3000);
-  }
-</script>
-
+    </script>
 </body>
 </html>

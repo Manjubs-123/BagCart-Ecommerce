@@ -25,21 +25,19 @@
       <!-- User Actions -->
       <div class="flex items-center space-x-4">
        
-        <!-- Wishlist -->
-        <a href="/wishlist" class="relative text-gray-600 hover:text-blue-600 transition-colors duration-200 p-2 rounded-lg hover:bg-gray-100">
-          <i class="fas fa-heart text-lg"></i>
-          <span class="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-semibold shadow-sm">
-<%= user && user.wishlistCount ? user.wishlistCount : 0 %>          </span>
-        </a>
+     
+<!-- Wishlist -->
+<a href="/user/profile/wishlist" class="relative text-gray-600 hover:text-blue-600 transition-colors duration-200 p-2 rounded-lg hover:bg-gray-100">
+  <i class="fas fa-heart text-lg"></i>
+  
+</a>
 
-        <!-- Cart -->
-        <a href="/cart" class="relative text-gray-600 hover:text-blue-600 transition-colors duration-200 p-2 rounded-lg hover:bg-gray-100">
-          <i class="fas fa-shopping-cart text-lg"></i>
-          <span class="absolute -top-1 -right-1 bg-blue-600 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-semibold shadow-sm">
-<%= user && user.cartCount ? user.cartCount : 0 %>
-          </span>
-        </a>
-
+      <!-- Cart -->
+<!-- Cart -->
+<a href="/user/cart" class="relative text-gray-600 hover:text-blue-600 transition-colors duration-200 p-2 rounded-lg hover:bg-gray-100">
+  <i class="fas fa-shopping-cart text-lg"></i>
+  
+</a>
         <!-- User Profile Dropdown -->
         <!-- <div class="relative group">
           <button class="flex items-center space-x-2 text-gray-700 hover:text-blue-600 transition-colors duration-200 p-2 rounded-lg hover:bg-gray-100">
@@ -112,16 +110,14 @@
                   <i class="fas fa-user-circle mr-3 text-gray-400"></i>
                   <span>My Profile</span>
                 </a>
-                <a href="/orders" class="flex items-center px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 rounded-lg transition-colors duration-200">
+                <a href="/order/orders" class="flex items-center px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 rounded-lg transition-colors duration-200">
                   <i class="fas fa-shopping-bag mr-3 text-gray-400"></i>
                   <span>My Orders</span>
                 </a>
-                <a href="/wishlist" class="flex items-center px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 rounded-lg transition-colors duration-200">
+                <a href="/user/profile/wishlist" class="flex items-center px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 rounded-lg transition-colors duration-200">
                   <i class="fas fa-heart mr-3 text-gray-400"></i>
                   <span>Wishlist</span>
-                  <span class="ml-auto bg-red-100 text-red-600 text-xs px-2 py-1 rounded-full">
-                    <%= user.wishlistCount || 0 %>
-                  </span>
+                
                 </a>
                 <div class="border-t border-gray-100 my-1"></div>
                 <a href="/user/logout" class="flex items-center px-4 py-3 text-red-600 hover:bg-red-50 rounded-lg transition-colors duration-200">

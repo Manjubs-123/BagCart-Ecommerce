@@ -1,0 +1,666 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shopping Cart - BagHub</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <style>
+        :root {
+            --primary: #1a56db;
+            --primary-dark: #1e429f;
+            --secondary: #047857;
+            --error: #dc2626;
+            --success: #059669;
+        }
+        
+        .btn-primary {
+            background-color: var(--primary);
+            transition: all 0.3s ease;
+        }
+        
+        .btn-primary:hover {
+            background-color: var(--primary-dark);
+            transform: translateY(-2px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        }
+        
+        .card-hover {
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+        
+        .card-hover:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        }
+        
+        .cart-item {
+            transition: all 0.3s ease;
+        }
+        
+        .quantity-btn {
+            transition: all 0.2s ease;
+        }
+        
+        .quantity-btn:hover:not(:disabled) {
+            background-color: #e5e7eb;
+        }
+        
+        .empty-state {
+            animation: fadeIn 0.5s ease-in-out;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .notification {
+            animation: slideIn 0.5s ease-out;
+        }
+        
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        
+        .pulse-low-stock {
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.4); }
+            70% { box-shadow: 0 0 0 10px rgba(245, 158, 11, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0); }
+        }
+        
+        .loading {
+            opacity: 0.6;
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <!-- Header -->
+    <%- include('../partials/landingheader') %>
+
+    <!-- Main Content -->
+    <div class="container mx-auto px-4 py-8">
+        <div class="flex flex-col lg:flex-row gap-8">
+            <!-- Sidebar -->
+            <%- include('../partials/userProfileSiderbar', {
+                activePage: 'addresses',
+                user,
+                ordersCount,
+                wishlistCount,
+                unreadNotifications
+            }) %>
+
+            <!-- Main Content Area -->
+            <div class="lg:w-2/3">
+                <!-- Header -->
+                <div class="bg-gradient-to-r from-blue-600 to-emerald-600 rounded-2xl shadow-lg p-6 mb-6 text-white">
+                    <div class="flex items-center gap-4">
+                        <div class="w-16 h-16 rounded-full bg-white/20 flex items-center justify-center">
+                            <i class="fas fa-shopping-cart text-2xl"></i>
+                        </div>
+                        <div>
+                            <h1 class="text-2xl font-bold">Shopping Cart</h1>
+                            <p class="text-blue-100">Review your items and proceed to checkout</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Cart Items Section -->
+                <div class="bg-white rounded-2xl shadow-sm p-6 card-hover">
+                    <div class="flex justify-between items-center mb-6">
+                        <h2 class="text-xl font-bold text-gray-900">Your Items (<span id="itemCount"><%= cart.items ? cart.items.length : 0 %></span>)</h2>
+                        <% if (cart.items && cart.items.length > 0) { %>
+                        <button id="clearCartBtn" class="text-red-500 hover:text-red-700 transition-colors flex items-center gap-2">
+                            <i class="fas fa-trash"></i>
+                            <span>Clear Cart</span>
+                        </button>
+                        <% } %>
+                    </div>
+
+                    <!-- Cart Items Container -->
+                    <div id="cartItems" class="space-y-4">
+                        <% if (!cart.items || cart.items.length === 0) { %>
+                            <!-- Empty Cart State -->
+                            <div class="empty-state text-center py-12">
+                                <div class="w-24 h-24 mx-auto bg-gray-100 rounded-full flex items-center justify-center mb-4">
+                                    <i class="fas fa-shopping-cart text-gray-400 text-3xl"></i>
+                                </div>
+                                <h3 class="text-xl font-bold text-gray-700 mb-2">Your cart is empty</h3>
+                                <p class="text-gray-500 mb-6">Add some products to your cart to continue shopping</p>
+                                <a href="/user/shop" class="btn-primary text-white px-6 py-3 rounded-lg inline-flex items-center gap-2">
+                                    <i class="fas fa-shopping-bag"></i>
+                                    <span>Continue Shopping</span>
+                                </a>
+                            </div>
+                        <% } else { %>
+                         
+<% cart.items.forEach(item => {
+    const product = item.product;
+    const variant = product.variants[item.variantIndex];
+
+    const available = (variant && typeof variant.stock === 'number') ? variant.stock : 0;
+    const isOutOfStock = available <= 0;
+    const isLowStock = available > 0 && available < 5;
+%>
+
+<div class="cart-item bg-white border border-gray-200 rounded-xl p-4 flex flex-col md:flex-row gap-4"
+     data-item-id="<%= item._id %>"
+     data-price="<%= variant.price %>"
+     data-qty="<%= item.quantity %>"
+     data-available="<%= available %>">
+
+    <!-- IMAGE -->
+    <div class="flex-shrink-0">
+        <img 
+            src="<%= variant?.images?.[0]?.url || '/images/no-image.jpg' %>"
+            alt="<%= product.name %>"
+            class="w-24 h-24 md:w-32 md:h-32 object-cover rounded-lg">
+    </div>
+
+    <div class="flex-grow">
+
+        <!-- NAME -->
+        <h3 class="font-bold text-gray-900 text-lg"><%= product.name %></h3>
+
+        <!-- COLOR -->
+        <p class="text-gray-600 text-sm mt-1">
+            Color: <%= variant.color %>
+        </p>
+        
+
+        <!-- STOCK DISPLAY -->
+        <div class="mt-2 flex items-center gap-4">
+          <% if (isOutOfStock) { %>
+            <span class="text-red-600 font-medium flex items-center gap-1">
+              <i class="fas fa-times-circle"></i> Out of stock
+            </span>
+            <span class="text-gray-500 text-sm ml-3">
+              <i class="fas fa-box mr-1"></i>0 left
+            </span>
+          <% } else { %>
+            <span class="<%= isLowStock ? 'text-red-600 font-semibold' : 'text-green-600 font-medium' %> flex items-center gap-1">
+              <i class="fas <%= isLowStock ? 'fa-exclamation-circle' : 'fa-check-circle' %>"></i>
+              <%= isLowStock ? 'Low stock' : 'In Stock' %>
+            </span>
+
+            <span class="text-gray-500 text-sm ml-3 flex items-center gap-1">
+              <i class="fas fa-box mr-1"></i>
+              <span class="<%= isLowStock ? 'text-red-600' : '' %>"><%= available %> left</span>
+            </span>
+          <% } %>
+        </div>
+
+        <!-- PRICE -->
+        <div class="mt-3 md:text-right">
+            <p class="text-2xl font-bold text-gray-900">₹<%= variant.price %></p>
+        </div>
+
+        <!-- QUANTITY + REMOVE + TOTAL -->
+        <div class="flex flex-col md:flex-row md:items-center justify-between mt-4">
+
+            <div class="flex items-center gap-3">
+
+                <span class="text-gray-700 font-medium">Quantity:</span>
+
+                <div class="flex items-center border border-gray-300 rounded-lg">
+
+                    <!-- decrease -->
+                    <button class="quantity-btn px-3 py-1 text-gray-600 hover:bg-gray-100"
+                            data-item-id="<%= item._id %>"
+                            data-action="decrease"
+                            <%= item.quantity <= 1 ? 'disabled' : '' %>>
+                        <i class="fas fa-minus"></i>
+                    </button>
+
+                    <!-- QTY VALUE -->
+                    <span class="px-3 py-1 border-l border-r border-gray-300 w-12 text-center font-medium qty-value">
+                        <%= item.quantity %>
+                    </span>
+
+                    <!-- increase -->
+                   <button class="quantity-btn px-3 py-1 text-gray-600 hover:bg-gray-100"
+        data-item-id="<%= item._id %>"
+        data-action="increase"
+        <%= isOutOfStock || item.quantity >= available ? 'disabled' : '' %>>
+    <i class="fas fa-plus"></i>
+</button>
+
+
+                </div>
+
+                <!-- REMOVE -->
+                <button class="remove-item-btn text-red-500 hover:text-red-700 transition-colors flex items-center gap-1 ml-4"
+                        data-item-id="<%= item._id %>">
+                    <i class="fas fa-trash"></i> Remove
+                </button>
+            </div>
+
+            <!-- TOTAL -->
+            <div class="mt-3 md:mt-0 md:text-right">
+                <p class="text-xl font-bold text-gray-900">₹<%= (variant.price * item.quantity).toFixed(2) %></p>
+            </div>
+
+        </div>
+
+    </div>
+</div>
+
+<% }) %>
+
+                        <% } %>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Order Summary Section -->
+            <!-- Order Summary Section -->
+<div class="lg:w-1/3">
+    <div class="bg-white rounded-2xl shadow-sm p-6 card-hover sticky top-24">
+
+        <h2 class="text-xl font-bold text-gray-900 mb-6">Order Summary</h2>
+
+        <!-- Summary -->
+        <div class="space-y-4 mb-6">
+            
+            <!-- Subtotal -->
+            <div class="flex justify-between items-center">
+                <span class="text-gray-600">
+                    Subtotal (<span id="summaryItemCount"><%= cart.items ? cart.items.length : 0 %></span> items)
+                </span>
+                <span class="font-medium text-lg" id="subtotal">₹0.00</span>
+            </div>
+
+            <!-- Grand Total -->
+            <div class="border-t pt-4">
+                <div class="flex justify-between items-center text-xl font-bold">
+                    <span>Grand Total</span>
+                    <span id="totalAmount">₹0.00</span>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Checkout Button -->
+        <button id="checkoutBtn"
+            class="w-full btn-primary text-white py-4 rounded-lg flex items-center justify-center gap-2 mb-4 text-lg font-semibold 
+            <%= (!cart.items || cart.items.length === 0) ? 'opacity-50 cursor-not-allowed' : '' %>"
+            <%= (!cart.items || cart.items.length === 0) ? 'disabled' : '' %>>
+            <i class="fas fa-lock"></i>
+            <span>Proceed to Checkout</span>
+        </button>
+
+        <!-- Continue Shopping -->
+        <div class="border-t mt-6 pt-6">
+            <a href="/user/shop" class="block text-center text-blue-600 hover:text-blue-800 transition-colors font-medium">
+                <i class="fas fa-arrow-left mr-2"></i> Continue Shopping
+            </a>
+        </div>
+
+    </div>
+</div>
+
+        </div>
+    </div>
+
+    <!-- Footer -->
+     <%- include('../partials/footer') %>
+
+    <!-- Notification Container -->
+    <div id="notificationContainer" class="fixed top-4 right-4 z-50 space-y-2"></div>
+
+    <script>
+        // Cart API endpoints
+        const API_ENDPOINTS = {
+            getCart: '/api/cart',
+            updateCart: '/api/cart',
+            updateItem: '/user/cart/update',
+            removeItem: '/user/cart/remove',
+            clearCart: '/user/cart/clear',
+            checkout: '/api/checkout'
+        };
+
+        // Initialize cart
+        document.addEventListener('DOMContentLoaded', function() {
+            updateCartSummary();
+            setupEventListeners();
+        });
+
+        // Set up event listeners
+        function setupEventListeners() {
+            // Quantity buttons
+            document.querySelectorAll('.quantity-btn').forEach(button => {
+                button.addEventListener('click', function() {
+                    const itemId = this.getAttribute('data-item-id');
+                    const action = this.getAttribute('data-action');
+                    handleQuantityChange(itemId, action);
+                });
+            });
+
+            // Remove item buttons
+            document.querySelectorAll('.remove-item-btn').forEach(button => {
+                button.addEventListener('click', function() {
+                    const itemId = this.getAttribute('data-item-id');
+                    console.log("REMOVE CLICKED:", itemId);
+                    handleRemoveItem(itemId);
+                });
+            });
+            
+            // Clear cart button
+            
+const clearCartBtn = document.getElementById('clearCartBtn');
+if (clearCartBtn) {
+    clearCartBtn.addEventListener('click', function () {
+        handleClearCart(); // Directly call SweetAlert version
+    });
+}
+
+            // Checkout button
+            document.getElementById('checkoutBtn').addEventListener('click', handleCheckout);
+        }
+
+      // Handle quantity changes
+async function handleQuantityChange(itemId, action) {
+    const itemEl = document.querySelector(`[data-item-id="${itemId}"]`);
+    const currentQty = parseInt(itemEl.querySelector('.qty-value').textContent);
+    const available = parseInt(itemEl.getAttribute('data-available'));
+
+    let newQty = currentQty;
+
+    // INCREASE
+    if (action === "increase") {
+        if (currentQty >= available) {
+            showNotification(`Only ${available} available`, "error");
+            return;
+        }
+        newQty++;
+    }
+
+    // DECREASE
+    if (action === "decrease") {
+        if (currentQty <= 1) return; // Prevent zero
+        newQty--;
+    }
+
+    const success = await updateCartItem(itemId, newQty);
+
+    if (success) {
+        // Update UI quantity text
+        itemEl.querySelector('.qty-value').textContent = newQty;
+        itemEl.setAttribute('data-qty', newQty);
+
+        // Update item total price
+        updateItemTotal(itemId, newQty);
+
+        // Get BOTH buttons
+        const plusBtn = itemEl.querySelector('[data-action="increase"]');
+        const minusBtn = itemEl.querySelector('[data-action="decrease"]');
+
+        // Disable PLUS when reaching stock
+        plusBtn.disabled = newQty >= available;
+
+        // Disable MINUS when reaching 1
+        minusBtn.disabled = newQty <= 1;
+
+        // Recalculate totals
+        updateCartSummary();
+    }
+}
+
+        
+
+async function updateCartItem(itemId, newQuantity) {
+    try {
+        setLoading(true);
+
+        const response = await axios.put(`/user/cart/update/${itemId}`, {
+            quantity: newQuantity
+        });
+
+        if (response.data.success) {
+            updateCartSummary();
+            showNotification('Cart updated successfully', 'success');
+            return true;
+        } else {
+            showNotification(response.data.message || 'Failed to update cart', 'error');
+            return false;
+        }
+    } catch (error) {
+        console.error('Error updating cart item:', error);
+        showNotification('Failed to update cart item', 'error');
+        return false;
+    } finally {
+        setLoading(false);
+    }
+}
+
+        // Update item total display
+        function updateItemTotal(itemId, quantity) {
+            const itemElement = document.querySelector(`[data-item-id="${itemId}"]`);
+            const price = parseFloat(itemElement.getAttribute('data-price'));
+            const itemTotal = price * quantity;
+            
+            const itemTotalElement = itemElement.querySelector('.text-xl.font-bold');
+            if (itemTotalElement) {
+                itemTotalElement.textContent = `₹${itemTotal.toFixed(2)}`;
+            }
+        }
+
+        // Handle remove item
+       async function handleRemoveItem(itemId) {
+
+    const result = await Swal.fire({
+        title: "Remove Item?",
+        text: "Are you sure you want to remove this item from your cart?",
+        icon: "warning",
+        showCancelButton: true,
+        confirmButtonColor: "#d33",
+        cancelButtonColor: "#3085d6",
+        confirmButtonText: "Yes, remove it",
+        cancelButtonText: "Cancel"
+    });
+
+    if (!result.isConfirmed) return;
+
+    try {
+        const response = await axios.delete(`/user/cart/remove/${itemId}`);
+
+        if (response.data.success) {
+
+            // Animate and remove
+            const itemElement = document.querySelector(`[data-item-id="${itemId}"]`);
+            if (itemElement) {
+                itemElement.style.opacity = '0';
+                itemElement.style.transform = 'translateX(100%)';
+                setTimeout(() => {
+                    itemElement.remove();
+                    updateCartSummary();
+                }, 300);
+            }
+
+            Swal.fire({
+                title: "Removed!",
+                text: "Item removed from your cart.",
+                icon: "success",
+                timer: 1200,
+                showConfirmButton: false
+            });
+
+        } else {
+            Swal.fire({
+                title: "Error!",
+                text: response.data.message || "Failed to remove item",
+                icon: "error"
+            });
+        }
+
+    } catch (err) {
+        console.error(err);
+        Swal.fire({
+            title: "Error!",
+            text: "Something went wrong while removing the item.",
+            icon: "error"
+        });
+    }
+}
+
+        // Handle clear cart
+      async function handleClearCart() {
+
+    const result = await Swal.fire({
+        title: "Clear Entire Cart?",
+        text: "This will remove all items from your cart.",
+        icon: "warning",
+        showCancelButton: true,
+        confirmButtonColor: "#d33",
+        cancelButtonColor: "#3085d6",
+        confirmButtonText: "Yes, clear it",
+        cancelButtonText: "Cancel"
+    });
+
+    if (!result.isConfirmed) return;
+
+    try {
+        const response = await axios.delete(API_ENDPOINTS.clearCart);
+
+        if (response.data.success) {
+
+            // Update UI to empty cart
+            document.getElementById('cartItems').innerHTML = `
+                <div class="empty-state text-center py-12">
+                    <div class="w-24 h-24 mx-auto bg-gray-100 rounded-full flex items-center justify-center mb-4">
+                        <i class="fas fa-shopping-cart text-gray-400 text-3xl"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-gray-700 mb-2">Your cart is empty</h3>
+                    <p class="text-gray-500 mb-6">Add some products to your cart to continue shopping</p>
+                    <a href="/user/shop" class="btn-primary text-white px-6 py-3 rounded-lg inline-flex items-center gap-2">
+                        <i class="fas fa-shopping-bag"></i>
+                        <span>Continue Shopping</span>
+                    </a>
+                </div>
+            `;
+
+            updateCartSummary();
+
+            Swal.fire({
+                title: "Cleared!",
+                text: "Your cart has been emptied.",
+                icon: "success",
+                timer: 1300,
+                showConfirmButton: false
+            });
+
+        } else {
+            Swal.fire({
+                title: "Error!",
+                text: response.data.message || "Failed to clear cart",
+                icon: "error"
+            });
+        }
+
+    } catch (error) {
+        console.error(error);
+        Swal.fire({
+            title: "Error!",
+            text: "Something went wrong while clearing the cart.",
+            icon: "error"
+        });
+    }
+}
+
+
+        // Update cart summary
+      function updateCartSummary() {
+    let subtotal = 0;
+    let itemCount = 0;
+
+    document.querySelectorAll('.cart-item').forEach(itemElement => {
+        const price = parseFloat(itemElement.getAttribute('data-price'));
+        const quantity = parseInt(itemElement.getAttribute('data-qty'));
+        subtotal += price * quantity;
+        itemCount += quantity;
+    });
+
+    document.getElementById('subtotal').textContent = `₹${subtotal.toFixed(2)}`;
+    document.getElementById('totalAmount').textContent = `₹${subtotal.toFixed(2)}`;
+    document.getElementById('summaryItemCount').textContent = itemCount;
+
+    // Update checkout button state
+    const checkoutBtn = document.getElementById('checkoutBtn');
+    if (itemCount === 0) {
+        checkoutBtn.disabled = true;
+        checkoutBtn.classList.add('opacity-50', 'cursor-not-allowed');
+    } else {
+        checkoutBtn.disabled = false;
+        checkoutBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+    }
+}
+
+        // Handle checkout
+        async function handleCheckout() {
+            if (document.querySelectorAll('.cart-item').length === 0) {
+                showNotification('Your cart is empty', 'error');
+                return;
+            }
+            
+            try {
+                setLoading(true);
+                // Redirect to checkout page
+                window.location.href = '/user/checkout';
+            } catch (error) {
+                console.error('Error during checkout:', error);
+                showNotification('Checkout failed. Please try again.', 'error');
+            } finally {
+                setLoading(false);
+            }
+        }
+
+        // Set loading state
+        function setLoading(loading) {
+            const mainContent = document.querySelector('.container');
+            if (loading) {
+                mainContent.classList.add('loading');
+            } else {
+                mainContent.classList.remove('loading');
+            }
+        }
+
+        // Notification system
+        function showNotification(message, type) {
+            const notification = document.createElement('div');
+            notification.className = `p-4 rounded-lg shadow-lg transform transition-all duration-300 notification ${
+                type === 'success' ? 'bg-green-500 text-white' : 'bg-red-500 text-white'
+            }`;
+            notification.innerHTML = `
+                <div class="flex items-center gap-3">
+                    <i class="fas fa-${type === 'success' ? 'check' : 'exclamation'}-circle"></i>
+                    <span class="font-medium">${message}</span>
+                </div>
+            `;
+            
+            const container = document.getElementById('notificationContainer');
+            container.appendChild(notification);
+            
+            // Remove notification after 5 seconds
+            setTimeout(() => {
+                notification.style.opacity = '0';
+                setTimeout(() => {
+                    if (container.contains(notification)) {
+                        container.removeChild(notification);
+                    }
+                }, 300);
+            }, 5000);
+        }
+    </script>
+</body>
+</html>

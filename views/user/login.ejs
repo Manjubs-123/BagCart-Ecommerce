@@ -211,7 +211,7 @@
         const submitBtn = document.getElementById('submitBtn');
 
         // Patterns
-        const emailPattern = /^[a-zA-Z0-9._%+-]+@gmail\.com$/;
+const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         const passwordPattern = /^(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*(),.?":{}|<>]).{6,}$/;
 
         // Track touched fields
