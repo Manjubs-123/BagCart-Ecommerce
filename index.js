@@ -24,6 +24,7 @@ import userApiRoutes from './routes/user/userApiRoutes.js';
 import orderRoutes from './routes/user/orderRoutes.js'
 import adminOrderRoutes from "./routes/admin/adminOrderRoutes.js"
 import walletRoutes from "./routes/user/walletRoutes.js";
+import adminCouponRoutes from "./routes/admin/adminCouponRoutes.js"
 const app = express();
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -138,6 +139,7 @@ app.use("/api", userApiRoutes);
 app.use('/order',orderRoutes);
 app.use('/admin/orders',adminOrderRoutes)
 app.use('/user',walletRoutes)
+app.use('/admin/coupon', adminCouponRoutes);
 
 
 
