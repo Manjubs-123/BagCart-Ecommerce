@@ -44,42 +44,10 @@ export const getCouponListPage = async (req, res) => {
     });
 
   } catch (err) {
-    console.error("🔥 LIST PAGE ERROR:", err.message);
+    console.error(" LIST PAGE ERROR:", err.message);
     res.status(500).send("Failed loading coupons");
   }
 };
-
-
-
-// Form page opens
-// ✅ Load form + send categories to EJS so it doesn't crash
-// export const getCreateCouponPage = async (req, res) => {
-//   try {
-//     const categories = await Category.find({}).lean(); // ✔ fetch categories from DB
-
-//    res.render("admin/couponCreate", {
-//   categories,
-//   error: null,
-//   success: null,
-//   oldInput: {},
-//   minOrderAmount:  minOrderAmount || 1,
-//   minDiscount: 5,
-//   maxDiscount: 90
-// });
-
-//   } catch (err) {
-//     res.render("admin/couponCreate", {
-//   categories: [],
-//   error: "Failed to load categories",
-//   success: null,
-//   oldInput: {},
-//   minOrderAmount:  minOrderAmount || 1,
-//   minDiscount: 5,
-//   maxDiscount: 90
-// });
-
-//   }
-// };
 
 export const getCreateCouponPage = async (req, res) => {
   try {
@@ -234,7 +202,7 @@ export const getEditCouponPage = async (req, res) => {
     res.render("admin/couponEdit", { coupon });
 
   } catch (err) {
-    console.error("🔥 EDIT PAGE LOAD ERROR:", err.message);
+    console.error("EDIT PAGE LOAD ERROR:", err.message);
     res.status(500).send("Failed to load edit page");
   }
 };
@@ -256,6 +224,8 @@ export const updateCoupon = async (req, res) => {
       isActive
     } = req.body;
 
+    console.log(" UPDATE PAYLOAD:", req.body); // Debug log
+
     const errors = [];
 
     // Format fields
@@ -269,64 +239,107 @@ export const updateCoupon = async (req, res) => {
 
     const validFromDate = new Date(validFrom);
     const validToDate = new Date(validTo);
-    const expiryDateObj = validToDate; // ✅ EXPIRY always same as validTo
 
-    // ---- Date edge case rules ----
+    console.log(" DATES - From:", validFromDate, "To:", validToDate); // Debug log
 
-    if (!validFrom) 
-      errors.push("Valid From is required!");
+    // Required field checks
+    if (!code || code.length < 3) errors.push("Coupon Code must be at least 3 characters!");
+    if (isNaN(discountValue)) errors.push("Discount percentage is required!");
+    if (isNaN(maxDiscountAmount)) errors.push("Maximum Discount Amount is required!");
+    if (!validFrom) errors.push("Valid From is required!");
+    if (!validTo) errors.push("Valid To is required!");
 
-    if (!validTo) 
-      errors.push("Valid To is required!");
-
-    if (validFromDate < now)
-      errors.push("Valid From cannot be in past!");
-
-    if (validToDate <= now)
-      errors.push("Valid To / Expiry must be in future!");
-
-    if (validToDate <= validFromDate)
-      errors.push("Valid To must be later than Valid From!");
-
-    // Discount percentage limits
-    if (isNaN(discountValue) || discountValue < 1 || discountValue > 100)
-      errors.push("Discount % must be 1–100!");
-
-    if (isNaN(maxDiscountAmount) || maxDiscountAmount < 1)
-      errors.push("Max Discount must be at least ₹1!");
-
-    // Unique coupon code check excluding the current one
-    const existing = await Coupon.findOne({ code, _id: { $ne: id } });
-    if (existing)
-      errors.push(`Coupon "${code}" already exists!`);
-
-    // ❌ If any error → block save
-    if (errors.length > 0) {
-      console.error("🔥 VALIDATION FAILED:", errors);
-      return res.status(400).json({ success:false, message: errors });
+    // Discount range 5–90
+    if (discountValue < 5 || discountValue > 90) {
+      errors.push("Discount must be between 5–90%");
     }
 
-    // ✅ UPDATE to DB
-    await Coupon.findByIdAndUpdate(id, {
+    // maxDiscountAmount < minOrderAmount
+    if (maxDiscountAmount >= minOrderAmount) {
+      errors.push("Max Discount Amount must be LESS than Min Order Amount");
+    }
+
+    // maxUsagePerUser ≤ maxUsage
+    if (maxUsage && maxUsagePerUser && maxUsagePerUser > maxUsage) {
+      errors.push("Max usage per user cannot exceed total max usage");
+    }
+
+    // Date validations
+    const GRACE_MINUTES = 1;
+    const safeNow = new Date(now.getTime() - GRACE_MINUTES * 60 * 1000);
+    
+    if (validFromDate < safeNow) errors.push("Valid From cannot be in the past!");
+    if (validToDate <= validFromDate) errors.push("Valid To must be later than Valid From!");
+    if (validToDate <= safeNow) errors.push("Valid To must be in the future!");
+
+    // Unique coupon code check excluding the current one
+    if (errors.length === 0) {
+      const existing = await Coupon.findOne({ code, _id: { $ne: id } });
+      if (existing) errors.push(`Coupon "${code}" already exists!`);
+    }
+
+    //  If any error → block save
+    if (errors.length > 0) {
+      console.error(" VALIDATION FAILED:", errors);
+      return res.status(400).json({ success: false, message: errors });
+    }
+
+    //  UPDATE to DB
+    const updateData = {
       code,
       discountValue,
-      maxDiscountAmount: maxDiscountAmount,
+      maxDiscountAmount,
       minOrderAmount,
       validFrom: validFromDate,
       validTo: validToDate,
-      expiryDate: expiryDateObj,
-      maxUsage,
-      maxUsagePerUser,
+      expiryDate: validToDate,
+      maxUsage: maxUsage || null,
+      maxUsagePerUser: maxUsagePerUser || null,
       isActive
-    });
+    };
 
-    console.log("✅ COUPON UPDATED IN DB ✅🔥");
-    return res.json({ success:true, message:["Coupon updated successfully!"] });
+    console.log(" SAVING TO DB:", updateData); // Debug log
+
+    const updatedCoupon = await Coupon.findByIdAndUpdate(
+      id, 
+      updateData,
+      { new: true, runValidators: true }
+    );
+
+    if (!updatedCoupon) {
+      return res.status(404).json({ success: false, message: ["Coupon not found!"] });
+    }
+
+    console.log(" COUPON UPDATED IN DB:", updatedCoupon);
+    return res.json({ success: true, message: ["Coupon updated successfully!"] });
 
   } catch (err) {
-    console.error("🔥 SERVER ERROR:", err.message);
-    return res.status(500).json({ success:false, message:["Server error while updating coupon!"] });
+    console.error(" SERVER ERROR:", err.message);
+    return res.status(500).json({ success: false, message: ["Server error while updating coupon!"] });
   }
 };
 
+export const toggleCouponStatus = async (req, res) => {
+  try {
+    const { id } = req.params;
 
+    const coupon = await Coupon.findById(id);
+    if (!coupon) {
+      return res.status(404).json({ success: false, message: "Coupon not found!" });
+    }
+
+    //  Toggle active ↔ inactive
+    coupon.isActive = !coupon.isActive;
+    await coupon.save();
+
+    return res.json({
+      success: true,
+      message: `Coupon ${coupon.code} is now ${coupon.isActive ? "Active " : "Inactive "}`,
+      isActive: coupon.isActive
+    });
+
+  } catch (err) {
+    console.error(" TOGGLE COUPON ERROR:", err.message);
+    return res.status(500).json({ success: false, message: "Server error while toggling coupon" });
+  }
+};
