@@ -26,22 +26,34 @@ export const getCouponListPage = async (req, res) => {
     if (sort === "newest") sortQuery.createdAt = -1;
     if (sort === "discountHigh") sortQuery.discountValue = -1;
     if (sort === "expiryNear") sortQuery.expiryDate = 1;
+    const totalCoupons = await Coupon.countDocuments(query);
 
     const coupons = await Coupon.find(query)
       .sort(sortQuery)
-      .skip((page-1)*limit)
+      .skip((page - 1) * Number(limit))
+
       .limit(limit)
       .lean();
 
-    res.render("admin/couponList", {
-      coupons,
-      totalCoupons: await Coupon.countDocuments(query),
-      activeCoupons: await Coupon.countDocuments({ ...query, isActive:true }),
-      expiredCoupons: await Coupon.countDocuments({ ...query, expiryDate:{ $lt:now }}),
-      totalUsage: coupons.reduce((a,c)=>a+(c.usedCount||0),0),
-      q, statusFilter:status, typeFilter:type, sort,
-      page:Number(page), limit:Number(limit), pages:1
-    });
+   const totalUsageAgg = await Coupon.aggregate([
+  { $group: { _id: null, total: { $sum: "$usedCount" } } }
+]);
+
+res.render("admin/couponList", {
+  coupons,
+ totalCoupons,  // ✅ already counted above
+  activeCoupons: await Coupon.countDocuments({ isActive: true }), // ✅ overall active count
+  expiredCoupons: await Coupon.countDocuments({ expiryDate: { $lt: now } }), // ✅ overall expired count
+  totalUsage: totalUsageAgg[0]?.total || 0, // ✅ now shows correct total usage
+  q,
+  statusFilter: status,
+  typeFilter: type,
+  sort,
+  page: Number(page),
+  limit: Number(limit),
+  pages: Math.ceil(totalCoupons / Number(limit)) // ✅ real pagination page count
+});
+
 
   } catch (err) {
     console.error(" LIST PAGE ERROR:", err.message);

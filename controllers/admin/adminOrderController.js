@@ -1,6 +1,7 @@
 import Order from "../../models/orderModel.js";
 import Product from "../../models/productModel.js";
 import Wallet from "../../models/walletModel.js";
+import Coupon from "../../models/couponModel.js";
 import mongoose from "mongoose";
 
 // Helper to build filter
@@ -347,48 +348,52 @@ export const approveReturn = async (req, res) => {
     const now = new Date();
     const errors = [];
 
-    // ✅ Fetch order
+    //  Fetch order
     const order = await Order.findById(orderId).populate("user");
     if (!order) {
       return res.status(404).json({ success: false, message: "Order not found" });
     }
 
-    // ✅ Fetch item from order
+    // Fetch item from order
     const item = order.items.id(itemId);
     if (!item) {
       return res.status(404).json({ success: false, message: "Return item not found in order" });
     }
 
-    // ✅ Status must be return-requested
+    //  Status must be return-requested
     if (item.status !== "return-requested") {
       return res.status(400).json({ success: false, message: "Item is not in return-requested state" });
     }
 
-    // ✅ Required guards
+    //  Required guards
     const price = Number(item.price);
     const qty = Number(item.quantity);
     if (!price || !qty || isNaN(price) || isNaN(qty)) {
       return res.status(400).json({ success: false, message: "Invalid item price or quantity for refund" });
     }
 
-    // ✅ 1) Calculate amount WITHOUT tax
+    //  1) Calculate amount WITHOUT tax
     const refundAmountWithoutTax = price * qty;
 
-    // ✅ 2) Calculate 10% tax for this item
+    
+    //  🔹 1.5) Adjust for coupon (if applied on this order)
+    let couponShare = 0;
+
+    //  2) Calculate 10% tax for this item
     const taxRate = 10;
     const taxAmount = refundAmountWithoutTax * (taxRate / 100);
 
-    // ✅ 3) Final refund INCLUDING tax
+    //  3) Final refund INCLUDING tax
     const finalRefundAmount = refundAmountWithoutTax + taxAmount;
 
-    // ✅ 4) Restock product variant
+    //  4) Restock product variant
     const product = await Product.findById(item.product);
     if (product && product.variants && product.variants[item.variantIndex]) {
       product.variants[item.variantIndex].stock += qty;
       await product.save();
     }
 
-    // ✅ 5) Wallet update — create if not exists
+    //  5) Wallet update — create if not exists
     const userId = order.user._id;
     let wallet = await Wallet.findOne({ user: userId });
 
@@ -400,7 +405,7 @@ export const approveReturn = async (req, res) => {
       });
     }
 
-    // ✅ 6) Credit wallet with tax-included refund
+    //  6) Credit wallet with tax-included refund
     wallet.balance += finalRefundAmount;
     wallet.transactions.push({
       type: "credit",
@@ -409,13 +414,13 @@ export const approveReturn = async (req, res) => {
       date: now
     });
 
-    // ✅ 7) Approve return timestamps
+    //  7) Approve return timestamps
     item.status = "returned";
     item.returnApprovedDate = now;
     item.refundAmount = finalRefundAmount;
     item.refundedTax = taxAmount;
 
-    // ✅ 8) Save to DB
+    //  8) Save to DB
     await wallet.save();
     await order.save();
 
@@ -427,7 +432,7 @@ export const approveReturn = async (req, res) => {
     });
 
   } catch (err) {
-    console.error("❌ Approve Return Server Error:", err);
+    console.error(" Approve Return Server Error:", err);
     return res.status(500).json({ success: false, message: "Server error while approving return", error: err.message });
   }
 };

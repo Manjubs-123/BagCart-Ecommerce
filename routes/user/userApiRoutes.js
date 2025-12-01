@@ -3,6 +3,7 @@ import User from "../../models/userModel.js";
 import Cart from "../../models/cartModel.js";
 import Product from "../../models/productModel.js";
 import Order from "../../models/orderModel.js";
+import Coupon from "../../models/couponModel.js";
 
 const router = express.Router();
 
@@ -299,8 +300,10 @@ router.get("/wallet/balance", async (req, res) => {
 ----------------------------------------------------------- */
 router.post("/orders", async (req, res) => {
     try {
-        const userId = req.session.user.id;
-        const { addressId, paymentMethod } = req.body;
+        const userId = req.session.user?.id;  // replace your old without ? if present
+if (!userId) return res.json({ success: false, message: "User not login ❌" });  // ✅ ADD this line
+
+        const { addressId, paymentMethod ,couponCode} = req.body;
 
         if (!addressId || !paymentMethod) {
             return res.json({ success: false, message: "Missing data" });
@@ -322,6 +325,9 @@ router.post("/orders", async (req, res) => {
 
         const orderItems = cart.items.map(item => {
             const variant = item.product.variants[item.variantIndex];
+            if (!variant) {
+    throw new Error("Variant not found - invalid variant index");
+  }
             return {
                 product: item.product._id,
                 variantIndex: item.variantIndex,
@@ -349,38 +355,101 @@ const customOrderId = "BH-" + Math.floor(100000 + Math.random() * 900000).toStri
             subtotal,
             tax,
             shippingFee,
-            totalAmount,
-            paymentStatus: paymentMethod === "cod" ? "pending" : "paid"
+           totalAmount: totalAmount - (req.body.discount || 0),
+
+            paymentStatus: paymentMethod === "cod" ? "pending" : "paid",
+            coupon: couponCode ? { code: couponCode.toUpperCase(), discount: req.body.discount } : undefined
+
         });
 
         //  STOCK REDUCTION LOGIC HERE
-        for (let item of cart.items) {
-            const product = await Product.findById(item.product._id);
-            if (!product) continue;
+       for (let item of cart.items) {
+    const product = await Product.findById(item.product._id);
+    if (!product) continue;
 
-            const variant = product.variants[item.variantIndex];
-            if (!variant) continue;
+    const variant = product.variants[item.variantIndex];
+    if (!variant) continue;
 
-            variant.stock -= item.quantity;
-            product.markModified(`variants.${item.variantIndex}.stock`);
+    // 🔹 FIX: Stop stock going negative
+    const newStock = variant.stock - item.quantity;
+    if (newStock < 0) {
+        return res.json({
+            success: false,
+            message: `Stock not available for variant ❌ (Only ${variant.stock} left)`
+        });
+    }
 
-            await product.save();
+    variant.stock = newStock;
+    product.markModified(`variants.${item.variantIndex}.stock`);
+
+    await product.save();  // ✅ will not crash now
+}
+
+
+
+
+// --------- ✅ INSERT YOUR COUPON UPDATE SECTION HERE ----------
+if (couponCode) {
+    const coupon = await Coupon.findOne({ code: couponCode.toUpperCase() });
+    if (coupon) {
+        const now = new Date();
+
+        if (coupon.expiryDate < now) {
+            return res.json({ success: false, message: "Coupon expired while placing order ❌" });
         }
 
-        // Clear cart
-        cart.items = [];
-        await cart.save();
+        if (coupon.maxUsage && coupon.usedCount >= coupon.maxUsage) {
+            return res.json({ success: false, message: "Coupon fully used ❌" });
+        }
 
-        return res.json({
-            success: true,
-            orderId: order._id
+        const userRecord = coupon.usedByUsers.find(u => u.userId.toString() === userId.toString());
+
+        if (coupon.maxUsagePerUser) {
+            if (userRecord && userRecord.count >= coupon.maxUsagePerUser) {
+                return res.json({ success: false, message: `User coupon limit reached ❌ (Max ${coupon.maxUsagePerUser})` });
+            }
+        }
+
+        coupon.usedCount += 1;
+
+        if (userRecord) {
+            userRecord.count += 1;
+        } else {
+            coupon.usedByUsers.push({ userId, count: 1 });
+        }
+
+        await coupon.save();  // 🔴 Important: updates DB so admin list shows correct usage ✅
+
+        // Optional: mark coupon used in order
+        await Order.findByIdAndUpdate(order._id, {
+            coupon: { code: coupon.code, discountApplied: true }
         });
-
-    } catch (err) {
-        console.error("ORDER ERROR:", err);
-        return res.json({ success: false, message: "Order failed" });
     }
+}
+// -----------------------------------------------------------
+
+// -------- END OF INSERTION --------
+
+return res.json({
+    success: true,
+    orderId: order._id
 });
+
+} catch (err) {
+    console.error("ORDER ERROR:", err);      // keep this
+    return res.json({ 
+      success: false, 
+      message: "Order failed",
+      error: err.message                    // 🔹 add this so you SEE what broke
+    });
+}
+    // } catch (err) {
+    //     console.error("ORDER ERROR:", err);
+    //     return res.json({ success: false, message: "Order failed" });
+    // }
+});
+
+
 
 
 export default router;
