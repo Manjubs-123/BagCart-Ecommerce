@@ -230,14 +230,14 @@
             <option value="expired" <%= statusFilter === 'expired' ? 'selected' : '' %>>Expired</option>
           </select>
           
-          <select 
+          <!-- <select 
             id="typeFilter" 
             onchange="filterByType()"
             class="border border-gray-300 rounded-lg px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
             <option value="">All Types</option>
             <option value="percentage" <%= typeFilter === 'percentage' ? 'selected' : '' %>>Percentage</option>
             <option value="fixed" <%= typeFilter === 'fixed' ? 'selected' : '' %>>Fixed Amount</option>
-          </select>
+          </select> -->
         </div>
       </div>
     </div>
@@ -330,14 +330,24 @@
 
 
                       <!-- Toggle Status Button -->
-                      <button
+                      <!-- <button
                         onclick="toggleCouponStatus('<%= coupon._id %>', <%= coupon.isActive ? 'true' : 'false' %>)"
                         class="<%= coupon.isActive ? 'bg-red-600 hover:bg-red-700' : 'bg-green-600 hover:bg-green-700' %> text-white px-4 py-2 rounded-lg transition flex items-center gap-2 text-sm font-medium action-btn"
                         <%= new Date(coupon.expiryDate) < new Date() ? 'disabled' : '' %>
                         title="<%= coupon.isActive ? 'Deactivate Coupon' : 'Activate Coupon' %>">
                         <i class="fas <%= coupon.isActive ? 'fa-ban' : 'fa-check' %>"></i>
                         <%= coupon.isActive ? 'Deactivate' : 'Activate' %>
-                      </button>
+                      </button> -->
+
+                      <button
+  onclick="toggleCouponStatus('<%= coupon._id %>', <%= coupon.isActive %>, '<%= coupon.code %>')"
+  class="<%= coupon.isActive ? 'bg-red-600 hover:bg-red-700' : 'bg-green-600 hover:bg-green-700' %> text-white px-4 py-2 rounded-lg transition flex items-center gap-2 text-sm font-medium action-btn"
+  <%= new Date(coupon.expiryDate) < new Date() ? 'disabled' : '' %>
+  title="<%= coupon.isActive ? 'Deactivate Coupon' : 'Activate Coupon' %>">
+  <i class="fas <%= coupon.isActive ? 'fa-ban' : 'fa-check' %> text-xs"></i>
+  <%= coupon.isActive ? 'Deactivate' : 'Activate' %>
+</button>
+
                     </div>
                   </td>
                 </tr>
@@ -425,60 +435,39 @@
     }
 
     // Toggle coupon status
-    function toggleCouponStatus(id, isActive) {
-      const action = isActive ? "deactivate" : "activate";
-      const actionText = isActive ? "Deactivate" : "Activate";
-      const buttonColor = isActive ? '#ef4444' : '#22c55e';
+  function toggleCouponStatus(id, isActive, code) {
+  const action = isActive ? "Deactivate" : "Activate";
 
-      Swal.fire({
-        title: `${actionText} Coupon`,
-        html: `Are you sure you want to <strong>${action}</strong> this coupon?`,
-        icon: "warning",
-        showCancelButton: true,
-        confirmButtonColor: buttonColor,
-        cancelButtonColor: "#6b7280",
-        confirmButtonText: `Yes, ${actionText}!`,
-        cancelButtonText: "Cancel",
-        reverseButtons: true
-      }).then((result) => {
-        if (result.isConfirmed) {
-          // Show loading state
-          Swal.fire({
-            title: `${actionText}ing...`,
-            text: 'Please wait while we update the coupon',
-            allowOutsideClick: false,
-            didOpen: () => {
-              Swal.showLoading();
-            }
-          });
+  Swal.fire({
+    title: `${action} Coupon "${code}"?`,
+    text: `Are you sure you want to ${action.toLowerCase()} this coupon?`,
+    icon: "question",
+    showCancelButton: true,
+    confirmButtonColor: isActive ? "#ef4444" : "#22c55e",
+    cancelButtonColor: "#6b7280",
+    confirmButtonText: `Yes, ${action}!`
+  }).then(async (result) => {
+    if (result.isConfirmed) {
+      try {
+        const response = await fetch(`/admin/coupon/toggle/${id}`, { method: "POST" });
+        const data = await response.json();
 
-          fetch(`/admin/coupon/toggleStatus?id=${id}`, { 
-            method: "POST",
-            headers: {
-              'Content-Type': 'application/json',
-            }
-          })
-            .then(res => res.json())
-            .then(data => {
-              Swal.fire({
-                title: "Success!",
-                text: data.message,
-                icon: "success",
-                timer: 1500,
-                showConfirmButton: false
-              }).then(() => location.reload());
-            })
-            .catch(() => {
-              Swal.fire({
-                title: "Error!",
-                text: "Failed to update coupon status",
-                icon: "error",
-                confirmButtonText: "OK"
-              });
-            });
-        }
-      });
+        if (!data.success) throw new Error(data.message);
+
+        Swal.fire({
+          title: "Updated!",
+          text: data.message,
+          icon: "success",
+          timer: 1500,
+          showConfirmButton: false
+        }).then(() => location.reload());
+
+      } catch (err) {
+        Swal.fire("Error!", err.message, "error");
+      }
     }
+  });
+}
 
     // Show success message if redirected with updated parameter
     const params = new URLSearchParams(window.location.search);

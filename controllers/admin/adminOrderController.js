@@ -1,6 +1,7 @@
 import Order from "../../models/orderModel.js";
 import Product from "../../models/productModel.js";
 import Wallet from "../../models/walletModel.js";
+import Coupon from "../../models/couponModel.js";
 import mongoose from "mongoose";
 
 // Helper to build filter
@@ -277,36 +278,242 @@ console.log("Return page loaded");
 };
 
 
+// export const approveReturn = async (req, res) => {
+//   try {
+//     const { orderId, itemId } = req.params;
+
+//     const order = await Order.findById(orderId);
+//     if (!order) return res.status(404).json({ success: false, message: "Order not found" });
+
+//     const item = order.items.id(itemId);
+//     if (!item) return res.status(404).json({ success: false, message: "Item not found" });
+
+//     if (item.status !== "return-requested") {
+//       return res.status(400).json({ success: false, message: "Invalid return status" });
+//     }
+
+//     // Update Status
+//     item.status = "returned";
+//     item.returnApprovedDate = new Date();
+
+//     //  Restock Product
+//     const product = await Product.findById(item.product);
+//     if (product?.variants[item.variantIndex]) {
+//       product.variants[item.variantIndex].stock += item.quantity;
+//       await product.save();
+//     }
+
+//     // Refund Money
+//     const userId = order.user._id;
+//     const refundAmount = item.price * item.quantity;
+
+//     let wallet = await Wallet.findOne({ user: userId });
+//     if (!wallet) {
+//       wallet = await Wallet.create({
+//         user: userId,
+//         balance: 0,
+//         transactions: []
+//       });
+//     }
+
+//     wallet.balance += refundAmount;
+//     wallet.transactions.push({
+//       type: "credit",
+//       amount: refundAmount,
+//       description: `Refund for returned item (${item.itemOrderId})`,
+//       date: new Date()
+//     });
+
+//     await wallet.save();
+//     await order.save();
+
+    
+//     return res.json({ 
+//       success: true,
+//       message: "Return approved & refunded",
+//       refund: refundAmount
+//     });
+
+//   } catch (err) {
+//     console.error("Approve Return Error:", err);
+//     return res.status(500).json({ success: false, message: "Server error" });
+//   }
+// };
+
+
+
+// export const approveReturn = async (req, res) => {
+//   try {
+//     const { orderId, itemId } = req.params;
+//     const { refundAmount, refundBase, refundTax, couponDeduction } = req.body;
+//     const now = new Date();
+
+//     // Fetch order
+//     const order = await Order.findById(orderId).populate("user");
+//     if (!order) {
+//       return res.status(404).json({ success: false, message: "Order not found" });
+//     }
+
+//     // Fetch item from order
+//     const item = order.items.id(itemId);
+//     if (!item) {
+//       return res.status(404).json({ success: false, message: "Return item not found in order" });
+//     }
+
+//     // Status must be return-requested
+//     if (item.status !== "return-requested") {
+//       return res.status(400).json({ success: false, message: "Item is not in return-requested state" });
+//     }
+
+//     // Calculate final refund amount
+//     let finalRefundAmount, taxAmount, actualCouponDeduction;
+    
+//     if (refundAmount && refundBase && refundTax !== undefined) {
+//       // Use values from frontend
+//       finalRefundAmount = parseFloat(refundAmount);
+//       taxAmount = parseFloat(refundTax);
+//       actualCouponDeduction = couponDeduction ? parseFloat(couponDeduction) : 0;
+//     } else {
+//       // Fallback calculation
+//       const price = Number(item.price);
+//       const qty = Number(item.quantity);
+//       const itemTotal = price * qty;
+      
+//       // Calculate coupon share if exists
+//       let couponShare = 0;
+//       if (order.coupon && order.coupon.discountAmount && order.coupon.discountAmount > 0) {
+//         const itemShare = order.subtotal > 0 ? itemTotal / order.subtotal : 0;
+//         couponShare = order.coupon.discountAmount * itemShare;
+//       }
+      
+//       const refundBase = Math.max(0, itemTotal - couponShare);
+//       taxAmount = refundBase * 0.10;
+//       finalRefundAmount = refundBase + taxAmount;
+//       actualCouponDeduction = couponShare;
+//     }
+
+//     // Restock product variant
+//     const product = await Product.findById(item.product);
+//     if (product && product.variants && product.variants[item.variantIndex]) {
+//       product.variants[item.variantIndex].stock += item.quantity;
+//       await product.save();
+//     }
+
+//     // Wallet update
+//     const userId = order.user._id;
+//     let wallet = await Wallet.findOne({ user: userId });
+
+//     if (!wallet) {
+//       wallet = await Wallet.create({
+//         user: userId,
+//         balance: 0,
+//         transactions: []
+//       });
+//     }
+
+//     // Credit wallet with tax-included refund
+//     wallet.balance += finalRefundAmount;
+//     wallet.transactions.push({
+//       type: "credit",
+//       amount: finalRefundAmount,
+//       description: `Return refund for item ${item.itemOrderId || itemId} (incl. 10% tax)`,
+//       details: {
+//         couponDeduction: actualCouponDeduction.toFixed(2),
+//         taxAmount: taxAmount.toFixed(2)
+//       },
+//       date: now
+//     });
+
+//     // Update item status
+//     item.status = "returned";
+//     item.returnApprovedDate = now;
+//     item.refundAmount = finalRefundAmount;
+//     item.refundedTax = taxAmount;
+
+//     // Save to DB
+//     await wallet.save();
+//     await order.save();
+
+//     return res.json({
+//       success: true,
+//       message: "Return approved and refund processed successfully",
+//       refund: finalRefundAmount,
+//       refundedTax: taxAmount,
+//       couponDeduction: actualCouponDeduction
+//     });
+
+//   } catch (err) {
+//     console.error("Approve Return Error:", err);
+//     return res.status(500).json({ success: false, message: "Server error while approving return" });
+//   }
+// };
+
+
 export const approveReturn = async (req, res) => {
   try {
     const { orderId, itemId } = req.params;
+    const { refundAmount, refundBase, refundTax, couponDeduction } = req.body;
+    const now = new Date();
 
-    const order = await Order.findById(orderId);
-    if (!order) return res.status(404).json({ success: false, message: "Order not found" });
-
-    const item = order.items.id(itemId);
-    if (!item) return res.status(404).json({ success: false, message: "Item not found" });
-
-    if (item.status !== "return-requested") {
-      return res.status(400).json({ success: false, message: "Invalid return status" });
+    const order = await Order.findById(orderId).populate("user");
+    if (!order) {
+      return res.status(404).json({ success: false, message: "Order not found" });
     }
 
-    // Update Status
-    item.status = "returned";
-    item.returnApprovedDate = new Date();
+    const item = order.items.id(itemId);
+    if (!item) {
+      return res.status(404).json({ success: false, message: "Return item not found in order" });
+    }
 
-    //  Restock Product
+    if (item.status !== "return-requested") {
+      return res.status(400).json({ success: false, message: "Item is not in return-requested state" });
+    }
+
+    let finalRefundAmount, taxAmount, actualCouponDeduction;
+
+    // If frontend provided correct values → use them
+    if (refundAmount && refundBase && refundTax !== undefined) {
+      finalRefundAmount = parseFloat(refundAmount);
+      taxAmount = parseFloat(refundTax);
+      actualCouponDeduction = couponDeduction ? parseFloat(couponDeduction) : 0;
+
+    } else {
+      // ⭐ FALLBACK CALCULATION FIXED HERE — ONLY THIS PART CHANGED ⭐
+
+      const price = Number(item.price);
+      const qty = Number(item.quantity);
+      const itemTotal = price * qty;
+
+      // ⭐ USE subtotalBeforeCoupon IF EXISTS — safest & correct
+      const baseSubtotal =
+        order.coupon?.subtotalBeforeCoupon > 0
+          ? order.coupon.subtotalBeforeCoupon
+          : order.subtotal;
+
+      let couponShare = 0;
+
+      if (order.coupon && order.coupon.discountAmount > 0) {
+        const itemShare = baseSubtotal > 0 ? itemTotal / baseSubtotal : 0;
+        couponShare = order.coupon.discountAmount * itemShare;
+      }
+
+      const computedRefundBase = Math.max(0, itemTotal - couponShare);
+      taxAmount = computedRefundBase * 0.10;
+      finalRefundAmount = computedRefundBase + taxAmount;
+      actualCouponDeduction = couponShare;
+    }
+
+    // Restock variant
     const product = await Product.findById(item.product);
-    if (product?.variants[item.variantIndex]) {
+    if (product && product.variants[item.variantIndex]) {
       product.variants[item.variantIndex].stock += item.quantity;
       await product.save();
     }
 
-    // Refund Money
+    // Wallet
     const userId = order.user._id;
-    const refundAmount = item.price * item.quantity;
-
     let wallet = await Wallet.findOne({ user: userId });
+
     if (!wallet) {
       wallet = await Wallet.create({
         user: userId,
@@ -315,30 +522,39 @@ export const approveReturn = async (req, res) => {
       });
     }
 
-    wallet.balance += refundAmount;
+    wallet.balance += finalRefundAmount;
     wallet.transactions.push({
       type: "credit",
-      amount: refundAmount,
-      description: `Refund for returned item (${item.itemOrderId})`,
-      date: new Date()
+      amount: finalRefundAmount,
+      description: `Return refund for item ${item.itemOrderId || itemId} (incl. 10% tax)`,
+      details: {
+        couponDeduction: actualCouponDeduction.toFixed(2),
+        taxAmount: taxAmount.toFixed(2)
+      },
+      date: now
     });
+
+    item.status = "returned";
+    item.returnApprovedDate = now;
+    item.refundAmount = finalRefundAmount;
+    item.refundedTax = taxAmount;
 
     await wallet.save();
     await order.save();
 
-    
-    return res.json({ 
+    return res.json({
       success: true,
-      message: "Return approved & refunded",
-      refund: refundAmount
+      message: "Return approved and refund processed successfully",
+      refund: finalRefundAmount,
+      refundedTax: taxAmount,
+      couponDeduction: actualCouponDeduction
     });
 
   } catch (err) {
     console.error("Approve Return Error:", err);
-    return res.status(500).json({ success: false, message: "Server error" });
+    return res.status(500).json({ success: false, message: "Server error while approving return" });
   }
 };
-
 
 export const rejectReturn = async (req, res) => {
   try {

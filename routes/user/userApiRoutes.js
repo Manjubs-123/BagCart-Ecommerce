@@ -3,6 +3,7 @@ import User from "../../models/userModel.js";
 import Cart from "../../models/cartModel.js";
 import Product from "../../models/productModel.js";
 import Order from "../../models/orderModel.js";
+import Coupon from "../../models/couponModel.js";
 
 const router = express.Router();
 
@@ -293,94 +294,400 @@ router.get("/wallet/balance", async (req, res) => {
     }
 });
 
+/* -----------------------------------------------------------
+   PLACE ORDER — FINAL STABLE VERSION
+----------------------------------------------------------- */
+router.post("/orders", async (req, res) => {
+  try {
+    const userId = req.session.user?.id;
+    if (!userId)
+      return res.json({ success: false, message: "User not login ❌" });
+
+    const { addressId, paymentMethod, couponCode } = req.body;
+
+    if (!addressId || !paymentMethod) {
+      return res.json({ success: false, message: "Missing data" });
+    }
+
+    const cart = await Cart.findOne({ user: userId }).populate(
+      "items.product"
+    );
+
+    if (!cart || cart.items.length === 0) {
+      return res.json({ success: false, message: "Cart empty" });
+    }
+
+    const user = await User.findById(userId);
+    const address = user.addresses.id(addressId);
+
+    if (!address) {
+      return res.json({ success: false, message: "Address not found" });
+    }
+
+    /* -----------------------------------------------------------
+       BUILD ORDER ITEMS
+    ----------------------------------------------------------- */
+    const orderItems = cart.items.map((item) => {
+      const variant = item.product.variants[item.variantIndex];
+      if (!variant) {
+        throw new Error("Variant not found - invalid variant index");
+      }
+
+      return {
+        product: item.product._id,
+        variantIndex: item.variantIndex,
+        quantity: item.quantity,
+        price: variant.price,
+        color: variant.color,
+        image: variant.images[0]?.url || "",
+      };
+    });
+
+    /* -----------------------------------------------------------
+       PRICE CALCULATION
+    ----------------------------------------------------------- */
+    const subtotal = orderItems.reduce(
+      (sum, item) => sum + item.price * item.quantity,
+      0
+    );
+    const tax = subtotal * 0.1; // 10% GST
+    const shippingFee = subtotal > 500 ? 0 : 50;
+
+    /* -----------------------------------------------------------
+       COUPON CALCULATION (REQUIRED + CLEAN)
+    ----------------------------------------------------------- */
+    let discountApplied = 0;
+    let couponInfo = null;
+
+    if (couponCode) {
+      const coupon = await Coupon.findOne({
+        code: couponCode.toUpperCase(),
+        isActive: true,
+      });
+
+      if (!coupon) {
+        return res.json({
+          success: false,
+          message: "Invalid coupon ❌",
+        });
+      }
+
+      const now = new Date();
+      if (coupon.expiryDate < now) {
+        return res.json({
+          success: false,
+          message: "Coupon expired ❌",
+        });
+      }
+
+      if (subtotal < (coupon.minOrderAmount || 0)) {
+        return res.json({
+          success: false,
+          message: `Minimum order ₹${coupon.minOrderAmount} required ❌`,
+        });
+      }
+
+      // percentage discount, capped by max discount
+      const rawDiscount = (subtotal * coupon.discountValue) / 100;
+      discountApplied = Math.min(rawDiscount, coupon.maxDiscountAmount);
+
+      discountApplied = Math.round(discountApplied * 100) / 100;
+
+      couponInfo = {
+        code: coupon.code,
+        discountValue: coupon.discountValue,
+        discountAmount: discountApplied,
+        maxDiscountAmount: coupon.maxDiscountAmount,
+        subtotalBeforeCoupon: subtotal,
+      };
+    }
+
+    const finalTotal =
+      subtotal + tax + shippingFee - (discountApplied || 0);
+
+    /* -----------------------------------------------------------
+       GENERATE CUSTOM ORDER ID
+    ----------------------------------------------------------- */
+    const customOrderId =
+      "BH-" + Math.floor(100000 + Math.random() * 900000).toString();
+
+    /* -----------------------------------------------------------
+       CREATE ORDER
+    ----------------------------------------------------------- */
+    const order = await Order.create({
+      orderId: customOrderId,
+      user: userId,
+      items: orderItems,
+      shippingAddress: address,
+      paymentMethod,
+
+      subtotal,
+      tax,
+      shippingFee,
+      totalAmount: finalTotal,
+
+      coupon: couponInfo,
+
+      paymentStatus: paymentMethod === "cod" ? "pending" : "paid",
+    });
+
+    /* -----------------------------------------------------------
+       UPDATE STOCK
+    ----------------------------------------------------------- */
+    for (let item of cart.items) {
+      const product = await Product.findById(item.product._id);
+      if (!product) continue;
+
+      const variant = product.variants[item.variantIndex];
+      if (!variant) continue;
+
+      const newStock = variant.stock - item.quantity;
+
+      if (newStock < 0) {
+        return res.json({
+          success: false,
+          message: `Stock not available ❌ Only ${variant.stock} left`,
+        });
+      }
+
+      variant.stock = newStock;
+      product.markModified(`variants.${item.variantIndex}.stock`);
+      await product.save();
+    }
+
+    /* -----------------------------------------------------------
+       UPDATE COUPON USAGE IN DATABASE
+    ----------------------------------------------------------- */
+    if (couponCode && couponInfo) {
+      const coupon = await Coupon.findOne({
+        code: couponCode.toUpperCase(),
+      });
+
+      if (coupon) {
+        const userRecord = coupon.usedByUsers.find(
+          (u) => u.userId.toString() === userId.toString()
+        );
+
+        coupon.usedCount += 1;
+
+        if (userRecord) {
+          userRecord.count += 1;
+        } else {
+          coupon.usedByUsers.push({ userId, count: 1 });
+        }
+
+        await coupon.save();
+      }
+    }
+
+    /* -----------------------------------------------------------
+       SUCCESS RESPONSE
+    ----------------------------------------------------------- */
+    return res.json({
+      success: true,
+      orderId: order._id,
+      message: "Order placed successfully",
+    });
+  } catch (err) {
+    console.error("ORDER ERROR:", err);
+
+    return res.json({
+      success: false,
+      message: "Order failed",
+      error: err.message,
+    });
+  }
+});
+
 
 /* -----------------------------------------------------------
    PLACE ORDER — SAFE VERSION
 ----------------------------------------------------------- */
-router.post("/orders", async (req, res) => {
-    try {
-        const userId = req.session.user.id;
-        const { addressId, paymentMethod } = req.body;
+// router.post("/orders", async (req, res) => {
+//     try {
+//         const userId = req.session.user?.id;  // replace your old without ? if present
+// if (!userId) return res.json({ success: false, message: "User not login ❌" });  // ✅ ADD this line
 
-        if (!addressId || !paymentMethod) {
-            return res.json({ success: false, message: "Missing data" });
-        }
+//         const { addressId, paymentMethod ,couponCode} = req.body;
 
-        const cart = await Cart.findOne({ user: userId })
-            .populate("items.product");
+//         if (!addressId || !paymentMethod) {
+//             return res.json({ success: false, message: "Missing data" });
+//         }
 
-        if (!cart || cart.items.length === 0) {
-            return res.json({ success: false, message: "Cart empty" });
-        }
+//         const cart = await Cart.findOne({ user: userId })
+//             .populate("items.product");
 
-        const user = await User.findById(userId);
-        const address = user.addresses.id(addressId);
+//         if (!cart || cart.items.length === 0) {
+//             return res.json({ success: false, message: "Cart empty" });
+//         }
 
-        if (!address) {
-            return res.json({ success: false, message: "Address not found" });
-        }
+//         const user = await User.findById(userId);
+//         const address = user.addresses.id(addressId);
 
-        const orderItems = cart.items.map(item => {
-            const variant = item.product.variants[item.variantIndex];
-            return {
-                product: item.product._id,
-                variantIndex: item.variantIndex,
-                quantity: item.quantity,
-                price: variant.price,
-                color: variant.color,
-                image: variant.images[0]?.url || ""
-            };
-        });
+//         if (!address) {
+//             return res.json({ success: false, message: "Address not found" });
+//         }
 
-        const subtotal = orderItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
-        const tax = subtotal * 0.1;
-        const shippingFee = subtotal > 500 ? 0 : 50;
-        const totalAmount = subtotal + tax + shippingFee;
+//         const orderItems = cart.items.map(item => {
+//             const variant = item.product.variants[item.variantIndex];
+//             if (!variant) {
+//     throw new Error("Variant not found - invalid variant index");
+//   }
+//             return {
+//                 product: item.product._id,
+//                 variantIndex: item.variantIndex,
+//                 quantity: item.quantity,
+//                 price: variant.price,
+//                 color: variant.color,
+//                 image: variant.images[0]?.url || ""
+//             };
+//         });
 
-        // ✅ Step 1: Make a new custom order ID (not MongoDB)
-const customOrderId = "BH-" + Math.floor(100000 + Math.random() * 900000).toString();
+//         const subtotal = orderItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
+//         const tax = subtotal * 0.1;
+//         const shippingFee = subtotal > 500 ? 0 : 50;
+//         const totalAmount = subtotal + tax + shippingFee;
 
-        const order = await Order.create({
-             orderId: customOrderId,
-            user: userId,
-            items: orderItems,
-            shippingAddress: address,
-            paymentMethod,
-            subtotal,
-            tax,
-            shippingFee,
-            totalAmount,
-            paymentStatus: paymentMethod === "cod" ? "pending" : "paid"
-        });
+//         // ---------- CALCULATE COUPON (NECESSARY) ----------
+// let discountApplied = 0;
+// let couponInfo = null;
 
-        //  STOCK REDUCTION LOGIC HERE
-        for (let item of cart.items) {
-            const product = await Product.findById(item.product._id);
-            if (!product) continue;
+// if (couponCode) {
+//     const coupon = await Coupon.findOne({ code: couponCode.toUpperCase(), isActive: true });
 
-            const variant = product.variants[item.variantIndex];
-            if (!variant) continue;
+//     if (!coupon) {
+//         return res.json({ success: false, message: "Invalid coupon ❌" });
+//     }
 
-            variant.stock -= item.quantity;
-            product.markModified(`variants.${item.variantIndex}.stock`);
+//     if (subtotal < (coupon.minOrderAmount || 0)) {
+//         return res.json({
+//             success: false,
+//             message: `Minimum order ₹${coupon.minOrderAmount} required ❌`
+//         });
+//     }
 
-            await product.save();
-        }
+//     // % discount capped by max discount
+//     let raw = (subtotal * coupon.discountValue) / 100;
+//     discountApplied = Math.min(raw, coupon.maxDiscountAmount);
+//     discountApplied = Math.round(discountApplied * 100) / 100;
 
-        // Clear cart
-        cart.items = [];
-        await cart.save();
+//     couponInfo = {
+//         code: coupon.code,
+//         discountValue: coupon.discountValue,
+//         discountAmount: discountApplied,
+//         maxDiscountAmount: coupon.maxDiscountAmount,
+//         subtotalBeforeCoupon: subtotal
+//     };
+// }
 
-        return res.json({
-            success: true,
-            orderId: order._id
-        });
+//         // ✅ Step 1: Make a new custom order ID (not MongoDB)
+// const customOrderId = "BH-" + Math.floor(100000 + Math.random() * 900000).toString();
 
-    } catch (err) {
-        console.error("ORDER ERROR:", err);
-        return res.json({ success: false, message: "Order failed" });
-    }
-});
+//         const order = await Order.create({
+//     orderId: customOrderId,
+//     user: userId,
+//     items: orderItems,
+//     shippingAddress: address,
+//     paymentMethod,
+
+//     subtotal,
+//     tax,
+//     shippingFee,
+//     totalAmount: subtotal + tax + shippingFee - discountApplied,
+//     coupon: couponInfo,
+
+//     paymentStatus: paymentMethod === "cod" ? "pending" : "paid"
+// });
+
+
+//         //  STOCK REDUCTION LOGIC HERE
+//        for (let item of cart.items) {
+//     const product = await Product.findById(item.product._id);
+//     if (!product) continue;
+
+//     const variant = product.variants[item.variantIndex];
+//     if (!variant) continue;
+
+//     // 🔹 FIX: Stop stock going negative
+//     const newStock = variant.stock - item.quantity;
+//     if (newStock < 0) {
+//         return res.json({
+//             success: false,
+//             message: `Stock not available for variant ❌ (Only ${variant.stock} left)`
+//         });
+//     }
+
+//     variant.stock = newStock;
+//     product.markModified(`variants.${item.variantIndex}.stock`);
+
+//     await product.save();  // ✅ will not crash now
+// }
+
+
+
+
+// // --------- ✅ INSERT YOUR COUPON UPDATE SECTION HERE ----------
+// if (couponCode) {
+//     const coupon = await Coupon.findOne({ code: couponCode.toUpperCase() });
+//     if (coupon) {
+//         const now = new Date();
+
+//         if (coupon.expiryDate < now) {
+//             return res.json({ success: false, message: "Coupon expired while placing order ❌" });
+//         }
+
+//         if (coupon.maxUsage && coupon.usedCount >= coupon.maxUsage) {
+//             return res.json({ success: false, message: "Coupon fully used ❌" });
+//         }
+
+//         const userRecord = coupon.usedByUsers.find(u => u.userId.toString() === userId.toString());
+
+//         if (coupon.maxUsagePerUser) {
+//             if (userRecord && userRecord.count >= coupon.maxUsagePerUser) {
+//                 return res.json({ success: false, message: `User coupon limit reached ❌ (Max ${coupon.maxUsagePerUser})` });
+//             }
+//         }
+
+//         coupon.usedCount += 1;
+
+//         if (userRecord) {
+//             userRecord.count += 1;
+//         } else {
+//             coupon.usedByUsers.push({ userId, count: 1 });
+//         }
+
+//         await coupon.save();  // 🔴 Important: updates DB so admin list shows correct usage ✅
+
+//         // Optional: mark coupon used in order
+//         await Order.findByIdAndUpdate(order._id, {
+//             coupon: { code: coupon.code, discountApplied: true }
+//         });
+//     }
+// }
+// // -----------------------------------------------------------
+
+// // -------- END OF INSERTION --------
+
+// return res.json({
+//     success: true,
+//     orderId: order._id
+// });
+
+// } catch (err) {
+//     console.error("ORDER ERROR:", err);      // keep this
+//     return res.json({ 
+//       success: false, 
+//       message: "Order failed",
+//       error: err.message                    // 🔹 add this so you SEE what broke
+//     });
+// }
+//     // } catch (err) {
+//     //     console.error("ORDER ERROR:", err);
+//     //     return res.json({ success: false, message: "Order failed" });
+//     // }
+// });
+
+
 
 
 export default router;

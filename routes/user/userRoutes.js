@@ -15,6 +15,8 @@ import {
   updateAddress,deleteAddress,setDefaultAddress,getSecuritySettings,checkCurrentPassword,changePassword,getWishlistPage,addToWishlist,removeFromWishlist,toggleWishlist,getCheckoutPage
 } from "../../controllers/user/userController.js";
 
+import { getAvailableCoupons, applyCoupon } from "../../controllers/user/couponController.js";
+
 import { renderForgotPassword, postForgotPassword, renderForgotVerifyOtp, postForgotVerifyOtp, resendForgotOtp, renderResetPassword, postResetPassword } from "../../controllers/user/authForgotController.js";
 import { isUserLoggedIn, isUserLoggedOut } from "../../middlewares/userAuth.js";
 import { noCache } from "../../middlewares/cacheMiddleware.js";
