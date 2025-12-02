@@ -97,6 +97,15 @@ const orderSchema = new mongoose.Schema({
   shippingFee: Number,
   totalAmount: Number,
 
+   // ✅ ADD THIS COUPON FIELD RIGHT HERE
+  coupon: {
+    code: String,
+    discountValue: Number,  // percentage like 10, 20, etc
+    discountAmount: Number, // actual discount applied in rupees
+    maxDiscountAmount: Number,
+    subtotalBeforeCoupon: Number 
+  },
+
   transactionId: String,
 },
   { timestamps: true }
