@@ -1,0 +1,1074 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Edit Offer | Admin</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <style>
+    /* copy your styles from createOffer — keep UI identical */
+    /* (omitted here for brevity — paste the same styles you used in createOffer) */
+  </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+  <%- include('../partials/sidebar', { currentPage: 'offers' }) %>
+  <main class="ml-64 flex-1 p-6">
+    <div class="mb-8">
+      <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-2">
+        <div>
+          <h1 class="text-2xl sm:text-3xl font-bold">Edit Offer</h1>
+          <p class="text-gray-600">Update offer details</p>
+        </div>
+        <a href="/admin/offers" class="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 inline-flex items-center">
+          <i class="fas fa-arrow-left mr-2"></i> Back to Offers
+        </a>
+      </div>
+    </div>
+
+    <div class="max-w-2xl mx-auto">
+      <!-- NOTE: we do NOT rely on the <form> submit. We'll use JS + axios.patch -->
+      <form id="offerForm">
+        <div class="bg-white rounded-xl p-4 sm:p-6 mb-6 shadow-sm">
+          <h2 class="text-lg font-semibold mb-4">Select Offer Type</h2>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div class="type-card" id="productType" onclick="selectType('product')">
+              <div class="flex items-center">
+                <div class="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center mr-3">
+                  <i class="fas fa-box text-blue-600"></i>
+                </div>
+                <div><h3 class="font-medium">Product Offer</h3><p class="text-xs text-gray-500">Apply to specific products</p></div>
+              </div>
+            </div>
+            <div class="type-card" id="categoryType" onclick="selectType('category')">
+              <div class="flex items-center">
+                <div class="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center mr-3">
+                  <i class="fas fa-layer-group text-green-600"></i>
+                </div>
+                <div><h3 class="font-medium">Category Offer</h3><p class="text-xs text-gray-500">Apply to categories</p></div>
+              </div>
+            </div>
+          </div>
+          <input type="hidden" id="offerType" name="type" value="<%= offer.type %>">
+        </div>
+
+        <div class="bg-white rounded-xl p-4 sm:p-6 shadow-sm">
+          <!-- Offer Name -->
+          <div class="mb-4">
+            <label class="text-sm font-medium">Offer Name *</label>
+            <input id="nameInput" name="name" type="text" required
+                   class="w-full px-4 py-3 border rounded-lg" 
+                   value="<%= offer.name %>">
+          </div>
+
+          <!-- Discount -->
+          <div class="mb-4">
+            <label class="text-sm font-medium">Discount Percentage *</label>
+            <div class="relative">
+              <input id="discountInput" name="discountValue" type="number" min="5" max="90" required
+                     class="w-full px-4 py-3 border rounded-lg pl-12"
+                     value="<%= offer.discountValue %>">
+              <span class="absolute left-4 top-3 text-gray-500">%</span>
+            </div>
+          </div>
+
+          <!-- Dates -->
+          <div class="mb-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label class="text-xs text-gray-600">Start Date & Time</label>
+              <input id="fromInput" name="validFrom" type="datetime-local" class="w-full px-4 py-3 border rounded-lg"
+                     value="<%= new Date(offer.validFrom).toISOString().slice(0,16) %>">
+            </div>
+            <div>
+              <label class="text-xs text-gray-600">End Date & Time</label>
+              <input id="toInput" name="validTo" type="datetime-local" class="w-full px-4 py-3 border rounded-lg"
+                     value="<%= new Date(offer.validTo).toISOString().slice(0,16) %>">
+            </div>
+          </div>
+
+          <!-- Product selection -->
+          <div id="productSelection" class="mb-4">
+            <label class="text-sm font-medium">Select Products *</label>
+            <div class="dropdown-container mb-3">
+              <div class="relative">
+                <input id="productSearch" type="text" placeholder="Search products..." class="w-full px-4 py-3 border rounded-lg" onfocus="showProductDropdown()" oninput="searchProducts()">
+                <i class="fas fa-chevron-down absolute right-4 top-3.5 text-gray-400"></i>
+                <div id="productDropdown" class="dropdown-options">
+                  <div id="productLoading" class="p-4 text-center"><i class="fas fa-spinner fa-spin"></i></div>
+                  <div id="productList"></div>
+                </div>
+              </div>
+            </div>
+
+            <div class="flex justify-between items-center mb-2">
+              <span class="text-sm text-gray-600">Selected Products (<span id="productCount">0</span>)</span>
+              <button type="button" id="clearProductsBtn" onclick="clearAllProducts()" class="text-xs text-red-600" disabled>Clear All</button>
+            </div>
+            <div id="selectedProducts" class="selected-items"></div>
+            <input type="hidden" id="productsInput" name="products" value="<%= (offer.products || []).map(p => p._id).join(',') %>">
+          </div>
+
+          <!-- Category selection -->
+          <div id="categorySelection" class="mb-4 hidden">
+            <label class="text-sm font-medium">Select Categories *</label>
+            <div class="dropdown-container mb-3">
+              <div class="relative">
+                <input id="categorySearch" type="text" placeholder="Search categories..." class="w-full px-4 py-3 border rounded-lg" onfocus="showCategoryDropdown()" oninput="searchCategories()">
+                <i class="fas fa-chevron-down absolute right-4 top-3.5 text-gray-400"></i>
+                <div id="categoryDropdown" class="dropdown-options">
+                  <div id="categoryLoading" class="p-4 text-center"><i class="fas fa-spinner fa-spin"></i></div>
+                  <div id="categoryList"></div>
+                </div>
+              </div>
+            </div>
+
+            <div class="flex justify-between items-center mb-2">
+              <span class="text-sm text-gray-600">Selected Categories (<span id="categoryCount">0</span>)</span>
+              <button type="button" id="clearCategoriesBtn" onclick="clearAllCategories()" class="text-xs text-red-600" disabled>Clear All</button>
+            </div>
+            <div id="selectedCategories" class="selected-items"></div>
+            <input type="hidden" id="categoriesInput" name="categories" value="<%= (offer.categories || []).map(c => c._id).join(',') %>">
+          </div>
+
+          <!-- Active toggle -->
+          <div class="mt-6">
+            <label class="flex items-center cursor-pointer">
+              <input id="activeCheckbox" name="isActive" type="checkbox" class="sr-only" <%= offer.isActive ? 'checked' : '' %>>
+              <div class="block bg-gray-300 w-10 h-6 rounded-full"></div>
+              <div class="dot absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition"></div>
+              <span class="ml-3 text-sm font-medium">Activate offer</span>
+            </label>
+          </div>
+
+          <div class="mt-6">
+            <button id="submitBtn" type="button" class="px-8 py-3 bg-blue-600 text-white rounded-lg">
+              <i class="fas fa-save mr-2"></i> Update Offer
+            </button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </main>
+
+<!-- Replace the entire script section with this: -->
+
+<!-- Replace the entire script section with this: -->
+
+<script>
+/* =========================================
+   GLOBAL VARIABLES AND INITIALIZATION
+   ========================================= */
+
+// Get server data
+const serverProducts = <%- JSON.stringify(offer.products || []) %>;
+const serverCategories = <%- JSON.stringify(offer.categories || []) %>;
+
+// Initialize sets from server data
+let selectedProducts = new Set();
+let selectedCategories = new Set();
+let currentOfferType = "<%= offer.type %>";
+let productsLoaded = false;
+let categoriesLoaded = false;
+
+// Initialize selections from server data
+serverProducts.forEach(p => {
+    if (p && p._id) {
+        selectedProducts.add(p._id.toString());
+    }
+});
+
+serverCategories.forEach(c => {
+    if (c && c._id) {
+        selectedCategories.add(c._id.toString());
+    }
+});
+
+document.addEventListener("DOMContentLoaded", function () {
+    /* ---------------------------
+       1. Force UI to select type
+       --------------------------- */
+    selectType(currentOfferType);
+
+    /* ---------------------------
+       2. Initialize hidden inputs with server data
+       --------------------------- */
+    document.getElementById("productsInput").value = [...selectedProducts].join(",");
+    document.getElementById("categoriesInput").value = [...selectedCategories].join(",");
+
+    /* ---------------------------
+       3. Display selected PRODUCTS
+       --------------------------- */
+    const pContainer = document.getElementById("selectedProducts");
+    const pCount = document.getElementById("productCount");
+    const pClear = document.getElementById("clearProductsBtn");
+
+    pContainer.innerHTML = "";
+    
+    selectedProducts.forEach(id => {
+        const product = serverProducts.find(p => p._id.toString() === id.toString());
+        const name = product ? product.name : id;
+
+        const div = document.createElement("div");
+        div.className = "selected-item";
+        div.dataset.id = id;
+        div.innerHTML = `
+            <span>${name}</span>
+            <button type="button" onclick="removeProduct('${id}')" class="text-red-500 hover:text-red-700 ml-2">
+                <i class="fas fa-times"></i>
+            </button>
+        `;
+        pContainer.appendChild(div);
+    });
+
+    pCount.textContent = selectedProducts.size;
+    pClear.disabled = selectedProducts.size === 0;
+
+    /* ---------------------------
+       4. Display selected CATEGORIES
+       --------------------------- */
+    const cContainer = document.getElementById("selectedCategories");
+    const cCount = document.getElementById("categoryCount");
+    const cClear = document.getElementById("clearCategoriesBtn");
+
+    cContainer.innerHTML = "";
+    
+    selectedCategories.forEach(id => {
+        const category = serverCategories.find(c => c._id.toString() === id.toString());
+        const name = category ? category.name : id;
+
+        const div = document.createElement("div");
+        div.className = "selected-item";
+        div.dataset.id = id;
+        div.innerHTML = `
+            <span>${name}</span>
+            <button type="button" onclick="removeCategory('${id}')" class="text-red-500 hover:text-red-700 ml-2">
+                <i class="fas fa-times"></i>
+            </button>
+        `;
+        cContainer.appendChild(div);
+    });
+
+    cCount.textContent = selectedCategories.size;
+    cClear.disabled = selectedCategories.size === 0;
+
+    /* ---------------------------
+       5. Initialize toggle switch
+       --------------------------- */
+    const checkbox = document.getElementById('activeCheckbox');
+    const toggle = checkbox.parentElement;
+    
+    // Set initial state based on server data
+    if (checkbox.checked) {
+        toggle.querySelector('.dot').classList.remove('left-1');
+        toggle.querySelector('.dot').classList.add('left-5');
+        toggle.querySelector('.block').classList.remove('bg-gray-300');
+        toggle.querySelector('.block').classList.add('bg-blue-500');
+    } else {
+        toggle.querySelector('.dot').classList.remove('left-5');
+        toggle.querySelector('.dot').classList.add('left-1');
+        toggle.querySelector('.block').classList.remove('bg-blue-500');
+        toggle.querySelector('.block').classList.add('bg-gray-300');
+    }
+    
+    checkbox.addEventListener('change', function() {
+        if (this.checked) {
+            toggle.querySelector('.dot').classList.remove('left-1');
+            toggle.querySelector('.dot').classList.add('left-5');
+            toggle.querySelector('.block').classList.remove('bg-gray-300');
+            toggle.querySelector('.block').classList.add('bg-blue-500');
+        } else {
+            toggle.querySelector('.dot').classList.remove('left-5');
+            toggle.querySelector('.dot').classList.add('left-1');
+            toggle.querySelector('.block').classList.remove('bg-blue-500');
+            toggle.querySelector('.block').classList.add('bg-gray-300');
+        }
+    });
+
+    /* ---------------------------
+       6. Set minimum dates and validation
+       --------------------------- */
+    const now = new Date();
+    const today = new Date(now.getTime() - now.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+    document.querySelector('input[name="validFrom"]').min = today;
+    document.querySelector('input[name="validTo"]').min = today;
+
+    // Initial validation - IMPORTANT: Call this LAST
+    setTimeout(() => {
+        validateForm();
+    }, 100);
+    
+    /* ---------------------------
+       7. Setup submit button - FIXED
+       --------------------------- */
+    const submitBtn = document.getElementById('submitBtn');
+    // Remove any existing listeners first
+    submitBtn.removeEventListener('click', submitForm);
+    submitBtn.addEventListener('click', submitForm);
+    
+    // Ensure button is always visible and has basic styling
+    submitBtn.style.display = 'block';
+    submitBtn.style.visibility = 'visible';
+    submitBtn.style.opacity = '1';
+    submitBtn.classList.remove('hidden', 'invisible', 'opacity-0');
+    
+    /* ---------------------------
+       8. Setup real-time validation
+       --------------------------- */
+    const nameInput = document.querySelector('input[name="name"]');
+    const discountInput = document.querySelector('input[name="discountValue"]');
+    const fromInput = document.querySelector('input[name="validFrom"]');
+    const toInput = document.querySelector('input[name="validTo"]');
+    
+    if (nameInput) {
+        nameInput.addEventListener('input', function() {
+            validateName(this);
+            validateForm();
+        });
+    }
+    
+    if (discountInput) {
+        discountInput.addEventListener('input', function() {
+            validateDiscount(this);
+            validateForm();
+        });
+    }
+    
+    if (fromInput) {
+        fromInput.addEventListener('change', function() {
+            validateDates();
+            validateForm();
+        });
+    }
+    
+    if (toInput) {
+        toInput.addEventListener('change', function() {
+            validateDates();
+            validateForm();
+        });
+    }
+    
+    // Also add validation when typing in dates
+    if (fromInput) {
+        fromInput.addEventListener('input', function() {
+            validateDates();
+            validateForm();
+        });
+    }
+    
+    if (toInput) {
+        toInput.addEventListener('input', function() {
+            validateDates();
+            validateForm();
+        });
+    }
+});
+
+// ===========================================
+// UTILITY FUNCTIONS
+// ===========================================
+function showError(elementId, message) {
+    const element = document.getElementById(elementId);
+    if (element) {
+        element.textContent = message;
+        element.style.display = 'block';
+    }
+}
+
+function hideError(elementId) {
+    const element = document.getElementById(elementId);
+    if (element) {
+        element.style.display = 'none';
+    }
+}
+
+function showValidation(input, isValid, successIcon, errorIcon) {
+    // Skip if elements don't exist
+    if (!input) return;
+    
+    const success = document.getElementById(successIcon);
+    const error = document.getElementById(errorIcon);
+    
+    if (isValid) {
+        input.classList.remove('border-red-500', 'input-error');
+        input.classList.add('border-green-500', 'input-success');
+        if (success) success.style.display = 'block';
+        if (error) error.style.display = 'none';
+    } else {
+        input.classList.remove('border-green-500', 'input-success');
+        input.classList.add('border-red-500', 'input-error');
+        if (success) success.style.display = 'none';
+        if (error) error.style.display = 'block';
+    }
+}
+
+function validateForm() {
+    const nameInput = document.querySelector('input[name="name"]');
+    const discountInput = document.querySelector('input[name="discountValue"]');
+    
+    const nameValid = validateName(nameInput);
+    const discountValid = validateDiscount(discountInput);
+    const dateValid = validateDates();
+
+    const selectionValid = currentOfferType === 'product'
+        ? selectedProducts.size > 0
+        : selectedCategories.size > 0;
+
+    const submitBtn = document.getElementById('submitBtn');
+    if (!submitBtn) {
+        console.error("Submit button not found!");
+        return false;
+    }
+    
+    const allValid = nameValid && discountValid && dateValid && selectionValid;
+    
+    // Update button state
+    submitBtn.disabled = !allValid;
+    
+    // Update button visibility and styling - FIXED
+    submitBtn.style.display = 'inline-flex';
+    submitBtn.style.visibility = 'visible';
+    submitBtn.style.opacity = '1';
+    
+    if (allValid) {
+        submitBtn.classList.remove('bg-gray-400', 'cursor-not-allowed', 'opacity-50');
+        submitBtn.classList.add('bg-blue-600', 'hover:bg-blue-700', 'cursor-pointer');
+        submitBtn.innerHTML = '<i class="fas fa-save mr-2"></i> Update Offer';
+    } else {
+        submitBtn.classList.remove('bg-blue-600', 'hover:bg-blue-700', 'cursor-pointer');
+        submitBtn.classList.add('bg-gray-400', 'cursor-not-allowed', 'opacity-75');
+        submitBtn.innerHTML = '<i class="fas fa-save mr-2"></i> Update Offer';
+    }
+
+    return allValid;
+}
+
+// ===========================================
+// OFFER TYPE SWITCH
+// ===========================================
+function selectType(type) {
+    currentOfferType = type;
+    const offerTypeInput = document.getElementById("offerType");
+    if (offerTypeInput) {
+        offerTypeInput.value = type;
+    }
+
+    // Update UI for selected type
+    const productTypeCard = document.getElementById("productType");
+    const categoryTypeCard = document.getElementById("categoryType");
+    const productSelection = document.getElementById("productSelection");
+    const categorySelection = document.getElementById("categorySelection");
+    
+    if (productTypeCard) productTypeCard.classList.remove("selected");
+    if (categoryTypeCard) categoryTypeCard.classList.remove("selected");
+
+    if (type === "product") {
+        if (productSelection) productSelection.classList.remove("hidden");
+        if (categorySelection) categorySelection.classList.add("hidden");
+        if (productTypeCard) productTypeCard.classList.add("selected");
+        
+        // Validate product selection
+        if (selectedProducts.size === 0) {
+            showError('productErrorMessage', 'Please select at least one product');
+        } else {
+            hideError('productErrorMessage');
+        }
+        hideError('categoryErrorMessage');
+    } else {
+        if (categorySelection) categorySelection.classList.remove("hidden");
+        if (productSelection) productSelection.classList.add("hidden");
+        if (categoryTypeCard) categoryTypeCard.classList.add("selected");
+        
+        // Validate category selection
+        if (selectedCategories.size === 0) {
+            showError('categoryErrorMessage', 'Please select at least one category');
+        } else {
+            hideError('categoryErrorMessage');
+        }
+        hideError('productErrorMessage');
+    }
+    
+    validateForm();
+}
+
+// ===========================================
+// FIELD VALIDATIONS
+// ===========================================
+function validateName(input) {
+    if (!input) return false;
+    
+    const value = input.value.trim();
+    const isValid = value.length >= 3 && value.length <= 100;
+
+    showValidation(input, isValid, 'nameSuccess', 'nameError');
+
+    if (!isValid && value.length > 0) {
+        showError('nameErrorMessage',
+            value.length < 3 ? 'Offer name must be at least 3 characters' :
+            'Offer name cannot exceed 100 characters'
+        );
+    } else {
+        hideError('nameErrorMessage');
+    }
+
+    return isValid;
+}
+
+function validateDiscount(input) {
+    if (!input) return false;
+    
+    const value = parseInt(input.value) || 0;
+    const isValid = value >= 5 && value <= 90;
+
+    showValidation(input, isValid, 'discountSuccess', 'discountError');
+
+    if (!isValid && input.value) {
+        showError('discountErrorMessage',
+            value < 5 ? 'Discount must be at least 5%' : 'Discount cannot exceed 90%'
+        );
+    } else {
+        hideError('discountErrorMessage');
+    }
+
+    return isValid;
+}
+
+function validateDates() {
+    const fromInput = document.querySelector('input[name="validFrom"]');
+    const toInput = document.querySelector('input[name="validTo"]');
+    
+    if (!fromInput || !toInput) return false;
+    
+    const from = new Date(fromInput.value);
+    const to = new Date(toInput.value);
+    const now = new Date();
+
+    let fromValid = fromInput.value !== '' && from > now;
+    let toValid = toInput.value !== '' && to > from;
+
+    showValidation(fromInput, fromValid, 'fromSuccess', 'fromError');
+    showValidation(toInput, toValid, 'toSuccess', 'toError');
+
+    if (!fromValid && fromInput.value) {
+        showError('dateErrorMessage', 'Start date must be in the future');
+    } else if (!toValid && toInput.value) {
+        showError('dateErrorMessage', 'End date must be after start date');
+    } else {
+        hideError('dateErrorMessage');
+    }
+
+    return fromValid && toValid;
+}
+
+// ===========================================
+// PRODUCT SELECTION FUNCTIONS (same as before)
+// ===========================================
+function showProductDropdown() {
+    const dropdown = document.getElementById("productDropdown");
+    if (!dropdown) return;
+    
+    dropdown.style.display = "block";
+    
+    if (!productsLoaded) {
+        loadProducts();
+        productsLoaded = true;
+    }
+    
+    document.addEventListener('click', closeProductDropdownOnOutsideClick);
+}
+
+function closeProductDropdownOnOutsideClick(event) {
+    const dropdown = document.getElementById("productDropdown");
+    const searchInput = document.getElementById("productSearch");
+    
+    if (!dropdown || !searchInput) return;
+    
+    if (!dropdown.contains(event.target) && !searchInput.contains(event.target)) {
+        dropdown.style.display = "none";
+        document.removeEventListener('click', closeProductDropdownOnOutsideClick);
+    }
+}
+
+function loadProducts(search = "") {
+    const loading = document.getElementById("productLoading");
+    const list = document.getElementById("productList");
+    
+    if (!loading || !list) return;
+    
+    loading.style.display = "block";
+    list.innerHTML = "";
+    
+    axios.get(`/admin/offers/products?search=${encodeURIComponent(search)}`)
+        .then(res => {
+            loading.style.display = "none";
+            
+            if (res.data.products && res.data.products.length > 0) {
+                res.data.products.forEach(p => {
+                    const isSelected = selectedProducts.has(p._id.toString());
+                    
+                    const div = document.createElement("div");
+                    div.className = `dropdown-option ${isSelected ? "selected" : ""}`;
+                    div.dataset.id = p._id;
+                    div.innerHTML = `
+                        <div class="flex items-center justify-between w-full">
+                            <div class="flex items-center gap-3">
+                                ${p.image ? `<img src="${p.image}" alt="${p.name}" class="w-8 h-8 object-cover rounded">` : ''}
+                                <div>
+                                    <div class="font-medium text-gray-900">${p.name}</div>
+                                    <div class="text-xs text-gray-500">₹${p.price}</div>
+                                </div>
+                            </div>
+                            ${isSelected ? '<i class="fas fa-check text-blue-500"></i>' : ''}
+                        </div>
+                    `;
+                    
+                    div.onclick = (e) => {
+                        e.stopPropagation();
+                        toggleProduct(p._id, p.name);
+                    };
+                    
+                    list.appendChild(div);
+                });
+            }
+        })
+        .catch(err => {
+            console.error("Error loading products:", err);
+            if (loading) loading.style.display = "none";
+        });
+}
+
+function searchProducts() {
+    const search = document.getElementById("productSearch").value;
+    loadProducts(search);
+}
+
+function toggleProduct(id, name) {
+    const idStr = id.toString();
+    
+    if (selectedProducts.has(idStr)) {
+        selectedProducts.delete(idStr);
+        removeProduct(idStr);
+    } else {
+        selectedProducts.add(idStr);
+        addProduct(idStr, name);
+    }
+    
+    updateProductUI(idStr);
+    updateProductsInput();
+    validateForm();
+}
+
+function addProduct(id, name) {
+    const container = document.getElementById("selectedProducts");
+    if (!container) return;
+    
+    // Check if already added
+    if (document.querySelector(`#selectedProducts [data-id="${id}"]`)) {
+        return;
+    }
+    
+    const div = document.createElement("div");
+    div.className = "selected-item";
+    div.dataset.id = id;
+    div.innerHTML = `
+        <span class="truncate">${name}</span>
+        <button type="button" onclick="removeProduct('${id}')" 
+                class="text-red-500 hover:text-red-700 ml-2 flex-shrink-0">
+            <i class="fas fa-times"></i>
+        </button>
+    `;
+    
+    container.appendChild(div);
+    updateProductSelectionState();
+}
+
+function removeProduct(id) {
+    selectedProducts.delete(id);
+    
+    const item = document.querySelector(`#selectedProducts [data-id="${id}"]`);
+    if (item) item.remove();
+    
+    updateProductUI(id);
+    updateProductsInput();
+    validateForm();
+}
+
+function updateProductUI(id) {
+    const option = document.querySelector(`#productList .dropdown-option[data-id="${id}"]`);
+    if (option) {
+        const isSelected = selectedProducts.has(id);
+        option.classList.toggle("selected", isSelected);
+        
+        const checkIcon = option.querySelector('.fa-check');
+        if (isSelected && !checkIcon) {
+            option.querySelector('.flex').innerHTML += '<i class="fas fa-check text-blue-500"></i>';
+        } else if (!isSelected && checkIcon) {
+            checkIcon.remove();
+        }
+    }
+    
+    updateProductSelectionState();
+}
+
+function updateProductSelectionState() {
+    const count = selectedProducts.size;
+    const countElement = document.getElementById("productCount");
+    const clearBtn = document.getElementById("clearProductsBtn");
+    
+    if (countElement) countElement.textContent = count;
+    if (clearBtn) clearBtn.disabled = count === 0;
+    
+    if (currentOfferType === 'product') {
+        if (count === 0) {
+            showError('productErrorMessage', 'Please select at least one product');
+        } else {
+            hideError('productErrorMessage');
+        }
+    }
+}
+
+function clearAllProducts() {
+    if (selectedProducts.size === 0) return;
+    
+    Swal.fire({
+        title: 'Clear all selected products?',
+        text: 'This will remove all selected products',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#dc2626',
+        cancelButtonColor: '#6b7280',
+        confirmButtonText: 'Yes, clear all',
+        cancelButtonText: 'Cancel'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            selectedProducts.clear();
+            const container = document.getElementById("selectedProducts");
+            if (container) container.innerHTML = "";
+            
+            document.querySelectorAll('#productList .dropdown-option').forEach(option => {
+                option.classList.remove("selected");
+                const checkIcon = option.querySelector('.fa-check');
+                if (checkIcon) checkIcon.remove();
+            });
+            
+            updateProductSelectionState();
+            updateProductsInput();
+            validateForm();
+        }
+    });
+}
+
+function updateProductsInput() {
+    const input = document.getElementById("productsInput");
+    if (input) {
+        input.value = [...selectedProducts].join(",");
+    }
+}
+
+// ===========================================
+// CATEGORY SELECTION FUNCTIONS (same as before)
+// ===========================================
+function showCategoryDropdown() {
+    const dropdown = document.getElementById("categoryDropdown");
+    if (!dropdown) return;
+    
+    dropdown.style.display = "block";
+    
+    if (!categoriesLoaded) {
+        loadCategories();
+        categoriesLoaded = true;
+    }
+    
+    document.addEventListener('click', closeCategoryDropdownOnOutsideClick);
+}
+
+function closeCategoryDropdownOnOutsideClick(event) {
+    const dropdown = document.getElementById("categoryDropdown");
+    const searchInput = document.getElementById("categorySearch");
+    
+    if (!dropdown || !searchInput) return;
+    
+    if (!dropdown.contains(event.target) && !searchInput.contains(event.target)) {
+        dropdown.style.display = "none";
+        document.removeEventListener('click', closeCategoryDropdownOnOutsideClick);
+    }
+}
+
+function loadCategories(search = "") {
+    const loading = document.getElementById("categoryLoading");
+    const list = document.getElementById("categoryList");
+    
+    if (!loading || !list) return;
+    
+    loading.style.display = "block";
+    list.innerHTML = "";
+    
+    axios.get(`/admin/offers/categories?search=${encodeURIComponent(search)}`)
+        .then(res => {
+            loading.style.display = "none";
+            
+            if (res.data.categories && res.data.categories.length > 0) {
+                res.data.categories.forEach(c => {
+                    const isSelected = selectedCategories.has(c._id.toString());
+                    
+                    const div = document.createElement("div");
+                    div.className = `dropdown-option ${isSelected ? "selected" : ""}`;
+                    div.dataset.id = c._id;
+                    div.innerHTML = `
+                        <div class="flex items-center justify-between w-full">
+                            <div class="font-medium text-gray-900">${c.name}</div>
+                            ${isSelected ? '<i class="fas fa-check text-blue-500"></i>' : ''}
+                        </div>
+                    `;
+                    
+                    div.onclick = (e) => {
+                        e.stopPropagation();
+                        toggleCategory(c._id, c.name);
+                    };
+                    
+                    list.appendChild(div);
+                });
+            }
+        })
+        .catch(err => {
+            console.error("Error loading categories:", err);
+            if (loading) loading.style.display = "none";
+        });
+}
+
+function searchCategories() {
+    const search = document.getElementById("categorySearch").value;
+    loadCategories(search);
+}
+
+function toggleCategory(id, name) {
+    const idStr = id.toString();
+    
+    if (selectedCategories.has(idStr)) {
+        selectedCategories.delete(idStr);
+        removeCategory(idStr);
+    } else {
+        selectedCategories.add(idStr);
+        addCategory(idStr, name);
+    }
+    
+    updateCategoryUI(idStr);
+    updateCategoriesInput();
+    validateForm();
+}
+
+function addCategory(id, name) {
+    const container = document.getElementById("selectedCategories");
+    if (!container) return;
+    
+    // Check if already added
+    if (document.querySelector(`#selectedCategories [data-id="${id}"]`)) {
+        return;
+    }
+    
+    const div = document.createElement("div");
+    div.className = "selected-item";
+    div.dataset.id = id;
+    div.innerHTML = `
+        <span>${name}</span>
+        <button type="button" onclick="removeCategory('${id}')" 
+                class="text-red-500 hover:text-red-700 ml-2 flex-shrink-0">
+            <i class="fas fa-times"></i>
+        </button>
+    `;
+    
+    container.appendChild(div);
+    updateCategorySelectionState();
+}
+
+function removeCategory(id) {
+    selectedCategories.delete(id);
+    
+    const item = document.querySelector(`#selectedCategories [data-id="${id}"]`);
+    if (item) item.remove();
+    
+    updateCategoryUI(id);
+    updateCategoriesInput();
+    validateForm();
+}
+
+function updateCategoryUI(id) {
+    const option = document.querySelector(`#categoryList .dropdown-option[data-id="${id}"]`);
+    if (option) {
+        const isSelected = selectedCategories.has(id);
+        option.classList.toggle("selected", isSelected);
+        
+        const checkIcon = option.querySelector('.fa-check');
+        if (isSelected && !checkIcon) {
+            option.querySelector('.flex').innerHTML += '<i class="fas fa-check text-blue-500"></i>';
+        } else if (!isSelected && checkIcon) {
+            checkIcon.remove();
+        }
+    }
+    
+    updateCategorySelectionState();
+}
+
+function updateCategorySelectionState() {
+    const count = selectedCategories.size;
+    const countElement = document.getElementById("categoryCount");
+    const clearBtn = document.getElementById("clearCategoriesBtn");
+    
+    if (countElement) countElement.textContent = count;
+    if (clearBtn) clearBtn.disabled = count === 0;
+    
+    if (currentOfferType === 'category') {
+        if (count === 0) {
+            showError('categoryErrorMessage', 'Please select at least one category');
+        } else {
+            hideError('categoryErrorMessage');
+        }
+    }
+}
+
+function clearAllCategories() {
+    if (selectedCategories.size === 0) return;
+    
+    Swal.fire({
+        title: 'Clear all selected categories?',
+        text: 'This will remove all selected categories',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#dc2626',
+        cancelButtonColor: '#6b7280',
+        confirmButtonText: 'Yes, clear all',
+        cancelButtonText: 'Cancel'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            selectedCategories.clear();
+            const container = document.getElementById("selectedCategories");
+            if (container) container.innerHTML = "";
+            
+            document.querySelectorAll('#categoryList .dropdown-option').forEach(option => {
+                option.classList.remove("selected");
+                const checkIcon = option.querySelector('.fa-check');
+                if (checkIcon) checkIcon.remove();
+            });
+            
+            updateCategorySelectionState();
+            updateCategoriesInput();
+            validateForm();
+        }
+    });
+}
+
+function updateCategoriesInput() {
+    const input = document.getElementById("categoriesInput");
+    if (input) {
+        input.value = [...selectedCategories].join(",");
+    }
+}
+
+// ===========================================
+// FORM SUBMISSION - PATCH REQUEST
+// ===========================================
+function submitForm(e) {
+    if (e) e.preventDefault();
+    
+    // Get the submit button
+    const submitBtn = document.getElementById('submitBtn');
+    if (submitBtn && submitBtn.disabled) {
+        Swal.fire("Error", "Please fix all validation errors before submitting", "error");
+        return;
+    }
+    
+    // Final validation
+    const nameInput = document.querySelector('input[name="name"]');
+    const discountInput = document.querySelector('input[name="discountValue"]');
+    
+    const nameValid = validateName(nameInput);
+    const discountValid = validateDiscount(discountInput);
+    const dateValid = validateDates();
+    
+    if (!nameValid || !discountValid || !dateValid) {
+        Swal.fire("Error", "Please fix all validation errors before submitting", "error");
+        return;
+    }
+    
+    if (currentOfferType === "product" && selectedProducts.size === 0) {
+        Swal.fire("Error", "Please select at least one product", "error");
+        return;
+    }
+    
+    if (currentOfferType === "category" && selectedCategories.size === 0) {
+        Swal.fire("Error", "Please select at least one category", "error");
+        return;
+    }
+    
+    // Show loading
+    Swal.fire({
+        title: "Updating Offer...",
+        text: "Please wait while we update your offer",
+        allowOutsideClick: false,
+        showConfirmButton: false,
+        willOpen: () => {
+            Swal.showLoading();
+        }
+    });
+    
+    // Get the offer ID from the server
+    const offerId = '<%= offer._id %>';
+    
+    // Prepare the data for PATCH request
+    const updateData = {
+        name: nameInput.value.trim(),
+        type: currentOfferType,
+        discountValue: parseInt(discountInput.value),
+        validFrom: document.querySelector('input[name="validFrom"]').value,
+        validTo: document.querySelector('input[name="validTo"]').value,
+        isActive: document.getElementById('activeCheckbox').checked
+    };
+    
+    // Add products or categories based on type
+    if (currentOfferType === 'product') {
+        updateData.products = [...selectedProducts];
+        updateData.categories = [];
+    } else {
+        updateData.categories = [...selectedCategories];
+        updateData.products = [];
+    }
+    
+    console.log("Sending PATCH request to:", `/admin/offers/${offerId}`);
+    console.log("Data:", updateData);
+    
+    // Send PATCH request
+    axios.patch(`/admin/offers/${offerId}`, updateData)
+        .then(response => {
+            Swal.fire({
+                title: "Success!",
+                text: "Offer updated successfully",
+                icon: "success",
+                confirmButtonColor: "#10b981",
+                confirmButtonText: "View Offers"
+            }).then(() => {
+                window.location.href = "/admin/offers";
+            });
+        })
+        .catch(err => {
+            console.error("Update error:", err);
+            let errorMessage = "Failed to update offer. Please try again.";
+            
+            if (err.response) {
+                console.error("Response error:", err.response.data);
+                errorMessage = err.response.data.message || errorMessage;
+            }
+            
+            Swal.fire({
+                title: "Error!",
+                text: errorMessage,
+                icon: "error",
+                confirmButtonColor: "#dc2626"
+            });
+        });
+}
+</script>
+</body>
+</html>
+
+
