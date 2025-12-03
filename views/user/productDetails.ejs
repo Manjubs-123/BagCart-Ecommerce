@@ -316,57 +316,45 @@
                     </div>
 
                     <!-- Price Section -->
-  <!-- Price Section -->
-<div id="priceSection" class="mb-4">
-    <!-- Row: Original MRP + Discount -->
-    <div class="flex items-center gap-3">
-        <!-- Original MRP - Show only if different from final price -->
-        <% if (product.regularPrice && product.regularPrice > product.finalPrice) { %>
-            <span class="text-gray-500 text-lg line-through">
-                ₹<%= product.regularPrice %>
-            </span>
-        <% } %>
-        
-        <!-- Show original price (variant price) if different from regularPrice -->
-        <% if (product.originalPrice && product.originalPrice < product.regularPrice) { %>
-            <span class="text-gray-500 text-sm line-through ml-1">
-                (₹<%= product.originalPrice %>)
-            </span>
-        <% } %>
+<!-- Price Section in Product Details -->
+<div class="mb-6">
+  <div class="text-sm text-gray-500 mb-1">Special price</div>
 
-        <!-- Discount % -->
-        <% if (product.appliedOffer && product.appliedOffer.discountValue) { %>
-            <span class="text-green-600 font-semibold text-lg ml-2">
-                <%= product.appliedOffer.discountValue %>% OFF
-            </span>
-        <% } %>
-    </div>
+  <div class="flex items-baseline flex-wrap gap-3 mb-2">
 
-    <!-- Row: Final price with potential savings -->
-    <div class="flex items-center gap-3">
-        <span class="text-3xl font-bold text-gray-900">
-            ₹<%= product.finalPrice %>
-        </span>
-        
-        <!-- Show savings amount -->
-        <% if (product.regularPrice && product.regularPrice > product.finalPrice) { %>
-            <span class="text-green-600 font-medium text-sm">
-                Save ₹<%= (product.regularPrice - product.finalPrice).toFixed(0) %>
-            </span>
-        <% } %>
-    </div>
-    
-    <!-- Additional offer info (optional) -->
-    <% if (product.appliedOffer) { %>
-        <div class="mt-1 text-xs text-blue-600">
-            <% if (product.appliedOffer.offerType === 'category') { %>
-                Category Offer Applied
-            <% } else if (product.appliedOffer.offerType === 'product') { %>
-                Special Product Offer
-            <% } %>
-        </div>
+    <!-- FINAL PRICE -->
+    <span id="productPrice" class="text-3xl font-bold text-gray-900">
+      ₹<%= product.salePrice %>
+    </span>
+
+    <!-- ORIGINAL PRICE -->
+    <% if (product.regularPrice && product.regularPrice > product.salePrice) { %>
+      <span id="productMrp" class="text-gray-500 text-xl line-through">
+        ₹<%= product.regularPrice %>
+      </span>
+
+      <!-- DISCOUNT BADGE -->
+      <span id="productDiscount" class="bg-red-100 text-red-800 text-sm font-semibold px-2 py-1 rounded">
+        <%= Math.round(((product.regularPrice - product.salePrice) / product.regularPrice) * 100) %>% off
+      </span>
     <% } %>
+  </div>
+
+  <% if (product.regularPrice && product.regularPrice > product.salePrice) { %>
+    <div id="saveAmount" class="text-green-600 font-medium">
+  Save ₹<%= (product.regularPrice - product.salePrice).toFixed(0) %>
 </div>
+
+  <% } %>
+
+  <% if (product.appliedOffer) { %>
+    <div class="mt-2 text-sm text-blue-600 flex items-center gap-1">
+      <i class="fas fa-tag"></i>
+      <span><%= product.appliedOffer.offerName || 'Special Offer' %> Applied</span>
+    </div>
+  <% } %>
+</div>
+
 
 
 
@@ -599,6 +587,7 @@
             if (button) button.classList.add("active", "border-blue-500");
         }
 
+        
 async function selectColor(color) {
   try {
     const res = await fetch(`/user/api/variant/${"<%= product._id %>"}?color=${color}`);
@@ -609,40 +598,41 @@ async function selectColor(color) {
       return;
     }
 
-    //  SET CORRECT VARIANT INDEX
     variantIndex = data.variantIndex;
 
     const variant = data.variant;
+    const offer = data.offerData;
 
-    //  Update main image
     if (variant.images && variant.images.length > 0) {
       changeMainImage(variant.images[0]);
     }
 
-    // Update thumbnails
     document.getElementById("thumbnailContainer").innerHTML =
       variant.images.map((img, i) => `
         <button onclick="changeMainImage('${img}', this)"
-                class="thumbnail-btn ${i === 0 ? 'active border-blue-500' : ''}">
+                class="thumbnail-btn ${i === 0 ? "active border-blue-500" : ""}">
             <img src="${img}" class="w-full h-full object-contain p-2">
         </button>
       `).join("");
 
-    //  Update prices
-    document.getElementById("productPrice").textContent = `₹${variant.price}`;
-    if (variant.mrp) {
-      const discount = Math.round(((variant.mrp - variant.price) / variant.mrp) * 100);
-      document.getElementById("productMrp").textContent = `₹${variant.mrp}`;
-      document.getElementById("productDiscount").textContent = `Save ${discount}%`;
-    }
+    // ✔ APPLY OFFER PRICES
+    document.getElementById("productPrice").textContent = `₹${offer.finalPrice}`;
+    document.getElementById("productMrp").textContent = `₹${offer.regularPrice}`;
+
+    const discount = Math.round(
+      ((offer.regularPrice - offer.finalPrice) / offer.regularPrice) * 100
+    );
+    document.getElementById("productDiscount").textContent = `${discount}% off`;
+
+    // ⭐ ADD THIS (UPDATE SAVE AMOUNT)
+    document.getElementById("saveAmount").textContent =
+      `Save ₹${(offer.regularPrice - offer.finalPrice).toFixed(0)}`;
 
     // Update stock
     document.getElementById("stockText").textContent = `${variant.stock} available in stock`;
     document.getElementById("quantity").max = variant.stock;
 
-    //  UPDATE WISHLIST HEART (ALWAYS BASED ON PRODUCT ID)
     const heart = document.querySelector(".wishlist-btn i");
-
     if (userWishlist.includes("<%= product._id.toString() %>")) {
       heart.classList.remove("far", "text-gray-400");
       heart.classList.add("fas", "text-red-500");
