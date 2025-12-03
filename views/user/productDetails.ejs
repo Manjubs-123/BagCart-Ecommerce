@@ -316,16 +316,62 @@
                     </div>
 
                     <!-- Price Section -->
-                    <div id="priceSection" class="flex flex-wrap items-center gap-3 md:gap-4 mb-2">
-                        <span id="productPrice" class="text-2xl sm:text-3xl font-bold text-gray-900">₹<%= product.salePrice %></span>
-                        <% if (product.regularPrice) { %>
-                            <span id="productMrp" class="text-lg sm:text-xl text-gray-500 line-through">₹<%= product.regularPrice %></span>
-                            <% let discount = Math.round(((product.regularPrice - product.salePrice) / product.regularPrice) * 100); %>
-                            <span id="productDiscount" class="text-base sm:text-lg font-semibold text-green-600">
-                                Save <%= discount %>%
-                            </span>
-                        <% } %>
-                    </div>
+  <!-- Price Section -->
+<div id="priceSection" class="mb-4">
+    <!-- Row: Original MRP + Discount -->
+    <div class="flex items-center gap-3">
+        <!-- Original MRP - Show only if different from final price -->
+        <% if (product.regularPrice && product.regularPrice > product.finalPrice) { %>
+            <span class="text-gray-500 text-lg line-through">
+                ₹<%= product.regularPrice %>
+            </span>
+        <% } %>
+        
+        <!-- Show original price (variant price) if different from regularPrice -->
+        <% if (product.originalPrice && product.originalPrice < product.regularPrice) { %>
+            <span class="text-gray-500 text-sm line-through ml-1">
+                (₹<%= product.originalPrice %>)
+            </span>
+        <% } %>
+
+        <!-- Discount % -->
+        <% if (product.appliedOffer && product.appliedOffer.discountValue) { %>
+            <span class="text-green-600 font-semibold text-lg ml-2">
+                <%= product.appliedOffer.discountValue %>% OFF
+            </span>
+        <% } %>
+    </div>
+
+    <!-- Row: Final price with potential savings -->
+    <div class="flex items-center gap-3">
+        <span class="text-3xl font-bold text-gray-900">
+            ₹<%= product.finalPrice %>
+        </span>
+        
+        <!-- Show savings amount -->
+        <% if (product.regularPrice && product.regularPrice > product.finalPrice) { %>
+            <span class="text-green-600 font-medium text-sm">
+                Save ₹<%= (product.regularPrice - product.finalPrice).toFixed(0) %>
+            </span>
+        <% } %>
+    </div>
+    
+    <!-- Additional offer info (optional) -->
+    <% if (product.appliedOffer) { %>
+        <div class="mt-1 text-xs text-blue-600">
+            <% if (product.appliedOffer.offerType === 'category') { %>
+                Category Offer Applied
+            <% } else if (product.appliedOffer.offerType === 'product') { %>
+                Special Product Offer
+            <% } %>
+        </div>
+    <% } %>
+</div>
+
+
+
+
+
                 </div>
 
                 <!-- Color Selection -->

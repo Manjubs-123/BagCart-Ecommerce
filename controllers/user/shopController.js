@@ -3,6 +3,7 @@ import Product from "../../models/productModel.js";
 import Category from "../../models/category.js";
 import User from "../../models/userModel.js";
 
+
 export const getShopPage = async (req, res) => {
   try {
     if (!req.session.user) {
