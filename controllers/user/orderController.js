@@ -430,47 +430,120 @@ export const downloadInvoice = async (req, res) => {
   }
 };
 
+// export const cancelItem = async (req, res) => {
+//   try {
+//     const { orderId, itemId } = req.params; // orderId is MongoDB _id from route
+//     const { reason, details } = req.body;
+//     const userId = req.session.user.id;
+
+//     // ✅ Find by MongoDB _id (existing route compatibility)
+//     const order = await Order.findOne({ _id: orderId, user: userId });
+//     if (!order) return res.json({ success: false, message: "Order not found" });
+
+//     const item = order.items.id(itemId);
+//     if (!item) return res.json({ success: false, message: "Item not found" });
+
+//     if (["delivered", "cancelled", "returned"].includes(item.status)) {
+//       return res.json({ success: false, message: "Cannot cancel this item" });
+//     }
+
+//     // Add stock back
+//     const product = await Product.findById(item.product);
+//     if (product) {
+//       product.variants[item.variantIndex].stock += item.quantity;
+//       await product.save();
+//     }
+
+//     item.status = "cancelled";
+//     item.cancelReason = reason;
+//     item.cancelDetails = details || "";
+//     item.cancelledDate = new Date();
+
+//     const allCancelled = order.items.every(i => ["cancelled", "returned"].includes(i.status));
+//     if (allCancelled) order.orderStatus = "cancelled";
+
+//     await order.save();
+
+//     return res.json({ success: true, message: "Item cancelled successfully" });
+
+//   } catch (err) {
+//     console.error("Cancel Error:", err);
+//     res.json({ success: false, message: "Something went wrong" });
+//   }
+// };
+
+
 export const cancelItem = async (req, res) => {
   try {
     const { orderId, itemId } = req.params; // orderId is MongoDB _id from route
     const { reason, details } = req.body;
-    const userId = req.session.user.id;
+    const userId = req.session?.user?.id;
 
-    // ✅ Find by MongoDB _id (existing route compatibility)
+    if (!userId) {
+      console.log("Cancel Error: not logged in");
+      return res.status(401).json({ success: false, message: "Not logged in" });
+    }
+
+    // Find order belonging to this user
     const order = await Order.findOne({ _id: orderId, user: userId });
-    if (!order) return res.json({ success: false, message: "Order not found" });
+    if (!order) {
+      console.log("Cancel Error: order not found", { orderId, userId });
+      return res.status(404).json({ success: false, message: "Order not found" });
+    }
 
     const item = order.items.id(itemId);
-    if (!item) return res.json({ success: false, message: "Item not found" });
+    if (!item) {
+      console.log("Cancel Error: item not found", { orderId, itemId });
+      return res.status(404).json({ success: false, message: "Item not found" });
+    }
 
     if (["delivered", "cancelled", "returned"].includes(item.status)) {
       return res.json({ success: false, message: "Cannot cancel this item" });
     }
 
-    // Add stock back
-    const product = await Product.findById(item.product);
-    if (product) {
-      product.variants[item.variantIndex].stock += item.quantity;
-      await product.save();
+    // Add stock back — defensive and markModified for nested array
+    try {
+      const product = await Product.findById(item.product);
+      if (product) {
+        const vIdx = item.variantIndex;
+        const variant = product.variants?.[vIdx];
+        if (variant) {
+          variant.stock = Number(variant.stock || 0) + Number(item.quantity || 0);
+          product.markModified(`variants.${vIdx}.stock`);
+          await product.save();
+          console.log("Stock returned:", { productId: product._id.toString(), vIdx, qty: item.quantity });
+        } else {
+          console.warn("Cancel warning: variant not found while returning stock", { productId: product._id, vIdx });
+        }
+      } else {
+        console.warn("Cancel warning: product not found while returning stock", { productId: item.product });
+      }
+    } catch (stockErr) {
+      // log but continue cancellation — don't fail because stock update had a transient problem
+      console.error("Error returning stock (non-fatal):", stockErr);
     }
 
+    // Update item/order status & meta
     item.status = "cancelled";
-    item.cancelReason = reason;
+    item.cancelReason = reason || "Cancelled by user";
     item.cancelDetails = details || "";
     item.cancelledDate = new Date();
 
+    // If all items are cancelled/returned -> mark whole order cancelled
     const allCancelled = order.items.every(i => ["cancelled", "returned"].includes(i.status));
     if (allCancelled) order.orderStatus = "cancelled";
 
     await order.save();
 
+    console.log("Item cancelled successfully", { orderId: order._id.toString(), itemId });
     return res.json({ success: true, message: "Item cancelled successfully" });
 
   } catch (err) {
     console.error("Cancel Error:", err);
-    res.json({ success: false, message: "Something went wrong" });
+    return res.status(500).json({ success: false, message: "Something went wrong", error: err.message });
   }
 };
+
 
 
 export const returnItem = async (req, res) => {
@@ -518,32 +591,3 @@ export const returnItem = async (req, res) => {
     return res.status(500).json({ success: false, message: "Internal server error" });
   }
 };
-
-
-//   try {
-//     const { orderId, itemId } = req.params; // orderId is MongoDB _id from route
-//     const { rejectionReason } = req.body;
-
-//     // ✅ Find by MongoDB _id (existing route compatibility)
-//     const order = await Order.findById(orderId);
-//     if (!order) return res.status(404).json({ success: false, message: "Order not found" });
-
-//     const item = order.items.id(itemId);
-//     if (!item) return res.status(404).json({ success: false, message: "Item not found" });
-
-//     item.status = "return-rejected";
-//     item.returnRejectReason = rejectionReason || "Rejected by admin";
-//     item.returnRejectedDate = new Date();
-
-//     await order.save();
-
-//     return res.json({
-//       success: true,
-//       message: "Return rejected successfully"
-//     });
-
-//   } catch (error) {
-//     console.error("Reject return error:", error);
-//     return res.status(500).json({ success: false, message: "Internal error" });
-//   }
-// };

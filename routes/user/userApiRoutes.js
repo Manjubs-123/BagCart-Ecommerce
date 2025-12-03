@@ -343,210 +343,189 @@ router.get("/wallet/balance", async (req, res) => {
 router.post("/orders", async (req, res) => {
   try {
     const userId = req.session.user?.id;
-    if (!userId)
-      return res.json({ success: false, message: "User not login ❌" });
+    if (!userId) return res.json({ success: false, message: "User not login ❌" });
 
     const { addressId, paymentMethod, couponCode } = req.body;
+    if (!addressId || !paymentMethod) return res.json({ success: false, message: "Missing data" });
 
-    if (!addressId || !paymentMethod) {
-      return res.json({ success: false, message: "Missing data" });
-    }
-
+    // Load cart (with product populated)
     const cart = await Cart.findOne({ user: userId }).populate("items.product");
-
-    if (!cart || cart.items.length === 0) {
-      return res.json({ success: false, message: "Cart empty" });
-    }
+    if (!cart || !cart.items.length) return res.json({ success: false, message: "Cart empty" });
 
     const user = await User.findById(userId);
     const address = user.addresses.id(addressId);
+    if (!address) return res.json({ success: false, message: "Address not found" });
 
-    if (!address) {
-      return res.json({ success: false, message: "Address not found" });
-    }
-
-    /* -----------------------------------------------------------
+    /* ------------------------------
        BUILD ORDER ITEMS (APPLY OFFERS)
-    ----------------------------------------------------------- */
+       ------------------------------ */
     let orderItems = [];
     let subtotal = 0;
     let totalRegularPrice = 0;
 
-    for (let item of cart.items) {
-      const product = item.product;
-      const variant = product.variants[item.variantIndex];
+    for (const cartItem of cart.items) {
+      const product = cartItem.product;
+      const variant = product.variants[cartItem.variantIndex];
 
-      // Apply offer to this variant (ensure applyOfferToProduct is imported)
+      // Defensive: ensure variant exists
+      if (!variant) {
+        return res.json({ success: false, message: "Product variant not found" });
+      }
+
+      // Apply offer to this variant (applyOfferToProduct should return numeric prices)
       const offerData = await applyOfferToProduct({
         ...product.toObject(),
         variants: [variant]
       });
+      const offerVariant = (offerData && offerData.variants && offerData.variants[0]) || {};
 
-      const offerVariant = offerData.variants[0];
-
-      const regularPrice = offerVariant.regularPrice;
-      const finalPrice = offerVariant.finalPrice;
-      const qty = item.quantity;
+      // Fallbacks to avoid NaN
+      const finalPrice = Number(offerVariant.finalPrice ?? variant.price ?? 0);
+      const regularPrice = Number(offerVariant.regularPrice ?? (variant.mrp ?? variant.price) ?? finalPrice);
+      const qty = Number(cartItem.quantity || 1);
 
       subtotal += finalPrice * qty;
       totalRegularPrice += regularPrice * qty;
 
       orderItems.push({
         product: product._id,
-        variantIndex: item.variantIndex,
+        variantIndex: cartItem.variantIndex,
         quantity: qty,
-
-        regularPrice,       // original MRP
-        price: finalPrice,  // discounted price
-        savings: (regularPrice - finalPrice) * qty,  // item-level savings
-
+        price: +finalPrice.toFixed(2),         // discounted price (store)
+        regularPrice: +regularPrice.toFixed(2),// original MRP (store)
+        savings: +Math.max(0, (regularPrice - finalPrice) * qty).toFixed(2),
+        appliedOffer: offerVariant.appliedOffer || null, // store offer metadata (if any)
         color: variant.color,
         image: variant.images?.[0]?.url || ""
       });
     }
 
-    /* -----------------------------------------------------------
-       PRICE CALCULATION
-       (use the subtotal we already computed above — do NOT redeclare)
-    ----------------------------------------------------------- */
-    // const subtotal = orderItems.reduce(...); // <-- REMOVED duplicate declaration
-    const tax = subtotal * 0.1; // 10% GST
+    // Round subtotal
+    subtotal = +subtotal.toFixed(2);
+    const tax = +((subtotal * 0.1)).toFixed(2);
     const shippingFee = subtotal > 500 ? 0 : 50;
 
-    /* -----------------------------------------------------------
-       COUPON CALCULATION (REQUIRED + CLEAN)
-    ----------------------------------------------------------- */
+    /* ------------------------------
+       COUPON CALCULATION
+       ------------------------------ */
     let discountApplied = 0;
     let couponInfo = null;
+    let couponDoc = null;
 
     if (couponCode) {
-      const coupon = await Coupon.findOne({
-        code: couponCode.toUpperCase(),
-        isActive: true,
-      });
-
-      if (!coupon) {
-        return res.json({
-          success: false,
-          message: "Invalid coupon ❌",
-        });
-      }
+      couponDoc = await Coupon.findOne({ code: couponCode.toUpperCase(), isActive: true });
+      if (!couponDoc) return res.json({ success: false, message: "Invalid coupon ❌" });
 
       const now = new Date();
-      if (coupon.expiryDate < now) {
-        return res.json({
-          success: false,
-          message: "Coupon expired ❌",
-        });
+      if (couponDoc.expiryDate && couponDoc.expiryDate < now) {
+        return res.json({ success: false, message: "Coupon expired ❌" });
       }
 
-      if (subtotal < (coupon.minOrderAmount || 0)) {
-        return res.json({
-          success: false,
-          message: `Minimum order ₹${coupon.minOrderAmount} required ❌`,
-        });
+      if (subtotal < (couponDoc.minOrderAmount || 0)) {
+        return res.json({ success: false, message: `Minimum order ₹${couponDoc.minOrderAmount} required ❌` });
       }
 
       // percentage discount, capped by max discount
-      const rawDiscount = (subtotal * coupon.discountValue) / 100;
-      discountApplied = Math.min(rawDiscount, coupon.maxDiscountAmount);
-
+      const rawDiscount = (subtotal * (couponDoc.discountValue || 0)) / 100;
+      discountApplied = Math.min(rawDiscount, couponDoc.maxDiscountAmount || rawDiscount);
       discountApplied = Math.round(discountApplied * 100) / 100;
 
       couponInfo = {
-        code: coupon.code,
-        discountValue: coupon.discountValue,
+        code: couponDoc.code,
+        discountValue: couponDoc.discountValue,
         discountAmount: discountApplied,
-        maxDiscountAmount: coupon.maxDiscountAmount,
-        subtotalBeforeCoupon: subtotal,
+        maxDiscountAmount: couponDoc.maxDiscountAmount,
+        subtotalBeforeCoupon: subtotal
       };
     }
 
-    const finalTotal = subtotal + tax + shippingFee - (discountApplied || 0);
+    // Final amount
+    const totalAmount = +((subtotal + tax + shippingFee - (discountApplied || 0))).toFixed(2);
 
-    /* -----------------------------------------------------------
-       GENERATE CUSTOM ORDER ID
-    ----------------------------------------------------------- */
-    const customOrderId =
-      "BH-" + Math.floor(100000 + Math.random() * 900000).toString();
+    /* ------------------------------
+       STOCK CHECK (before creating order)
+       ------------------------------ */
+    for (const cartItem of cart.items) {
+      const prod = await Product.findById(cartItem.product._id);
+      const variant = prod?.variants?.[cartItem.variantIndex];
+      if (!variant) return res.json({ success: false, message: "Product/variant not found (stock check)" });
 
-    /* -----------------------------------------------------------
-       CREATE ORDER
-    ----------------------------------------------------------- */
+      const newStock = variant.stock - cartItem.quantity;
+      if (newStock < 0) {
+        return res.json({
+          success: false,
+          message: `Stock not available ❌ Only ${variant.stock} left for ${prod.name}`
+        });
+      }
+    }
+
+    /* ------------------------------
+       CREATE ORDER (safe data stored)
+       ------------------------------ */
+    const customOrderId = "BH-" + Math.floor(100000 + Math.random() * 900000).toString();
+
     const order = await Order.create({
       orderId: customOrderId,
       user: userId,
       items: orderItems,
       shippingAddress: address,
       paymentMethod,
-
       subtotal,
       tax,
       shippingFee,
-      totalAmount: finalTotal,
-
-      // helpful to store these so confirmation page can show savings
-      totalRegularPrice,
-      totalSavings: Math.max(0, totalRegularPrice - subtotal + (discountApplied || 0)),
-
+      totalAmount,
+      totalRegularPrice: +totalRegularPrice.toFixed(2),
+      totalSavings: +(Math.max(0, totalRegularPrice - subtotal) + (discountApplied || 0)).toFixed(2),
       coupon: couponInfo,
-
-      paymentStatus: paymentMethod === "cod" ? "pending" : "paid",
+      paymentStatus: paymentMethod === "cod" ? "pending" : "paid"
     });
 
-    /* -----------------------------------------------------------
-       UPDATE STOCK
-    ----------------------------------------------------------- */
-    for (let item of cart.items) {
-      const product = await Product.findById(item.product._id);
-      if (!product) continue;
-
-      const variant = product.variants[item.variantIndex];
-      if (!variant) continue;
-
-      const newStock = variant.stock - item.quantity;
-
-      if (newStock < 0) {
-        return res.json({
-          success: false,
-          message: `Stock not available ❌ Only ${variant.stock} left`,
-        });
+    // Ensure each order item has itemOrderId
+    let needSave = false;
+    order.items = order.items.map((it, idx) => {
+      if (!it.itemOrderId) {
+        it.itemOrderId = `${order.orderId}-${idx + 1}`;
+        needSave = true;
       }
+      return it;
+    });
+    if (needSave) await order.save();
 
-      variant.stock = newStock;
-      product.markModified(`variants.${item.variantIndex}.stock`);
-      await product.save();
+    /* ------------------------------
+       UPDATE STOCK (now reduce)
+       ------------------------------ */
+    for (const cartItem of cart.items) {
+      const prod = await Product.findById(cartItem.product._id);
+      const variant = prod.variants[cartItem.variantIndex];
+      variant.stock = variant.stock - cartItem.quantity;
+      prod.markModified(`variants.${cartItem.variantIndex}.stock`);
+      await prod.save();
     }
 
-    /* -----------------------------------------------------------
-       UPDATE COUPON USAGE IN DATABASE
-    ----------------------------------------------------------- */
-    if (couponCode && couponInfo) {
-      const coupon = await Coupon.findOne({
-        code: couponCode.toUpperCase(),
-      });
-
+    /* ------------------------------
+       UPDATE COUPON USAGE (after success)
+       ------------------------------ */
+    if (couponDoc) {
+      // re-fetch to avoid race issues (optional)
+      const coupon = await Coupon.findOne({ _id: couponDoc._id });
       if (coupon) {
-        const userRecord = coupon.usedByUsers.find(
-          (u) => u.userId.toString() === userId.toString()
-        );
-
-        coupon.usedCount += 1;
-
-        if (userRecord) {
-          userRecord.count += 1;
+        // expiry / usage rechecks
+        const now = new Date();
+        if (coupon.expiryDate && coupon.expiryDate < now) {
+          // coupon expired after validation — just continue but don't increment usage
         } else {
-          coupon.usedByUsers.push({ userId, count: 1 });
-        }
+          // user usage
+          const userRecord = coupon.usedByUsers.find(u => u.userId.toString() === userId.toString());
+          coupon.usedCount = (coupon.usedCount || 0) + 1;
+          if (userRecord) userRecord.count = (userRecord.count || 0) + 1;
+          else coupon.usedByUsers.push({ userId, count: 1 });
 
-        await coupon.save();
+          await coupon.save();
+        }
       }
     }
 
-    /* -----------------------------------------------------------
-       SUCCESS RESPONSE
-    ----------------------------------------------------------- */
-    // clear cart items (optional, handled elsewhere in some versions)
+    // clear cart only after everything succeeded
     cart.items = [];
     await cart.save();
 
@@ -558,7 +537,6 @@ router.post("/orders", async (req, res) => {
     });
   } catch (err) {
     console.error("ORDER ERROR:", err);
-
     return res.json({
       success: false,
       message: "Order failed",
