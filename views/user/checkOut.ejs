@@ -846,7 +846,7 @@ async function loadAvailableCoupons() {
 
             checkoutState.cartItems.forEach(item => {
                 const variant = item.product.variants[item.variantIndex];  
-                subtotal += variant.price * item.quantity;
+subtotal += item.finalPrice * item.quantity;
                 itemCount += item.quantity;
             });
 
@@ -886,102 +886,118 @@ async function loadAvailableCoupons() {
         // ALL YOUR ORIGINAL CODE STAYS EXACTLY THE SAME
 
         // Render order items
-        function renderOrderItems() {
-            const container = document.getElementById('orderItemsContainer');
-            const previewContainer = document.getElementById('orderPreviewContainer');
+function renderOrderItems() {
+    const container = document.getElementById('orderItemsContainer');
+    const previewContainer = document.getElementById('orderPreviewContainer');
 
-            if (checkoutState.cartItems.length === 0) {
-                container.innerHTML = `
-                    <div class="text-center py-8">
-                        <i class="fas fa-shopping-cart text-gray-400 text-4xl mb-4"></i>
-                        <p class="text-gray-600">Your cart is empty</p>
+    if (checkoutState.cartItems.length === 0) {
+        container.innerHTML = `
+            <div class="text-center py-8">
+                <i class="fas fa-shopping-cart text-gray-400 text-4xl mb-4"></i>
+                <p class="text-gray-600">Your cart is empty</p>
+            </div>
+        `;
+        previewContainer.innerHTML = '<p class="text-gray-600 text-sm">No items in cart</p>';
+        return;
+    }
+
+    container.innerHTML = checkoutState.cartItems.map(item => {
+
+        const product = item.product;
+        const variant = product.variants[item.variantIndex];
+
+        // ⭐ USE API PRICES (correct)
+        const finalPrice = item.finalPrice;
+        const regularPrice = item.regularPrice;
+        const qty = item.quantity;
+
+        const available = variant.stock;
+        const isLowStock = available > 0 && available < 5;
+        const isOutOfStock = available <= 0;
+
+        return `
+            <div class="checkout-item bg-white border border-gray-200 rounded-xl p-4 flex flex-col md:flex-row gap-4"
+                 data-item-id="${item._id}">
+                 
+                <div class="flex-shrink-0">
+                    <img src="${variant?.images?.[0]?.url || '/images/no-image.jpg'}"
+                         class="w-24 h-24 md:w-32 md:h-32 object-cover rounded-lg">
+                </div>
+
+                <div class="flex-grow">
+                    <h3 class="font-bold text-gray-900 text-lg">${product.name}</h3>
+                    <p class="text-gray-600 text-sm mt-1">Color: ${variant.color}</p>
+
+                    <div class="mt-2 flex items-center gap-4">
+                        ${isOutOfStock ? `
+                            <span class="text-red-600 font-medium flex items-center gap-1">
+                                <i class="fas fa-times-circle"></i> Out of stock
+                            </span>
+                        ` : `
+                            <span class="${isLowStock ? 'text-red-600' : 'text-green-600'} font-medium flex items-center gap-1">
+                                <i class="fas fa-check-circle"></i>
+                                ${isLowStock ? 'Low Stock' : 'In Stock'}
+                            </span>
+                        `}
                     </div>
-                `;
-                previewContainer.innerHTML = '<p class="text-gray-600 text-sm">No items in cart</p>';
-                return;
-            }
 
-            container.innerHTML = checkoutState.cartItems.map(item => {
-                const product = item.product;
-                const variant = product.variants[item.variantIndex];
-                const available = variant?.stock ?? 0;
-                const isOutOfStock = available <= 0;
-                const isLowStock = available > 0 && available < 5;
-                const totalPrice = variant.price * item.quantity;
+                    <!-- ⭐ Correct Price Block -->
+                  
+                    <div class="mt-3 md:text-right">
 
-                return `
-                    <div class="checkout-item bg-white border border-gray-200 rounded-xl p-4 flex flex-col md:flex-row gap-4"
-                         data-item-id="${item._id}"
-                         data-price="${variant.price}"
-                         data-qty="${item.quantity}"
-                         data-available="${available}">
-                         
-                        <div class="flex-shrink-0">
-                            <img src="${variant?.images?.[0]?.url || '/images/no-image.jpg'}"
-                                 alt="${product.name}"
-                                 class="w-24 h-24 md:w-32 md:h-32 object-cover rounded-lg">
-                        </div>
+    <!-- Final discounted price (per unit × quantity) -->
+    <p class="text-2xl font-bold text-gray-900">
+        ₹${finalPrice.toFixed(2)}
+    </p>
 
-                        <div class="flex-grow">
-                            <h3 class="font-bold text-gray-900 text-lg">${product.name}</h3>
-                            <p class="text-gray-600 text-sm mt-1">Color: ${variant.color}</p>
+    <!-- ❗ STRIKE THROUGH – total original MRP of all quantities -->
+    <p class="text-gray-500 text-sm line-through">
+        ₹${(regularPrice * qty).toFixed(2)}
+    </p>
 
-                            <div class="mt-2 flex items-center gap-4">
-                                ${isOutOfStock ? `
-                                    <span class="text-red-600 font-medium flex items-center gap-1">
-                                        <i class="fas fa-times-circle"></i> Out of stock
-                                    </span>
-                                    <span class="text-gray-500 text-sm ml-3">
-                                        <i class="fas fa-box mr-1"></i> 0 left
-                                    </span>
-                                ` : `
-                                    <span class="${isLowStock ? 'text-red-600 font-semibold' : 'text-green-600 font-medium'} flex items-center gap-1">
-                                        <i class="fas ${isLowStock ? 'fa-exclamation-circle' : 'fa-check-circle'}"></i>
-                                        ${isLowStock ? 'Low stock' : 'In Stock'}
-                                    </span>
-                                    <span class="text-gray-500 text-sm ml-3 flex items-center gap-1">
-                                        <i class="fas fa-box mr-1"></i>
-                                        <span class="${isLowStock ? 'text-red-600' : ''}">${available} left</span>
-                                    </span>
-                                `}
-                            </div>
+    <!-- Discount percentage -->
+    <p class="text-green-600 text-sm font-semibold">
+        ${Math.round(((regularPrice - finalPrice) / regularPrice) * 100)}% Off
+    </p>
+</div>
 
-                            <div class="mt-3 md:text-right">
-                                <p class="text-2xl font-bold text-gray-900">₹${variant.price}</p>
-                            </div>
 
-                            <div class="flex flex-col md:flex-row md:items-center justify-between mt-4">
-                                <div class="flex items-center gap-3">
-                                    <button class="remove-item-btn text-red-500 hover:text-red-700 transition-colors flex items-center gap-1 ml-4"
-                                            data-item-id="${item._id}">
-                                        <i class="fas fa-trash"></i> Remove
-                                    </button>
-                                </div>
-                                <div class="mt-3 md:mt-0 md:text-right">
-                                    <p class="text-xl font-bold text-gray-900">₹${totalPrice.toFixed(2)}</p>
-                                </div>
-                            </div>
-                        </div>
+
+
+                    <div class="flex flex-col md:flex-row md:items-center justify-between mt-4">
+                        <button class="remove-item-btn text-red-500 hover:text-red-700 transition-colors"
+                                data-item-id="${item._id}">
+                            <i class="fas fa-trash"></i> Remove
+                        </button>
+
+                        <p class="text-xl font-bold text-gray-900">
+                            ₹${(finalPrice * qty).toFixed(2)}
+                        </p>
                     </div>
-                `;
-            }).join('');
+                </div>
+            </div>
+        `;
+    }).join('');
 
-            // ORDER PREVIEW (RIGHT SIDEBAR)
-            previewContainer.innerHTML = checkoutState.cartItems.map(item => {
-                const variant = item.product.variants[item.variantIndex];
-                return `
-                    <div class="flex items-center gap-3">
-                        <img src="${variant?.images?.[0]?.url || '/images/no-image.jpg'}"
-                             class="w-12 h-12 object-cover rounded-lg">
-                        <div class="flex-grow">
-                            <p class="text-sm font-medium text-gray-900">${item.product.name}</p>
-                            <p class="text-xs text-gray-600">Qty: ${item.quantity} × ₹${variant.price}</p>
-                        </div>
-                        <p class="text-sm font-bold text-gray-900">₹${(variant.price * item.quantity).toFixed(2)}</p>
-                    </div>
-                `;
-            }).join('');
-        }
+    // ⭐ RIGHT-SIDE PREVIEW TOTAL
+    previewContainer.innerHTML = checkoutState.cartItems.map(item => {
+        const variant = item.product.variants[item.variantIndex];
+        return `
+            <div class="flex items-center gap-3">
+                <img src="${variant?.images?.[0]?.url || '/images/no-image.jpg'}"
+                     class="w-12 h-12 object-cover rounded-lg">
+                <div class="flex-grow">
+                    <p class="text-sm font-medium">${item.product.name}</p>
+                    <p class="text-xs text-gray-600">Qty: ${item.quantity} × ₹${item.finalPrice}</p>
+                </div>
+                <p class="text-sm font-bold text-gray-900">
+                    ₹${(item.quantity * item.finalPrice).toFixed(2)}
+                </p>
+            </div>
+        `;
+    }).join('');
+}
+
 
         // ALL YOUR OTHER EXISTING FUNCTIONS REMAIN EXACTLY THE SAME...
         // (setupEventListeners, handleQuantityChange, handleRemoveItem, handlePlaceOrder, 

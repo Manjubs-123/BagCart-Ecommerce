@@ -128,42 +128,72 @@
               <div class="text-right">
                 <p class="text-sm text-gray-600 mb-1">Order Reference</p>
                 <p class="text-2xl font-bold text-blue-600 font-mono tracking-tight">
-          <%= orderDisplayId %>
-
+                  <%= orderDisplayId %>
                 </p>
                 <p class="text-sm text-gray-500 mt-2">
                   <i class="far fa-clock mr-1"></i>
-                  <%= order.createdAt.toLocaleDateString('en-US', { year: 'numeric' , month: 'short' , day: 'numeric' ,
-                    hour: '2-digit' , minute: '2-digit' }) %>
+                  <%= order.createdAt.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) %>
                 </p>
               </div>
             </div>
           </div>
         </div>
 
+        <!-- Savings Banner -->
+        <% if (order.totalSavings && order.totalSavings > 0) { %>
+          <div class="bg-gradient-to-r from-green-50 to-emerald-100 border-l-4 border-green-500 rounded-r-xl p-6 mb-8 professional-shadow">
+            <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+              <div class="flex items-center gap-4">
+                <div class="bg-green-100 p-3 rounded-full">
+                  <i class="fas fa-piggy-bank text-green-600 text-2xl"></i>
+                </div>
+                <div>
+                  <h3 class="text-xl font-bold text-green-800 mb-1">Great Savings!</h3>
+                  <p class="text-green-600">
+                    You saved <span class="font-bold text-green-700">₹<%= order.totalSavings.toFixed(2) %></span> on this order
+                  </p>
+                </div>
+              </div>
+              <div class="text-right">
+                <p class="text-sm text-green-600 mb-1">Original Order Value</p>
+                <p class="text-2xl font-bold text-gray-500 line-through">₹<%= (order.totalRegularPrice || 0).toFixed(2) %></p>
+              </div>
+            </div>
+          </div>
+        <% } %>
+
         <!-- Individual Order Items - Enhanced -->
         <div class="space-y-6 mb-8">
           <div class="flex items-center justify-between mb-6">
             <h2 class="text-2xl font-bold text-gray-800">Order Items</h2>
-            <!-- <span class="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-medium">
-              <%= order.items.length %> item<%= order.items.length> 1 ? 's' : '' %>
-            </span> -->
-       <% const count = order?.items?.length || 0; %>
-<span class="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-medium">
-  <%= count %> <%= count === 1 ? 'item' : 'items' %>
-</span>
-
-
+            <% const itemCount = order?.items?.length || 0; %>
+            <span class="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-medium">
+              <%= itemCount %> <%= itemCount === 1 ? 'item' : 'items' %>
+            </span>
           </div>
 
-          <% order.items.forEach((item, index)=> { %>
+          <% order.items.forEach((item, index) => { 
+            // FIX: Check for different property names
+            const productName = item.productName || (item.product && item.product.name) || 'Product';
+            const brand = item.brand || (item.product && item.product.brand) || 'BagHub';
+            const productImage = item.image || 
+                               (item.product && item.product.images && item.product.images[0]) || 
+                               '/images/no-image.jpg';
+            const color = item.color || 'Not specified';
+            const quantity = item.quantity || 1;
+            const price = item.price || 0;
+            const regularPrice = item.regularPrice || item.price || 0;
+            const totalPrice = item.totalPrice || (price * quantity);
+            const totalRegularPrice = item.totalRegularPrice || (regularPrice * quantity);
+            const savings = item.savings || (totalRegularPrice - totalPrice);
+          %>
             <div class="order-item-card bg-white rounded-xl professional-shadow p-6 elegant-border">
               <div class="flex flex-col lg:flex-row gap-6">
 
                 <!-- Product Image -->
                 <div class="flex-shrink-0">
                   <div class="relative">
-                    <img src="<%= item.image || '/images/no-image.jpg' %>" alt="<%= item.product.name %>"
+                    <img src="<%= productImage %>" alt="<%= productName %>"
                       class="w-32 h-32 object-cover rounded-lg border border-gray-200">
                     <div
                       class="absolute -top-2 -right-2 bg-blue-600 text-white rounded-full w-8 h-8 flex items-center justify-center text-sm font-bold">
@@ -177,8 +207,9 @@
                   <div class="flex flex-col md:flex-row md:items-start justify-between gap-4 mb-4">
                     <div class="flex-grow">
                       <h3 class="text-xl font-semibold text-gray-900 mb-3">
-                        <%= item.product.name %>
+                        <%= productName %>
                       </h3>
+                      <p class="text-gray-600 text-sm mb-2"><%= brand %></p>
 
                       <!-- Individual Item Order ID - Enhanced -->
                       <div class="bg-gray-50 rounded-lg p-4 mb-4 border border-gray-200">
@@ -189,52 +220,87 @@
                       </div>
 
                       <!-- Product Specifications - Enhanced -->
-                      <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+                      <div class="grid grid-cols-2 md:grid-cols-5 gap-4 mb-4">
+                        <!-- Color -->
                         <div class="bg-white p-3 rounded-lg border border-gray-200">
                           <p class="text-xs text-gray-500 mb-1">Color</p>
-                          <p class="font-medium text-gray-900">
-                            <%= item.color %>
-                          </p>
+                          <p class="font-medium text-gray-900"><%= color %></p>
                         </div>
+
+                        <!-- Quantity -->
                         <div class="bg-white p-3 rounded-lg border border-gray-200">
                           <p class="text-xs text-gray-500 mb-1">Quantity</p>
-                          <p class="font-medium text-gray-900">
-                            <%= item.quantity %>
-                          </p>
+                          <p class="font-medium text-gray-900"><%= quantity %></p>
                         </div>
-                        <div class="bg-white p-3 rounded-lg border border-gray-200">
-                          <p class="text-xs text-gray-500 mb-1">Unit Price</p>
-                          <p class="font-medium text-gray-900">₹<%= item.price %>
-                          </p>
-                        </div>
-                        <div class="bg-white p-3 rounded-lg border border-gray-200">
-                          <p class="text-xs text-gray-500 mb-1">Item Total</p>
-                          <p class="font-medium text-blue-600">₹<%= (item.price * item.quantity).toFixed(2) %>
-                          </p>
-                        </div>
+
+                        <!-- Unit Price -->
+      <!-- Unit Price (in grid) -->
+<div class="bg-white p-3 rounded-lg border border-gray-200">
+  <p class="text-xs text-gray-500 mb-1">Unit Price</p>
+
+  <!-- Show discounted price -->
+  <p class="font-medium text-gray-900">
+    ₹<%= (item.price || 0).toFixed(2) %>
+  </p>
+
+  <!-- Original MRP strike-through only if different -->
+  <% if (item.regularPrice && item.regularPrice > item.price) { %>
+    <p class="text-gray-500 text-sm line-through">
+      ₹<%= item.regularPrice.toFixed(2) %>
+    </p>
+  <% } %>
+</div>
+
+
+
+  <!-- Total Price -->
+<div class="bg-white p-3 rounded-lg border border-gray-200">
+  <p class="text-xs text-gray-500 mb-1">Total Price</p>
+
+  <% const totalRegular = item.regularPrice * item.quantity; %>
+  <% const totalFinal = item.price * item.quantity; %>
+
+  <div class="space-y-1">
+    <% if (totalRegular > totalFinal) { %>
+      <p class="text-gray-500 text-sm line-through">₹<%= totalRegular.toFixed(2) %></p>
+      <p class="font-bold text-green-600 text-lg">₹<%= totalFinal.toFixed(2) %></p>
+    <% } else { %>
+      <p class="font-bold text-gray-900 text-lg">₹<%= totalFinal.toFixed(2) %></p>
+    <% } %>
+  </div>
+</div>
+
+
+                        <!-- Savings -->
+                        <% if (savings > 0) { %>
+                          <div class="bg-green-50 p-3 rounded-lg border border-green-200">
+                            <p class="text-xs text-green-600 mb-1">You Saved</p>
+                            <p class="font-bold text-green-700 text-lg">
+                              ₹<%= savings.toFixed(2) %>
+                            </p>
+                          </div>
+                        <% } %>
                       </div>
+
                     </div>
 
                     <!-- Status Badge - Enhanced -->
                     <div class="flex-shrink-0">
-
-
                       <span class="status-badge <%= getStatusClass(item.status) %>">
-                        <% if (item.status==="return-requested" ) { %>
+                        <% if (item.status === "return-requested") { %>
                           Return Requested
-                          <% } else if (item.status==="return-approved" ) { %>
-                            Return Approved (Refund Credited)
-                            <% } else if (item.status==="return-rejected" ) { %>
-                              Return Rejected
-                              <% } else if (item.status==="delivered" ) { %>
-                                Delivered
-                                <% } else if (item.status==="cancelled" ) { %>
-                                  Cancelled
-                                  <% } else { %>
-                                    <%= item.status %>
-                                      <% } %>
+                        <% } else if (item.status === "return-approved") { %>
+                          Return Approved (Refund Credited)
+                        <% } else if (item.status === "return-rejected") { %>
+                          Return Rejected
+                        <% } else if (item.status === "delivered") { %>
+                          Delivered
+                        <% } else if (item.status === "cancelled") { %>
+                          Cancelled
+                        <% } else { %>
+                          <%= item.status || 'Processing' %>
+                        <% } %>
                       </span>
-
                     </div>
                   </div>
 
@@ -255,24 +321,17 @@
 
                   <!-- Download Invoice Button for this specific item - Enhanced -->
                   <div class="mt-6 pt-4 border-t border-gray-200">
-<button
-  onclick="downloadInvoice('<%= order._id %>', '<%= item._id %>', '<%= item.product.name %>', this)"
-  class="bg-gradient-to-r from-green-600 to-green-700 text-white px-6 py-3 rounded-lg font-semibold hover:from-green-700 hover:to-green-800 transition-all duration-300 flex items-center gap-3 professional-shadow">
-  <i class="fas fa-file-invoice"></i>
-  Download Invoice for <%= item.product.name %>
-</button>
-
-                    <!-- <button
-                      onclick="downloadInvoice('<%= orderDisplayId %>', '<%= item._id %>', '<%= item.product.name %>', this)"
+                    <button
+                      onclick="downloadInvoice('<%= order._id %>', '<%= item._id %>', '<%= productName %>', this)"
                       class="bg-gradient-to-r from-green-600 to-green-700 text-white px-6 py-3 rounded-lg font-semibold hover:from-green-700 hover:to-green-800 transition-all duration-300 flex items-center gap-3 professional-shadow">
                       <i class="fas fa-file-invoice"></i>
-                      Download Invoice for <%= item.product.name %>
-                    </button> -->
+                      Download Invoice for <%= productName %>
+                    </button>
                   </div>
                 </div>
               </div>
             </div>
-            <% }) %>
+          <% }) %>
         </div>
 
         <!-- Order Summary - Enhanced -->
@@ -281,29 +340,80 @@
           <div class="bg-white rounded-xl professional-shadow p-6 elegant-border">
             <h3 class="text-lg font-semibold text-gray-900 mb-6 pb-2 border-b border-gray-200">Price Summary</h3>
             <div class="space-y-4">
+              <!-- Original Total -->
+              <% if (order.totalRegularPrice && order.totalRegularPrice > order.subtotal) { %>
+                <div class="flex justify-between items-center py-2 border-b border-gray-100 pb-3">
+                  <span class="text-gray-600">Original Total</span>
+                  <span class="text-gray-500 line-through">
+                    ₹<%= order.totalRegularPrice.toFixed(2) %>
+                  </span>
+                </div>
+                
+                <!-- Discount/Savings -->
+                <div class="flex justify-between items-center py-2 border-b border-green-100 pb-3 bg-green-50 px-3 rounded-lg">
+                  <span class="text-green-600 font-medium">
+                    <i class="fas fa-tag mr-2"></i>Discount Applied
+                  </span>
+                  <span class="font-bold text-green-700">
+                    -₹<%= (order.totalRegularPrice - order.subtotal).toFixed(2) %>
+                  </span>
+                </div>
+              <% } %>
+              
+              <!-- Subtotal -->
               <div class="flex justify-between items-center py-2">
                 <span class="text-gray-600">Subtotal (<%= order.items.length %> items)</span>
                 <span class="font-medium text-gray-900">₹<%= order.subtotal.toFixed(2) %></span>
               </div>
+              
+              <!-- Tax -->
               <div class="flex justify-between items-center py-2">
                 <span class="text-gray-600">Tax (10%)</span>
                 <span class="font-medium text-gray-900">₹<%= order.tax.toFixed(2) %></span>
               </div>
+              
+              <!-- Shipping -->
               <div class="flex justify-between items-center py-2">
                 <span class="text-gray-600">Shipping</span>
                 <span class="font-medium text-green-600">
-                  <%= order.shippingFee===0 ? 'FREE' : `₹${order.shippingFee.toFixed(2)}` %>
+                  <%= order.shippingFee === 0 ? 'FREE' : `₹${order.shippingFee.toFixed(2)}` %>
                 </span>
               </div>
+              
+              <!-- Coupon Discount -->
+              <% if (order.couponDiscount && order.couponDiscount > 0) { %>
+                <div class="flex justify-between items-center py-2 border-b border-green-100 pb-3 bg-green-50 px-3 rounded-lg">
+                  <span class="text-green-600 font-medium">
+                    <i class="fas fa-tag mr-2"></i>Coupon Discount
+                  </span>
+                  <span class="font-bold text-green-700">
+                    -₹<%= order.couponDiscount.toFixed(2) %>
+                  </span>
+                </div>
+              <% } %>
+              
+              <!-- Grand Total -->
               <div class="border-t border-gray-200 pt-4 mt-2">
                 <div class="flex justify-between items-center text-lg font-bold">
-                  <span class="text-gray-800">Total Amount</span>
+                  <span class="text-gray-800">Grand Total</span>
                   <span class="text-blue-600">₹<%= order.totalAmount.toFixed(2) %></span>
                 </div>
+                
+                <!-- Total Savings -->
+                <% if (order.totalSavings && order.totalSavings > 0) { %>
+                  <div class="mt-3 pt-3 border-t border-green-100">
+                    <div class="flex justify-between items-center text-green-700">
+                      <span class="text-sm font-medium">
+                        <i class="fas fa-piggy-bank mr-2"></i>Total Savings
+                      </span>
+                      <span class="font-bold">₹<%= order.totalSavings.toFixed(2) %></span>
+                    </div>
+                  </div>
+                <% } %>
               </div>
             </div>
           </div>
-
+          
           <!-- Shipping Address -->
           <div class="bg-white rounded-xl professional-shadow p-6 elegant-border">
             <h3 class="text-lg font-semibold text-gray-900 mb-6 pb-2 border-b border-gray-200">Shipping Address</h3>
@@ -324,15 +434,15 @@
                     <p class="text-gray-900">
                       <%= order.shippingAddress.addressLine2 %>
                     </p>
-                    <% } %>
-                      <p class="text-gray-900">
-                        <%= order.shippingAddress.city %>,
-                          <%= order.shippingAddress.state %> -
-                            <%= order.shippingAddress.pincode %>
-                      </p>
-                      <p class="text-gray-900">
-                        <%= order.shippingAddress.country %>
-                      </p>
+                  <% } %>
+                  <p class="text-gray-900">
+                    <%= order.shippingAddress.city %>,
+                    <%= order.shippingAddress.state %> -
+                    <%= order.shippingAddress.pincode %>
+                  </p>
+                  <p class="text-gray-900">
+                    <%= order.shippingAddress.country %>
+                  </p>
                 </div>
               </div>
               <div class="flex items-center gap-3 pt-2">
@@ -343,7 +453,7 @@
               </div>
             </div>
           </div>
-
+          
           <!-- Payment Information -->
           <div class="bg-white rounded-xl professional-shadow p-6 elegant-border">
             <h3 class="text-lg font-semibold text-gray-900 mb-6 pb-2 border-b border-gray-200">Payment Information</h3>
@@ -351,7 +461,7 @@
               <div class="flex justify-between items-center py-2">
                 <span>Payment Method:</span>
                 <span class="font-medium text-gray-900 capitalize">
-                  <%= order.paymentMethod==='cod' ? 'Cash on Delivery' : order.paymentMethod %>
+                  <%= order.paymentMethod === 'cod' ? 'Cash on Delivery' : order.paymentMethod %>
                 </span>
               </div>
               <div class="flex justify-between items-center py-2">
@@ -361,6 +471,15 @@
                 </span>
               </div>
               
+              <!-- Coupon Used -->
+              <% if (order.couponCode) { %>
+                <div class="flex justify-between items-center py-2 border-t border-gray-100 pt-3">
+                  <span>Coupon Used:</span>
+                  <span class="font-medium text-green-600">
+                    <%= order.couponCode %>
+                  </span>
+                </div>
+              <% } %>
             </div>
           </div>
         </div>
@@ -389,6 +508,31 @@
     </div>
 
     <script>
+      // Download invoice function for individual items - FIXED
+      function downloadInvoice(orderId, itemId, productName, btn) {
+        const button = btn;
+        const originalHtml = button.innerHTML;
+
+        button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Generating...';
+        button.disabled = true;
+
+        const mongoOrderId = '<%= order._id %>'; // This gets the MongoDB _id
+        
+        const invoiceUrl = `/order/${mongoOrderId}/item/${itemId}/invoice`;
+
+        console.log("📤 Downloading invoice:", { mongoOrderId, itemId });
+
+        const link = document.createElement("a");
+        link.href = invoiceUrl;
+        link.target = "_blank";
+        link.click();
+
+        setTimeout(() => {
+          button.innerHTML = originalHtml;
+          button.disabled = false;
+        }, 1500);
+      }
+
       // Confetti animation
       function launchConfetti() {
         const container = document.getElementById("confettiContainer");
@@ -404,78 +548,8 @@
         }
       }
 
-      // Download invoice function for individual items
-      
-      // function downloadInvoice(orderId, itemId, productName, btn) {
-      //   const button = btn;
-      //   const originalHtml = button.innerHTML;
-
-      //   button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Generating...';
-      //   button.disabled = true;
-
-      //   const invoiceUrl = `/order/${orderId}/item/${itemId}/invoice`;
-
-      //   const link = document.createElement("a");
-      //   link.href = invoiceUrl;
-      //   link.target = "_blank";
-      //   link.click();
-
-      //   setTimeout(() => {
-      //     button.innerHTML = originalHtml;
-      //     button.disabled = false;
-      //   }, 1500);
-      // }
-
       document.addEventListener("DOMContentLoaded", launchConfetti);
     </script>
-    <script>
-  // Download invoice function for individual items - FIXED
-  function downloadInvoice(displayOrderId, itemId, productName, btn) {
-    const button = btn;
-    const originalHtml = button.innerHTML;
-
-    button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Generating...';
-    button.disabled = true;
-
-    // ✅ Get the actual MongoDB order _id from the page data
-    // We need to find a way to pass the MongoDB _id to this function
-    // Since we don't have it directly, we need to modify the approach
-    
-    // Option 1: If you can pass MongoDB _id from EJS:
-    const mongoOrderId = '<%= order._id %>'; // This gets the MongoDB _id
-    
-    const invoiceUrl = `/order/${mongoOrderId}/item/${itemId}/invoice`;
-
-    console.log("📤 Downloading invoice:", { mongoOrderId, itemId, displayOrderId });
-
-    const link = document.createElement("a");
-    link.href = invoiceUrl;
-    link.target = "_blank";
-    link.click();
-
-    setTimeout(() => {
-      button.innerHTML = originalHtml;
-      button.disabled = false;
-    }, 1500);
-  }
-
-  // Confetti animation
-  function launchConfetti() {
-    const container = document.getElementById("confettiContainer");
-    const colors = ["#10b981", "#3b82f6", "#f59e0b", "#ef4444", "#8b5cf6"];
-
-    for (let i = 0; i < 50; i++) {
-      let div = document.createElement("div");
-      div.classList.add("confetti");
-      div.style.left = Math.random() * 100 + "vw";
-      div.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
-      div.style.animationDelay = Math.random() * 3 + "s";
-      container.appendChild(div);
-    }
-  }
-
-  document.addEventListener("DOMContentLoaded", launchConfetti);
-</script>
 
 </body>
 

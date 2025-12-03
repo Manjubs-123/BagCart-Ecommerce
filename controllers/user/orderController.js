@@ -15,7 +15,6 @@ const __dirname = path.dirname(__filename);
 const generateOrderId = () => {
   return "BH-" + Math.floor(100000 + Math.random() * 900000).toString();
 };
-
 export const createOrder = async (req, res) => {
     try {
         const userId = req.session.user.id;
@@ -39,15 +38,35 @@ export const createOrder = async (req, res) => {
             return res.json({ success: false, message: "Address not found" });
         }
 
+        // ⭐ Compute final & regular prices for each cart item
+        for (let item of cart.items) {
+            const variant = item.product.variants[item.variantIndex];
+
+            const offerData = await applyOfferToProduct({
+                ...item.product.toObject(),
+                variants: [variant]
+            });
+
+            const offerVariant = offerData.variants[0];
+
+            item._finalPrice = offerVariant.finalPrice;     
+            item._regularPrice = offerVariant.regularPrice; 
+        }
+
+        // ⭐ Save computed values into order
         const orderItems = cart.items.map(item => {
             const variant = item.product.variants[item.variantIndex];
+
             return {
                 product: item.product._id,
                 variantIndex: item.variantIndex,
                 quantity: item.quantity,
-                price: variant.price,
+
+                price: item._finalPrice,
+                regularPrice: item._regularPrice,
+
                 color: variant.color,
-                image: variant.images[0]?.url || ""
+                image: variant.images?.[0]?.url || ""
             };
         });
 
@@ -56,11 +75,10 @@ export const createOrder = async (req, res) => {
         const shippingFee = subtotal > 500 ? 0 : 50;
         const totalAmount = subtotal + tax + shippingFee;
 
-        // ✅ Generate custom order ID
         const customOrderId = generateOrderId();
 
         const order = await Order.create({
-            orderId: customOrderId, // ✅ Store custom ID
+            orderId: customOrderId,
             user: userId,
             items: orderItems,
             shippingAddress: address,
@@ -72,28 +90,23 @@ export const createOrder = async (req, res) => {
             paymentStatus: paymentMethod === "cod" ? "pending" : "paid"
         });
 
-        // Stock reduction logic
+        // Reduce stock
         for (let item of cart.items) {
             const product = await Product.findById(item.product._id);
             if (!product) continue;
 
-            const variant = product.variants[item.variantIndex];
-            if (!variant) continue;
-
-            variant.stock -= item.quantity;
+            product.variants[item.variantIndex].stock -= item.quantity;
             product.markModified(`variants.${item.variantIndex}.stock`);
             await product.save();
         }
 
-        // Clear cart
         cart.items = [];
         await cart.save();
 
-        // ✅ Return MongoDB _id for route compatibility BUT also include custom orderId
         return res.json({
             success: true,
-            orderId: order._id, // ✅ Keep _id for existing routes
-            customOrderId: order.orderId // ✅ Also return custom ID for display
+            orderId: order._id,
+            customOrderId: order.orderId
         });
 
     } catch (err) {
@@ -104,22 +117,58 @@ export const createOrder = async (req, res) => {
 
 export const getOrderConfirmation = async (req, res) => {
   try {
-    const mongoOrderId = req.params.id; // This is MongoDB _id from route
+    const mongoOrderId = req.params.id;
     
-    // ✅ Find by MongoDB _id (existing route compatibility)
     const order = await Order.findById(mongoOrderId)
-      .populate({ path: "items.product", select: "name brand variants images" })
+      .populate({ 
+        path: "items.product",
+        select: "name brand variants images" 
+      })
       .lean();
 
     if (!order) return res.redirect("/order/orders");
 
-    // ✅ Use custom orderId for display
+    // Ensure each item has price & regularPrice (use stored values first)
+    const items = order.items.map(item => {
+      // if variant present, read fallback values
+      const variant = item.product && item.product.variants && item.product.variants[item.variantIndex];
+      const storedPrice = item.price !== undefined ? Number(item.price) : (variant ? variant.price : 0);
+      const storedRegular = item.regularPrice !== undefined ? Number(item.regularPrice) : (variant ? (variant.mrp || variant.price) : storedPrice);
+
+      // compute per-item totals
+      const qty = Number(item.quantity || 1);
+      const totalFinal = storedPrice * qty;
+      const totalRegular = storedRegular * qty;
+      const itemSavings = Math.max(0, totalRegular - totalFinal);
+
+      return {
+        ...item,
+        price: storedPrice,
+        regularPrice: storedRegular,
+        totalPrice: totalFinal,
+        totalRegularPrice: totalRegular,
+        itemSavings
+      };
+    });
+
+    // compute order-level regular total & total savings (for banner)
+    const totalRegularPrice = items.reduce((s, it) => s + (it.totalRegularPrice || 0), 0);
+    const subtotal = Number(order.subtotal || items.reduce((s, it) => s + (it.totalPrice || 0), 0));
+    const totalSavings = Math.max(0, totalRegularPrice - subtotal);
+
+    // use original custom display order id
     const orderDisplayId = order.orderId;
 
-    console.log("✔ UI Order ID =", orderDisplayId);
+    // create a new object we will pass to EJS
+    const orderForRender = {
+      ...order,
+      items,
+      totalRegularPrice,
+      totalSavings
+    };
 
     res.render("user/orderConfirmation", {
-      order,
+      order: orderForRender,
       orderDisplayId
     });
   } catch (err) {
@@ -127,6 +176,128 @@ export const getOrderConfirmation = async (req, res) => {
     res.redirect("/order/orders");
   }
 };
+
+
+
+// export const createOrder = async (req, res) => {
+//     try {
+//         const userId = req.session.user.id;
+//         const { addressId, paymentMethod } = req.body;
+
+//         if (!addressId || !paymentMethod) {
+//             return res.json({ success: false, message: "Missing data" });
+//         }
+
+//         const cart = await Cart.findOne({ user: userId })
+//             .populate("items.product");
+
+//         if (!cart || cart.items.length === 0) {
+//             return res.json({ success: false, message: "Cart empty" });
+//         }
+
+//         const user = await User.findById(userId);
+//         const address = user.addresses.id(addressId);
+
+//         if (!address) {
+//             return res.json({ success: false, message: "Address not found" });
+//         }
+
+//       const orderItems = cart.items.map(item => {
+//     const variant = item.product.variants[item.variantIndex];
+
+//     return {
+//         product: item.product._id,
+//         variantIndex: item.variantIndex,
+//         quantity: item.quantity,
+
+//         // IMPORTANT: STORE BOTH PRICES
+//         price: item.finalPrice,           // discounted price
+//         regularPrice: item.regularPrice,  // original MRP
+
+//         color: variant.color,
+//         image: variant.images?.[0]?.url || ""
+//     };
+// });
+
+
+
+//         const subtotal = orderItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
+//         const tax = subtotal * 0.1;
+//         const shippingFee = subtotal > 500 ? 0 : 50;
+//         const totalAmount = subtotal + tax + shippingFee;
+
+//         // ✅ Generate custom order ID
+//         const customOrderId = generateOrderId();
+
+//         const order = await Order.create({
+//             orderId: customOrderId, // ✅ Store custom ID
+//             user: userId,
+//             items: orderItems,
+//             shippingAddress: address,
+//             paymentMethod,
+//             subtotal,
+//             tax,
+//             shippingFee,
+//             totalAmount,
+//             paymentStatus: paymentMethod === "cod" ? "pending" : "paid"
+//         });
+
+//         // Stock reduction logic
+//         for (let item of cart.items) {
+//             const product = await Product.findById(item.product._id);
+//             if (!product) continue;
+
+//             const variant = product.variants[item.variantIndex];
+//             if (!variant) continue;
+
+//             variant.stock -= item.quantity;
+//             product.markModified(`variants.${item.variantIndex}.stock`);
+//             await product.save();
+//         }
+
+//         // Clear cart
+//         cart.items = [];
+//         await cart.save();
+
+//         // ✅ Return MongoDB _id for route compatibility BUT also include custom orderId
+//         return res.json({
+//             success: true,
+//             orderId: order._id, // ✅ Keep _id for existing routes
+//             customOrderId: order.orderId // ✅ Also return custom ID for display
+//         });
+
+//     } catch (err) {
+//         console.error("ORDER ERROR:", err);
+//         return res.json({ success: false, message: "Order failed" });
+//     }
+// };
+
+
+// export const getOrderConfirmation = async (req, res) => {
+//   try {
+//     const mongoOrderId = req.params.id; // This is MongoDB _id from route
+    
+//     // ✅ Find by MongoDB _id (existing route compatibility)
+//     const order = await Order.findById(mongoOrderId)
+//       .populate({ path: "items.product", select: "name brand variants images" })
+//       .lean();
+
+//     if (!order) return res.redirect("/order/orders");
+
+//     // ✅ Use custom orderId for display
+//     const orderDisplayId = order.orderId;
+
+//     console.log("✔ UI Order ID =", orderDisplayId);
+
+//     res.render("user/orderConfirmation", {
+//       order,
+//       orderDisplayId
+//     });
+//   } catch (err) {
+//     console.error(err);
+//     res.redirect("/order/orders");
+//   }
+// };
 
 export const getMyOrders = async (req, res) => {
   try {
@@ -348,7 +519,7 @@ export const returnItem = async (req, res) => {
   }
 };
 
-// export const returnItem = async (req, res) => {
+
 //   try {
 //     const { orderId, itemId } = req.params; // orderId is MongoDB _id from route
 //     const { rejectionReason } = req.body;
