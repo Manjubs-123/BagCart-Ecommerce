@@ -478,20 +478,19 @@ export const approveReturn = async (req, res) => {
       actualCouponDeduction = couponDeduction ? parseFloat(couponDeduction) : 0;
 
     } else {
-      // ⭐ FALLBACK CALCULATION FIXED HERE — ONLY THIS PART CHANGED ⭐
+      // ⭐ FALLBACK CALCULATION (ONLY THIS SECTION MODIFIED)
 
       const price = Number(item.price);
       const qty = Number(item.quantity);
       const itemTotal = price * qty;
 
-      // ⭐ USE subtotalBeforeCoupon IF EXISTS — safest & correct
+      // Use subtotalBeforeCoupon if available
       const baseSubtotal =
         order.coupon?.subtotalBeforeCoupon > 0
           ? order.coupon.subtotalBeforeCoupon
           : order.subtotal;
 
       let couponShare = 0;
-
       if (order.coupon && order.coupon.discountAmount > 0) {
         const itemShare = baseSubtotal > 0 ? itemTotal / baseSubtotal : 0;
         couponShare = order.coupon.discountAmount * itemShare;
@@ -499,7 +498,20 @@ export const approveReturn = async (req, res) => {
 
       const computedRefundBase = Math.max(0, itemTotal - couponShare);
       taxAmount = computedRefundBase * 0.10;
-      finalRefundAmount = computedRefundBase + taxAmount;
+
+      // 🚫 Default: No shipping refund
+      let shippingRefund = 0;
+
+      // ⭐ Check if this is the LAST item being returned
+      const otherItems = order.items.filter(i => i._id.toString() !== itemId);
+      const allOtherReturned = otherItems.every(i => i.status === "returned");
+
+      // ⭐ If last item → refund full shipping fee
+      if (allOtherReturned) {
+        shippingRefund = order.shippingFee || 50;
+      }
+
+      finalRefundAmount = computedRefundBase + taxAmount + shippingRefund;
       actualCouponDeduction = couponShare;
     }
 
@@ -510,7 +522,7 @@ export const approveReturn = async (req, res) => {
       await product.save();
     }
 
-    // Wallet
+    // Wallet update
     const userId = order.user._id;
     let wallet = await Wallet.findOne({ user: userId });
 
@@ -526,7 +538,7 @@ export const approveReturn = async (req, res) => {
     wallet.transactions.push({
       type: "credit",
       amount: finalRefundAmount,
-      description: `Return refund for item ${item.itemOrderId || itemId} (incl. 10% tax)`,
+      description: `Return refund for item ${item.itemOrderId || itemId} (incl. tax & shipping if applicable)`,
       details: {
         couponDeduction: actualCouponDeduction.toFixed(2),
         taxAmount: taxAmount.toFixed(2)
@@ -555,6 +567,7 @@ export const approveReturn = async (req, res) => {
     return res.status(500).json({ success: false, message: "Server error while approving return" });
   }
 };
+
 
 export const rejectReturn = async (req, res) => {
   try {

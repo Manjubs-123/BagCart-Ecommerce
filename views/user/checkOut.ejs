@@ -243,6 +243,24 @@
                                 </div>
                             </div>
                         </div>
+
+                        <!-- Razorpay Online Payment -->
+<div class="payment-method p-4 border border-gray-200 rounded-xl cursor-pointer"
+     data-method="razorpay">
+    <div class="flex items-center gap-4">
+        <div class="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center text-blue-600">
+            <i class="fas fa-credit-card text-xl"></i>
+        </div>
+        <div class="flex-grow">
+            <h3 class="font-bold text-gray-900">Online Payment</h3>
+            <p class="text-gray-600 text-sm">Pay securely with Razorpay</p>
+        </div>
+        <div class="w-6 h-6 rounded-full border-2 border-gray-300 flex items-center justify-center">
+            <div class="w-3 h-3 rounded-full bg-blue-600 hidden"></div>
+        </div>
+    </div>
+</div>
+
                     </div>
                 </div>
 
@@ -1097,39 +1115,34 @@ function renderOrderItems() {
         }
 
         // Handle place order
-        async function handlePlaceOrder() {
-            if (!checkoutState.selectedAddress) {
-                showNotification('Please select a shipping address', 'error');
-                return;
-            }
+       
+async function handlePlaceOrder() {
 
-            if (!checkoutState.selectedPaymentMethod) {
-                showNotification('Please select a payment method', 'error');
-                return;
-            }
+    const orderData = {
+        addressId: checkoutState.selectedAddress,
+        paymentMethod: checkoutState.selectedPaymentMethod,
+        couponCode: checkoutState.appliedCoupon ? checkoutState.appliedCoupon.code : null
+    };
 
-            try {
-                const orderData = {
-                    addressId: checkoutState.selectedAddress,
-                    paymentMethod: checkoutState.selectedPaymentMethod,
-                    couponCode: checkoutState.appliedCoupon ? checkoutState.appliedCoupon.code : null
-                };
+    const response = await axios.post('/api/orders', orderData);
 
-                const response = await axios.post('/api/orders', orderData);
+    if (!response.data.success) {
+        return showNotification(response.data.message, "error");
+    }
 
-                if (response.data.success) {
-                    showNotification('Order placed successfully!', 'success');
-                    setTimeout(() => {
-                        window.location.href = `/order/confirmation/${response.data.orderId}`;
-                    }, 1500);
-                } else {
-                    showNotification(response.data.message || 'Failed to place order', 'error');
-                }
-            } catch (error) {
-                console.error('Order Error:', error);
-                showNotification('Failed to place order', 'error');
-            }
-        }
+    // COD → redirect
+    if (checkoutState.selectedPaymentMethod === "cod") {
+        return window.location.href = `/order/confirmation/${response.data.orderId}`;
+    }
+
+    // Razorpay → STEP 2 starts here
+    const rzpResponse = await axios.post("/api/payment/payment/create-order", {
+        orderId: response.data.orderId,
+        amount: response.data.totalAmount
+    });
+
+    return initiateRazorpayPayment(rzpResponse.data);
+}
 
         // Handle add or update address
         async function handleAddOrUpdateAddress(e) {
@@ -1476,5 +1489,209 @@ function renderOrderItems() {
             }, 5000);
         }
     </script>
+
+    <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+<script>
+document.getElementById('rzp-button').addEventListener('click', async (e) => {
+  e.preventDefault();
+
+  // Prepare payload - get items, totals from page or fetch server session/cart
+  const payload = {
+    items: window.cartItems, // adapt accordingly
+    subtotal: window.subtotal,
+    shipping: window.shipping,
+    total: window.total,
+    userId: "<%= user && user._id ? user._id : '' %>"
+  };
+
+  // Create server order
+  const resp = await fetch('/api/payment/create-order', {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify(payload)
+  });
+
+  const data = await resp.json();
+  if(!data.success) { alert('Could not create order'); return; }
+
+  const options = {
+    key: data.key,
+    amount: data.razorpayOrder.amount,
+    currency: data.razorpayOrder.currency,
+    name: "Your Shop Name",
+    description: "Order Payment",
+    image: "/images/logo.png",
+    order_id: data.razorpayOrder.id,
+    handler: async function (response) {
+      // response contains razorpay_payment_id, razorpay_order_id, razorpay_signature
+      const verifyResp = await fetch('/api/payment/verify', {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({
+          razorpayOrderId: response.razorpay_order_id,
+          razorpayPaymentId: response.razorpay_payment_id,
+          razorpaySignature: response.razorpay_signature,
+          orderId: data.orderId
+        })
+      });
+
+      const verifyResult = await verifyResp.json();
+      if (verifyResult.success) {
+        // Redirect to success page (server will render order details)
+        window.location = `/order/success/${data.orderId}`;
+      } else {
+        window.location = `/order/failure/${data.orderId}`;
+      }
+    },
+    prefill: {
+      name: "<%= user ? user.name : '' %>",
+      email: "<%= user ? user.email : '' %>",
+      contact: "<%= user ? user.phone : '' %>"
+    },
+    theme: { color: "#3399cc" }
+  };
+
+  const rzp = new Razorpay(options);
+  rzp.on('payment.failed', function (response){
+    // optionally, send failure details to server for logging
+    fetch('/api/payment/verify', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({
+        failed: true,
+        details: response,
+        orderId: data.orderId
+      })
+    });
+    window.location = `/order/failure/${data.orderId}`;
+  });
+
+  rzp.open();
+});
+</script>
+<script>
+
+// async function initiateRazorpayPayment(orderResponse) {
+
+//     const { orderId, amount, currency, razorpayOrderId } = orderResponse;
+
+//     const options = {
+//         key: "<%= process.env.RZP_KEY_ID %>",
+//         amount: amount,              // paise from backend
+//         currency: currency,
+//         name: "BagHub",
+//         description: "Order Payment",
+//         order_id: razorpayOrderId,
+
+//         modal: {
+//             ondismiss: function () {
+//                 Swal.fire("Payment Cancelled", "You closed the payment window.", "warning");
+//             }
+//         },
+
+//         handler: async function (response) {
+//             try {
+//                 const verifyRes = await axios.post("/api/payment/verify", {
+//                     orderId: orderId,
+//                     razorpayPaymentId: response.razorpay_payment_id,
+//                     razorpayOrderId: response.razorpay_order_id,
+//                     razorpaySignature: response.razorpay_signature,
+//                 });
+
+//                 if (verifyRes.data.success) {
+//                     // 🔥 REDIRECT TO ORDER CONFIRMATION PAGE
+//                     window.location.href = `/order/confirmation/${orderId}`;
+//                 } else {
+//                     Swal.fire("Payment Failed", "Verification failed!", "error");
+//                 }
+//             } catch (err) {
+//                 Swal.fire("Payment Error", "Something went wrong!", "error");
+//             }
+//         }
+//     };
+
+//     const rzp = new Razorpay(options);
+//     rzp.open();
+// }
+
+async function initiateRazorpayPayment(orderResponse) {
+    const { orderId, amount, currency, razorpayOrderId } = orderResponse;
+
+    const options = {
+        key: "<%= process.env.RZP_KEY_ID %>",
+        amount: amount,
+        currency: currency,
+        name: "BagHub",
+        description: "Order Payment",
+        order_id: razorpayOrderId,
+
+        modal: {
+            ondismiss: function () {
+                // user closed popup
+                window.location.href = `/order/payment-failed/${orderId}`;
+            }
+        },
+
+        handler: async function (response) {
+            const verifyRes = await axios.post("/api/payment/verify", {
+                orderId: orderId,
+                razorpayPaymentId: response.razorpay_payment_id,
+                razorpayOrderId: response.razorpay_order_id,
+                razorpaySignature: response.razorpay_signature,
+            });
+
+            if (verifyRes.data.success) {
+                window.location.href = `/order/confirmation/${orderId}`;
+            } else {
+                window.location.href = `/order/payment-failed/${orderId}`;
+            }
+        },
+
+        // 🔥 PAYMENT FAILURE HANDLER (Very important)
+        "prefill": {},
+        "theme": {},
+    };
+
+    const rzp = new Razorpay(options);
+
+    rzp.on('payment.failed', function (response) {
+        // Razorpay payment failed, send to custom failure page
+        window.location.href = `/order/payment-failed/${orderId}`;
+    });
+
+    rzp.open();
+}
+
+</script>
+
+<script>
+function startRazorpay(orderId, amount, razorpayOrderId) {
+    var options = {
+        key: "YOUR_KEY",
+        amount: amount * 100,
+        currency: "INR",
+        name: "My Shop",
+        order_id: razorpayOrderId,
+
+        handler: function (response) {
+            window.location.href = `/payment-success/${orderId}`;
+        },
+
+        modal: {
+            ondismiss: function () {
+               window.location.href = `/order/payment-failed/${orderId}`;
+
+            }
+        },
+
+        theme: { color: "#3399cc" }
+    };
+
+    new Razorpay(options).open();
+}
+</script>
+
+
+
 </body>
 </html>

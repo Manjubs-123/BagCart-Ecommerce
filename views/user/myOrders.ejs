@@ -366,49 +366,55 @@
                               </div>
 
                               <!-- Action Buttons -->
-                              <div class="mt-4 sm:mt-6 pt-4 border-t border-gray-200 flex flex-wrap gap-2 sm:gap-3 action-buttons-mobile">
-                                <!-- Download Invoice Button -->
-                                <button 
-                                  onclick="downloadInvoice('<%= order._id %>', '<%= item._id %>', '<%= item.product.name %>', this)"
-                                  class="btn-primary text-white px-4 sm:px-6 py-2 sm:py-3 rounded-lg font-semibold flex items-center gap-2 sm:gap-3 professional-shadow text-sm sm:text-base mobile-full">
-                                  <i class="fas fa-file-invoice"></i>
-                                  <span>Download Invoice</span>
-                                </button>
+                              <!-- Action Buttons -->
+<div class="mt-4 sm:mt-6 pt-4 border-t border-gray-200">
 
-                                <!-- Cancel Button -->
-                                <% if (canCancelItem(item.status || order.orderStatus)) { %>
-                                  <button 
-                                    onclick="showCancelModal('<%= order._id %>', '<%= item._id %>', '<%= item.product.name %>')"
-                                    class="btn-danger text-white px-4 sm:px-6 py-2 sm:py-3 rounded-lg font-semibold flex items-center gap-2 sm:gap-3 professional-shadow text-sm sm:text-base mobile-full">
-                                    <i class="fas fa-times-circle"></i>
-                                    <span>Cancel Item</span>
-                                  </button>
-                                <% } else { %>
-                                  <button 
-                                    disabled
-                                    class="bg-gray-400 text-white px-4 sm:px-6 py-2 sm:py-3 rounded-lg font-semibold flex items-center gap-2 sm:gap-3 professional-shadow cursor-not-allowed opacity-50 text-sm sm:text-base mobile-full">
-                                    <i class="fas fa-times-circle"></i>
-                                    <span>Cancel Not Available</span>
-                                  </button>
-                                <% } %>
+<% if (order.paymentStatus === 'failed') { %>
+  <a href="/order/retry/<%= order._id %>"
+     class="bg-blue-600 text-white px-4 py-2 rounded-lg font-semibold professional-shadow text-sm sm:text-base">
+     Retry Payment
+  </a>
+<% } 
+else { %>
 
-                                <!-- Return Button -->
-                                <% if (canReturnItem(item.status || order.orderStatus)) { %>
-                                  <button 
-                                    onclick="showReturnModal('<%= order._id %>', '<%= item._id %>', '<%= item.product.name %>')"
-                                    class="btn-warning text-white px-4 sm:px-6 py-2 sm:py-3 rounded-lg font-semibold flex items-center gap-2 sm:gap-3 professional-shadow text-sm sm:text-base mobile-full">
-                                    <i class="fas fa-undo"></i>
-                                    <span>Return Item</span>
-                                  </button>
-                                <% } else { %>
-                                  <button 
-                                    disabled
-                                    class="bg-gray-400 text-white px-4 sm:px-6 py-2 sm:py-3 rounded-lg font-semibold flex items-center gap-2 sm:gap-3 professional-shadow cursor-not-allowed opacity-50 text-sm sm:text-base mobile-full">
-                                    <i class="fas fa-undo"></i>
-                                    <span>Return Not Available</span>
-                                  </button>
-                                <% } %>
-                              </div>
+      <!-- NORMAL BUTTONS (only if payment is successful or COD) -->
+
+      <div class="flex flex-wrap gap-2 sm:gap-3 action-buttons-mobile">
+
+        <!-- Download Invoice -->
+        <button 
+          onclick="downloadInvoice('<%= order._id %>', '<%= item._id %>', '<%= item.product.name %>', this)"
+          class="btn-primary text-white px-4 sm:px-6 py-2 sm:py-3 rounded-lg font-semibold flex items-center gap-3 professional-shadow text-sm sm:text-base mobile-full">
+          <i class="fas fa-file-invoice"></i>
+          <span>Download Invoice</span>
+        </button>
+
+        <!-- Cancel -->
+        <% if (canCancelItem(item.status || order.orderStatus)) { %>
+          <button 
+            onclick="showCancelModal('<%= order._id %>', '<%= item._id %>', '<%= item.product.name %>')"
+            class="btn-danger text-white px-4 sm:px-6 py-2 sm:py-3 rounded-lg font-semibold flex items-center gap-3 professional-shadow text-sm sm:text-base mobile-full">
+            <i class="fas fa-times-circle"></i>
+            <span>Cancel Item</span>
+          </button>
+        <% } %>
+
+        <!-- Return -->
+        <% if (canReturnItem(item.status || order.orderStatus)) { %>
+          <button 
+            onclick="showReturnModal('<%= order._id %>', '<%= item._id %>', '<%= item.product.name %>')"
+            class="btn-warning text-white px-4 sm:px-6 py-2 sm:py-3 rounded-lg font-semibold flex items-center gap-3 professional-shadow text-sm sm:text-base mobile-full">
+            <i class="fas fa-undo"></i>
+            <span>Return Item</span>
+          </button>
+        <% } %>
+
+      </div>
+
+  <% } %>
+
+</div>
+
                             </div>
                           </div>
                         </div>

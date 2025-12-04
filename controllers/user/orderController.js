@@ -473,121 +473,253 @@ export const downloadInvoice = async (req, res) => {
 // };
 
 
+// export const cancelItem = async (req, res) => {
+//   try {
+//     const { orderId, itemId } = req.params; // orderId is MongoDB _id from route
+//     const { reason, details } = req.body;
+//     const userId = req.session?.user?.id;
+
+//     if (!userId) {
+//       console.log("Cancel Error: not logged in");
+//       return res.status(401).json({ success: false, message: "Not logged in" });
+//     }
+
+//     // Find order belonging to this user
+//     const order = await Order.findOne({ _id: orderId, user: userId });
+//     if (!order) {
+//       console.log("Cancel Error: order not found", { orderId, userId });
+//       return res.status(404).json({ success: false, message: "Order not found" });
+//     }
+
+//     const item = order.items.id(itemId);
+//     if (!item) {
+//       console.log("Cancel Error: item not found", { orderId, itemId });
+//       return res.status(404).json({ success: false, message: "Item not found" });
+//     }
+
+//     if (["delivered", "cancelled", "returned"].includes(item.status)) {
+//       return res.json({ success: false, message: "Cannot cancel this item" });
+//     }
+
+//     // Add stock back — defensive and markModified for nested array
+//     try {
+//       const product = await Product.findById(item.product);
+//       if (product) {
+//         const vIdx = item.variantIndex;
+//         const variant = product.variants?.[vIdx];
+//         if (variant) {
+//           variant.stock = Number(variant.stock || 0) + Number(item.quantity || 0);
+//           product.markModified(`variants.${vIdx}.stock`);
+//           await product.save();
+//           console.log("Stock returned:", { productId: product._id.toString(), vIdx, qty: item.quantity });
+//         } else {
+//           console.warn("Cancel warning: variant not found while returning stock", { productId: product._id, vIdx });
+//         }
+//       } else {
+//         console.warn("Cancel warning: product not found while returning stock", { productId: item.product });
+//       }
+//     } catch (stockErr) {
+//       // log but continue cancellation — don't fail because stock update had a transient problem
+//       console.error("Error returning stock (non-fatal):", stockErr);
+//     }
+
+//     // Update item/order status & meta
+//     item.status = "cancelled";
+//     item.cancelReason = reason || "Cancelled by user";
+//     item.cancelDetails = details || "";
+//     item.cancelledDate = new Date();
+
+//     // If all items are cancelled/returned -> mark whole order cancelled
+//     const allCancelled = order.items.every(i => ["cancelled", "returned"].includes(i.status));
+//     if (allCancelled) order.orderStatus = "cancelled";
+
+//     await order.save();
+
+//     console.log("Item cancelled successfully", { orderId: order._id.toString(), itemId });
+//     return res.json({ success: true, message: "Item cancelled successfully" });
+
+//   } catch (err) {
+//     console.error("Cancel Error:", err);
+//     return res.status(500).json({ success: false, message: "Something went wrong", error: err.message });
+//   }
+// };
+
 export const cancelItem = async (req, res) => {
   try {
-    const { orderId, itemId } = req.params; // orderId is MongoDB _id from route
+    const { orderId, itemId } = req.params;
     const { reason, details } = req.body;
     const userId = req.session?.user?.id;
 
     if (!userId) {
-      console.log("Cancel Error: not logged in");
       return res.status(401).json({ success: false, message: "Not logged in" });
     }
 
-    // Find order belonging to this user
     const order = await Order.findOne({ _id: orderId, user: userId });
-    if (!order) {
-      console.log("Cancel Error: order not found", { orderId, userId });
-      return res.status(404).json({ success: false, message: "Order not found" });
-    }
+    if (!order) return res.status(404).json({ success: false, message: "Order not found" });
 
     const item = order.items.id(itemId);
-    if (!item) {
-      console.log("Cancel Error: item not found", { orderId, itemId });
-      return res.status(404).json({ success: false, message: "Item not found" });
-    }
+    if (!item) return res.status(404).json({ success: false, message: "Item not found" });
 
     if (["delivered", "cancelled", "returned"].includes(item.status)) {
       return res.json({ success: false, message: "Cannot cancel this item" });
     }
 
-    // Add stock back — defensive and markModified for nested array
+    // Restore stock
     try {
       const product = await Product.findById(item.product);
       if (product) {
-        const vIdx = item.variantIndex;
-        const variant = product.variants?.[vIdx];
+        const variant = product.variants[item.variantIndex];
         if (variant) {
-          variant.stock = Number(variant.stock || 0) + Number(item.quantity || 0);
-          product.markModified(`variants.${vIdx}.stock`);
+          variant.stock += item.quantity;
+          product.markModified(`variants.${item.variantIndex}.stock`);
           await product.save();
-          console.log("Stock returned:", { productId: product._id.toString(), vIdx, qty: item.quantity });
-        } else {
-          console.warn("Cancel warning: variant not found while returning stock", { productId: product._id, vIdx });
         }
-      } else {
-        console.warn("Cancel warning: product not found while returning stock", { productId: item.product });
       }
-    } catch (stockErr) {
-      // log but continue cancellation — don't fail because stock update had a transient problem
-      console.error("Error returning stock (non-fatal):", stockErr);
+    } catch (err) {
+      console.error("Stock return error:", err);
     }
 
-    // Update item/order status & meta
+    // Update item
     item.status = "cancelled";
     item.cancelReason = reason || "Cancelled by user";
     item.cancelDetails = details || "";
     item.cancelledDate = new Date();
 
-    // If all items are cancelled/returned -> mark whole order cancelled
+    // Refund if prepaid
+    if (order.paymentMethod === "razorpay" && order.paymentStatus === "paid") {
+      try {
+        const refund = await razorpay.payments.refund(item.razorpayPaymentId, {
+          amount: item.price * item.quantity * 100
+        });
+        item.refundId = refund.id;
+        item.refundStatus = "initiated";
+      } catch (err) {
+        console.error("Refund Error:", err);
+      }
+    }
+
+    // If entire order cancelled
     const allCancelled = order.items.every(i => ["cancelled", "returned"].includes(i.status));
     if (allCancelled) order.orderStatus = "cancelled";
 
+    if (allCancelled && order.paymentMethod === "razorpay") {
+      order.paymentStatus = "refunded";
+    }
+
     await order.save();
 
-    console.log("Item cancelled successfully", { orderId: order._id.toString(), itemId });
     return res.json({ success: true, message: "Item cancelled successfully" });
 
   } catch (err) {
     console.error("Cancel Error:", err);
-    return res.status(500).json({ success: false, message: "Something went wrong", error: err.message });
+    return res.status(500).json({ success: false, message: "Something went wrong" });
   }
 };
 
 
-
 export const returnItem = async (req, res) => {
   try {
-    const { orderId, itemId } = req.params; // orderId is MongoDB _id
+    const { orderId, itemId } = req.params;
     const { reason, details } = req.body;
-    const userId = req.session.user.id;
+    const userId = req.session?.user?.id;
 
-    console.log("📦 Return request:", { orderId, itemId, reason, details, userId });
+    if (!userId) {
+      return res.status(401).json({ success: false, message: "Not logged in" });
+    }
 
     const order = await Order.findOne({ _id: orderId, user: userId });
     if (!order) {
-      console.log("❌ Order not found");
       return res.json({ success: false, message: "Order not found" });
     }
 
     const item = order.items.id(itemId);
     if (!item) {
-      console.log("❌ Item not found");
       return res.json({ success: false, message: "Item not found" });
     }
 
-    // Check if item can be returned (only delivered items)
-    if (item.status !== 'delivered') {
+    // ❌ Prevent invalid return attempts
+    if (item.status === "cancelled") {
+      return res.json({ success: false, message: "Cancelled items cannot be returned" });
+    }
+
+    if (item.status === "returned") {
+      return res.json({ success: false, message: "Item already returned" });
+    }
+
+    if (item.status === "return-requested") {
+      return res.json({ success: false, message: "Return already requested" });
+    }
+
+    // Only delivered items can be returned
+    if (item.status !== "delivered") {
       return res.json({ success: false, message: "Only delivered items can be returned" });
     }
 
-    // Update item status to return requested
-    item.status = 'return-requested';
+    // ⭐ Mark item as return requested
+    item.status = "return-requested";
     item.returnReason = reason;
     item.returnDetails = details || "";
     item.returnRequestedDate = new Date();
 
     await order.save();
 
-    console.log("✅ Return request submitted successfully");
-
-    return res.json({ 
-      success: true, 
-      message: "Return request submitted successfully" 
+    return res.json({
+      success: true,
+      message: "Return request submitted successfully"
     });
 
   } catch (error) {
-    console.error("❌ Return error:", error);
-    return res.status(500).json({ success: false, message: "Internal server error" });
+    console.error("Return Error:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error"
+    });
   }
 };
+
+
+// export const returnItem = async (req, res) => {
+//   try {
+//     const { orderId, itemId } = req.params; // orderId is MongoDB _id
+//     const { reason, details } = req.body;
+//     const userId = req.session.user.id;
+
+//     console.log("📦 Return request:", { orderId, itemId, reason, details, userId });
+
+//     const order = await Order.findOne({ _id: orderId, user: userId });
+//     if (!order) {
+//       console.log("❌ Order not found");
+//       return res.json({ success: false, message: "Order not found" });
+//     }
+
+//     const item = order.items.id(itemId);
+//     if (!item) {
+//       console.log("❌ Item not found");
+//       return res.json({ success: false, message: "Item not found" });
+//     }
+
+//     // Check if item can be returned (only delivered items)
+//     if (item.status !== 'delivered') {
+//       return res.json({ success: false, message: "Only delivered items can be returned" });
+//     }
+
+//     // Update item status to return requested
+//     item.status = 'return-requested';
+//     item.returnReason = reason;
+//     item.returnDetails = details || "";
+//     item.returnRequestedDate = new Date();
+
+//     await order.save();
+
+//     console.log("✅ Return request submitted successfully");
+
+//     return res.json({ 
+//       success: true, 
+//       message: "Return request submitted successfully" 
+//     });
+
+//   } catch (error) {
+//     console.error("❌ Return error:", error);
+//     return res.status(500).json({ success: false, message: "Internal server error" });
+//   }
+// };

@@ -533,6 +533,8 @@ router.post("/orders", async (req, res) => {
       success: true,
       orderId: order._id,
       customOrderId: order.orderId,
+       totalAmount: order.totalAmount,   // ⬅ send amount here
+    razorpayAmount: order.totalAmount * 100, // optional
       message: "Order placed successfully",
     });
   } catch (err) {

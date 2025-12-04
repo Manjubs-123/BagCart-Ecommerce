@@ -250,11 +250,28 @@
                               <span class="text-gray-600">Tax (10%):</span>
                               <span class="font-medium">+₹<%= refundTax.toFixed(2) %></span>
                             </div>
+<%
+  // Check if this return will complete the full order
+  const remainingItems = order.items.filter(i => i._id.toString() !== item._id.toString());
+  const isLastReturn = remainingItems.every(i => i.status === 'returned');
+
+  const shippingRefund = isLastReturn ? (order.shippingFee || 0) : 0;
+  const totalRefundWithShipping = totalRefund + shippingRefund;
+%>
+
+<% if (isLastReturn && shippingRefund > 0) { %>
+  <div class="flex justify-between">
+    <span class="text-gray-600">Shipping Refund:</span>
+    <span class="font-medium text-green-600">+₹<%= shippingRefund.toFixed(2) %></span>
+  </div>
+<% } %>
+
 
                             <div class="flex justify-between border-t border-green-300 pt-2 mt-2">
-                              <span class="font-bold text-green-700">Total Refund:</span>
-                              <span class="font-bold text-green-700 text-lg">₹<%= totalRefund.toFixed(2) %></span>
-                            </div>
+  <span class="font-bold text-green-700">Total Refund:</span>
+  <span class="font-bold text-green-700 text-lg">₹<%= totalRefundWithShipping.toFixed(2) %></span>
+</div>
+
                           </div>
 
                           <% if (order.coupon && order.coupon.code) { %>
@@ -274,9 +291,21 @@
                   </div>
 
                   <div class="flex gap-4 justify-center pt-4 border-t border-gray-200">
-                    <button onclick="approveReturn('<%= order._id %>', '<%= item._id %>', '<%= (item.product?.name || '').replace(/'/g, '\\\'') %>', '<%= totalRefund.toFixed(2) %>', '<%= refundBase.toFixed(2) %>', '<%= refundTax.toFixed(2) %>', '<%= couponShare.toFixed(2) %>')" class="btn-success text-white px-8 py-3 rounded-xl font-semibold flex items-center gap-3">
-                      <i class="fas fa-check-circle"></i> Approve Return & Refund
-                    </button>
+                   <button 
+  onclick="approveReturn(
+    '<%= order._id %>', 
+    '<%= item._id %>', 
+    '<%= (item.product?.name || '').replace(/'/g, '\\\'') %>',
+    '<%= totalRefundWithShipping.toFixed(2) %>',   // final refund INCLUDING shipping
+    '<%= refundBase.toFixed(2) %>',
+    '<%= refundTax.toFixed(2) %>',
+    '<%= couponShare.toFixed(2) %>',
+    '<%= shippingRefund.toFixed(2) %>'              // NEW ARG
+  )"
+  class="btn-success text-white px-8 py-3 rounded-xl font-semibold flex items-center gap-3">
+  <i class="fas fa-check-circle"></i> Approve Return & Refund
+</button>
+
 
                     <button onclick="rejectReturn('<%= order._id %>', '<%= item._id %>', '<%= (item.product?.name || '').replace(/'/g, '\\\'') %>')" class="btn-danger text-white px-8 py-3 rounded-xl font-semibold flex items-center gap-3">
                       <i class="fas fa-times-circle"></i> Reject Return
@@ -302,7 +331,8 @@
     }
 
     // Approve return with SweetAlert
-    function approveReturn(orderId, itemId, productName, refundAmount, refundBase, refundTax, couponDeduction) {
+function approveReturn(orderId, itemId, productName, refundAmount, refundBase, refundTax, couponDeduction, shippingRefund)
+{
       const couponDeductionValue = parseFloat(couponDeduction) || 0;
       
       Swal.fire({
@@ -351,12 +381,14 @@
               headers: {
                 'Content-Type': 'application/json',
               },
-              body: JSON.stringify({
-                refundAmount: parseFloat(refundAmount),
-                refundBase: parseFloat(refundBase),
-                refundTax: parseFloat(refundTax),
-                couponDeduction: couponDeductionValue
-              })
+           body: JSON.stringify({
+  refundAmount: parseFloat(refundAmount),
+  refundBase: parseFloat(refundBase),
+  refundTax: parseFloat(refundTax),
+  couponDeduction: couponDeductionValue,
+  shippingRefund: parseFloat(shippingRefund)
+})
+
             });
             
             if (!response.ok) {
