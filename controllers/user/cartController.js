@@ -1,5 +1,39 @@
 import Cart from "../../models/cartModel.js";
 import Product from "../../models/productModel.js";
+import { applyOfferToProduct } from "../../utils/applyOffer.js"; 
+
+// export const getCartPage = async (req, res) => {
+//   try {
+//     if (!req.session.user) {
+//       return res.redirect("/user/login");
+//     }
+
+//     const userId = req.session.user.id;
+
+//     //  Fetch cart
+//     const cart = await Cart.findOne({ user: userId })
+//       .populate("items.product");   
+
+//     const ordersCount = 0;
+//     const wishlistCount = req.session.user.wishlistCount || 0;
+//     const unreadNotifications = 0;
+
+//     res.render("user/cart", {
+//       title: "Shopping Cart",
+//       currentPage: "cart",
+//       user: req.session.user,
+//       ordersCount,
+//       wishlistCount,
+//       unreadNotifications,
+//       cart: cart || { items: [] }
+//     });
+
+//   } catch (error) {
+//     console.error("Cart Page Error:", error);
+//     res.status(500).send("Error loading cart page");
+//   }
+// };
+
 
 
 export const getCartPage = async (req, res) => {
@@ -10,22 +44,55 @@ export const getCartPage = async (req, res) => {
 
     const userId = req.session.user.id;
 
-    //  Fetch cart
-    const cart = await Cart.findOne({ user: userId })
-      .populate("items.product");   
+    let cart = await Cart.findOne({ user: userId })
+      .populate("items.product")
+      .lean();
 
     const ordersCount = 0;
     const wishlistCount = req.session.user.wishlistCount || 0;
     const unreadNotifications = 0;
 
-    res.render("user/cart", {
+    if (!cart) {
+      return res.render("user/cart", {
+        title: "Shopping Cart",
+        currentPage: "cart",
+        user: req.session.user,
+        ordersCount,
+        wishlistCount,
+        unreadNotifications,
+        cart: { items: [] }
+      });
+    }
+
+    // --------------------------------------------------------
+    // 🔥 APPLY OFFER PRICING TO EACH CART ITEM
+    // --------------------------------------------------------
+    for (let item of cart.items) {
+      const product = item.product;
+      const variant = product.variants[item.variantIndex];
+
+      const offerData = await applyOfferToProduct({
+        ...product,
+        variants: [variant] // apply only to selected variant
+      });
+
+      const offerVariant = offerData.variants[0];
+
+      item.finalPrice = offerVariant.finalPrice;           // discounted
+      item.regularPrice = offerVariant.regularPrice;       // MRP
+      item.appliedOffer = offerVariant.appliedOffer;       // offer name, etc.
+      item.totalPrice = offerVariant.finalPrice * item.quantity;
+    }
+
+    // Render page with updated items
+    return res.render("user/cart", {
       title: "Shopping Cart",
       currentPage: "cart",
       user: req.session.user,
       ordersCount,
       wishlistCount,
       unreadNotifications,
-      cart: cart || { items: [] }
+      cart
     });
 
   } catch (error) {
@@ -33,6 +100,8 @@ export const getCartPage = async (req, res) => {
     res.status(500).send("Error loading cart page");
   }
 };
+
+
 
 export const addToCart = async (req, res) => {
   try {

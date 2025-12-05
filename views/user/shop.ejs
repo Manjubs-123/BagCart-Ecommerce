@@ -162,12 +162,8 @@
                             <div class="product-card bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden card-hover">
                                 <a href="/user/product/<%= product._id %>" class="block">
                                     <div class="relative">
-                                        <% let mainImage = '/images/placeholder.jpg'; %>
-                                        <% if (product.variants && product.variants.length > 0) { %>
-                                            <% const firstVariantWithImage = product.variants.find(v => v.images && v.images.length > 0); %>
-                                            <% if (firstVariantWithImage) { mainImage = firstVariantWithImage.images[0].url; } %>
-                                        <% } %>
-                                        <img src="<%= mainImage %>" alt="<%= product.name %>" class="w-full h-64 object-cover" loading="lazy">
+                                        <img src="<%= product.mainImage || '/images/placeholder.jpg' %>" alt="<%= product.name %>" 
+                                            class="w-full h-64 object-cover" loading="lazy" onerror="this.src='/images/placeholder.jpg'">
                                         
                                         <% if (product.isFeatured) { %>
                                             <div class="absolute top-3 left-3">
@@ -185,7 +181,46 @@
                                     <div class="p-4">
                                         <h3 class="font-semibold text-gray-900 text-lg mb-2"><%= product.name %></h3>
                                         <p class="text-sm text-gray-500 mb-2"><%= product.brand %></p>
-                                        <p class="text-blue-600 font-bold text-xl mb-3">₹<%= product.variants?.[0]?.price || 0 %></p>
+                                        
+                                        <!-- PRICE SECTION -->
+<div class="mb-3">
+
+    <!-- Original price (crossed) -->
+    <% if ((product.regularPrice || product.variantMRP) > (product.finalPrice || product.variantPrice)) { %>
+        <div class="flex items-center gap-2 mb-1">
+            <span class="text-gray-500 text-sm line-through">
+                ₹<%= product.regularPrice || product.variantMRP %>
+            </span>
+            <span class="text-green-600 font-semibold text-sm">
+                <%= product.discountPercent || 0 %>% off
+            </span>
+        </div>
+    <% } %>
+
+    <!-- Final price -->
+    <div class="text-lg font-bold text-gray-900">
+        ₹<%= product.finalPrice || product.variantPrice %>
+    </div>
+
+    <!-- Savings -->
+    <% if ((product.regularPrice || product.variantMRP) > (product.finalPrice || product.variantPrice)) { %>
+        <div class="text-xs text-green-600">
+            Save ₹<%= ((product.regularPrice || product.variantMRP) - (product.finalPrice || product.variantPrice)).toFixed(0) %>
+        </div>
+    <% } %>
+
+    <!-- Offer badge -->
+    <% if (product.appliedOffer) { %>
+        <div class="mt-1">
+            <span class="inline-block bg-blue-100 text-blue-800 text-xs font-semibold px-2 py-1 rounded">
+                <i class="fas fa-tag mr-1"></i>Offer Applied
+            </span>
+        </div>
+    <% } %>
+
+</div>
+
+                                        
                                         <% if (product.variants && product.variants.length > 0) { %>
                                             <div class="flex gap-1 mb-3">
                                                 <% product.variants.forEach(v => { %>
@@ -193,6 +228,7 @@
                                                 <% }) %>
                                             </div>
                                         <% } %>
+                                        
                                         <div class="flex items-center justify-between pt-3 border-t border-gray-100">
                                             <span class="text-sm text-gray-500"><i class="fas fa-shipping-fast mr-1"></i>Free Shipping</span>
                                             <span class="text-blue-600 text-sm font-medium">View Details <i class="fas fa-arrow-right ml-1"></i></span>

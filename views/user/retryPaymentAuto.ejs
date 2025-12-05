@@ -1,0 +1,61 @@
+<!doctype html>
+<html>
+<head>
+  <title>Retry Payment</title>
+  <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+</head>
+<body>
+<script>
+function startRazorpay(orderId, amount, razorpayOrderId) {
+  var options = {
+    key: "<%= keyId %>",               // <-- passed from server, DO NOT hardcode
+    amount: amount * 100,
+    currency: "INR",
+    name: "BagHub",
+    description: "Retry Payment",
+    order_id: razorpayOrderId,
+
+    handler: function (response) {
+      // Instead of just redirecting, POST to server to VERIFY signature, then redirect
+      fetch("/api/payment/verify", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          razorpayOrderId: razorpayOrderId,
+          razorpayPaymentId: response.razorpay_payment_id || response.razorpay_payment_id, // depends on checkout keys
+          razorpaySignature: response.razorpay_signature || response.razorpay_signature,
+          orderId: orderId
+        })
+      })
+      .then(r => r.json())
+      .then(data => {
+        if (data.success) {
+         window.location.href = `/order/confirmation/${orderId}`;
+        } else {
+          // verification failed or server returned failed -> redirect to failure page
+          window.location.href = `/order/payment-failed/${orderId}`;
+        }
+      })
+      .catch(err => {
+        console.error("Verify error:", err);
+        window.location.href = `/order/payment-failed/${orderId}`;
+      });
+    },
+
+    modal: {
+      ondismiss: function () {
+        window.location.href = `/order/payment-failed/${orderId}`;
+      }
+    }
+  };
+
+  new Razorpay(options).open();
+}
+
+// Auto-trigger
+startRazorpay("<%= orderId %>", <  amount %>, "<%= razorpayOrderId %>");
+</script>
+
+<h3 style="text-align:center; margin-top:40px;">Opening payment window...</h3>
+</body>
+</html>

@@ -9,6 +9,7 @@ import fs from "fs";
 import mongoose from "mongoose";
 import {loadHomeProducts,renderLandingPage} from "./productController.js"; 
 import Order from "../../models/orderModel.js";
+import { applyOfferToProduct } from "../../utils/applyOffer.js"; 
 
 
 
@@ -952,6 +953,99 @@ export const changePassword = async (req, res) => {
     }
 };
 
+// export const getWishlistPage = async (req, res) => {
+//     try {
+//         if (!req.session.user || !req.session.user.id) {
+//             return res.redirect("/login");
+//         }
+
+//         const user = await User.findById(req.session.user.id)
+//             .populate({
+//                 path: "wishlist",
+//                 populate: { 
+//                     path: "category", 
+//                     select: "name" 
+//                 }
+//             });
+
+//         // Apply offers to wishlist items
+//         const wishlistItems = await Promise.all(
+//             user.wishlist.map(async (product) => {
+//                 // Convert to plain object
+//                 const productObj = product.toObject();
+                
+//                 // Get active offers for this product
+//                 const offers = await Offer.find({
+//                     $or: [
+//                         { 
+//                             offerType: 'product', 
+//                             'appliedProducts': product._id,
+//                             isActive: true,
+//                             startDate: { $lte: new Date() },
+//                             endDate: { $gte: new Date() }
+//                         },
+//                         {
+//                             offerType: 'category',
+//                             'appliedCategories': product.category._id,
+//                             isActive: true,
+//                             startDate: { $lte: new Date() },
+//                             endDate: { $gte: new Date() }
+//                         }
+//                     ]
+//                 }).sort({ discountValue: -1 }).limit(1);
+
+//                 // Apply the best offer
+//                 if (offers.length > 0) {
+//                     const bestOffer = offers[0];
+//                     productObj.appliedOffer = {
+//                         _id: bestOffer._id,
+//                         name: bestOffer.name,
+//                         offerType: bestOffer.offerType,
+//                         discountType: bestOffer.discountType,
+//                         discountValue: bestOffer.discountValue
+//                     };
+
+//                     // Calculate discounted price for each variant
+//                     if (productObj.variants && productObj.variants.length > 0) {
+//                         productObj.variants = productObj.variants.map(variant => {
+//                             const variantCopy = { ...variant };
+//                             const originalPrice = variantCopy.price || variantCopy.mrp || 0;
+                            
+//                             if (bestOffer.discountType === 'percentage') {
+//                                 variantCopy.finalPrice = originalPrice * (1 - bestOffer.discountValue / 100);
+//                             } else if (bestOffer.discountType === 'fixed') {
+//                                 variantCopy.finalPrice = Math.max(0, originalPrice - bestOffer.discountValue);
+//                             } else {
+//                                 variantCopy.finalPrice = originalPrice;
+//                             }
+                            
+//                             // Round to 2 decimal places
+//                             variantCopy.finalPrice = parseFloat(variantCopy.finalPrice.toFixed(2));
+//                             variantCopy.regularPrice = originalPrice;
+                            
+//                             return variantCopy;
+//                         });
+//                     }
+//                 }
+
+//                 return productObj;
+//             })
+//         );
+
+//         res.render("user/wishlist", {
+//             activePage: "wishlist",
+//             user,
+//             wishlistItems,
+//             wishlistCount: wishlistItems.length,
+//             ordersCount: 0,
+//             unreadNotifications: 0
+//         });
+
+//     } catch (err) {
+//         console.log("WISHLIST ERROR:", err);
+//         return res.status(500).send("Error loading wishlist");
+//     }
+// };
 export const getWishlistPage = async (req, res) => {
     try {
         if (!req.session.user || !req.session.user.id) {
@@ -961,10 +1055,36 @@ export const getWishlistPage = async (req, res) => {
         const user = await User.findById(req.session.user.id)
             .populate({
                 path: "wishlist",
-                populate: { path: "category", select: "name" }
+                populate: { 
+                    path: "category",
+                    select: "name"
+                }
             });
 
-        const wishlistItems = user.wishlist;
+        let wishlistItems = [];
+
+        for (let product of user.wishlist) {
+            let productObj = product.toObject();
+
+            // ⭐ APPLY SAME OFFER LOGIC AS PRODUCT DETAILS PAGE
+            const offerData = await applyOfferToProduct(productObj);
+
+            // Merge updated variant pricing
+            if (offerData && offerData.variants) {
+                productObj.variants = productObj.variants.map((v, index) => ({
+                    ...v,
+                    regularPrice: offerData.variants[index].regularPrice,
+                    finalPrice: offerData.variants[index].finalPrice,
+                    discountPercent: Math.round(
+                        ((offerData.variants[index].regularPrice - offerData.variants[index].finalPrice) /
+                        offerData.variants[index].regularPrice) * 100
+                    ),
+                    appliedOffer: offerData.variants[index].appliedOffer
+                }));
+            }
+
+            wishlistItems.push(productObj);
+        }
 
         res.render("user/wishlist", {
             activePage: "wishlist",
@@ -980,7 +1100,6 @@ export const getWishlistPage = async (req, res) => {
         return res.status(500).send("Error loading wishlist");
     }
 };
-
 
 export const addToWishlist = async (req, res) => {
   try {

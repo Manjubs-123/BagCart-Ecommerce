@@ -10,31 +10,31 @@
 
     <style>
         :root { --primary:#1a56db; --primary-dark:#1e429f; }
-
         .card-hover { transition:0.3s; box-shadow:0 4px 6px rgba(0,0,0,.1); }
         .card-hover:hover { transform:translateY(-2px); }
-
         .wishlist-item { transition:0.3s; }
         .wishlist-item:hover { transform:translateY(-5px); }
-
         .empty-state { animation:fadeIn .5s; }
-
         @keyframes fadeIn {
             from { opacity:0; transform:translateY(20px); }
             to { opacity:1; transform:translateY(0); }
         }
-
         .notification { animation:slideIn .5s; }
         @keyframes slideIn {
             from { transform:translateX(100%); opacity:0; }
             to { transform:translateX(0); opacity:1; }
+        }
+        .offer-badge {
+            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+        }
+        .discount-badge {
+            background: linear-gradient(135deg, #10b981 0%, #047857 100%);
         }
     </style>
 </head>
 
 <body class="bg-gray-50 min-h-screen">
 
-<!-- HEADER -->
 <%- include('../partials/landingheader') %>
 
 <div class="container mx-auto px-4 py-8">
@@ -88,134 +88,219 @@
 
                     <% wishlistItems.forEach(product => { %>
 
-                 <% const variantIndex = 0; %>
-<% const variant = product.variants?.[variantIndex]; %>
-<% const unavailable = product.isDeleted || !product.isActive; %>
+                        <% 
+                            // Get first variant for default display
+                            const firstVariant = product.variants?.[0] || {};
+                            const unavailable = product.isDeleted || !product.isActive;
+                            
+                            // Get prices from variant (with offer if applied)
+                            const regularPrice = firstVariant.regularPrice || firstVariant.price || firstVariant.mrp || 0;
+                            const finalPrice = firstVariant.finalPrice || firstVariant.price || firstVariant.mrp || 0;
+                            const discountPercent = firstVariant.discountPercent || 
+                                (regularPrice > finalPrice ? Math.round(((regularPrice - finalPrice) / regularPrice) * 100) : 0);
+                            
+                            // Stock from first variant
+                            const variantStock = firstVariant.stock || 0;
+                        %>
 
+                        <div class="wishlist-item bg-white border border-gray-200 rounded-xl p-4 flex flex-col md:flex-row gap-4 
+                            <%= unavailable ? 'opacity-50 pointer-events-none' : '' %>"
+                            data-product-id="<%= product._id %>">
 
-<div class="wishlist-item bg-white border border-gray-200 rounded-xl p-4 flex flex-col md:flex-row gap-4 
-    <%= unavailable ? 'opacity-50 pointer-events-none' : '' %>">
+                            <!-- IMAGE -->
+                            <div class="flex-shrink-0">
+                                <img 
+                                    src="<%= product.images?.[0]?.url || firstVariant.images?.[0]?.url || '/images/no-image.jpg' %>"
+                                    class="w-24 h-24 md:w-32 md:h-32 object-cover rounded-lg"
+                                    id="productImage-<%= product._id %>"
+                                />
+                            </div>
 
-    <!-- IMAGE -->
-    <div class="flex-shrink-0">
-        <img 
-            src="<%= product.images?.[0]?.url || variant?.images?.[0]?.url || '/images/no-image.jpg' %>"
-            class="w-24 h-24 md:w-32 md:h-32 object-cover rounded-lg"
-        />
-    </div>
+                            <!-- CONTENT -->
+                            <div class="flex-grow">
+                                
+                                <!-- NAME + CATEGORY -->
+                                <div class="flex flex-col md:flex-row md:justify-between">
 
-    <!-- CONTENT -->
-    <div class="flex-grow">
-        
-        <!-- NAME + CATEGORY -->
-        <div class="flex flex-col md:flex-row md:justify-between">
+                                    <div>
+                                        <h3 class="font-bold text-gray-900 text-lg"><%= product.name %></h3>
 
-            <div>
-                <h3 class="font-bold text-gray-900 text-lg"><%= product.name %></h3>
+                                        <!-- OFFER BADGE -->
+                                        <% if (product.appliedOffer) { %>
+                                            <div class="mt-2">
+                                                <span class="offer-badge text-white text-xs font-semibold px-3 py-1 rounded-full inline-flex items-center gap-1">
+                                                    <i class="fas fa-tag"></i>
+                                                    <% if (product.appliedOffer.offerType === 'category') { %>
+                                                        Category Offer: <%= product.appliedOffer.discountValue %>% OFF
+                                                    <% } else if (product.appliedOffer.offerType === 'product') { %>
+                                                        Product Offer: <%= product.appliedOffer.discountValue %>% OFF
+                                                    <% } else { %>
+                                                        Special Offer: <%= product.appliedOffer.discountValue %>% OFF
+                                                    <% } %>
+                                                </span>
+                                            </div>
+                                        <% } %>
 
-                <p class="text-gray-600 text-sm mt-1">
-                    <%= product.description || "No description available" %>
+                                        <p class="text-gray-600 text-sm mt-1">
+                                            <%= product.description || "No description available" %>
+                                        </p>
+
+                                        <p class="text-gray-500 text-sm mt-2">
+                                            Category: <%= product.category?.name || "Uncategorized" %>
+                                        </p>
+                                    </div>
+
+                                    <!-- PRICE SECTION -->
+                                    <div class="mt-4 md:mt-0 md:text-right">
+                                        <% if (unavailable) { %>
+                                            <p class="text-red-600 font-bold">Unavailable</p>
+                                        <% } else { %>
+                                            <!-- Final Price -->
+                                           <!-- <p class="text-2xl font-bold text-gray-900">
+    ₹<%= finalPrice.toFixed(2) %>
+</p>
+
+<% if (regularPrice > finalPrice) { %>
+    <p class="line-through text-gray-500">₹<%= regularPrice.toFixed(2) %></p>
+    <p class="text-green-600 font-semibold"><%= discountPercent %>% OFF</p>
+<% } %> -->
+
+                                            
+                                            <!-- Original Price with discount -->
+                                           <div class="mt-4 md:mt-0 md:text-right">
+
+    <% if (unavailable) { %>
+
+        <p class="text-red-600 font-bold">Unavailable</p>
+
+    <% } else { %>
+
+        <!-- FINAL PRICE (JS updates this) -->
+        <p id="finalPrice-<%= product._id %>" class="text-2xl font-bold text-gray-900">
+            ₹<%= finalPrice.toFixed(2) %>
+        </p>
+
+        <% if (regularPrice > finalPrice) { %>
+
+            <!-- DISCOUNT & OLD PRICE (JS updates this whole block) -->
+            <div class="mt-1" id="discountInfo-<%= product._id %>">
+                <p class="text-gray-500 line-through text-sm">
+                    ₹<%= regularPrice.toFixed(2) %>
                 </p>
 
-                <p class="text-gray-500 text-sm mt-2">
-                    Category: <%= product.category?.name || "Uncategorized" %>
+                <p class="text-green-600 font-semibold text-sm">
+                    <%= discountPercent %>% OFF
+                </p>
+
+                <p class="text-green-700 text-xs mt-1">
+                    Save ₹<%= (regularPrice - finalPrice).toFixed(2) %>
                 </p>
             </div>
 
-            <!-- PRICE -->
-            <div class="mt-4 md:mt-0 md:text-right">
-                <% if (unavailable) { %>
-                    <p class="text-red-600 font-bold">Unavailable</p>
-                <% } else { %>
-                    <p class="text-2xl font-bold text-gray-900">
-                        ₹<%= variant?.price || product.price || 0 %>
-                    </p>
-                <% } %>
-            </div>
-        </div>
+        <% } %>
 
-      <!-- VARIANT SELECTOR -->
-<% if (product.variants && product.variants.length > 1) { %>
-    <div class="mt-3">
-        <label class="text-sm text-gray-600">Choose Color:</label>
-        <select 
-            id="variantSelect-<%= product._id %>" 
-            class="border border-gray-300 rounded-lg px-2 py-1"
-        >
-            <% product.variants.forEach((v, idx) => { %>
-                <option value="<%= idx %>">
-                    <%= v.color %> - ₹<%= v.price %>
-                    (<%= v.stock > 0 ? v.stock + ' left' : 'Out of stock' %>)
-                </option>
-            <% }) %>
-        </select>
-    </div>
-<% } %>
-
-
-        <!-- STOCK + BUTTONS -->
-        <div class="flex flex-col md:flex-row md:items-center justify-between mt-4">
-
-            <!-- STOCK -->
-            <div class="flex items-center gap-2 text-sm">
-                <% if (unavailable) { %>
-                    <i class="fas fa-ban text-red-600"></i>
-                    <span class="text-red-600">Currently Unavailable</span>
-                <% } else if ((variant?.stock || 0) > 0) { %>
-                    <i class="fas fa-box text-green-600"></i>
-                    <span>In Stock</span>
-                <% } else { %>
-                    <i class="fas fa-box text-red-600"></i>
-                    <span>Out of Stock</span>
-                <% } %>
-            </div>
-
-            <!-- BUTTONS -->
-            <div class="flex gap-2 mt-3 md:mt-0">
-
-                <!-- Add to Cart -->
-
-                <button 
-    onclick="addToCartFromWishlist('<%= product._id %>')"
-    class="px-4 py-2 rounded-lg flex items-center gap-2 bg-gray-100 text-gray-700 hover:bg-gray-200"
->
-    <i class="fas fa-shopping-cart"></i>
-    Add to Cart
-</button>
-
-        <!-- <button 
-    onclick="<%= (!unavailable && variant?.stock > 0) 
-                ? `addToCart('${product._id}', ${variantIndex})` 
-                : '' %>"
-    class="px-4 py-2 rounded-lg flex items-center gap-2 
-        <%= (!unavailable && variant?.stock > 0) 
-            ? 'bg-gray-100 text-gray-700 hover:bg-gray-200' 
-            : 'bg-gray-300 text-gray-400 cursor-not-allowed' 
-        %>"
->
-    <i class="fas fa-shopping-cart"></i>
-    Add to Cart
-</button> -->
-
-
-
-
-                <!-- Remove -->
-                <button 
-                    onclick="removeFromWishlist('<%= product._id %>')"
-                    class="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 flex items-center gap-2"
-                >
-                    <i class="fas fa-trash"></i> Remove
-                </button>
-
-            </div>
-
-        </div>
-
-    </div>
+    <% } %>
 
 </div>
-   
+
+                                        <% } %>
+                                    </div>
+                                </div>
+
+                                <!-- VARIANT SELECTOR (ONLY IF MULTIPLE VARIANTS) -->
+                                <% if (product.variants && product.variants.length > 1) { %>
+                                    <div class="mt-3">
+                                        <label class="text-sm text-gray-600">Choose Color:</label>
+                                        <div class="flex flex-wrap gap-2 mt-2">
+                                            <% product.variants.forEach((variant, idx) => { 
+                                                const variantFinalPrice = variant.finalPrice || variant.price || variant.mrp || 0;
+                                                const variantRegularPrice = variant.regularPrice || variant.price || variant.mrp || 0;
+                                                const variantDiscount = variant.discountPercent || 
+                                                    (variantRegularPrice > variantFinalPrice ? Math.round(((variantRegularPrice - variantFinalPrice) / variantRegularPrice) * 100) : 0);
+                                            %>
+                                                <button 
+                                                    onclick="selectVariant('<%= product._id %>', <%= idx %>)"
+                                                    class="variant-btn px-3 py-2 border rounded-lg text-sm transition-colors <%= idx === 0 ? 'border-blue-500 bg-blue-50' : 'border-gray-300 hover:border-gray-400' %>"
+                                                    data-variant-index="<%= idx %>"
+                                                    data-product-id="<%= product._id %>"
+                                                    data-variant-price="<%= variantFinalPrice %>"
+                                                    data-variant-mrp="<%= variantRegularPrice %>"
+                                                    data-variant-discount="<%= variantDiscount %>"
+                                                    data-variant-image="<%= variant.images?.[0]?.url || product.images?.[0]?.url || '/images/no-image.jpg' %>"
+                                                    data-variant-stock="<%= variant.stock %>"
+                                                    data-variant-color="<%= variant.color %>"
+                                                >
+                                                    <div class="flex items-center gap-2">
+                                                        <% if (variant.color) { %>
+                                                            <div class="w-4 h-4 rounded-full border" 
+                                                                 style="background-color: <%= variant.color.toLowerCase() %>"></div>
+                                                        <% } %>
+                                                        <span><%= variant.color || 'Color ' + (idx + 1) %></span>
+                                                        <span class="text-gray-600">- ₹<%= variantFinalPrice.toFixed(2) %></span>
+                                                        <% if (variantDiscount > 0) { %>
+                                                            <span class="text-green-600 text-xs">(<%= variantDiscount %>% off)</span>
+                                                        <% } %>
+                                                    </div>
+                                                    <% if (variant.stock <= 0) { %>
+                                                        <div class="text-red-500 text-xs mt-1">Out of stock</div>
+                                                    <% } %>
+                                                </button>
+                                            <% }) %>
+                                        </div>
+                                    </div>
+                                <% } %>
+
+                                <!-- STOCK + BUTTONS -->
+                                <div class="flex flex-col md:flex-row md:items-center justify-between mt-4">
+
+                                    <!-- STOCK -->
+                                    <div class="flex items-center gap-2 text-sm" id="stockStatus-<%= product._id %>">
+                                        <% if (unavailable) { %>
+                                            <i class="fas fa-ban text-red-600"></i>
+                                            <span class="text-red-600">Currently Unavailable</span>
+                                        <% } else if (variantStock > 0) { %>
+                                            <i class="fas fa-box text-green-600"></i>
+                                            <span>In Stock (<%= variantStock %> left)</span>
+                                        <% } else { %>
+                                            <i class="fas fa-box text-red-600"></i>
+                                            <span>Out of Stock</span>
+                                        <% } %>
+                                    </div>
+
+                                    <!-- BUTTONS -->
+                                    <div class="flex gap-2 mt-3 md:mt-0">
+
+                                        <!-- Add to Cart -->
+                                        <button 
+                                            onclick="addToCartFromWishlist('<%= product._id %>')"
+                                            id="addToCartBtn-<%= product._id %>"
+                                            class="px-4 py-2 rounded-lg flex items-center gap-2 
+                                                <%= (!unavailable && variantStock > 0) 
+                                                    ? 'bg-blue-600 text-white hover:bg-blue-700' 
+                                                    : 'bg-gray-300 text-gray-400 cursor-not-allowed' 
+                                                %>"
+                                            <%= (!unavailable && variantStock > 0) ? '' : 'disabled' %>
+                                        >
+                                            <i class="fas fa-shopping-cart"></i>
+                                            Add to Cart
+                                        </button>
+
+                                        <!-- Remove -->
+                                        <button 
+                                            onclick="removeFromWishlist('<%= product._id %>')"
+                                            class="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 flex items-center gap-2"
+                                        >
+                                            <i class="fas fa-trash"></i> Remove
+                                        </button>
+
+                                    </div>
+
+                                </div>
+
+                            </div>
+
+                        </div>
+                   
                     <% }) %>
 
                 </div>
@@ -237,74 +322,40 @@
     </div>
 </div>
 
-  <%- include('../partials/footer') %>
+<%- include('../partials/footer') %>
 
 <!-- JS -->
 <script>
 function removeFromWishlist(productId) {
+    if (!confirm("Are you sure you want to remove this item from your wishlist?")) return;
+    
     fetch(`/user/wishlist/remove/${productId}`, { method: "POST" })
         .then(res => res.json())
-        .then(data => { if (data.success) location.reload(); });
+        .then(data => { 
+            if (data.success) {
+                // Remove from UI
+                const card = document.querySelector(`[data-product-id="${productId}"]`);
+                if (card) {
+                    card.style.opacity = "0";
+                    setTimeout(() => card.remove(), 300);
+                }
+            }
+        });
 }
 
-// function addToCart(productId) {
-//     fetch(`/cart/add/${productId}`, { method: "POST" })
-//         .then(res => res.json())
-//         .then(data => {
-//             if (data.success) showNotification("Item added to cart", "success");
-//         });
-// }
-function addToCart(productId, variantIndex = 0) {
-
-    fetch("/user/cart/add", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ productId, quantity: 1, variantIndex })
-    })
-    .then(res => res.json())
-    .then(async data => {
-
-        if (!data.success) {
-            showNotification(data.message || "Failed to add", "error");
-            return;
-        }
-
-        showNotification("Item added to cart", "success");
-
-        // 🟢 REMOVE ITEM FROM WISHLIST (DB)
-        await fetch(`/user/wishlist/remove/${productId}`, { method: "POST" });
-
-        // 🟢 REMOVE FROM UI IMMEDIATELY WITHOUT REFRESH
-        const card = document.querySelector(`[data-product-id="${productId}"]`);
-        if (card) {
-            card.style.opacity = "0";
-            setTimeout(() => card.remove(), 300);
-        }
-
-        // 🟢 Redirect to cart AFTER wishlist item is removed
-        setTimeout(() => {
-            window.location.href = "/user/cart";
-        }, 400);
-
-    })
-    .catch(err => {
-        console.error(err);
-        showNotification("Error adding item", "error");
-    });
-}
-
-
-function addToCartFromWishlist(productId) {
-
-    // Get selected variant index
-    const selectEl = document.getElementById(`variantSelect-${productId}`);
-    let variantIndex = 0;
-
-    if (selectEl) {
-        variantIndex = parseInt(selectEl.value);
+function addToCartFromWishlist(productId, variantIndex = 0) {
+    // Get selected variant index from data attribute if available
+    const selectedBtn = document.querySelector(`[data-product-id="${productId}"].border-blue-500`);
+    if (selectedBtn) {
+        variantIndex = parseInt(selectedBtn.dataset.variantIndex) || 0;
     }
 
-    // Add to cart
+    const button = document.getElementById(`addToCartBtn-${productId}`);
+    const originalText = button.innerHTML;
+    
+    button.disabled = true;
+    button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Adding...';
+    
     fetch("/user/cart/add", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -316,29 +367,131 @@ function addToCartFromWishlist(productId) {
     })
     .then(res => res.json())
     .then(async data => {
-
         if (!data.success) {
-            showNotification(data.message || "Failed to add", "error");
+            alert(data.message || "Failed to add to cart");
+            button.disabled = false;
+            button.innerHTML = originalText;
             return;
         }
 
-        showNotification("Item added to cart", "success");
-
-        // remove from wishlist
+        // Remove from wishlist
         await fetch(`/user/wishlist/remove/${productId}`, { method: "POST" });
 
-        setTimeout(() => window.location.href = "/user/cart", 500);
+        // Remove from UI
+        const card = document.querySelector(`[data-product-id="${productId}"]`);
+        if (card) {
+            card.style.opacity = "0";
+            setTimeout(() => card.remove(), 300);
+        }
+
+        // Redirect to cart after a delay
+        setTimeout(() => {
+            window.location.href = "/user/cart";
+        }, 500);
+    })
+    .catch(err => {
+        console.error("Error:", err);
+        alert("Error adding to cart");
+        button.disabled = false;
+        button.innerHTML = originalText;
     });
 }
 
-
-function showNotification(message, type) {
-    const n = document.createElement("div");
-    n.className = `notification p-4 rounded-lg shadow-lg text-white ${type === 'success' ? 'bg-green-600' : 'bg-red-600'}`;
-    n.innerHTML = `<div class="flex items-center gap-3"><i class="fas fa-${type === 'success' ? 'check' : 'exclamation'}"></i> ${message}</div>`;
+// Select variant function
+function selectVariant(productId, variantIndex) {
+    const button = document.querySelector(
+        `[data-product-id="${productId}"][data-variant-index="${variantIndex}"]`
+    );
     
-    document.body.appendChild(n);
-    setTimeout(() => { n.style.opacity = '0'; setTimeout(() => n.remove(), 300); }, 3000);
+    if (!button) return;
+    
+    // Get variant data
+    const variantPrice = parseFloat(button.dataset.variantPrice);
+    const variantMrp = parseFloat(button.dataset.variantMrp);
+    const variantDiscount = parseInt(button.dataset.variantDiscount);
+    const variantImage = button.dataset.variantImage;
+    const variantStock = parseInt(button.dataset.variantStock);
+    const variantColor = button.dataset.variantColor;
+    
+    // Update active state
+    document.querySelectorAll(`[data-product-id="${productId}"] .variant-btn`).forEach(btn => {
+        btn.classList.remove('border-blue-500', 'bg-blue-50');
+        btn.classList.add('border-gray-300');
+    });
+    
+    button.classList.add('border-blue-500', 'bg-blue-50');
+    button.classList.remove('border-gray-300');
+    
+    // Update product image
+    const productImage = document.getElementById(`productImage-${productId}`);
+    if (productImage && variantImage) {
+        productImage.src = variantImage;
+    }
+    
+    // Update price section
+    const finalPriceElement = document.getElementById(`finalPrice-${productId}`);
+    const discountInfoElement = document.getElementById(`discountInfo-${productId}`);
+    
+    if (finalPriceElement) {
+        finalPriceElement.textContent = `₹${variantPrice.toFixed(2)}`;
+    }
+    
+    if (variantMrp > variantPrice) {
+        const savings = (variantMrp - variantPrice).toFixed(2);
+        if (discountInfoElement) {
+            discountInfoElement.innerHTML = `
+                <p class="text-gray-500 line-through text-sm">
+                    ₹${variantMrp.toFixed(2)}
+                </p>
+                <p class="text-green-600 font-semibold text-sm">
+                    ${variantDiscount}% OFF
+                </p>
+                <p class="text-green-700 text-xs mt-1">
+                    Save ₹${savings}
+                </p>
+            `;
+        }
+    } else {
+        if (discountInfoElement) {
+            discountInfoElement.innerHTML = '';
+        }
+    }
+    
+    // Update stock status
+    const stockStatusElement = document.getElementById(`stockStatus-${productId}`);
+    if (stockStatusElement) {
+        let stockHtml = '';
+        if (variantStock <= 0) {
+            stockHtml = `
+                <i class="fas fa-box text-red-600"></i>
+                <span class="text-red-600">Out of Stock</span>
+            `;
+        } else {
+            stockHtml = `
+                <i class="fas fa-box text-green-600"></i>
+                <span>In Stock (${variantStock} left) - ${variantColor || ''}</span>
+            `;
+        }
+        stockStatusElement.innerHTML = stockHtml;
+    }
+    
+    // Update add to cart button
+    const addToCartBtn = document.getElementById(`addToCartBtn-${productId}`);
+    if (addToCartBtn) {
+        addToCartBtn.setAttribute('onclick', `addToCartFromWishlist('${productId}', ${variantIndex})`);
+        
+        if (variantStock <= 0) {
+            addToCartBtn.disabled = true;
+            addToCartBtn.classList.remove('bg-blue-600', 'hover:bg-blue-700');
+            addToCartBtn.classList.add('bg-gray-300', 'cursor-not-allowed');
+            addToCartBtn.innerHTML = '<i class="fas fa-shopping-cart"></i> Out of Stock';
+        } else {
+            addToCartBtn.disabled = false;
+            addToCartBtn.classList.remove('bg-gray-300', 'cursor-not-allowed');
+            addToCartBtn.classList.add('bg-blue-600', 'hover:bg-blue-700');
+            addToCartBtn.innerHTML = '<i class="fas fa-shopping-cart"></i> Add to Cart';
+        }
+    }
 }
 </script>
 

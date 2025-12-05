@@ -26,6 +26,8 @@ import adminOrderRoutes from "./routes/admin/adminOrderRoutes.js"
 import walletRoutes from "./routes/user/walletRoutes.js";
 import adminCouponRoutes from "./routes/admin/adminCouponRoutes.js"
 import couponRoutes from "./routes/user/couponRoutes.js";
+import offerRoutes from "./routes/admin/offerRoutes.js";  
+import paymentRoutes from "./routes/user/paymentRoutes.js";
 const app = express();
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -142,6 +144,10 @@ app.use('/admin/orders',adminOrderRoutes)
 app.use('/user',walletRoutes)
 app.use('/admin/coupon', adminCouponRoutes);
 app.use('/user', couponRoutes);
+app.use('/admin/offers', offerRoutes);
+app.use("/api/payment", paymentRoutes);
+app.use("/", paymentRoutes);
+
 
 // 404 handler
 
