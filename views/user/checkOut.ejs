@@ -261,6 +261,26 @@
     </div>
 </div>
 
+
+<!-- Wallet Payment -->
+<div class="payment-method p-4 border border-gray-200 rounded-xl cursor-pointer"
+     data-method="wallet">
+    <div class="flex items-center gap-4">
+        <div class="w-12 h-12 rounded-full bg-yellow-100 flex items-center justify-center text-yellow-600">
+            <i class="fas fa-wallet text-xl"></i>
+        </div>
+        <div class="flex-grow">
+            <h3 class="font-bold text-gray-900">Wallet</h3>
+            <p class="text-gray-600 text-sm">
+                Available Balance: ₹<span id="walletBalanceDisplay">0</span>
+            </p>
+        </div>
+        <div class="w-6 h-6 rounded-full border-2 border-gray-300 flex items-center justify-center">
+            <div class="w-3 h-3 rounded-full bg-blue-600 hidden"></div>
+        </div>
+    </div>
+</div>
+
                     </div>
                 </div>
 
@@ -626,6 +646,12 @@
                 const walletResponse = await axios.get('/api/wallet/balance');
                 if (walletResponse.data.success) {
                     checkoutState.walletBalance = walletResponse.data.balance || 0;
+
+                     // ⭐ ADD THIS PART — UPDATE WALLET UI BLOCK
+    const walletBalanceUI = document.getElementById("walletBalanceDisplay");
+    if (walletBalanceUI) {
+        walletBalanceUI.textContent = checkoutState.walletBalance.toFixed(2);
+    }
                 }
 
                 // ADD THIS: Load available coupons
@@ -1115,34 +1141,47 @@ function renderOrderItems() {
         }
 
         // Handle place order
-       
-async function handlePlaceOrder() {
+ async function handlePlaceOrder() {
+  try {
+      const orderData = {
+          addressId: checkoutState.selectedAddress,
+          paymentMethod: checkoutState.selectedPaymentMethod,
+          couponCode: checkoutState.appliedCoupon ? checkoutState.appliedCoupon.code : null
+      };
 
-    const orderData = {
-        addressId: checkoutState.selectedAddress,
-        paymentMethod: checkoutState.selectedPaymentMethod,
-        couponCode: checkoutState.appliedCoupon ? checkoutState.appliedCoupon.code : null
-    };
+      const response = await axios.post('/api/orders', orderData);
 
-    const response = await axios.post('/api/orders', orderData);
+      // DEBUG LOG
+      console.log("ORDER RESPONSE FROM BACKEND:", response.data);
 
-    if (!response.data.success) {
-        return showNotification(response.data.message, "error");
-    }
+      if (!response.data.success) {
+          return showNotification(response.data.message, "error");
+      }
 
-    // COD → redirect
-    if (checkoutState.selectedPaymentMethod === "cod") {
-        return window.location.href = `/order/confirmation/${response.data.orderId}`;
-    }
+      // COD
+      if (checkoutState.selectedPaymentMethod === "cod") {
+          return window.location.href = `/order/confirmation/${response.data.orderId}`;
+      }
 
-    // Razorpay → STEP 2 starts here
-    const rzpResponse = await axios.post("/api/payment/payment/create-order", {
-        orderId: response.data.orderId,
-        amount: response.data.totalAmount
-    });
+      // WALLET
+      if (checkoutState.selectedPaymentMethod === "wallet") {
+          return window.location.href = `/order/confirmation/${response.data.orderId}`;
+      }
 
-    return initiateRazorpayPayment(rzpResponse.data);
+      // ONLINE PAYMENT (razorpay)
+      const rzpResponse = await axios.post("/api/payment/payment/create-order", {
+          orderId: response.data.orderId,
+          amount: response.data.totalAmount
+      });
+
+      return initiateRazorpayPayment(rzpResponse.data);
+
+  } catch (err) {
+      console.error("FRONTEND ERROR:", err);
+      showNotification("Order failed (frontend JS error)", "error");
+  }
 }
+
 
         // Handle add or update address
         async function handleAddOrUpdateAddress(e) {
@@ -1491,128 +1530,8 @@ async function handlePlaceOrder() {
     </script>
 
     <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+
 <script>
-document.getElementById('rzp-button').addEventListener('click', async (e) => {
-  e.preventDefault();
-
-  // Prepare payload - get items, totals from page or fetch server session/cart
-  const payload = {
-    items: window.cartItems, // adapt accordingly
-    subtotal: window.subtotal,
-    shipping: window.shipping,
-    total: window.total,
-    userId: "<%= user && user._id ? user._id : '' %>"
-  };
-
-  // Create server order
-  const resp = await fetch('/api/payment/create-order', {
-    method: 'POST',
-    headers: {'Content-Type':'application/json'},
-    body: JSON.stringify(payload)
-  });
-
-  const data = await resp.json();
-  if(!data.success) { alert('Could not create order'); return; }
-
-  const options = {
-    key: data.key,
-    amount: data.razorpayOrder.amount,
-    currency: data.razorpayOrder.currency,
-    name: "Your Shop Name",
-    description: "Order Payment",
-    image: "/images/logo.png",
-    order_id: data.razorpayOrder.id,
-    handler: async function (response) {
-      // response contains razorpay_payment_id, razorpay_order_id, razorpay_signature
-      const verifyResp = await fetch('/api/payment/verify', {
-        method: 'POST',
-        headers: {'Content-Type':'application/json'},
-        body: JSON.stringify({
-          razorpayOrderId: response.razorpay_order_id,
-          razorpayPaymentId: response.razorpay_payment_id,
-          razorpaySignature: response.razorpay_signature,
-          orderId: data.orderId
-        })
-      });
-
-      const verifyResult = await verifyResp.json();
-      if (verifyResult.success) {
-        // Redirect to success page (server will render order details)
-        window.location = `/order/success/${data.orderId}`;
-      } else {
-        window.location = `/order/failure/${data.orderId}`;
-      }
-    },
-    prefill: {
-      name: "<%= user ? user.name : '' %>",
-      email: "<%= user ? user.email : '' %>",
-      contact: "<%= user ? user.phone : '' %>"
-    },
-    theme: { color: "#3399cc" }
-  };
-
-  const rzp = new Razorpay(options);
-  rzp.on('payment.failed', function (response){
-    // optionally, send failure details to server for logging
-    fetch('/api/payment/verify', {
-      method: 'POST',
-      headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({
-        failed: true,
-        details: response,
-        orderId: data.orderId
-      })
-    });
-    window.location = `/order/failure/${data.orderId}`;
-  });
-
-  rzp.open();
-});
-</script>
-<script>
-
-// async function initiateRazorpayPayment(orderResponse) {
-
-//     const { orderId, amount, currency, razorpayOrderId } = orderResponse;
-
-//     const options = {
-//         key: "<%= process.env.RZP_KEY_ID %>",
-//         amount: amount,              // paise from backend
-//         currency: currency,
-//         name: "BagHub",
-//         description: "Order Payment",
-//         order_id: razorpayOrderId,
-
-//         modal: {
-//             ondismiss: function () {
-//                 Swal.fire("Payment Cancelled", "You closed the payment window.", "warning");
-//             }
-//         },
-
-//         handler: async function (response) {
-//             try {
-//                 const verifyRes = await axios.post("/api/payment/verify", {
-//                     orderId: orderId,
-//                     razorpayPaymentId: response.razorpay_payment_id,
-//                     razorpayOrderId: response.razorpay_order_id,
-//                     razorpaySignature: response.razorpay_signature,
-//                 });
-
-//                 if (verifyRes.data.success) {
-//                     // 🔥 REDIRECT TO ORDER CONFIRMATION PAGE
-//                     window.location.href = `/order/confirmation/${orderId}`;
-//                 } else {
-//                     Swal.fire("Payment Failed", "Verification failed!", "error");
-//                 }
-//             } catch (err) {
-//                 Swal.fire("Payment Error", "Something went wrong!", "error");
-//             }
-//         }
-//     };
-
-//     const rzp = new Razorpay(options);
-//     rzp.open();
-// }
 
 async function initiateRazorpayPayment(orderResponse) {
     const { orderId, amount, currency, razorpayOrderId } = orderResponse;

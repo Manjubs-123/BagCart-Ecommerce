@@ -4,6 +4,7 @@ import Cart from "../../models/cartModel.js";
 import Product from "../../models/productModel.js";
 import Order from "../../models/orderModel.js";
 import Coupon from "../../models/couponModel.js";
+import Wallet from "../../models/walletModel.js"; 
 import { applyOfferToProduct } from "../../utils/applyOffer.js";
 
 const router = express.Router();
@@ -322,20 +323,37 @@ router.post("/addresses", async (req, res) => {
 /* -----------------------------------------------------------
    WALLET BALANCE
 ----------------------------------------------------------- */
+// router.get("/wallet/balance", async (req, res) => {
+//     try {
+//         const userId = req.session.user.id;
+//         const user = await User.findById(userId).lean();
+
+//         return res.json({
+//             success: true,
+//             balance: user.walletBalance || 0
+//         });
+
+//     } catch (err) {
+//         return res.json({ success: true, balance: 0 });
+//     }
+// });
+
 router.get("/wallet/balance", async (req, res) => {
     try {
         const userId = req.session.user.id;
-        const user = await User.findById(userId).lean();
+
+        const wallet = await Wallet.findOne({ user: userId }).lean();
 
         return res.json({
             success: true,
-            balance: user.walletBalance || 0
+            balance: wallet?.balance || 0
         });
 
     } catch (err) {
-        return res.json({ success: true, balance: 0 });
+        return res.json({ success: false, balance: 0 });
     }
 });
+
 
 /* -----------------------------------------------------------
    PLACE ORDER — FINAL STABLE VERSION
@@ -443,6 +461,26 @@ router.post("/orders", async (req, res) => {
     const totalAmount = +((subtotal + tax + shippingFee - (discountApplied || 0))).toFixed(2);
 
     /* ------------------------------
+   WALLET FULL PAYMENT CHECK
+------------------------------ */
+if (paymentMethod === "wallet") {
+
+    // Load wallet
+    const wallet = await Wallet.findOne({ user: userId });
+
+    // If no wallet or no balance
+    if (!wallet || wallet.balance < totalAmount) {
+        return res.json({
+            success: false,
+            message: "Insufficient wallet balance ❌"
+        });
+    }
+
+    // Wallet is enough → continue normally
+}
+
+
+    /* ------------------------------
        STOCK CHECK (before creating order)
        ------------------------------ */
     for (const cartItem of cart.items) {
@@ -479,6 +517,32 @@ router.post("/orders", async (req, res) => {
       coupon: couponInfo,
       paymentStatus: paymentMethod === "cod" ? "pending" : "paid"
     });
+
+/* ------------------------------
+   WALLET PAYMENT → DEBIT NOW
+------------------------------ */
+// if (paymentMethod === "wallet") {
+//     const wallet = await Wallet.findOne({ user: userId });
+
+//     wallet.balance -= totalAmount;
+
+//     wallet.transactions.push({
+//         type: "debit",
+//         amount: totalAmount,
+//         description: `Order Payment ${order.orderId}`,
+//         date: new Date()
+//     });
+
+//     await wallet.save();
+
+//     // Mark order paid
+//     order.paymentStatus = "paid";
+//     order.orderStatus = "confirmed";
+//     await order.save();
+// }
+
+
+
 
     // Ensure each order item has itemOrderId
     let needSave = false;
@@ -528,6 +592,50 @@ router.post("/orders", async (req, res) => {
     // clear cart only after everything succeeded
     cart.items = [];
     await cart.save();
+/* ------------------------------
+   SAFE WALLET DEDUCTION
+------------------------------ */
+if (paymentMethod === "wallet") {
+
+    const wallet = await Wallet.findOne({ user: userId });
+
+    // extra safety check
+    if (!wallet || wallet.balance < totalAmount) {
+        return res.json({
+            success: false,
+            message: "Wallet balance changed, try again ❌"
+        });
+    }
+
+    // Deduct amount
+    wallet.balance -= totalAmount;
+
+    wallet.transactions.push({
+        type: "debit",
+        amount: totalAmount,
+        description: `Order Payment ${order.orderId}`,
+        status: "success",
+        date: new Date()
+    });
+
+    await wallet.save();
+
+    // Mark order as paid
+    order.paymentStatus = "paid";
+    order.orderStatus = "confirmed";
+    await order.save();
+
+    // Return success response
+    return res.json({
+        success: true,
+        orderId: order._id,
+        customOrderId: order.orderId,
+        totalAmount: order.totalAmount,
+        message: "Order placed successfully using wallet 🎉"
+    });
+}
+
+
 
     return res.json({
       success: true,

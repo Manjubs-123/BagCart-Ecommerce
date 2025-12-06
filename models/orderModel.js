@@ -223,12 +223,12 @@ const orderSchema = new mongoose.Schema({
 
   orderStatus: {
     type: String,
-    enum: ["pending", "processing", "shipped", "out_for_delivery", "delivered", "cancelled"],
+    enum: ["pending", "confirmed", "processing", "shipped", "out_for_delivery", "delivered", "cancelled"],
     default: "pending"
   },
 
   // make paymentMethod an enum so only known values are used
-  paymentMethod: { type: String, enum: ["cod", "razorpay", "paypal"], default: "cod" },
+  paymentMethod: { type: String, enum: ["cod", "razorpay", "wallet"], default: "cod" },
 
   // better to enforce a set of statuses for payment
   paymentStatus: { type: String, enum: ["pending", "paid", "failed", "refunded"], default: "pending" },
