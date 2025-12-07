@@ -1,0 +1,1022 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sales Report - Admin Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <style>
+        :root {
+            --admin-primary: #1e3a8a;
+            --admin-secondary: #3b82f6;
+            --admin-accent: #10b981;
+            --admin-dark: #1f2937;
+            --admin-light: #f3f4f6;
+        }
+        
+        .admin-bg-primary {
+            background-color: var(--admin-primary);
+        }
+        
+        .admin-bg-secondary {
+            background-color: var(--admin-secondary);
+        }
+        
+        .admin-text-primary {
+            color: var(--admin-primary);
+        }
+        
+        .admin-text-secondary {
+            color: var(--admin-secondary);
+        }
+        
+        .admin-border-primary {
+            border-color: var(--admin-primary);
+        }
+        
+        .admin-border-secondary {
+            border-color: var(--admin-secondary);
+        }
+        
+        .stat-card {
+            transition: all 0.3s ease;
+            border-left: 4px solid transparent;
+        }
+        
+        .stat-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+        }
+        
+        .stat-card-total { border-left-color: #3b82f6; }
+        .stat-card-orders { border-left-color: #10b981; }
+        .stat-card-discount { border-left-color: #f59e0b; }
+        .stat-card-revenue { border-left-color: #8b5cf6; }
+        
+        .filter-btn.active {
+            background-color: var(--admin-primary);
+            color: white;
+        }
+        
+        .table-row-hover:hover {
+            background-color: #f8fafc;
+        }
+        
+        .download-btn {
+            transition: all 0.3s ease;
+        }
+        
+        .download-btn:hover {
+            transform: translateY(-1px);
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+    
+    <!-- Include Admin Header -->
+    <%- include('../partials/sidebar', { currentPage: 'offers' }) %>        
+    
+    <div class="flex">
+        <!-- Include Admin Sidebar -->
+ <!-- Sidebar -->
+    <!-- <%- include('../partials/sidebar', { currentPage: 'offers' }) %>         -->
+        <!-- Main Content -->
+        <div class="flex-1 ml-64 p-6">
+            <!-- Page Header -->
+            <div class="mb-8">
+                <div class="flex justify-between items-center">
+                    <div>
+                        <h1 class="text-3xl font-bold text-gray-900">Sales Report</h1>
+                        <p class="text-gray-600 mt-2">Analyze and download sales performance reports</p>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <span class="text-sm text-gray-500">Last updated: <span id="lastUpdated"><%= new Date().toLocaleDateString() %></span></span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Filter Section -->
+            <div class="bg-white rounded-xl shadow-sm p-6 mb-8 border border-gray-200">
+                <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+                    <div class="flex-1">
+                        <h2 class="text-lg font-semibold text-gray-900 mb-4">Filter Report</h2>
+                        
+                        <!-- Quick Filter Buttons -->
+                        <div class="flex flex-wrap gap-2 mb-4">
+                            <button onclick="setFilter('today')" class="filter-btn px-4 py-2 rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-700">
+                                <i class="fas fa-calendar-day mr-2"></i>Today
+                            </button>
+                            <button onclick="setFilter('yesterday')" class="filter-btn px-4 py-2 rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-700">
+                                <i class="fas fa-calendar mr-2"></i>Yesterday
+                            </button>
+                            <button onclick="setFilter('last7days')" class="filter-btn px-4 py-2 rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-700">
+                                <i class="fas fa-calendar-week mr-2"></i>Last 7 Days
+                            </button>
+                            <button onclick="setFilter('last30days')" class="filter-btn px-4 py-2 rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-700">
+                                <i class="fas fa-calendar-alt mr-2"></i>Last 30 Days
+                            </button>
+                            <button onclick="setFilter('thisMonth')" class="filter-btn px-4 py-2 rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-700">
+                                <i class="fas fa-calendar mr-2"></i>This Month
+                            </button>
+                            <button onclick="setFilter('lastMonth')" class="filter-btn px-4 py-2 rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-700">
+                                <i class="fas fa-calendar mr-2"></i>Last Month
+                            </button>
+                            <button onclick="setFilter('thisYear')" class="filter-btn px-4 py-2 rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-700">
+                                <i class="fas fa-calendar mr-2"></i>This Year
+                            </button>
+                        </div>
+                        
+                        <!-- Custom Date Range -->
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">From Date</label>
+                                <input type="text" id="fromDate" 
+                                       class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                       placeholder="Select start date">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">To Date</label>
+                                <input type="text" id="toDate" 
+                                       class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                       placeholder="Select end date">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Action Buttons -->
+                    <div class="flex flex-col gap-3">
+                        <button onclick="applyFilters()" 
+                                class="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg flex items-center justify-center gap-2 transition-colors">
+                            <i class="fas fa-filter"></i>
+                            Apply Filters
+                        </button>
+                        <button onclick="resetFilters()" 
+                                class="px-6 py-3 bg-gray-200 hover:bg-gray-300 text-gray-700 font-semibold rounded-lg flex items-center justify-center gap-2 transition-colors">
+                            <i class="fas fa-redo"></i>
+                            Reset Filters
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Statistics Cards -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                <!-- Total Orders -->
+                <div class="stat-card stat-card-orders bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm text-gray-500">Total Orders</p>
+                            <h3 class="text-2xl font-bold text-gray-900 mt-1" id="totalOrders">0</h3>
+                        </div>
+                        <div class="p-3 bg-green-100 rounded-lg">
+                            <i class="fas fa-shopping-cart text-green-600 text-xl"></i>
+                        </div>
+                    </div>
+                    <div class="mt-4">
+                        <div class="flex items-center text-sm">
+                            <span id="ordersChange" class="font-medium text-green-600">0%</span>
+                            <span class="text-gray-500 ml-2">from previous period</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Total Revenue -->
+                <div class="stat-card stat-card-revenue bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm text-gray-500">Total Revenue</p>
+                            <h3 class="text-2xl font-bold text-gray-900 mt-1" id="totalRevenue">₹0</h3>
+                        </div>
+                        <div class="p-3 bg-purple-100 rounded-lg">
+                            <i class="fas fa-rupee-sign text-purple-600 text-xl"></i>
+                        </div>
+                    </div>
+                    <div class="mt-4">
+                        <div class="flex items-center text-sm">
+                            <span id="revenueChange" class="font-medium text-green-600">0%</span>
+                            <span class="text-gray-500 ml-2">from previous period</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Total Discount -->
+                <div class="stat-card stat-card-discount bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm text-gray-500">Total Discount</p>
+                            <h3 class="text-2xl font-bold text-gray-900 mt-1" id="totalDiscount">₹0</h3>
+                        </div>
+                        <div class="p-3 bg-yellow-100 rounded-lg">
+                            <i class="fas fa-tag text-yellow-600 text-xl"></i>
+                        </div>
+                    </div>
+                    <div class="mt-4">
+                        <div class="flex items-center text-sm">
+                            <span id="discountChange" class="font-medium text-green-600">0%</span>
+                            <span class="text-gray-500 ml-2">from previous period</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Average Order Value -->
+                <div class="stat-card stat-card-total bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm text-gray-500">Avg Order Value</p>
+                            <h3 class="text-2xl font-bold text-gray-900 mt-1" id="avgOrderValue">₹0</h3>
+                        </div>
+                        <div class="p-3 bg-blue-100 rounded-lg">
+                            <i class="fas fa-chart-line text-blue-600 text-xl"></i>
+                        </div>
+                    </div>
+                    <div class="mt-4">
+                        <div class="flex items-center text-sm">
+                            <span id="avgOrderChange" class="font-medium text-green-600">0%</span>
+                            <span class="text-gray-500 ml-2">from previous period</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Charts Section -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+                <!-- Revenue Chart -->
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+                    <div class="flex justify-between items-center mb-6">
+                        <h2 class="text-lg font-semibold text-gray-900">Revenue Trend</h2>
+                        <div class="flex space-x-2">
+                            <button onclick="setChartPeriod('day')" class="chart-period-btn text-xs px-3 py-1 rounded bg-blue-100 text-blue-600">Daily</button>
+                            <button onclick="setChartPeriod('week')" class="chart-period-btn text-xs px-3 py-1 rounded bg-gray-100 text-gray-700">Weekly</button>
+                            <button onclick="setChartPeriod('month')" class="chart-period-btn text-xs px-3 py-1 rounded bg-gray-100 text-gray-700">Monthly</button>
+                        </div>
+                    </div>
+                    <div class="h-72">
+                        <canvas id="revenueChart"></canvas>
+                    </div>
+                </div>
+                
+                <!-- Order Categories -->
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+                    <div class="flex justify-between items-center mb-6">
+                        <h2 class="text-lg font-semibold text-gray-900">Order Categories</h2>
+                    </div>
+                    <div class="h-72">
+                        <canvas id="categoryChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Report Table -->
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                <div class="px-6 py-4 border-b border-gray-200 flex flex-col sm:flex-row sm:items-center sm:justify-between">
+                    <h2 class="text-lg font-semibold text-gray-900">Sales Details</h2>
+                    <div class="flex space-x-3 mt-3 sm:mt-0">
+                        <button onclick="downloadReport('pdf')" 
+                                class="download-btn px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-medium rounded-lg flex items-center gap-2">
+                            <i class="fas fa-file-pdf"></i>
+                            PDF
+                        </button>
+                        <button onclick="downloadReport('excel')" 
+                                class="download-btn px-4 py-2 bg-green-600 hover:bg-green-700 text-white font-medium rounded-lg flex items-center gap-2">
+                            <i class="fas fa-file-excel"></i>
+                            Excel
+                        </button>
+                        <button onclick="downloadReport('csv')" 
+                                class="download-btn px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg flex items-center gap-2">
+                            <i class="fas fa-file-csv"></i>
+                            CSV
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="overflow-x-auto">
+                    <table class="w-full">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Order ID</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Item Order ID</th> <!-- Add this -->
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Customer</th>
+                                <th class="px6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Items</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Subtotal</th>
+<th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Coupon Disc</th> <!-- Add this -->
+<th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Offer Disc</th> <!-- Add this -->                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Payment</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="salesTableBody" class="bg-white divide-y divide-gray-200">
+                            <!-- Data will be loaded here -->
+                        </tbody>
+                    </table>
+                </div>
+                
+                <!-- Loading State -->
+                <div id="loadingState" class="p-8 text-center">
+                    <i class="fas fa-spinner fa-spin text-blue-600 text-2xl mb-2"></i>
+                    <p class="text-gray-600">Loading sales data...</p>
+                </div>
+                
+                <!-- Empty State -->
+                <div id="emptyState" class="hidden p-8 text-center">
+                    <i class="fas fa-chart-bar text-gray-400 text-4xl mb-4"></i>
+                    <h3 class="text-lg font-medium text-gray-900 mb-2">No sales data found</h3>
+                    <p class="text-gray-600">Try adjusting your filters or select a different date range.</p>
+                </div>
+                
+                <!-- Pagination -->
+                <div class="px-6 py-4 border-t border-gray-200 flex items-center justify-between">
+                    <div class="text-sm text-gray-700">
+                        Showing <span id="startRow">0</span> to <span id="endRow">0</span> of <span id="totalRows">0</span> results
+                    </div>
+                    <div class="flex space-x-2">
+                        <button onclick="prevPage()" id="prevBtn" class="px-3 py-1 rounded border border-gray-300 text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed">
+                            <i class="fas fa-chevron-left"></i>
+                        </button>
+                        <button onclick="nextPage()" id="nextBtn" class="px-3 py-1 rounded border border-gray-300 text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed">
+                            <i class="fas fa-chevron-right"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Summary Section -->
+            <div class="mt-8 grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <!-- Top Products -->
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+                    <h2 class="text-lg font-semibold text-gray-900 mb-4">Top Selling Products</h2>
+                    <div id="topProducts" class="space-y-4">
+                        <!-- Will be populated by JavaScript -->
+                    </div>
+                </div>
+                
+                <!-- Payment Methods -->
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+                    <h2 class="text-lg font-semibold text-gray-900 mb-4">Payment Methods</h2>
+                    <div id="paymentMethods" class="space-y-3">
+                        <!-- Will be populated by JavaScript -->
+                    </div>
+                </div>
+                
+                <!-- Coupon Performance -->
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+                    <h2 class="text-lg font-semibold text-gray-900 mb-4">Coupon Performance</h2>
+                    <div id="couponPerformance" class="space-y-3">
+                        <!-- Will be populated by JavaScript -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+
+    <script>
+    // State management
+    const reportState = {
+        currentFilter: 'last30days',
+        fromDate: null,
+        toDate: null,
+        currentPage: 1,
+        pageSize: 10,
+        totalItems: 0
+    };
+
+    // Initialize page
+    document.addEventListener('DOMContentLoaded', function() {
+        initDatePickers();
+        setFilter('last30days');
+        loadReportData();
+    });
+
+    // Initialize date pickers
+    function initDatePickers() {
+        flatpickr("#fromDate", {
+            dateFormat: "Y-m-d",
+            maxDate: "today",
+            onChange: function(selectedDates, dateStr) {
+                reportState.fromDate = dateStr;
+            }
+        });
+        
+        flatpickr("#toDate", {
+            dateFormat: "Y-m-d",
+            maxDate: "today",
+            onChange: function(selectedDates, dateStr) {
+                reportState.toDate = dateStr;
+            }
+        });
+    }
+
+    // Set filter
+    function setFilter(filterType) {
+        reportState.currentFilter = filterType;
+        
+        // Update button styles
+        document.querySelectorAll('.filter-btn').forEach(btn => {
+            btn.classList.remove('active');
+        });
+        
+        // Highlight current button
+        const activeBtn = Array.from(document.querySelectorAll('.filter-btn')).find(btn => 
+            btn.textContent.toLowerCase().includes(filterType.replace(/\d/g, ''))
+        );
+        if (activeBtn) activeBtn.classList.add('active');
+        
+        // Calculate dates based on filter
+        const today = new Date();
+        let fromDate = new Date();
+        let toDate = new Date();
+        
+        switch(filterType) {
+            case 'today':
+                // fromDate and toDate already set to today
+                break;
+            case 'yesterday':
+                fromDate.setDate(today.getDate() - 1);
+                toDate = new Date(fromDate);
+                break;
+            case 'last7days':
+                fromDate.setDate(today.getDate() - 7);
+                break;
+            case 'last30days':
+                fromDate.setDate(today.getDate() - 30);
+                break;
+            case 'thisMonth':
+                fromDate = new Date(today.getFullYear(), today.getMonth(), 1);
+                toDate = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+                break;
+            case 'lastMonth':
+                fromDate = new Date(today.getFullYear(), today.getMonth() - 1, 1);
+                toDate = new Date(today.getFullYear(), today.getMonth(), 0);
+                break;
+            case 'thisYear':
+                fromDate = new Date(today.getFullYear(), 0, 1);
+                toDate = new Date(today.getFullYear(), 11, 31);
+                break;
+        }
+        
+        // Format dates as YYYY-MM-DD
+        const formatDate = (date) => {
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
+        };
+        
+        document.getElementById('fromDate').value = formatDate(fromDate);
+        document.getElementById('toDate').value = formatDate(toDate);
+        
+        reportState.fromDate = formatDate(fromDate);
+        reportState.toDate = formatDate(toDate);
+        reportState.currentPage = 1;
+        
+        loadReportData();
+    }
+
+    // Apply filters
+    function applyFilters() {
+        reportState.fromDate = document.getElementById('fromDate').value;
+        reportState.toDate = document.getElementById('toDate').value;
+        reportState.currentPage = 1;
+        
+        if (!reportState.fromDate || !reportState.toDate) {
+            showNotification('Please select both start and end dates', 'error');
+            return;
+        }
+        
+        loadReportData();
+    }
+
+    // Reset filters
+    function resetFilters() {
+        setFilter('last30days');
+    }
+
+    // Load report data
+    async function loadReportData() {
+        showLoading(true);
+        
+        try {
+            const response = await axios.post('/admin/sales', {
+                fromDate: reportState.fromDate,
+                toDate: reportState.toDate,
+                page: reportState.currentPage,
+                limit: reportState.pageSize
+            });
+            
+            if (response.data.success) {
+                updateUI(response.data);
+            } else {
+                showNotification('Failed to load report data', 'error');
+            }
+        } catch (error) {
+            console.error('Error loading report:', error);
+            showNotification('Error loading report data', 'error');
+        } finally {
+            showLoading(false);
+        }
+    }
+
+    // Update UI with data
+    function updateUI(data) {
+        try {
+            // Update statistics
+            document.getElementById('totalOrders').textContent = data.summary.totalOrders.toLocaleString();
+            document.getElementById('totalRevenue').textContent = '₹' + data.summary.totalRevenue.toLocaleString('en-IN');
+            document.getElementById('totalDiscount').textContent = '₹' + data.summary.totalDiscount.toLocaleString('en-IN');
+            
+            // Calculate average order value
+            const avgOrderValue = data.summary.totalOrders > 0 
+                ? data.summary.totalRevenue / data.summary.totalOrders 
+                : 0;
+            document.getElementById('avgOrderValue').textContent = '₹' + avgOrderValue.toFixed(2);
+            
+            // Update sales table
+            updateSalesTable(data.sales || []);
+            
+            // Update pagination
+            updatePagination(data.pagination || {});
+            
+            // Update charts if data exists
+            if (data.charts) {
+                updateCharts(data.charts);
+            }
+            
+            // Update top products
+            updateTopProducts(data.topProducts || []);
+            
+            // Update payment methods
+            updatePaymentMethods(data.paymentMethods || []);
+            
+            // Update coupon performance
+            updateCouponPerformance(data.couponPerformance || []);
+            
+            // Update last updated timestamp
+            document.getElementById('lastUpdated').textContent = new Date().toLocaleString();
+            
+        } catch (error) {
+            console.error('Error updating UI:', error);
+        }
+    }
+
+    // Update sales table
+    function updateSalesTable(sales) {
+        const tbody = document.getElementById('salesTableBody');
+        tbody.innerHTML = '';
+        
+        if (sales.length === 0) {
+            document.getElementById('emptyState').classList.remove('hidden');
+            document.getElementById('emptyState').style.display = 'block';
+            return;
+        }
+        
+        document.getElementById('emptyState').classList.add('hidden');
+        document.getElementById('emptyState').style.display = 'none';
+        
+        sales.forEach(sale => {
+            const row = document.createElement('tr');
+            row.className = 'table-row-hover';
+            
+            // Format date
+            const date = new Date(sale.date);
+            const formattedDate = date.toLocaleDateString('en-IN', {
+                day: '2-digit',
+                month: 'short',
+                year: 'numeric'
+            });
+            
+            // Get customer info
+            const customerName = sale.customer?.name || 'Unknown';
+            const customerEmail = sale.customer?.email || '';
+            
+            row.innerHTML = `
+    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+        ${formattedDate}
+    </td>
+
+    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-blue-600">
+        ${sale.orderId || 'N/A'}
+    </td>
+
+    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+        ${sale.itemOrderId || 'N/A'}
+    </td>
+
+    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+        <div class="flex items-center">
+            <div class="flex-shrink-0 h-8 w-8 rounded-full bg-gray-300 flex items-center justify-center">
+                <span class="text-xs font-medium">${customerName.charAt(0)}</span>
+            </div>
+            <div class="ml-3">
+                <div class="font-medium text-gray-900">${customerName}</div>
+                <div class="text-gray-500 text-xs">${customerEmail}</div>
+            </div>
+        </div>
+    </td>
+
+    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+        ${sale.items || 0}
+    </td>
+
+    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+        ₹${(sale.subtotal || 0).toLocaleString('en-IN')}
+    </td>
+
+    <!-- Coupon Discount Column -->
+    <td class="px-6 py-4 whitespace-nowrap text-sm text-red-600">
+        -₹${(sale.couponDiscount || 0).toLocaleString('en-IN')}
+    </td>
+
+    <!-- Offer Discount Column -->
+    <td class="px-6 py-4 whitespace-nowrap text-sm text-red-600">
+        -₹${(sale.offerDiscount || 0).toLocaleString('en-IN')}
+    </td>
+
+    <td class="px-6 py-4 whitespace-nowrap text-sm font-semibold text-gray-900">
+        ₹${(sale.total || 0).toLocaleString('en-IN')}
+    </td>
+
+    <td class="px-6 py-4 whitespace-nowrap text-sm">
+        <span class="px-2 py-1 text-xs rounded-full ${getPaymentMethodClass(sale.paymentMethod)}">
+            ${sale.paymentMethod || 'N/A'}
+        </span>
+    </td>
+
+    <td class="px-6 py-4 whitespace-nowrap text-sm">
+        <span class="px-2 py-1 text-xs rounded-full ${getStatusClass(sale.status)}">
+            ${sale.status || 'N/A'}
+        </span>
+    </td>
+`;
+
+            tbody.appendChild(row);
+        });
+    }
+
+    // Helper function for payment method styling
+    function getPaymentMethodClass(method) {
+        if (!method) return 'bg-gray-100 text-gray-800';
+        
+        switch(method.toLowerCase()) {
+            case 'razorpay': return 'bg-blue-100 text-blue-800';
+            case 'cod': return 'bg-green-100 text-green-800';
+            case 'wallet': return 'bg-yellow-100 text-yellow-800';
+            default: return 'bg-gray-100 text-gray-800';
+        }
+    }
+
+    // Helper function for status styling
+    function getStatusClass(status) {
+        if (!status) return 'bg-gray-100 text-gray-800';
+        
+        switch(status.toLowerCase()) {
+            case 'completed':
+            case 'delivered': return 'bg-green-100 text-green-800';
+            case 'pending': return 'bg-yellow-100 text-yellow-800';
+            case 'cancelled': return 'bg-red-100 text-red-800';
+            case 'processing': return 'bg-blue-100 text-blue-800';
+            default: return 'bg-gray-100 text-gray-800';
+        }
+    }
+
+    // Update pagination
+    function updatePagination(pagination) {
+        reportState.totalItems = pagination.total || 0;
+        
+        const start = pagination.start || 0;
+        const end = pagination.end || 0;
+        const total = pagination.total || 0;
+        
+        document.getElementById('startRow').textContent = start;
+        document.getElementById('endRow').textContent = end;
+        document.getElementById('totalRows').textContent = total;
+        
+        const prevBtn = document.getElementById('prevBtn');
+        const nextBtn = document.getElementById('nextBtn');
+        
+        if (prevBtn) {
+            prevBtn.disabled = pagination.page === 1;
+        }
+        
+        if (nextBtn) {
+            nextBtn.disabled = pagination.page === pagination.totalPages;
+        }
+    }
+
+    // Next page
+    function nextPage() {
+        const totalPages = Math.ceil(reportState.totalItems / reportState.pageSize);
+        if (reportState.currentPage < totalPages) {
+            reportState.currentPage++;
+            loadReportData();
+        }
+    }
+
+    // Previous page
+    function prevPage() {
+        if (reportState.currentPage > 1) {
+            reportState.currentPage--;
+            loadReportData();
+        }
+    }
+
+    // Update charts
+    function updateCharts(chartData) {
+        try {
+            // Revenue chart
+            const revenueCtx = document.getElementById('revenueChart').getContext('2d');
+            
+            // Destroy existing chart if it exists
+            if (window.revenueChart instanceof Chart) {
+                window.revenueChart.destroy();
+            }
+            
+            // Create new chart only if we have data
+            if (chartData.revenue && chartData.revenue.labels && chartData.revenue.labels.length > 0) {
+                window.revenueChart = new Chart(revenueCtx, {
+                    type: 'line',
+                    data: {
+                        labels: chartData.revenue.labels,
+                        datasets: [{
+                            label: 'Revenue',
+                            data: chartData.revenue.data,
+                            borderColor: '#3b82f6',
+                            backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                            borderWidth: 2,
+                            fill: true,
+                            tension: 0.4
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                display: false
+                            }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                ticks: {
+                                    callback: function(value) {
+                                        return '₹' + value.toLocaleString('en-IN');
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+            
+            // Category chart
+            const categoryCtx = document.getElementById('categoryChart').getContext('2d');
+            
+            // Destroy existing chart if it exists
+            if (window.categoryChart instanceof Chart) {
+                window.categoryChart.destroy();
+            }
+            
+            // Create new chart only if we have data
+            if (chartData.categories && chartData.categories.labels && chartData.categories.labels.length > 0) {
+                window.categoryChart = new Chart(categoryCtx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: chartData.categories.labels,
+                        datasets: [{
+                            data: chartData.categories.data,
+                            backgroundColor: [
+                                '#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ef4444'
+                            ],
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                position: 'bottom'
+                            }
+                        }
+                    }
+                });
+            }
+        } catch (error) {
+            console.error('Error updating charts:', error);
+        }
+    }
+
+    // Set chart period
+    function setChartPeriod(period) {
+        document.querySelectorAll('.chart-period-btn').forEach(btn => {
+            btn.classList.remove('bg-blue-100', 'text-blue-600');
+            btn.classList.add('bg-gray-100', 'text-gray-700');
+        });
+        
+        event.target.classList.remove('bg-gray-100', 'text-gray-700');
+        event.target.classList.add('bg-blue-100', 'text-blue-600');
+        
+        // Here you would reload chart data with the new period
+        console.log('Chart period changed to:', period);
+    }
+
+    // Update top products
+    function updateTopProducts(products) {
+        const container = document.getElementById('topProducts');
+        container.innerHTML = '';
+        
+        if (!products || products.length === 0) {
+            container.innerHTML = '<p class="text-gray-500 text-sm">No products found</p>';
+            return;
+        }
+        
+        products.forEach((product, index) => {
+            const productDiv = document.createElement('div');
+            productDiv.className = 'flex items-center justify-between';
+            
+            productDiv.innerHTML = `
+                <div class="flex items-center">
+                    <span class="text-gray-500 font-medium mr-3">${index + 1}</span>
+                    <div class="flex-shrink-0 h-10 w-10 bg-gray-200 rounded-lg flex items-center justify-center">
+                        <i class="fas fa-box text-gray-500"></i>
+                    </div>
+                    <div class="ml-3">
+                        <div class="font-medium text-gray-900">${product.name || 'Unknown Product'}</div>
+                        <div class="text-gray-500 text-xs">${product.category || 'Uncategorized'}</div>
+                    </div>
+                </div>
+                <div class="text-right">
+                    <div class="font-semibold text-gray-900">₹${(product.revenue || 0).toLocaleString('en-IN')}</div>
+                    <div class="text-gray-500 text-xs">${product.quantity || 0} sold</div>
+                </div>
+            `;
+            
+            container.appendChild(productDiv);
+        });
+    }
+
+    // Update payment methods
+    function updatePaymentMethods(methods) {
+        const container = document.getElementById('paymentMethods');
+        container.innerHTML = '';
+        
+        if (!methods || methods.length === 0) {
+            container.innerHTML = '<p class="text-gray-500 text-sm">No payment data found</p>';
+            return;
+        }
+        
+        methods.forEach(method => {
+            const methodDiv = document.createElement('div');
+            methodDiv.className = 'flex items-center justify-between';
+            
+            methodDiv.innerHTML = `
+                <div class="flex items-center">
+                    <div class="w-8 h-8 rounded-full ${getPaymentMethodClass(method.name)} flex items-center justify-center mr-3">
+                        <i class="fas ${getPaymentIcon(method.name)} text-sm"></i>
+                    </div>
+                    <span class="font-medium text-gray-900">${method.name || 'Unknown'}</span>
+                </div>
+                <div class="text-right">
+                    <div class="font-semibold text-gray-900">₹${(method.amount || 0).toLocaleString('en-IN')}</div>
+                    <div class="text-gray-500 text-xs">${method.count || 0} orders</div>
+                </div>
+            `;
+            
+            container.appendChild(methodDiv);
+        });
+    }
+
+    // Get payment icon
+    function getPaymentIcon(method) {
+        if (!method) return 'fa-money-check-alt';
+        
+        switch(method.toLowerCase()) {
+            case 'razorpay': return 'fa-credit-card';
+            case 'cod': return 'fa-money-bill-wave';
+            case 'wallet': return 'fa-wallet';
+            default: return 'fa-money-check-alt';
+        }
+    }
+
+    // Update coupon performance
+    function updateCouponPerformance(coupons) {
+        const container = document.getElementById('couponPerformance');
+        container.innerHTML = '';
+        
+        if (!coupons || coupons.length === 0) {
+            container.innerHTML = '<p class="text-gray-500 text-sm">No coupon data found</p>';
+            return;
+        }
+        
+        coupons.forEach(coupon => {
+            const couponDiv = document.createElement('div');
+            couponDiv.className = 'flex items-center justify-between';
+            
+            couponDiv.innerHTML = `
+                <div>
+                    <div class="font-medium text-gray-900">${coupon.code || 'Unknown'}</div>
+                    <div class="text-gray-500 text-xs">${coupon.discount || 0}% off</div>
+                </div>
+                <div class="text-right">
+                    <div class="font-semibold text-gray-900">₹${(coupon.savings || 0).toLocaleString('en-IN')}</div>
+                    <div class="text-gray-500 text-xs">${coupon.uses || 0} uses</div>
+                </div>
+            `;
+            
+            container.appendChild(couponDiv);
+        });
+    }
+
+    // Download report
+    async function downloadReport(format) {
+        try {
+            if (!reportState.fromDate || !reportState.toDate) {
+                showNotification('Please apply filters first', 'error');
+                return;
+            }
+            
+            const response = await axios.post('/admin/sales/download', {
+                fromDate: reportState.fromDate,
+                toDate: reportState.toDate,
+                format: format
+            }, {
+                responseType: 'blob'
+            });
+            
+            // Create download link
+            const url = window.URL.createObjectURL(new Blob([response.data]));
+            const link = document.createElement('a');
+            link.href = url;
+            
+            // Set filename based on format
+            const filename = `sales-report-${reportState.fromDate}-to-${reportState.toDate}.${format}`;
+            link.setAttribute('download', filename);
+            
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+            
+            // Clean up URL object
+            window.URL.revokeObjectURL(url);
+            
+            showNotification(`Report downloaded as ${format.toUpperCase()}`, 'success');
+        } catch (error) {
+            console.error('Download error:', error);
+            showNotification('Failed to download report', 'error');
+        }
+    }
+
+    // Show loading state
+    function showLoading(show) {
+        const loadingEl = document.getElementById('loadingState');
+        
+        if (show) {
+            loadingEl.classList.remove('hidden');
+            loadingEl.style.display = 'block';
+        } else {
+            loadingEl.classList.add('hidden');
+            loadingEl.style.display = 'none';
+        }
+    }
+
+    // Show notification
+    function showNotification(message, type) {
+        // Remove any existing notifications
+        const existingNotifications = document.querySelectorAll('.notification-alert');
+        existingNotifications.forEach(notification => notification.remove());
+        
+        // Create notification element
+        const notification = document.createElement('div');
+        notification.className = `notification-alert fixed top-4 right-4 z-50 px-6 py-3 rounded-lg shadow-lg text-white flex items-center gap-3 transition-all duration-300 ${
+            type === 'success' ? 'bg-green-500' : 'bg-red-500'
+        }`;
+        
+        notification.innerHTML = `
+            <i class="fas ${type === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle'}"></i>
+            <span>${message}</span>
+        `;
+        
+        document.body.appendChild(notification);
+        
+        // Remove after 3 seconds
+        setTimeout(() => {
+            notification.style.opacity = '0';
+            notification.style.transform = 'translateX(100%)';
+            setTimeout(() => notification.remove(), 300);
+        }, 3000);
+    }
+</script>
+
+
+</body>
+</html>

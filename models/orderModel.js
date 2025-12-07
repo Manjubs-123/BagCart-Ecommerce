@@ -255,9 +255,13 @@ const orderSchema = new mongoose.Schema({
     code: String,
     discountValue: Number,  // percentage like 10, 20, etc
     discountAmount: Number, // actual discount applied in rupees
+      
+offerDiscount: { type: Number, default: 0 },
     maxDiscountAmount: Number,
     subtotalBeforeCoupon: Number 
   },
+
+
 
   transactionId: String,
 },

@@ -28,6 +28,7 @@ import adminCouponRoutes from "./routes/admin/adminCouponRoutes.js"
 import couponRoutes from "./routes/user/couponRoutes.js";
 import offerRoutes from "./routes/admin/offerRoutes.js";  
 import paymentRoutes from "./routes/user/paymentRoutes.js";
+import adminSalesReport from "./routes/admin/adminSalesReport.js";
 const app = express();
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -147,6 +148,7 @@ app.use('/user', couponRoutes);
 app.use('/admin/offers', offerRoutes);
 app.use("/api/payment", paymentRoutes);
 app.use("/", paymentRoutes);
+app.use('/admin', adminSalesReport);
 
 
 // 404 handler
