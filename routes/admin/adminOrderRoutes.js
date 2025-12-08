@@ -21,8 +21,6 @@ router.get("/:id", isAdminAuthenticated, adminGetOrder);
        // detail view
 router.patch("/:orderId/item/:itemId/status", isAdminAuthenticated, adminUpdateOrderStatus);
 
-// router.post("/returns/:orderId/item/:itemId/approve",isAdminAuthenticated, approveReturn);
-// router.post("/returns/:orderId/item/:itemId/reject", isAdminAuthenticated,rejectReturn);
 router.post("/returns/:orderId/item/:itemId/approve", isAdminAuthenticated, approveReturn);
 router.post("/returns/:orderId/item/:itemId/reject", isAdminAuthenticated, rejectReturn);
 

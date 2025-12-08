@@ -4,9 +4,9 @@ import { isAdminAuthenticated } from "../../middlewares/adminAuth.js";
 
 const router=express.Router();
 
-router.get("/",renderAdminLogin);
-router.post("/login",postAdminLogin);
+router.get("/",isAdminAuthenticated,renderAdminLogin);
+router.post("/login",isAdminAuthenticated,postAdminLogin);
 router.get("/dashboard",isAdminAuthenticated,renderAdminDashboard);
-router.get("/logout",adminLogout);
+router.get("/logout",isAdminAuthenticated,adminLogout);
 
 export default router;

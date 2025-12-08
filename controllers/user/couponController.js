@@ -24,24 +24,24 @@ export const getAvailableCoupons = async (req, res) => {
 
     return res.json({ success: true, coupons });
   } catch (err) {
-    console.error("❌ Coupon fetch error:", err);
+    console.error(" Coupon fetch error:", err);
     return res.status(500).json({ success: false, message: "Failed to load coupons" });
   }
 };
 
-// Apply Coupon - FIXED VERSION
+
 export const applyCoupon = async (req, res) => {
   try {
     const userId = req.session.user?.id;
     let { couponCode } = req.body;
     couponCode = couponCode?.toUpperCase();
 
-    console.log("🎯 Applying coupon:", couponCode, "for user:", userId);
+    console.log("Applying coupon:", couponCode, "for user:", userId);
 
     // Get cart
     const cart = await Cart.findOne({ user: userId }).populate("items.product");
     if (!cart || cart.items.length === 0) {
-      return res.json({ success: false, message: "Cart empty ❌" });
+      return res.json({ success: false, message: "Cart empty " });
     }
 
     // Calculate cart total
@@ -51,7 +51,7 @@ export const applyCoupon = async (req, res) => {
       cartTotal += variant.price * item.quantity;
     });
 
-    console.log("🛒 Cart total:", cartTotal);
+    console.log("Cart total:", cartTotal);
 
     // Find coupon
     const coupon = await Coupon.findOne({
@@ -62,11 +62,11 @@ export const applyCoupon = async (req, res) => {
     });
 
     if (!coupon) {
-      console.log("❌ Coupon not found:", couponCode);
-      return res.json({ success: false, message: "Invalid or expired coupon ❌" });
+      console.log("Coupon not found:", couponCode);
+      return res.json({ success: false, message: "Invalid or expired coupon " });
     }
 
-    console.log("✅ Coupon found:", coupon.code, "Min order:", coupon.minOrderAmount);
+    console.log(" Coupon found:", coupon.code, "Min order:", coupon.minOrderAmount);
 
     // Check minimum order amount
     if (cartTotal < coupon.minOrderAmount) {
@@ -104,7 +104,7 @@ export const applyCoupon = async (req, res) => {
       coupon.maxDiscountAmount
     );
 
-    console.log("💰 Discount calculated:", discountAmount);
+    console.log(" Discount calculated:", discountAmount);
 
     return res.json({ 
       success: true, 
@@ -116,7 +116,7 @@ export const applyCoupon = async (req, res) => {
     });
 
   } catch (err) {
-    console.error("❌ Coupon apply error:", err);
+    console.error(" Coupon apply error:", err);
     return res.status(500).json({ success: false, message: "Coupon apply failed" });
   }
 };

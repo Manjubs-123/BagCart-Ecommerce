@@ -291,25 +291,7 @@
                   </div>
 
                   <div class="flex gap-4 justify-center pt-4 border-t border-gray-200">
-                   <!-- <button 
-  onclick="approveReturn(
-    '<%= order._id %>', 
-    '<%= item._id %>', 
-    // '<%= (item.product?.name || '').replace(/'/g, '\\\'') %>',
-    '<%= totalRefundWithShipping.toFixed(2) %>',   // final refund INCLUDING shipping
-    '<%= refundBase.toFixed(2) %>',
-    '<%= refundTax.toFixed(2) %>',
-    '<%= couponShare.toFixed(2) %>',
-    '<%= shippingRefund.toFixed(2) %>'              // NEW ARG
-  )"
-  class="btn-success text-white px-8 py-3 rounded-xl font-semibold flex items-center gap-3">
-  <i class="fas fa-check-circle"></i> Approve Return & Refund
-</button>
-
-
-                    <button onclick="rejectReturn('<%= order._id %>', '<%= item._id %>', '<%= (item.product?.name || '').replace(/'/g, '\\\'') %>')" class="btn-danger text-white px-8 py-3 rounded-xl font-semibold flex items-center gap-3">
-                      <i class="fas fa-times-circle"></i> Reject Return
-                    </button> -->
+                
                     <button 
   onclick="approveReturn(
     '<%= order._id %>', 

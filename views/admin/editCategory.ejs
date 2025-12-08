@@ -308,73 +308,6 @@
       hideError(globalError);
     });
 
-    // Form submission
-    // Form submission using Axios PATCH
-// form.addEventListener("submit", async function (e) {
-//   e.preventDefault(); // prevent normal form submit
-
-//   // Final validation
-//   const nameValidation = validateName(nameInput.value);
-//   const descValidation = validateDescription(descriptionInput.value);
-
-//   let hasErrors = false;
-
-//   if (!nameValidation.valid) {
-//     setFieldState(nameInput, false);
-//     showError(nameError, nameValidation.message);
-//     hasErrors = true;
-//   }
-
-//   if (!descValidation.valid) {
-//     setFieldState(descriptionInput, false);
-//     showError(descriptionError, descValidation.message);
-//     hasErrors = true;
-//   }
-
-//   if (hasErrors) {
-//     showError(globalError, "Please fix all validation errors before submitting");
-//     globalErrorText.textContent = "Please fix all validation errors before submitting";
-//     return;
-//   }
-
-//   const id = form.getAttribute("data-id");
-
-//   submitBtn.disabled = true;
-//   submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Updating...';
-
-//   try {
-//     const res = await axios.put(`/admin/category/update/${id}`, {
-//       name: nameInput.value.trim(),
-//       description: descriptionInput.value.trim(),
-//     });
-    
-//     if (res.data.success) {
-//       Swal.fire({
-//         icon: "success",
-//         title: "Updated!",
-//         text: "Category updated successfully",
-//         confirmButtonColor: "#1a56db",
-//       }).then(() => {
-//         window.location.href = "/admin/category";
-//       });
-//     }
-//   } catch (err) {
-//     if(err.response.data.redirect){
-//       window.location = `/admin/category/edit/${id}?error=Category name already exists`;
-//     }
-//     submitBtn.disabled = false;
-//     submitBtn.innerHTML = '<i class="fas fa-save"></i> Update Category';
-
-//     const msg = err.response?.data?.error || "Server Error";
-
-//     Swal.fire({
-//       icon: "error",
-//       title: "Error",
-//       text: msg,
-//     });
-//   }
-// });
-
 form.addEventListener("submit", async function (e) {
   e.preventDefault();
 
@@ -402,7 +335,7 @@ form.addEventListener("submit", async function (e) {
     return;
   }
 
-  // 2️⃣ AXIOS PATCH REQUEST
+  //  AXIOS PATCH REQUEST
   const id = form.getAttribute("data-id");
 
   submitBtn.disabled = true;

@@ -38,7 +38,7 @@ export const createOrder = async (req, res) => {
             return res.json({ success: false, message: "Address not found" });
         }
 
-        // ⭐ Compute final & regular prices for each cart item
+        // Compute final & regular prices for each cart item
         for (let item of cart.items) {
             const variant = item.product.variants[item.variantIndex];
 
@@ -53,7 +53,7 @@ export const createOrder = async (req, res) => {
             item._regularPrice = offerVariant.regularPrice; 
         }
 
-        // ⭐ Save computed values into order
+        // Save computed values into order
         const orderItems = cart.items.map(item => {
             const variant = item.product.variants[item.variantIndex];
 
@@ -130,6 +130,7 @@ export const getOrderConfirmation = async (req, res) => {
 
     // Ensure each item has price & regularPrice (use stored values first)
     const items = order.items.map(item => {
+
       // if variant present, read fallback values
       const variant = item.product && item.product.variants && item.product.variants[item.variantIndex];
       const storedPrice = item.price !== undefined ? Number(item.price) : (variant ? variant.price : 0);
@@ -179,126 +180,6 @@ export const getOrderConfirmation = async (req, res) => {
 
 
 
-// export const createOrder = async (req, res) => {
-//     try {
-//         const userId = req.session.user.id;
-//         const { addressId, paymentMethod } = req.body;
-
-//         if (!addressId || !paymentMethod) {
-//             return res.json({ success: false, message: "Missing data" });
-//         }
-
-//         const cart = await Cart.findOne({ user: userId })
-//             .populate("items.product");
-
-//         if (!cart || cart.items.length === 0) {
-//             return res.json({ success: false, message: "Cart empty" });
-//         }
-
-//         const user = await User.findById(userId);
-//         const address = user.addresses.id(addressId);
-
-//         if (!address) {
-//             return res.json({ success: false, message: "Address not found" });
-//         }
-
-//       const orderItems = cart.items.map(item => {
-//     const variant = item.product.variants[item.variantIndex];
-
-//     return {
-//         product: item.product._id,
-//         variantIndex: item.variantIndex,
-//         quantity: item.quantity,
-
-//         // IMPORTANT: STORE BOTH PRICES
-//         price: item.finalPrice,           // discounted price
-//         regularPrice: item.regularPrice,  // original MRP
-
-//         color: variant.color,
-//         image: variant.images?.[0]?.url || ""
-//     };
-// });
-
-
-
-//         const subtotal = orderItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
-//         const tax = subtotal * 0.1;
-//         const shippingFee = subtotal > 500 ? 0 : 50;
-//         const totalAmount = subtotal + tax + shippingFee;
-
-//         // ✅ Generate custom order ID
-//         const customOrderId = generateOrderId();
-
-//         const order = await Order.create({
-//             orderId: customOrderId, // ✅ Store custom ID
-//             user: userId,
-//             items: orderItems,
-//             shippingAddress: address,
-//             paymentMethod,
-//             subtotal,
-//             tax,
-//             shippingFee,
-//             totalAmount,
-//             paymentStatus: paymentMethod === "cod" ? "pending" : "paid"
-//         });
-
-//         // Stock reduction logic
-//         for (let item of cart.items) {
-//             const product = await Product.findById(item.product._id);
-//             if (!product) continue;
-
-//             const variant = product.variants[item.variantIndex];
-//             if (!variant) continue;
-
-//             variant.stock -= item.quantity;
-//             product.markModified(`variants.${item.variantIndex}.stock`);
-//             await product.save();
-//         }
-
-//         // Clear cart
-//         cart.items = [];
-//         await cart.save();
-
-//         // ✅ Return MongoDB _id for route compatibility BUT also include custom orderId
-//         return res.json({
-//             success: true,
-//             orderId: order._id, // ✅ Keep _id for existing routes
-//             customOrderId: order.orderId // ✅ Also return custom ID for display
-//         });
-
-//     } catch (err) {
-//         console.error("ORDER ERROR:", err);
-//         return res.json({ success: false, message: "Order failed" });
-//     }
-// };
-
-
-// export const getOrderConfirmation = async (req, res) => {
-//   try {
-//     const mongoOrderId = req.params.id; // This is MongoDB _id from route
-    
-//     // ✅ Find by MongoDB _id (existing route compatibility)
-//     const order = await Order.findById(mongoOrderId)
-//       .populate({ path: "items.product", select: "name brand variants images" })
-//       .lean();
-
-//     if (!order) return res.redirect("/order/orders");
-
-//     // ✅ Use custom orderId for display
-//     const orderDisplayId = order.orderId;
-
-//     console.log("✔ UI Order ID =", orderDisplayId);
-
-//     res.render("user/orderConfirmation", {
-//       order,
-//       orderDisplayId
-//     });
-//   } catch (err) {
-//     console.error(err);
-//     res.redirect("/order/orders");
-//   }
-// };
-
 export const getMyOrders = async (req, res) => {
   try {
     const userId = req.session.user?.id;
@@ -313,7 +194,7 @@ export const getMyOrders = async (req, res) => {
     orders = orders.map(order => {
       const fixedItems = order.items.map((item, index) => ({
         ...item,
-        itemOrderId: item.itemOrderId || `${order.orderId}-${index + 1}` // ✅ Use custom orderId
+        itemOrderId: item.itemOrderId || `${order.orderId}-${index + 1}` 
       }));
 
       return {
@@ -345,32 +226,32 @@ export const getMyOrders = async (req, res) => {
 
 export const downloadInvoice = async (req, res) => {
   try {
-    const { orderId, itemId } = req.params; // orderId is MongoDB _id from route
+    const { orderId, itemId } = req.params; 
     const userId = req.session.user?.id;
 
-    console.log("📥 Download Invoice Request:", { orderId, itemId, userId });
+    console.log(" Download Invoice Request:", { orderId, itemId, userId });
 
-    // ✅ Find by MongoDB _id (existing route compatibility)
+    
     const order = await Order.findOne({ _id: orderId, user: userId })
       .populate("items.product")
       .lean();
 
     if (!order) {
-      console.log("❌ Order not found");
+      console.log(" Order not found");
       return res.status(404).send("Order not found");
     }
 
     const item = order.items.find(i => i._id.toString() === itemId);
     if (!item) {
-      console.log("❌ Item not found");
+      console.log("Item not found");
       return res.status(404).send("Order item not found");
     }
 
-    // ✅ Use custom orderId for display
+    //  Use custom orderId for display
     const displayOrderId = order.orderId;
     const displayItemOrderId = item.itemOrderId || `${displayOrderId}-${order.items.indexOf(item) + 1}`;
 
-    console.log("✅ Generating invoice for:", { displayOrderId, displayItemOrderId });
+    console.log(" Generating invoice for:", { displayOrderId, displayItemOrderId });
 
     const fileName = `Invoice-${displayOrderId}-${displayItemOrderId}.pdf`;
 
@@ -425,124 +306,12 @@ export const downloadInvoice = async (req, res) => {
     doc.end();
 
   } catch (err) {
-    console.error("❌ downloadInvoice Error:", err);
+    console.error(" downloadInvoice Error:", err);
     res.status(500).send("Could not generate invoice");
   }
 };
 
-// export const cancelItem = async (req, res) => {
-//   try {
-//     const { orderId, itemId } = req.params; // orderId is MongoDB _id from route
-//     const { reason, details } = req.body;
-//     const userId = req.session.user.id;
 
-//     // ✅ Find by MongoDB _id (existing route compatibility)
-//     const order = await Order.findOne({ _id: orderId, user: userId });
-//     if (!order) return res.json({ success: false, message: "Order not found" });
-
-//     const item = order.items.id(itemId);
-//     if (!item) return res.json({ success: false, message: "Item not found" });
-
-//     if (["delivered", "cancelled", "returned"].includes(item.status)) {
-//       return res.json({ success: false, message: "Cannot cancel this item" });
-//     }
-
-//     // Add stock back
-//     const product = await Product.findById(item.product);
-//     if (product) {
-//       product.variants[item.variantIndex].stock += item.quantity;
-//       await product.save();
-//     }
-
-//     item.status = "cancelled";
-//     item.cancelReason = reason;
-//     item.cancelDetails = details || "";
-//     item.cancelledDate = new Date();
-
-//     const allCancelled = order.items.every(i => ["cancelled", "returned"].includes(i.status));
-//     if (allCancelled) order.orderStatus = "cancelled";
-
-//     await order.save();
-
-//     return res.json({ success: true, message: "Item cancelled successfully" });
-
-//   } catch (err) {
-//     console.error("Cancel Error:", err);
-//     res.json({ success: false, message: "Something went wrong" });
-//   }
-// };
-
-
-// export const cancelItem = async (req, res) => {
-//   try {
-//     const { orderId, itemId } = req.params; // orderId is MongoDB _id from route
-//     const { reason, details } = req.body;
-//     const userId = req.session?.user?.id;
-
-//     if (!userId) {
-//       console.log("Cancel Error: not logged in");
-//       return res.status(401).json({ success: false, message: "Not logged in" });
-//     }
-
-//     // Find order belonging to this user
-//     const order = await Order.findOne({ _id: orderId, user: userId });
-//     if (!order) {
-//       console.log("Cancel Error: order not found", { orderId, userId });
-//       return res.status(404).json({ success: false, message: "Order not found" });
-//     }
-
-//     const item = order.items.id(itemId);
-//     if (!item) {
-//       console.log("Cancel Error: item not found", { orderId, itemId });
-//       return res.status(404).json({ success: false, message: "Item not found" });
-//     }
-
-//     if (["delivered", "cancelled", "returned"].includes(item.status)) {
-//       return res.json({ success: false, message: "Cannot cancel this item" });
-//     }
-
-//     // Add stock back — defensive and markModified for nested array
-//     try {
-//       const product = await Product.findById(item.product);
-//       if (product) {
-//         const vIdx = item.variantIndex;
-//         const variant = product.variants?.[vIdx];
-//         if (variant) {
-//           variant.stock = Number(variant.stock || 0) + Number(item.quantity || 0);
-//           product.markModified(`variants.${vIdx}.stock`);
-//           await product.save();
-//           console.log("Stock returned:", { productId: product._id.toString(), vIdx, qty: item.quantity });
-//         } else {
-//           console.warn("Cancel warning: variant not found while returning stock", { productId: product._id, vIdx });
-//         }
-//       } else {
-//         console.warn("Cancel warning: product not found while returning stock", { productId: item.product });
-//       }
-//     } catch (stockErr) {
-//       // log but continue cancellation — don't fail because stock update had a transient problem
-//       console.error("Error returning stock (non-fatal):", stockErr);
-//     }
-
-//     // Update item/order status & meta
-//     item.status = "cancelled";
-//     item.cancelReason = reason || "Cancelled by user";
-//     item.cancelDetails = details || "";
-//     item.cancelledDate = new Date();
-
-//     // If all items are cancelled/returned -> mark whole order cancelled
-//     const allCancelled = order.items.every(i => ["cancelled", "returned"].includes(i.status));
-//     if (allCancelled) order.orderStatus = "cancelled";
-
-//     await order.save();
-
-//     console.log("Item cancelled successfully", { orderId: order._id.toString(), itemId });
-//     return res.json({ success: true, message: "Item cancelled successfully" });
-
-//   } catch (err) {
-//     console.error("Cancel Error:", err);
-//     return res.status(500).json({ success: false, message: "Something went wrong", error: err.message });
-//   }
-// };
 
 export const cancelItem = async (req, res) => {
   try {
@@ -637,7 +406,7 @@ export const returnItem = async (req, res) => {
       return res.json({ success: false, message: "Item not found" });
     }
 
-    // ❌ Prevent invalid return attempts
+    //  Prevent invalid return attempts
     if (item.status === "cancelled") {
       return res.json({ success: false, message: "Cancelled items cannot be returned" });
     }
@@ -655,7 +424,7 @@ export const returnItem = async (req, res) => {
       return res.json({ success: false, message: "Only delivered items can be returned" });
     }
 
-    // ⭐ Mark item as return requested
+    //  Mark item as return requested
     item.status = "return-requested";
     item.returnReason = reason;
     item.returnDetails = details || "";
@@ -677,49 +446,3 @@ export const returnItem = async (req, res) => {
   }
 };
 
-
-// export const returnItem = async (req, res) => {
-//   try {
-//     const { orderId, itemId } = req.params; // orderId is MongoDB _id
-//     const { reason, details } = req.body;
-//     const userId = req.session.user.id;
-
-//     console.log("📦 Return request:", { orderId, itemId, reason, details, userId });
-
-//     const order = await Order.findOne({ _id: orderId, user: userId });
-//     if (!order) {
-//       console.log("❌ Order not found");
-//       return res.json({ success: false, message: "Order not found" });
-//     }
-
-//     const item = order.items.id(itemId);
-//     if (!item) {
-//       console.log("❌ Item not found");
-//       return res.json({ success: false, message: "Item not found" });
-//     }
-
-//     // Check if item can be returned (only delivered items)
-//     if (item.status !== 'delivered') {
-//       return res.json({ success: false, message: "Only delivered items can be returned" });
-//     }
-
-//     // Update item status to return requested
-//     item.status = 'return-requested';
-//     item.returnReason = reason;
-//     item.returnDetails = details || "";
-//     item.returnRequestedDate = new Date();
-
-//     await order.save();
-
-//     console.log("✅ Return request submitted successfully");
-
-//     return res.json({ 
-//       success: true, 
-//       message: "Return request submitted successfully" 
-//     });
-
-//   } catch (error) {
-//     console.error("❌ Return error:", error);
-//     return res.status(500).json({ success: false, message: "Internal server error" });
-//   }
-// };

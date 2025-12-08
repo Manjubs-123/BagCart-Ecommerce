@@ -725,86 +725,12 @@
                 }
 
 
-                // async function saveProfile() {
-                //     const formData = new FormData();
-
-                //     formData.append("name", document.getElementById("fullName").value);
-                //     formData.append("phone", document.getElementById("phone").value);
-
-                //     if (croppedImageBlob) {
-                //         formData.append("profileImage", croppedImageBlob, "avatar.jpg");
-                //     }
-
-                //     const res = await axios.post("/user/updateProfile", formData, {
-                //         headers: { "Content-Type": "multipart/form-data" }
-                //     });
-
-                //     if (res.data.success) {
-                //         alert("Profile Updated Successfully");
-                //         window.location.reload();
-                //     }
-                // }
-
-
-                // async function saveProfile() {
-                //     const formData = new FormData();
-                //     formData.append("name", document.getElementById("fullName").value);
-                //     formData.append("phone", document.getElementById("phone").value);
-
-                //     if (croppedImageBlob) {
-                //         formData.append("profileImage", croppedImageBlob, "avatar.jpg");
-                //     }
-
-                //     const res = await axios.post("/user/updateProfile", formData, {
-                //         headers: { "Content-Type": "multipart/form-data" }
-                //     });
-
-                //     if (res.data.success) {
-                //         Swal.fire({
-                //             icon: "success",
-                //             title: "Profile Updated Successfully!",
-                //             text: "Your profile details & image have been updated.",
-                //             confirmButtonColor: "#2563eb"
-                //         }).then(() => {
-                //             window.location.reload();
-                //         });
-                //     }
-                // }
 
                 function cancelCrop() {
                     document.getElementById("cropperModal").classList.add("hidden");
                 }
 
-                // function applyCrop() {
-                //   cropper.getCroppedCanvas().toBlob((blob) => {
-                //     croppedImageBlob = blob;
-                //     document.getElementById("cropperModal").classList.add("hidden");
-                //   });
-                // }
-
-
-
-                // Handle avatar upload preview
-                // document.getElementById('avatarInput').addEventListener('change', function(e) {
-                //     const file = e.target.files[0];
-                //     if (file) {
-                //         const reader = new FileReader();
-                //         reader.onload = function(e) {
-                //             // Update all avatar previews
-                //             const avatarElements = document.querySelectorAll('.avatar-upload img, .avatar-upload div');
-                //             avatarElements.forEach(element => {
-                //                 if (element.tagName === 'IMG') {
-                //                     element.src = e.target.result;
-                //                 } else if (element.classList.contains('bg-gradient-to-r')) {
-                //                     element.innerHTML = `<img src="${e.target.result}" class="w-full h-full rounded-full object-cover" alt="Profile">`;
-                //                 }
-                //             });
-                //         };
-                //         reader.readAsDataURL(file);
-                //     }
-                // });
-
-                // Notification system
+               
                 function showNotification(message, type) {
                     const notification = document.createElement('div');
                     notification.className = `fixed top-4 right-4 p-4 rounded-lg shadow-lg z-50 transform transition-transform duration-300 ${type === 'success' ? 'bg-green-500 text-white' : 'bg-red-500 text-white'

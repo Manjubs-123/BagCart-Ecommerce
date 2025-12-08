@@ -615,7 +615,7 @@ async function selectColor(color) {
         </button>
       `).join("");
 
-    // ✔ APPLY OFFER PRICES
+    //  APPLY OFFER PRICES
     document.getElementById("productPrice").textContent = `₹${offer.finalPrice}`;
     document.getElementById("productMrp").textContent = `₹${offer.regularPrice}`;
 
@@ -624,7 +624,7 @@ async function selectColor(color) {
     );
     document.getElementById("productDiscount").textContent = `${discount}% off`;
 
-    // ⭐ ADD THIS (UPDATE SAVE AMOUNT)
+    // ADD THIS (UPDATE SAVE AMOUNT)
     document.getElementById("saveAmount").textContent =
       `Save ₹${(offer.regularPrice - offer.finalPrice).toFixed(0)}`;
 
@@ -760,7 +760,7 @@ async function addToCart() {
   const payload = {
     productId: "<%= product._id %>",
     quantity,
-    variantIndex   // 🔥 correct now
+    variantIndex   
   };
 
   const res = await fetch("/user/cart/add", {

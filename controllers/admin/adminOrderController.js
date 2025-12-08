@@ -1,34 +1,7 @@
 import Order from "../../models/orderModel.js";
 import Product from "../../models/productModel.js";
 import Wallet from "../../models/walletModel.js";
-import Coupon from "../../models/couponModel.js";
 import mongoose from "mongoose";
-
-// Helper to build filter
-function buildFilter({ search, status, fromDate, toDate }) {
-  const filter = {};
-  if (status) filter.orderStatus = status;
-  if (fromDate || toDate) {
-    filter.createdAt = {};
-    if (fromDate) filter.createdAt.$gte = new Date(fromDate);
-    if (toDate) filter.createdAt.$lte = new Date(toDate);
-  }
-if (search) {
-  const regex = new RegExp(search, "i");
-
-  filter.$or = [
-    { orderId: regex },
-    { "items.itemOrderId": regex },
-
-    // Search inner item ObjectId safely
-    mongoose.isValidObjectId(search)
-      ? { "items._id": new mongoose.Types.ObjectId(search) }
-      : {}
-  ];
-}
-
-  return filter;
-}
 
 export const adminListOrders = async (req, res) => {
   try {
@@ -36,41 +9,89 @@ export const adminListOrders = async (req, res) => {
     const limit = 10;
     const skip = (page - 1) * limit;
 
-    const { search, status } = req.query;
+    const { search, status, fromDate, toDate } = req.query;
 
+    
     let filter = {};
 
-    if (search) {
-      filter.$or = [
-        { orderId: new RegExp(search, "i") },
-        { "items.itemOrderId": new RegExp(search, "i") }
+    // STATUS FILTER
+    if (status && status !== "all") {
+      const orderLevelStatuses = [
+        "pending", "processing", "shipped",
+        "out_for_delivery", "delivered"
       ];
+
+      const itemLevelStatuses = [
+        "cancelled", "return-requested", "returned"
+      ];
+
+      if (orderLevelStatuses.includes(status)) {
+        filter.orderStatus = status;
+      }
+      else if (itemLevelStatuses.includes(status)) {
+        filter.items = { $elemMatch: { status: status } };  
+      }
     }
 
-    if (status) {
-      filter.orderStatus = status;
+    // DATE FILTER
+    if (fromDate || toDate) {
+      filter.createdAt = {};
+
+      if (fromDate) {
+        filter.createdAt.$gte = new Date(fromDate);
+      }
+
+      if (toDate) {
+        const end = new Date(toDate);
+        end.setHours(23, 59, 59, 999);
+        filter.createdAt.$lte = end;
+      }
     }
 
+    
+    if (search && search.trim() !== "") {
+      const regex = new RegExp(search, "i");
+
+      const orConditions = [
+        { orderId: regex },
+        { "items.itemOrderId": regex }
+      ];
+
+      // search by item ObjectId
+      if (mongoose.isValidObjectId(search)) {
+        orConditions.push({
+          "items._id": new mongoose.Types.ObjectId(search)
+        });
+      }
+
+      // Ensure $and exists
+      if (!filter.$and) filter.$and = [];
+
+      filter.$and.push({ $or: orConditions });
+    }
+
+    
+    // COUNT STATS
+   
     const totalOrders = await Order.countDocuments(filter);
 
     const deliveredOrders = await Order.countDocuments({
       ...filter,
-      orderStatus: "delivered"
+      orderStatus: "delivered",
     });
 
     const cancelledOrders = await Order.countDocuments({
       ...filter,
-      orderStatus: "cancelled"
+      "items.status": "cancelled",
     });
 
     const inProgressOrders = await Order.countDocuments({
       ...filter,
-      orderStatus: { $in: ["pending", "processing", "shipped", "out_for_delivery"] }
+      orderStatus: { $in: ["pending", "processing", "shipped", "out_for_delivery"] },
     });
 
-    //  RETURN REQUEST COUNT
     const returnCount = await Order.countDocuments({
-      "items.status": "return-requested"
+      "items.status": "return-requested",
     });
 
     const orders = await Order.find(filter)
@@ -81,6 +102,7 @@ export const adminListOrders = async (req, res) => {
       .limit(limit)
       .lean();
 
+    
     res.render("admin/orderList", {
       orders,
       totalOrders,
@@ -90,7 +112,7 @@ export const adminListOrders = async (req, res) => {
       page,
       pages: Math.ceil(totalOrders / limit),
       query: req.query,
-      returnCount  
+      returnCount,
     });
 
   } catch (err) {
@@ -105,10 +127,11 @@ export const adminListOrders = async (req, res) => {
       page: 1,
       pages: 1,
       query: req.query,
-      returnCount: 0   
+      returnCount: 0,
     });
   }
 };
+
 
 export const adminGetOrder = async (req, res) => {
   try {
@@ -278,176 +301,6 @@ console.log("Return page loaded");
 };
 
 
-// export const approveReturn = async (req, res) => {
-//   try {
-//     const { orderId, itemId } = req.params;
-
-//     const order = await Order.findById(orderId);
-//     if (!order) return res.status(404).json({ success: false, message: "Order not found" });
-
-//     const item = order.items.id(itemId);
-//     if (!item) return res.status(404).json({ success: false, message: "Item not found" });
-
-//     if (item.status !== "return-requested") {
-//       return res.status(400).json({ success: false, message: "Invalid return status" });
-//     }
-
-//     // Update Status
-//     item.status = "returned";
-//     item.returnApprovedDate = new Date();
-
-//     //  Restock Product
-//     const product = await Product.findById(item.product);
-//     if (product?.variants[item.variantIndex]) {
-//       product.variants[item.variantIndex].stock += item.quantity;
-//       await product.save();
-//     }
-
-//     // Refund Money
-//     const userId = order.user._id;
-//     const refundAmount = item.price * item.quantity;
-
-//     let wallet = await Wallet.findOne({ user: userId });
-//     if (!wallet) {
-//       wallet = await Wallet.create({
-//         user: userId,
-//         balance: 0,
-//         transactions: []
-//       });
-//     }
-
-//     wallet.balance += refundAmount;
-//     wallet.transactions.push({
-//       type: "credit",
-//       amount: refundAmount,
-//       description: `Refund for returned item (${item.itemOrderId})`,
-//       date: new Date()
-//     });
-
-//     await wallet.save();
-//     await order.save();
-
-    
-//     return res.json({ 
-//       success: true,
-//       message: "Return approved & refunded",
-//       refund: refundAmount
-//     });
-
-//   } catch (err) {
-//     console.error("Approve Return Error:", err);
-//     return res.status(500).json({ success: false, message: "Server error" });
-//   }
-// };
-
-
-
-// export const approveReturn = async (req, res) => {
-//   try {
-//     const { orderId, itemId } = req.params;
-//     const { refundAmount, refundBase, refundTax, couponDeduction } = req.body;
-//     const now = new Date();
-
-//     // Fetch order
-//     const order = await Order.findById(orderId).populate("user");
-//     if (!order) {
-//       return res.status(404).json({ success: false, message: "Order not found" });
-//     }
-
-//     // Fetch item from order
-//     const item = order.items.id(itemId);
-//     if (!item) {
-//       return res.status(404).json({ success: false, message: "Return item not found in order" });
-//     }
-
-//     // Status must be return-requested
-//     if (item.status !== "return-requested") {
-//       return res.status(400).json({ success: false, message: "Item is not in return-requested state" });
-//     }
-
-//     // Calculate final refund amount
-//     let finalRefundAmount, taxAmount, actualCouponDeduction;
-    
-//     if (refundAmount && refundBase && refundTax !== undefined) {
-//       // Use values from frontend
-//       finalRefundAmount = parseFloat(refundAmount);
-//       taxAmount = parseFloat(refundTax);
-//       actualCouponDeduction = couponDeduction ? parseFloat(couponDeduction) : 0;
-//     } else {
-//       // Fallback calculation
-//       const price = Number(item.price);
-//       const qty = Number(item.quantity);
-//       const itemTotal = price * qty;
-      
-//       // Calculate coupon share if exists
-//       let couponShare = 0;
-//       if (order.coupon && order.coupon.discountAmount && order.coupon.discountAmount > 0) {
-//         const itemShare = order.subtotal > 0 ? itemTotal / order.subtotal : 0;
-//         couponShare = order.coupon.discountAmount * itemShare;
-//       }
-      
-//       const refundBase = Math.max(0, itemTotal - couponShare);
-//       taxAmount = refundBase * 0.10;
-//       finalRefundAmount = refundBase + taxAmount;
-//       actualCouponDeduction = couponShare;
-//     }
-
-//     // Restock product variant
-//     const product = await Product.findById(item.product);
-//     if (product && product.variants && product.variants[item.variantIndex]) {
-//       product.variants[item.variantIndex].stock += item.quantity;
-//       await product.save();
-//     }
-
-//     // Wallet update
-//     const userId = order.user._id;
-//     let wallet = await Wallet.findOne({ user: userId });
-
-//     if (!wallet) {
-//       wallet = await Wallet.create({
-//         user: userId,
-//         balance: 0,
-//         transactions: []
-//       });
-//     }
-
-//     // Credit wallet with tax-included refund
-//     wallet.balance += finalRefundAmount;
-//     wallet.transactions.push({
-//       type: "credit",
-//       amount: finalRefundAmount,
-//       description: `Return refund for item ${item.itemOrderId || itemId} (incl. 10% tax)`,
-//       details: {
-//         couponDeduction: actualCouponDeduction.toFixed(2),
-//         taxAmount: taxAmount.toFixed(2)
-//       },
-//       date: now
-//     });
-
-//     // Update item status
-//     item.status = "returned";
-//     item.returnApprovedDate = now;
-//     item.refundAmount = finalRefundAmount;
-//     item.refundedTax = taxAmount;
-
-//     // Save to DB
-//     await wallet.save();
-//     await order.save();
-
-//     return res.json({
-//       success: true,
-//       message: "Return approved and refund processed successfully",
-//       refund: finalRefundAmount,
-//       refundedTax: taxAmount,
-//       couponDeduction: actualCouponDeduction
-//     });
-
-//   } catch (err) {
-//     console.error("Approve Return Error:", err);
-//     return res.status(500).json({ success: false, message: "Server error while approving return" });
-//   }
-// };
-
 
 export const approveReturn = async (req, res) => {
   try {
@@ -471,15 +324,13 @@ export const approveReturn = async (req, res) => {
 
     let finalRefundAmount, taxAmount, actualCouponDeduction;
 
-    // If frontend provided correct values → use them
     if (refundAmount && refundBase && refundTax !== undefined) {
       finalRefundAmount = parseFloat(refundAmount);
       taxAmount = parseFloat(refundTax);
       actualCouponDeduction = couponDeduction ? parseFloat(couponDeduction) : 0;
 
     } else {
-      // ⭐ FALLBACK CALCULATION (ONLY THIS SECTION MODIFIED)
-
+      
       const price = Number(item.price);
       const qty = Number(item.quantity);
       const itemTotal = price * qty;
@@ -487,7 +338,7 @@ export const approveReturn = async (req, res) => {
       // Use subtotalBeforeCoupon if available
       const baseSubtotal =
         order.coupon?.subtotalBeforeCoupon > 0
-          ? order.coupon.subtotalBeforeCoupon
+          ? order.coupon.subtotalBeforeCoupon 
           : order.subtotal;
 
       let couponShare = 0;
@@ -499,14 +350,14 @@ export const approveReturn = async (req, res) => {
       const computedRefundBase = Math.max(0, itemTotal - couponShare);
       taxAmount = computedRefundBase * 0.10;
 
-      // 🚫 Default: No shipping refund
+      //  No shipping refund
       let shippingRefund = 0;
 
-      // ⭐ Check if this is the LAST item being returned
+      //  Check if this is the LAST item being returned
       const otherItems = order.items.filter(i => i._id.toString() !== itemId);
       const allOtherReturned = otherItems.every(i => i.status === "returned");
 
-      // ⭐ If last item → refund full shipping fee
+      // If last item → refund full shipping fee
       if (allOtherReturned) {
         shippingRefund = order.shippingFee || 50;
       }

@@ -8,7 +8,7 @@ export const renderAdminLogin = (req, res) => {
   res.setHeader("Pragma", "no-cache");
   res.setHeader("Expires", "0");
 
-  // If already logged in → redirect to dashboard
+  // If already logged in redirect to dashboard
   if (req.session.isAdmin) {
     return res.redirect("/admin/dashboard");
   }

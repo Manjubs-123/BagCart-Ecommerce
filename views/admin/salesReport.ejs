@@ -6,8 +6,6 @@
     <title>Sales Report - Admin Dashboard</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
-
-    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
@@ -22,29 +20,12 @@
             --admin-light: #f3f4f6;
         }
         
-        .admin-bg-primary {
-            background-color: var(--admin-primary);
-        }
-        
-        .admin-bg-secondary {
-            background-color: var(--admin-secondary);
-        }
-        
-        .admin-text-primary {
-            color: var(--admin-primary);
-        }
-        
-        .admin-text-secondary {
-            color: var(--admin-secondary);
-        }
-        
-        .admin-border-primary {
-            border-color: var(--admin-primary);
-        }
-        
-        .admin-border-secondary {
-            border-color: var(--admin-secondary);
-        }
+        .admin-bg-primary { background-color: var(--admin-primary); }
+        .admin-bg-secondary { background-color: var(--admin-secondary); }
+        .admin-text-primary { color: var(--admin-primary); }
+        .admin-text-secondary { color: var(--admin-secondary); }
+        .admin-border-primary { border-color: var(--admin-primary); }
+        .admin-border-secondary { border-color: var(--admin-secondary); }
         
         .stat-card {
             transition: all 0.3s ease;
@@ -58,8 +39,8 @@
         
         .stat-card-total { border-left-color: #3b82f6; }
         .stat-card-orders { border-left-color: #10b981; }
-        .stat-card-discount { border-left-color: #f59e0b; }
-        .stat-card-revenue { border-left-color: #8b5cf6; }
+        .stat-card-coupon { border-left-color: #f59e0b; }
+        .stat-card-offer { border-left-color: #8b5cf6; }
         
         .filter-btn.active {
             background-color: var(--admin-primary);
@@ -81,13 +62,10 @@
 </head>
 <body class="bg-gray-50">
     
-    <!-- Include Admin Header -->
-    <%- include('../partials/sidebar', { currentPage: 'offers' }) %>        
+    <!-- Include Admin Sidebar -->
+    <%- include('../partials/sidebar', { currentPage: 'sales' }) %>        
     
     <div class="flex">
-        <!-- Include Admin Sidebar -->
- <!-- Sidebar -->
-    <!-- <%- include('../partials/sidebar', { currentPage: 'offers' }) %>         -->
         <!-- Main Content -->
         <div class="flex-1 ml-64 p-6">
             <!-- Page Header -->
@@ -95,7 +73,7 @@
                 <div class="flex justify-between items-center">
                     <div>
                         <h1 class="text-3xl font-bold text-gray-900">Sales Report</h1>
-                        <p class="text-gray-600 mt-2">Analyze and download sales performance reports</p>
+                        <p class="text-gray-600 mt-2">Comprehensive sales analytics with discount tracking</p>
                     </div>
                     <div class="flex items-center space-x-2">
                         <span class="text-sm text-gray-500">Last updated: <span id="lastUpdated"><%= new Date().toLocaleDateString() %></span></span>
@@ -167,7 +145,7 @@
                 </div>
             </div>
 
-            <!-- Statistics Cards -->
+            <!-- Statistics Cards - UPDATED WITH PROPER DISCOUNT TRACKING -->
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
                 <!-- Total Orders -->
                 <div class="stat-card stat-card-orders bg-white p-6 rounded-xl shadow-sm border border-gray-200">
@@ -180,67 +158,31 @@
                             <i class="fas fa-shopping-cart text-green-600 text-xl"></i>
                         </div>
                     </div>
-                    <div class="mt-4">
-                        <div class="flex items-center text-sm">
-                            <span id="ordersChange" class="font-medium text-green-600">0%</span>
-                            <span class="text-gray-500 ml-2">from previous period</span>
-                        </div>
-                    </div>
                 </div>
                 
                 <!-- Total Revenue -->
-                <div class="stat-card stat-card-revenue bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+                <div class="stat-card stat-card-total bg-white p-6 rounded-xl shadow-sm border border-gray-200">
                     <div class="flex items-center justify-between">
                         <div>
                             <p class="text-sm text-gray-500">Total Revenue</p>
                             <h3 class="text-2xl font-bold text-gray-900 mt-1" id="totalRevenue">₹0</h3>
                         </div>
-                        <div class="p-3 bg-purple-100 rounded-lg">
-                            <i class="fas fa-rupee-sign text-purple-600 text-xl"></i>
-                        </div>
-                    </div>
-                    <div class="mt-4">
-                        <div class="flex items-center text-sm">
-                            <span id="revenueChange" class="font-medium text-green-600">0%</span>
-                            <span class="text-gray-500 ml-2">from previous period</span>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- Total Discount -->
-                <div class="stat-card stat-card-discount bg-white p-6 rounded-xl shadow-sm border border-gray-200">
-                    <div class="flex items-center justify-between">
-                        <div>
-                            <p class="text-sm text-gray-500">Total Discount</p>
-                            <h3 class="text-2xl font-bold text-gray-900 mt-1" id="totalDiscount">₹0</h3>
-                        </div>
-                        <div class="p-3 bg-yellow-100 rounded-lg">
-                            <i class="fas fa-tag text-yellow-600 text-xl"></i>
-                        </div>
-                    </div>
-                    <div class="mt-4">
-                        <div class="flex items-center text-sm">
-                            <span id="discountChange" class="font-medium text-green-600">0%</span>
-                            <span class="text-gray-500 ml-2">from previous period</span>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- Average Order Value -->
-                <div class="stat-card stat-card-total bg-white p-6 rounded-xl shadow-sm border border-gray-200">
-                    <div class="flex items-center justify-between">
-                        <div>
-                            <p class="text-sm text-gray-500">Avg Order Value</p>
-                            <h3 class="text-2xl font-bold text-gray-900 mt-1" id="avgOrderValue">₹0</h3>
-                        </div>
                         <div class="p-3 bg-blue-100 rounded-lg">
-                            <i class="fas fa-chart-line text-blue-600 text-xl"></i>
+                            <i class="fas fa-rupee-sign text-blue-600 text-xl"></i>
                         </div>
                     </div>
-                    <div class="mt-4">
-                        <div class="flex items-center text-sm">
-                            <span id="avgOrderChange" class="font-medium text-green-600">0%</span>
-                            <span class="text-gray-500 ml-2">from previous period</span>
+                </div>
+                
+           
+                <!-- Offer Discount -->
+                <div class="stat-card stat-card-offer bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm text-gray-500">Offer Discount</p>
+                            <h3 class="text-2xl font-bold text-gray-900 mt-1" id="totalOfferDiscount">₹0</h3>
+                        </div>
+                        <div class="p-3 bg-purple-100 rounded-lg">
+                            <i class="fas fa-tags text-purple-600 text-xl"></i>
                         </div>
                     </div>
                 </div>
@@ -252,21 +194,16 @@
                 <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
                     <div class="flex justify-between items-center mb-6">
                         <h2 class="text-lg font-semibold text-gray-900">Revenue Trend</h2>
-                        <div class="flex space-x-2">
-                            <button onclick="setChartPeriod('day')" class="chart-period-btn text-xs px-3 py-1 rounded bg-blue-100 text-blue-600">Daily</button>
-                            <button onclick="setChartPeriod('week')" class="chart-period-btn text-xs px-3 py-1 rounded bg-gray-100 text-gray-700">Weekly</button>
-                            <button onclick="setChartPeriod('month')" class="chart-period-btn text-xs px-3 py-1 rounded bg-gray-100 text-gray-700">Monthly</button>
-                        </div>
                     </div>
                     <div class="h-72">
                         <canvas id="revenueChart"></canvas>
                     </div>
                 </div>
                 
-                <!-- Order Categories -->
+                <!-- Category Performance - FIXED TO SHOW CATEGORY NAMES -->
                 <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
                     <div class="flex justify-between items-center mb-6">
-                        <h2 class="text-lg font-semibold text-gray-900">Order Categories</h2>
+                        <h2 class="text-lg font-semibold text-gray-900">Category Performance</h2>
                     </div>
                     <div class="h-72">
                         <canvas id="categoryChart"></canvas>
@@ -303,12 +240,13 @@
                             <tr>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Order ID</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Item Order ID</th> <!-- Add this -->
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Customer</th>
-                                <th class="px6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Items</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Subtotal</th>
-<th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Coupon Disc</th> <!-- Add this -->
-<th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Offer Disc</th> <!-- Add this -->                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Items</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Categories</th>
+                                <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Subtotal</th>
+                                <!-- <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Coupon Disc</th> -->
+                                <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Offer Disc</th>
+                                <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Total</th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Payment</th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
                             </tr>
@@ -367,17 +305,15 @@
                 </div>
                 
                 <!-- Coupon Performance -->
-                <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+                <!-- <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
                     <h2 class="text-lg font-semibold text-gray-900 mb-4">Coupon Performance</h2>
                     <div id="couponPerformance" class="space-y-3">
-                        <!-- Will be populated by JavaScript -->
-                    </div>
+                        Will be populated by JavaScript -->
+                    </div> 
                 </div>
             </div>
         </div>
     </div>
-
-
 
     <script>
     // State management
@@ -438,7 +374,6 @@
         
         switch(filterType) {
             case 'today':
-                // fromDate and toDate already set to today
                 break;
             case 'yesterday':
                 fromDate.setDate(today.getDate() - 1);
@@ -464,7 +399,6 @@
                 break;
         }
         
-        // Format dates as YYYY-MM-DD
         const formatDate = (date) => {
             const year = date.getFullYear();
             const month = String(date.getMonth() + 1).padStart(2, '0');
@@ -529,16 +463,11 @@
     // Update UI with data
     function updateUI(data) {
         try {
-            // Update statistics
+            // Update statistics - NOW WITH SEPARATE DISCOUNT TRACKING
             document.getElementById('totalOrders').textContent = data.summary.totalOrders.toLocaleString();
             document.getElementById('totalRevenue').textContent = '₹' + data.summary.totalRevenue.toLocaleString('en-IN');
-            document.getElementById('totalDiscount').textContent = '₹' + data.summary.totalDiscount.toLocaleString('en-IN');
-            
-            // Calculate average order value
-            const avgOrderValue = data.summary.totalOrders > 0 
-                ? data.summary.totalRevenue / data.summary.totalOrders 
-                : 0;
-            document.getElementById('avgOrderValue').textContent = '₹' + avgOrderValue.toFixed(2);
+            // document.getElementById('totalCouponDiscount').textContent = '₹' + data.summary.totalCouponDiscount.toLocaleString('en-IN');
+            document.getElementById('totalOfferDiscount').textContent = '₹' + data.summary.totalOfferDiscount.toLocaleString('en-IN');
             
             // Update sales table
             updateSalesTable(data.sales || []);
@@ -586,7 +515,6 @@
             const row = document.createElement('tr');
             row.className = 'table-row-hover';
             
-            // Format date
             const date = new Date(sale.date);
             const formattedDate = date.toLocaleDateString('en-IN', {
                 day: '2-digit',
@@ -594,75 +522,64 @@
                 year: 'numeric'
             });
             
-            // Get customer info
             const customerName = sale.customer?.name || 'Unknown';
             const customerEmail = sale.customer?.email || '';
             
+            // Extract unique categories from item details
+            const categories = sale.itemDetails ? 
+                [...new Set(sale.itemDetails.map(item => item.category))].join(', ') : 
+                'N/A';
+            
             row.innerHTML = `
-    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-        ${formattedDate}
-    </td>
-
-    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-blue-600">
-        ${sale.orderId || 'N/A'}
-    </td>
-
-    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-        ${sale.itemOrderId || 'N/A'}
-    </td>
-
-    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-        <div class="flex items-center">
-            <div class="flex-shrink-0 h-8 w-8 rounded-full bg-gray-300 flex items-center justify-center">
-                <span class="text-xs font-medium">${customerName.charAt(0)}</span>
-            </div>
-            <div class="ml-3">
-                <div class="font-medium text-gray-900">${customerName}</div>
-                <div class="text-gray-500 text-xs">${customerEmail}</div>
-            </div>
-        </div>
-    </td>
-
-    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-        ${sale.items || 0}
-    </td>
-
-    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-        ₹${(sale.subtotal || 0).toLocaleString('en-IN')}
-    </td>
-
-    <!-- Coupon Discount Column -->
-    <td class="px-6 py-4 whitespace-nowrap text-sm text-red-600">
-        -₹${(sale.couponDiscount || 0).toLocaleString('en-IN')}
-    </td>
-
-    <!-- Offer Discount Column -->
-    <td class="px-6 py-4 whitespace-nowrap text-sm text-red-600">
-        -₹${(sale.offerDiscount || 0).toLocaleString('en-IN')}
-    </td>
-
-    <td class="px-6 py-4 whitespace-nowrap text-sm font-semibold text-gray-900">
-        ₹${(sale.total || 0).toLocaleString('en-IN')}
-    </td>
-
-    <td class="px-6 py-4 whitespace-nowrap text-sm">
-        <span class="px-2 py-1 text-xs rounded-full ${getPaymentMethodClass(sale.paymentMethod)}">
-            ${sale.paymentMethod || 'N/A'}
-        </span>
-    </td>
-
-    <td class="px-6 py-4 whitespace-nowrap text-sm">
-        <span class="px-2 py-1 text-xs rounded-full ${getStatusClass(sale.status)}">
-            ${sale.status || 'N/A'}
-        </span>
-    </td>
-`;
-
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    ${formattedDate}
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-blue-600">
+                    ${sale.orderId || 'N/A'}
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    <div class="flex items-center">
+                        <div class="flex-shrink-0 h-8 w-8 rounded-full bg-gray-300 flex items-center justify-center">
+                            <span class="text-xs font-medium">${customerName.charAt(0)}</span>
+                        </div>
+                        <div class="ml-3">
+                            <div class="font-medium text-gray-900">${customerName}</div>
+                            <div class="text-gray-500 text-xs">${customerEmail}</div>
+                        </div>
+                    </div>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    ${sale.items || 0}
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                    ${categories}
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">
+                    ₹${(sale.subtotal || 0).toLocaleString('en-IN')}
+                </td>
+               
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-red-600 text-right">
+                    -₹${(sale.offerDiscount || 0).toLocaleString('en-IN')}
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm font-semibold text-gray-900 text-right">
+                    ₹${(sale.total || 0).toLocaleString('en-IN')}
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm">
+                    <span class="px-2 py-1 text-xs rounded-full ${getPaymentMethodClass(sale.paymentMethod)}">
+                        ${sale.paymentMethod || 'N/A'}
+                    </span>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm">
+                    <span class="px-2 py-1 text-xs rounded-full ${getStatusClass(sale.status)}">
+                        ${sale.status || 'N/A'}
+                    </span>
+                </td>
+            `;
+            
             tbody.appendChild(row);
         });
     }
 
-    // Helper function for payment method styling
     function getPaymentMethodClass(method) {
         if (!method) return 'bg-gray-100 text-gray-800';
         
@@ -674,7 +591,6 @@
         }
     }
 
-    // Helper function for status styling
     function getStatusClass(status) {
         if (!status) return 'bg-gray-100 text-gray-800';
         
@@ -712,7 +628,6 @@
         }
     }
 
-    // Next page
     function nextPage() {
         const totalPages = Math.ceil(reportState.totalItems / reportState.pageSize);
         if (reportState.currentPage < totalPages) {
@@ -721,7 +636,6 @@
         }
     }
 
-    // Previous page
     function prevPage() {
         if (reportState.currentPage > 1) {
             reportState.currentPage--;
@@ -729,18 +643,16 @@
         }
     }
 
-    // Update charts
+    // Update charts - FIXED CATEGORY CHART TO SHOW NAMES
     function updateCharts(chartData) {
         try {
             // Revenue chart
             const revenueCtx = document.getElementById('revenueChart').getContext('2d');
             
-            // Destroy existing chart if it exists
             if (window.revenueChart instanceof Chart) {
                 window.revenueChart.destroy();
             }
             
-            // Create new chart only if we have data
             if (chartData.revenue && chartData.revenue.labels && chartData.revenue.labels.length > 0) {
                 window.revenueChart = new Chart(revenueCtx, {
                     type: 'line',
@@ -778,26 +690,25 @@
                 });
             }
             
-            // Category chart
+            // Category chart - NOW SHOWS CATEGORY NAMES
             const categoryCtx = document.getElementById('categoryChart').getContext('2d');
             
-            // Destroy existing chart if it exists
             if (window.categoryChart instanceof Chart) {
                 window.categoryChart.destroy();
             }
             
-            // Create new chart only if we have data
             if (chartData.categories && chartData.categories.labels && chartData.categories.labels.length > 0) {
                 window.categoryChart = new Chart(categoryCtx, {
                     type: 'doughnut',
                     data: {
-                        labels: chartData.categories.labels,
+                        labels: chartData.categories.labels, // ✅ These are now category NAMES
                         datasets: [{
                             data: chartData.categories.data,
                             backgroundColor: [
-                                '#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ef4444'
+                                '#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ef4444', '#06b6d4', '#ec4899'
                             ],
-                            borderWidth: 1
+                            borderWidth: 2,
+                            borderColor: '#fff'
                         }]
                     },
                     options: {
@@ -805,7 +716,24 @@
                         maintainAspectRatio: false,
                         plugins: {
                             legend: {
-                                position: 'bottom'
+                                position: 'bottom',
+                                labels: {
+                                    padding: 10,
+                                    font: {
+                                        size: 12
+                                    }
+                                }
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        const label = context.label || '';
+                                        const value = context.parsed || 0;
+                                        const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                        const percentage = ((value / total) * 100).toFixed(1);
+                                        return `${label}: ${value} orders (${percentage}%)`;
+                                    }
+                                }
                             }
                         }
                     }
@@ -814,20 +742,6 @@
         } catch (error) {
             console.error('Error updating charts:', error);
         }
-    }
-
-    // Set chart period
-    function setChartPeriod(period) {
-        document.querySelectorAll('.chart-period-btn').forEach(btn => {
-            btn.classList.remove('bg-blue-100', 'text-blue-600');
-            btn.classList.add('bg-gray-100', 'text-gray-700');
-        });
-        
-        event.target.classList.remove('bg-gray-100', 'text-gray-700');
-        event.target.classList.add('bg-blue-100', 'text-blue-600');
-        
-        // Here you would reload chart data with the new period
-        console.log('Chart period changed to:', period);
     }
 
     // Update top products
@@ -896,7 +810,6 @@
         });
     }
 
-    // Get payment icon
     function getPaymentIcon(method) {
         if (!method) return 'fa-money-check-alt';
         
@@ -925,11 +838,11 @@
             couponDiv.innerHTML = `
                 <div>
                     <div class="font-medium text-gray-900">${coupon.code || 'Unknown'}</div>
-                    <div class="text-gray-500 text-xs">${coupon.discount || 0}% off</div>
+                    <div class="text-gray-500 text-xs">${coupon.uses || 0} uses</div>
                 </div>
                 <div class="text-right">
                     <div class="font-semibold text-gray-900">₹${(coupon.savings || 0).toLocaleString('en-IN')}</div>
-                    <div class="text-gray-500 text-xs">${coupon.uses || 0} uses</div>
+                    <div class="text-gray-500 text-xs">saved</div>
                 </div>
             `;
             
@@ -945,6 +858,8 @@
                 return;
             }
             
+            showNotification(`Preparing ${format.toUpperCase()} download...`, 'info');
+            
             const response = await axios.post('/admin/sales/download', {
                 fromDate: reportState.fromDate,
                 toDate: reportState.toDate,
@@ -953,20 +868,18 @@
                 responseType: 'blob'
             });
             
-            // Create download link
             const url = window.URL.createObjectURL(new Blob([response.data]));
             const link = document.createElement('a');
             link.href = url;
             
-            // Set filename based on format
-            const filename = `sales-report-${reportState.fromDate}-to-${reportState.toDate}.${format}`;
+            const extension = format === 'excel' ? 'xlsx' : format;
+            const filename = `sales-report-${reportState.fromDate}-to-${reportState.toDate}.${extension}`;
             link.setAttribute('download', filename);
             
             document.body.appendChild(link);
             link.click();
             link.remove();
             
-            // Clean up URL object
             window.URL.revokeObjectURL(url);
             
             showNotification(`Report downloaded as ${format.toUpperCase()}`, 'success');
@@ -991,24 +904,30 @@
 
     // Show notification
     function showNotification(message, type) {
-        // Remove any existing notifications
         const existingNotifications = document.querySelectorAll('.notification-alert');
         existingNotifications.forEach(notification => notification.remove());
         
-        // Create notification element
         const notification = document.createElement('div');
-        notification.className = `notification-alert fixed top-4 right-4 z-50 px-6 py-3 rounded-lg shadow-lg text-white flex items-center gap-3 transition-all duration-300 ${
-            type === 'success' ? 'bg-green-500' : 'bg-red-500'
-        }`;
+        let bgColor = 'bg-blue-500';
+        let icon = 'fa-info-circle';
+        
+        if (type === 'success') {
+            bgColor = 'bg-green-500';
+            icon = 'fa-check-circle';
+        } else if (type === 'error') {
+            bgColor = 'bg-red-500';
+            icon = 'fa-exclamation-circle';
+        }
+        
+        notification.className = `notification-alert fixed top-4 right-4 z-50 px-6 py-3 rounded-lg shadow-lg text-white flex items-center gap-3 transition-all duration-300 ${bgColor}`;
         
         notification.innerHTML = `
-            <i class="fas ${type === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle'}"></i>
+            <i class="fas ${icon}"></i>
             <span>${message}</span>
         `;
         
         document.body.appendChild(notification);
         
-        // Remove after 3 seconds
         setTimeout(() => {
             notification.style.opacity = '0';
             notification.style.transform = 'translateX(100%)';
@@ -1016,7 +935,6 @@
         }, 3000);
     }
 </script>
-
 
 </body>
 </html>

@@ -28,7 +28,7 @@ import adminCouponRoutes from "./routes/admin/adminCouponRoutes.js"
 import couponRoutes from "./routes/user/couponRoutes.js";
 import offerRoutes from "./routes/admin/offerRoutes.js";  
 import paymentRoutes from "./routes/user/paymentRoutes.js";
-import adminSalesReport from "./routes/admin/adminSalesReport.js";
+import adminSalesReportRoutes from "./routes/admin/adminSalesReportRoutes.js";
 const app = express();
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -70,7 +70,7 @@ app.use(async (req, res, next) => {
 
       res.locals.user = dbUser;
 
-      // Also update session user (so it always stays fresh)
+     
       req.session.user = {
         id: dbUser._id,
         name: dbUser.name,
@@ -97,7 +97,7 @@ app.use(async (req, res, next) => {
   if (req.session.user && req.session.user.id) {
     let user = await User.findById(req.session.user.id).lean();
 
-    // FIX: if profileImage missing → assign default
+    // if profileImage missing → assign default
     if (!user.profileImage || !user.profileImage.url) {
       user.profileImage = {
         url: "https://res.cloudinary.com/db5uwjwdv/image/upload/v1763442856/AdobeStock_1185421594_Preview_cvfm1v.jpg",
@@ -131,6 +131,7 @@ app.use(passport.session());
 
 
 app.use('/user/cart',cartRoutes);
+app.use('/admin', adminSalesReportRoutes);
 app.use("/admin", adminRoutes);
 app.use("/user", userRoutes);
 app.use("/user", shopRoutes);
@@ -148,10 +149,8 @@ app.use('/user', couponRoutes);
 app.use('/admin/offers', offerRoutes);
 app.use("/api/payment", paymentRoutes);
 app.use("/", paymentRoutes);
-app.use('/admin', adminSalesReport);
 
 
-// 404 handler
 
 
 

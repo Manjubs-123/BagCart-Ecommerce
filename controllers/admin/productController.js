@@ -168,7 +168,7 @@ export const addProduct = async (req, res) => {
 
 
     const existingProduct=await Product.findOne({
-      name:{$regex:`^${name.trim()}$`,$options:"i"}//exact matching or case sensitive
+      name:{$regex:`^${name.trim()}$`,$options:"i"} 
    
     })
     if(existingProduct){
@@ -198,7 +198,6 @@ export const addProduct = async (req, res) => {
 
     await newProduct.save();
 
-    // console.log(" Saved product variant images:", newProduct.variants[0]?.images);
 
     res.status(201).json({
       message: "Product added successfully",
@@ -281,7 +280,7 @@ export const updateProduct = async (req, res) => {
     if (name && name.trim()) {
       const existingWithSameName = await Product.findOne({
         _id: { $ne: id }, // exclude same product
-        name: { $regex: `^${name.trim()}$`, $options: "i" }, // case-insensitive exact match
+        name: { $regex: `^${name.trim()}$`, $options: "i" }, 
         isDeleted: false
       });
 

@@ -26,7 +26,7 @@ router.get("/categories", isAdminAuthenticated, getActiveCategories);
 router.get("/create", isAdminAuthenticated, getCreateOfferPage);
 router.post("/create", isAdminAuthenticated, postCreateOffer);
 
-// TOGGLE STATUS  (🔥 REQUIRED)
+// TOGGLE STATUS  
 router.post("/:id/toggle-status", isAdminAuthenticated, toggleOfferStatus);
 
 router.delete("/:id", isAdminAuthenticated, deleteOffer);

@@ -184,57 +184,6 @@ export const postVerifyOtp = async (req, res) => {
   }
 };
 
-// export const resendOtp = async (req, res) => {
-//   try {
-//     const email = req.session.pendingEmail;
-//     if (!email) return res.redirect("/user/signup");
-
-//     const now = Date.now();
-//     const cooldown = req.session.cooldown || 0;
-
-//     // Prevent resend spam
-//     if (now < cooldown) {
-//       const remaining = Math.ceil((cooldown - now) / 1000);
-//       return res.render("user/verifyOtp", {
-//         email,
-//         error: `Please wait ${remaining}s before resending OTP.`,
-//         cooldown: remaining,
-//         RESEND_COOLDOWN: 60,
-//         OTP_EXPIRY_MINUTES: 1,
-//       });
-//     }
-
-//     // New OTP
-//     const newOtp = Math.floor(100000 + Math.random() * 900000).toString();
-//     req.session.otp = newOtp;
-//     req.session.otpExpires = now + 1 * 60 * 1000;
-//     req.session.cooldown = now + 60 * 1000;
-
-//     // FIXED: Use the imported sendOtpMail function directly
-//     await sendOtpMail(email, newOtp);
-
-//     console.log(`Resent OTP to ${email}: ${newOtp}`);
-
-//     res.render("user/verifyOtp", {
-//       email,
-//       error: null,
-//       cooldown: 60,
-//       RESEND_COOLDOWN: 60,
-//       OTP_EXPIRY_MINUTES: 1,
-//     });
-//   } catch (err) {
-//     console.error("Resend OTP Error:", err);
-//     res.render("user/verifyOtp", {
-//       email: req.session.pendingEmail || "",
-//       error: "Failed to resend OTP. Please try again.",
-//       cooldown: 0,
-//       RESEND_COOLDOWN: 60,
-//       OTP_EXPIRY_MINUTES: 1,
-//     });
-//   }
-// };
-
-
 export const resendOtp = async (req, res) => {
   try {
     const email = req.session.pendingEmail;
@@ -416,50 +365,7 @@ export const getChangeEmailPage = (req, res) => {
   res.render("user/profileEmailChange", { user });
 };
 
-// Send OTP to new email
 
-// export const sendChangeEmailOtp = async (req, res) => {
-//   try {
-//     const userId = req.session.user.id;
-//     const { newEmail } = req.body;
-
-//     if (!newEmail) {
-//       return res.json({ success: false, message: "Email is required" });
-//     }
-
-//     const user = await User.findById(userId);
-
-//     if (user.email === newEmail) {
-//       return res.json({
-//         success: false,
-//         message: "New email cannot be the same as current email"
-//       });
-//     }
-
-//     const existing = await User.findOne({ email: newEmail });
-//     if (existing) {
-//       return res.json({
-//         success: false,
-//         message: "Email already exists. Choose another."
-//       });
-//     }
-
-//     const otp = Math.floor(100000 + Math.random() * 900000).toString();
-
-//     req.session.changeEmailOtp = otp;
-//     req.session.changeEmailNewEmail = newEmail;
-//     req.session.changeEmailOtpExpires = Date.now() + (1* 60 * 1000);
-
-//     await sendOtpMail(newEmail, otp);
-
-//     return res.json({ success: true });
-
-//   } catch (err) {
-//     console.log(err);
-//     return res.json({ success: false, message: "Server error" });
-//   }
-// };
-// Send OTP to new email
 
 // Send OTP for Email Change
 export const sendChangeEmailOtp = async (req, res) => {
@@ -500,7 +406,7 @@ export const sendChangeEmailOtp = async (req, res) => {
     // Send email
     await sendOtpMail(newEmail, otp);
 
-    // LOGGGG ❗This prints OTP in VS CODE TERMINAL
+    // LOGGGG This prints OTP in VS CODE TERMINAL
     console.log("▶ Email Change OTP Sent");
     console.log("New Email:", newEmail);
     console.log("OTP:", otp);
@@ -598,92 +504,6 @@ export const verifyChangedEmailOtp = async (req, res) => {
   }
 };
 
-
-
-// Verify OTP
-
-
-// export const verifyChangedEmailOtp = async (req, res) => {
-//   try {
-//     const userId = req.session.user.id;
-//     const { otp } = req.body;
-
-//     if (!otp) {
-//       return res.json({ success: false, message: "OTP is required" });
-//     }
-
-//     if (Date.now() > req.session.changeEmailOtpExpires) {
-//       return res.json({ success: false, message: "OTP expired" });
-//     }
-
-//     if (otp !== req.session.changeEmailOtp) {
-//       return res.json({ success: false, message: "Invalid OTP" });
-//     }
-
-//     const newEmail = req.session.changeEmailNewEmail;
-
-//     await User.findByIdAndUpdate(userId, { email: newEmail });
-
-//     // update session
-//     req.session.user.email = newEmail;
-
-//     // clear session
-//     delete req.session.changeEmailOtp;
-//     delete req.session.changeEmailNewEmail;
-//     delete req.session.changeEmailOtpExpires;
-
-//     return res.json({ success: true, newEmail });
-
-//   } catch (err) {
-//     console.log(err);
-//     return res.json({ success: false, message: "Something went wrong" });
-//   }
-// };
-// Verify OTP & Update Email
-// export const verifyChangedEmailOtp = async (req, res) => {
-//   try {
-//     const userId = req.session.user.id;
-//     const { otp } = req.body;
-
-//     if (!otp) {
-//       return res.json({ success: false, message: "OTP is required" });
-//     }
-
-//     // Debug Logging
-//     console.log("Entered OTP:", otp);
-//     console.log("Stored OTP:", req.session.changeEmailOtp);
-
-//     // Expired?
-//     if (Date.now() > req.session.changeEmailOtpExpires) {
-//       return res.json({ success: false, message: "OTP expired" });
-//     }
-
-//     // Wrong?
-//     if (otp !== req.session.changeEmailOtp) {
-//       return res.json({ success: false, message: "Invalid OTP" });
-//     }
-
-//     const newEmail = req.session.changeEmailNewEmail;
-
-//     // Update in DB
-//     await User.findByIdAndUpdate(userId, { email: newEmail });
-
-//     // Update user session
-//     req.session.user.email = newEmail;
-
-//     // Cleanup
-//     delete req.session.changeEmailOtp;
-//     delete req.session.changeEmailNewEmail;
-//     delete req.session.changeEmailOtpExpires;
-//     delete req.session.changeEmailCooldown;
-
-//     return res.json({ success: true, newEmail });
-
-//   } catch (err) {
-//     console.log("Error in verifyChangedEmailOtp:", err);
-//     return res.json({ success: false, message: "Something went wrong" });
-//   }
-// };
 
 
 export const getAddressPage = async (req, res) => {
@@ -953,99 +773,8 @@ export const changePassword = async (req, res) => {
     }
 };
 
-// export const getWishlistPage = async (req, res) => {
-//     try {
-//         if (!req.session.user || !req.session.user.id) {
-//             return res.redirect("/login");
-//         }
 
-//         const user = await User.findById(req.session.user.id)
-//             .populate({
-//                 path: "wishlist",
-//                 populate: { 
-//                     path: "category", 
-//                     select: "name" 
-//                 }
-//             });
 
-//         // Apply offers to wishlist items
-//         const wishlistItems = await Promise.all(
-//             user.wishlist.map(async (product) => {
-//                 // Convert to plain object
-//                 const productObj = product.toObject();
-                
-//                 // Get active offers for this product
-//                 const offers = await Offer.find({
-//                     $or: [
-//                         { 
-//                             offerType: 'product', 
-//                             'appliedProducts': product._id,
-//                             isActive: true,
-//                             startDate: { $lte: new Date() },
-//                             endDate: { $gte: new Date() }
-//                         },
-//                         {
-//                             offerType: 'category',
-//                             'appliedCategories': product.category._id,
-//                             isActive: true,
-//                             startDate: { $lte: new Date() },
-//                             endDate: { $gte: new Date() }
-//                         }
-//                     ]
-//                 }).sort({ discountValue: -1 }).limit(1);
-
-//                 // Apply the best offer
-//                 if (offers.length > 0) {
-//                     const bestOffer = offers[0];
-//                     productObj.appliedOffer = {
-//                         _id: bestOffer._id,
-//                         name: bestOffer.name,
-//                         offerType: bestOffer.offerType,
-//                         discountType: bestOffer.discountType,
-//                         discountValue: bestOffer.discountValue
-//                     };
-
-//                     // Calculate discounted price for each variant
-//                     if (productObj.variants && productObj.variants.length > 0) {
-//                         productObj.variants = productObj.variants.map(variant => {
-//                             const variantCopy = { ...variant };
-//                             const originalPrice = variantCopy.price || variantCopy.mrp || 0;
-                            
-//                             if (bestOffer.discountType === 'percentage') {
-//                                 variantCopy.finalPrice = originalPrice * (1 - bestOffer.discountValue / 100);
-//                             } else if (bestOffer.discountType === 'fixed') {
-//                                 variantCopy.finalPrice = Math.max(0, originalPrice - bestOffer.discountValue);
-//                             } else {
-//                                 variantCopy.finalPrice = originalPrice;
-//                             }
-                            
-//                             // Round to 2 decimal places
-//                             variantCopy.finalPrice = parseFloat(variantCopy.finalPrice.toFixed(2));
-//                             variantCopy.regularPrice = originalPrice;
-                            
-//                             return variantCopy;
-//                         });
-//                     }
-//                 }
-
-//                 return productObj;
-//             })
-//         );
-
-//         res.render("user/wishlist", {
-//             activePage: "wishlist",
-//             user,
-//             wishlistItems,
-//             wishlistCount: wishlistItems.length,
-//             ordersCount: 0,
-//             unreadNotifications: 0
-//         });
-
-//     } catch (err) {
-//         console.log("WISHLIST ERROR:", err);
-//         return res.status(500).send("Error loading wishlist");
-//     }
-// };
 export const getWishlistPage = async (req, res) => {
     try {
         if (!req.session.user || !req.session.user.id) {
@@ -1066,7 +795,7 @@ export const getWishlistPage = async (req, res) => {
         for (let product of user.wishlist) {
             let productObj = product.toObject();
 
-            // ⭐ APPLY SAME OFFER LOGIC AS PRODUCT DETAILS PAGE
+            // APPLY SAME OFFER LOGIC AS PRODUCT DETAILS PAGE
             const offerData = await applyOfferToProduct(productObj);
 
             // Merge updated variant pricing
