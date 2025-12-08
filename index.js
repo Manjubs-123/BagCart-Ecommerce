@@ -69,8 +69,6 @@ app.use(async (req, res, next) => {
       const dbUser = await User.findById(req.session.user.id).lean();
 
       res.locals.user = dbUser;
-
-     
       req.session.user = {
         id: dbUser._id,
         name: dbUser.name,
