@@ -89,7 +89,7 @@ function getCouponDiscountAndLog(order) {
 
   for (const f of fields) {
     if (f.value !== undefined && f.value !== null && !isNaN(f.value)) {
-      console.log(`SALES REPORT: coupon from "${f.key}" = ${f.value} for order=${order.orderId}`);
+      // console.log(`SALES REPORT: coupon from "${f.key}" = ${f.value} for order=${order.orderId}`);
       return Number(f.value);
     }
   }
@@ -112,14 +112,8 @@ orders.forEach((order) => {
   totalRevenue += Number(order.totalAmount) || 0;
 
   // Coupon discount (make sure numeric)
-totalCouponDiscount += Number(
-    order.coupon?.discountAmount ??
-    order.coupon?.discount ??
-    order.discountApplied ??
-    order.couponDiscount ??
-    order.discountAmount ??
-    0
-);
+totalCouponDiscount += getCouponDiscountAndLog(order);
+
 
 
   // Offer discount: prefer stored order.offerDiscount (if valid number > 0).
@@ -383,6 +377,7 @@ const couponDiscount = Number(
 
 /* -------------------------------------------------------
    DOWNLOAD SALES REPORT - WITH PROPER DISCOUNTS
+
 ------------------------------------------------------- */
 export const downloadSalesReport = async (req, res) => {
   try {
@@ -415,7 +410,7 @@ export const downloadSalesReport = async (req, res) => {
       const dateStr = o.createdAt ? new Date(o.createdAt).toLocaleDateString() : "";
       const itemsCount = Array.isArray(o.items) ? o.items.length : 0;
       const subtotal = typeof o.subtotal === "number" ? o.subtotal : 0;
-      const couponDiscount = o.coupon?.discountAmount || 0;
+const couponDiscount = Number(String(o.coupon?.discountAmount || 0).replace(/[^\d.-]/g, ""));
       
       // Calculate offer discount
       let offerDiscount = o.offerDiscount || 0;
@@ -617,143 +612,165 @@ export const downloadSalesReport = async (req, res) => {
     /* -------------------------------------------------------
        PDF DOWNLOAD - PROPERLY ALIGNED
     ------------------------------------------------------- */
-    if (format === "pdf") {
-      const doc = new PDFDocument({ 
-        margin: 30, 
-        size: "A4",
-        layout: "landscape"
-      });
 
-      res.setHeader("Content-Type", "application/pdf");
-      res.setHeader(
-        "Content-Disposition",
-        `attachment; filename="${filenameBase}.pdf"`
-      );
+    // Clean numbers to remove weird UTF characters like ’
+const clean = (v) => {
+  if (v === null || v === undefined) return "0";
+  return String(v).replace(/[^\d.-]/g, ""); 
+};
 
-      doc.pipe(res);
+   /* -------------------------------------------------------
+   PDF DOWNLOAD - FIXED & CLEAN
+------------------------------------------------------- */
 
-      // Title
-      doc.fontSize(18).font("Helvetica-Bold").text("Sales Report", { align: "center" });
-      doc.fontSize(10).font("Helvetica").text(`Period: ${fromDate} → ${toDate}`, { align: "center" });
-      doc.moveDown(1);
+if (format === "pdf") {
+  const doc = new PDFDocument({
+    margin: 30,
+    size: "A4",
+    layout: "landscape",
+  });
 
-      // Summary section
-      const totalRevenue = rows.reduce((sum, r) => sum + r.total, 0);
-      const totalCouponDisc = rows.reduce((sum, r) => sum + r.couponDiscount, 0);
-      const totalOfferDisc = rows.reduce((sum, r) => sum + r.offerDiscount, 0);
+  res.setHeader("Content-Type", "application/pdf");
+  res.setHeader(
+    "Content-Disposition",
+    `attachment; filename="${filenameBase}.pdf"`
+  );
 
-      doc.fontSize(10).font("Helvetica-Bold");
-      doc.text(`Total Orders: ${rows.length}`, 40);
-      doc.text(`Total Revenue: ₹${totalRevenue.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`, 40);
-      doc.text(`Total Coupon Discount: ₹${totalCouponDisc.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`, 40);
-      doc.text(`Total Offer Discount: ₹${totalOfferDisc.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`, 40);
-      doc.moveDown(1);
+  doc.pipe(res);
 
-      // Table headers
-      const colWidths = {
-        orderId: 60,
-        date: 55,
-        customer: 70,
-        items: 25,
-        categories: 80,
-        subtotal: 50,
-        couponDisc: 45,
-        offerDisc: 45,
-        totalDisc: 45,
-        total: 50,
-        payment: 50,
-        status: 50,
-      };
+  // Title
+  doc.fontSize(18).font("Helvetica-Bold").text("Sales Report", { align: "center" });
+  doc.fontSize(10).font("Helvetica").text(`Period: ${fromDate} → ${toDate}`, { align: "center" });
+  doc.moveDown(1);
 
-      const headers = [
-        "Order ID",
-        "Date",
-        "Customer",
-        "Items",
-        "Categories",
-        "Subtotal",
-        "Coupon",
-        "Offer",
-        "Total Disc",
-        "Final",
-        "Payment",
-        "Status",
-      ];
+  // Summary section
+  const totalRevenue = rows.reduce((sum, r) => sum + r.total, 0);
+  const totalCouponDisc = rows.reduce((sum, r) => sum + r.couponDiscount, 0);
+  const totalOfferDisc = rows.reduce((sum, r) => sum + r.offerDiscount, 0);
 
-      const startX = 40;
-      let y = doc.y;
+  doc.fontSize(10).font("Helvetica-Bold");
+  doc.text(`Total Orders: ${rows.length}`, 40);
+  doc.text(`Total Revenue: ₹${totalRevenue.toLocaleString("en-IN", { minimumFractionDigits: 2 })}`, 40);
+  doc.text(`Total Coupon Discount: ₹${totalCouponDisc.toLocaleString("en-IN", { minimumFractionDigits: 2 })}`, 40);
+  doc.text(`Total Offer Discount: ₹${totalOfferDisc.toLocaleString("en-IN", { minimumFractionDigits: 2 })}`, 40);
+  doc.moveDown(1);
 
-      // Draw header row
-      doc.font("Helvetica-Bold").fontSize(8);
-      let x = startX;
+  // Column sizes
+ const colWidths = {
+  orderId: 60,
+  date: 55,
+  customer: 70,
+  items: 35,
+  categories: 100,
+  subtotal: 55,
+  couponDisc: 50,
+  offerDisc: 50,
+  totalDisc: 55,
+  total: 60,
+  payment: 60,
+  status: 55,
+};
 
-      Object.values(colWidths).forEach((w, i) => {
-        doc.text(headers[i], x, y, { width: w, align: "center" });
-        x += w;
-      });
 
-      doc.moveDown(0.5);
-      y = doc.y;
+  const headers = [
+    "Order ID",
+    "Date",
+    "Customer",
+    "Items",
+    "Categories",
+    "Subtotal",
+    "Coupon",
+    "Offer",
+    "Total Disc",
+    "Final",
+    "Payment",
+    "Status",
+  ];
 
-      // Draw separator line
-      doc.moveTo(startX, y).lineTo(startX + Object.values(colWidths).reduce((a, b) => a + b, 0), y).stroke();
-      doc.moveDown(0.3);
+  const clean = (v) => String(v || "0").replace(/[^\d.-]/g, "");
 
-      // Data rows
-      doc.font("Helvetica").fontSize(7);
+  const startX = 40;
+  let y = doc.y;
 
-      rows.forEach((r) => {
-        const rowData = [
-          r.orderId,
-          r.date,
-          r.customer.substring(0, 15),
-          String(r.items),
-          r.categories.substring(0, 20),
-          `₹${r.subtotal}`,
-          `₹${r.couponDiscount}`,
-          `₹${r.offerDiscount}`,
-          `₹${r.totalDiscount}`,
-          `₹${r.total}`,
-          r.paymentMethod,
-          r.status,
-        ];
+  // Header row
+  doc.font("Helvetica-Bold").fontSize(8);
+  let x = startX;
+  Object.values(colWidths).forEach((w, i) => {
+    doc.text(headers[i], x, y, { width: w, align: "center" });
+    x += w;
+  });
 
-        // Calculate max height for this row
-        let maxHeight = 0;
-        Object.values(colWidths).forEach((w, i) => {
-          const value = rowData[i] || "";
-          const height = doc.heightOfString(value, { width: w });
-          if (height > maxHeight) maxHeight = height;
-        });
+  doc.moveDown(0.5);
+  y = doc.y;
 
-        // Check if we need a new page
-        if (doc.y + maxHeight > doc.page.height - 40) {
-          doc.addPage();
-          doc.y = 40;
-        }
+  // Separator line
+  doc.moveTo(startX, y).lineTo(startX + Object.values(colWidths).reduce((a, b) => a + b, 0), y).stroke();
+  doc.moveDown(0.3);
 
-        // Draw the row
-        let drawX = startX;
-        const drawY = doc.y;
+  // ROWS
+  doc.font("Helvetica").fontSize(7);
+// Clean numeric and text values
+const cleanNum = (v) => String(v || "0").replace(/[^\d.-]/g, "");
+const cleanTxt = (v) => String(v || "").replace(/[^\w\s,-]/g, "");
 
-        Object.values(colWidths).forEach((w, i) => {
-          const value = rowData[i];
-          const alignRight = i >= 5 && i <= 9;
+// ----------- MAIN PDF ROW LOOP ------------
+rows.forEach((r) => {
+  const rowData = [
+    cleanTxt(r.orderId),
+    r.date,
+    cleanTxt(r.customer).substring(0, 18),
+    String(r.items || 0),
+    cleanTxt(r.categories).substring(0, 28),
 
-          doc.text(value, drawX, drawY, {
-            width: w,
-            align: alignRight ? "right" : "left",
-          });
+    `₹${cleanNum(r.subtotal)}`,
+    `₹${cleanNum(r.couponDiscount)}`,
+    `₹${cleanNum(r.offerDiscount)}`,
+    `₹${cleanNum(r.totalDiscount)}`,
+    `₹${cleanNum(r.total)}`,
 
-          drawX += w;
-        });
+    cleanTxt(r.paymentMethod),
+    cleanTxt(r.status),
+  ];
 
-        doc.y = drawY + maxHeight + 3;
-      });
+  // Calculate height
+  let maxHeight = 12;
+  Object.values(colWidths).forEach((w, i) => {
+    const h = doc.heightOfString(rowData[i], { width: w });
+    if (h > maxHeight) maxHeight = h;
+  });
 
-      doc.end();
-      return;
-    }
+  // Page break
+  if (doc.y + maxHeight > doc.page.height - 50) {
+    doc.addPage();
+    doc.y = 40;
+  }
+
+  // Draw cells
+  let drawX = startX;
+  const drawY = doc.y;
+
+  Object.values(colWidths).forEach((w, i) => {
+    const moneyColumns = [5, 6, 7, 8, 9];
+    const alignRight = moneyColumns.includes(i);
+
+    doc.text(rowData[i], drawX, drawY, {
+      width: w,
+      align: alignRight ? "right" : "left",
+    });
+
+    drawX += w;
+  });
+
+  doc.y = drawY + maxHeight + 3;
+});
+
+
+ 
+
+  doc.end();
+  return;
+}
+
 
     return res.status(400).json({ 
       success: false, 

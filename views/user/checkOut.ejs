@@ -923,6 +923,12 @@ subtotal += item.finalPrice * item.quantity;
             }
             
             document.getElementById('totalAmount').textContent = `₹${total.toFixed(2)}`;
+            // Update main coupon discount (dashboard stat card)
+const couponStat = document.getElementById("totalCouponDiscount");
+if (couponStat) {
+    couponStat.textContent = `₹${couponDiscount.toFixed(2)}`;
+}
+
         }
 
         // ========== ALL YOUR EXISTING FUNCTIONS REMAIN THE SAME ==========
