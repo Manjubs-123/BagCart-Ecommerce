@@ -313,6 +313,79 @@ export const downloadInvoice = async (req, res) => {
 
 
 
+// export const cancelItem = async (req, res) => {
+//   try {
+//     const { orderId, itemId } = req.params;
+//     const { reason, details } = req.body;
+//     const userId = req.session?.user?.id;
+
+//     if (!userId) {
+//       return res.status(401).json({ success: false, message: "Not logged in" });
+//     }
+
+//     const order = await Order.findOne({ _id: orderId, user: userId });
+//     if (!order) return res.status(404).json({ success: false, message: "Order not found" });
+
+//     const item = order.items.id(itemId);
+//     if (!item) return res.status(404).json({ success: false, message: "Item not found" });
+
+//     if (["delivered", "cancelled", "returned"].includes(item.status)) {
+//       return res.json({ success: false, message: "Cannot cancel this item" });
+//     }
+
+//     // Restore stock
+//     try {
+//       const product = await Product.findById(item.product);
+//       if (product) {
+//         const variant = product.variants[item.variantIndex];
+//         if (variant) {
+//           variant.stock += item.quantity;
+//           product.markModified(`variants.${item.variantIndex}.stock`);
+//           await product.save();
+//         }
+//       }
+//     } catch (err) {
+//       console.error("Stock return error:", err);
+//     }
+
+//     // Update item
+//     item.status = "cancelled";
+//     item.cancelReason = reason || "Cancelled by user";
+//     item.cancelDetails = details || "";
+//     item.cancelledDate = new Date();
+
+//     // Refund if prepaid
+//     if (order.paymentMethod === "razorpay" && order.paymentStatus === "paid") {
+//       try {
+//         const refund = await razorpay.payments.refund(item.razorpayPaymentId, {
+//           amount: item.price * item.quantity * 100
+//         });
+//         item.refundId = refund.id;
+//         item.refundStatus = "initiated";
+//       } catch (err) {
+//         console.error("Refund Error:", err);
+//       }
+//     }
+
+//     // If entire order cancelled
+//     const allCancelled = order.items.every(i => ["cancelled", "returned"].includes(i.status));
+//     if (allCancelled) order.orderStatus = "cancelled";
+
+//     if (allCancelled && order.paymentMethod === "razorpay") {
+//       order.paymentStatus = "refunded";
+//     }
+
+//     await order.save();
+
+//     return res.json({ success: true, message: "Item cancelled successfully" });
+
+//   } catch (err) {
+//     console.error("Cancel Error:", err);
+//     return res.status(500).json({ success: false, message: "Something went wrong" });
+//   }
+// };
+
+
 export const cancelItem = async (req, res) => {
   try {
     const { orderId, itemId } = req.params;
@@ -354,25 +427,67 @@ export const cancelItem = async (req, res) => {
     item.cancelDetails = details || "";
     item.cancelledDate = new Date();
 
-    // Refund if prepaid
-    if (order.paymentMethod === "razorpay" && order.paymentStatus === "paid") {
+    // -----------------------------------------------
+    // ✅ REFUND LOGIC UPDATED → CREDIT WALLET ONLY
+    // -----------------------------------------------
+
+    const isPrepaid =
+      (order.paymentMethod === "razorpay" && order.paymentStatus === "paid") ||
+      order.paymentMethod === "wallet";
+
+    if (isPrepaid) {
       try {
-        const refund = await razorpay.payments.refund(item.razorpayPaymentId, {
-          amount: item.price * item.quantity * 100
+        const refundAmount = Number(item.price) * Number(item.quantity);
+
+        // Find/create wallet
+        let wallet = await Wallet.findOne({ user: userId });
+        if (!wallet) {
+          wallet = await Wallet.create({
+            user: userId,
+            balance: 0,
+            transactions: []
+          });
+        }
+
+        // Add balance
+        wallet.balance += refundAmount;
+
+        // Add transaction
+        wallet.transactions.push({
+          type: "credit",
+          amount: refundAmount,
+          description: `Refund for cancelled item ${item.itemOrderId || itemId}`,
+          date: new Date()
         });
-        item.refundId = refund.id;
-        item.refundStatus = "initiated";
+
+        await wallet.save();
+
+        // mark item refund info
+        item.refundAmount = refundAmount;
+        item.refundMethod = "wallet";
+        item.refundStatus = "credited";
+        item.refundDate = new Date();
+
       } catch (err) {
-        console.error("Refund Error:", err);
+        console.error("Wallet Refund Error:", err);
       }
     }
 
-    // If entire order cancelled
-    const allCancelled = order.items.every(i => ["cancelled", "returned"].includes(i.status));
-    if (allCancelled) order.orderStatus = "cancelled";
+    // -----------------------------------------------
+    // ❌ Old Razorpay refund removed — NO DIRECT REFUND
+    // -----------------------------------------------
 
-    if (allCancelled && order.paymentMethod === "razorpay") {
-      order.paymentStatus = "refunded";
+    // Entire order cancelled?
+    const allCancelled = order.items.every(i =>
+      ["cancelled", "returned"].includes(i.status)
+    );
+
+    if (allCancelled) {
+      order.orderStatus = "cancelled";
+
+      if (order.paymentMethod === "razorpay") {
+        order.paymentStatus = "refunded"; // internal marker only
+      }
     }
 
     await order.save();
