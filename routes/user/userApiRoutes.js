@@ -351,6 +351,17 @@ router.post("/orders", async (req, res) => {
     // Final amount
     const totalAmount = +((subtotal + tax + shippingFee - (discountApplied || 0))).toFixed(2);
 
+
+    /* ------------------------------
+   BLOCK COD FOR AMOUNT > ₹1000
+------------------------------ */
+if (paymentMethod === "cod" && totalAmount > 1000) {
+  return res.json({
+    success: false,
+    message: "Cash on Delivery is not available for orders above ₹1000"
+  });
+}
+
     /* ------------------------------
    WALLET FULL PAYMENT CHECK
 ------------------------------ */
