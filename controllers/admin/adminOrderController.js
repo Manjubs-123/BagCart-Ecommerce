@@ -157,6 +157,102 @@ export const adminGetOrder = async (req, res) => {
 };
 
 
+// export const adminUpdateOrderStatus = async (req, res) => {
+//   const session = await mongoose.startSession();
+//   session.startTransaction();
+//   try {
+//     const { orderId, itemId } = req.params;
+//     const { status } = req.body;
+
+//     const order = await Order.findById(orderId).session(session);
+//     if (!order) {
+//       await session.abortTransaction();
+//       session.endSession();
+//       return res.status(404).json({ success: false, message: "Order not found" });
+//     }
+
+//     const item = order.items.id(itemId);
+//     if (!item) {
+//       await session.abortTransaction();
+//       session.endSession();
+//       return res.status(404).json({ success: false, message: "Item not found" });
+//     }
+
+
+    
+// const prevStatus = item.status;
+// // Normalize DB and incoming UI statuses
+// const normalize = (s) =>
+//   s.toLowerCase()
+//    .replace(/ /g, "_")
+//    .replace(/-/g, "_")
+//    .trim();
+
+
+// const prev = normalize(prevStatus);
+// const next = normalize(status);
+
+
+// const allowedFlow = {
+//   pending: ["processing"],
+//   processing: ["shipped"],
+//   shipped: ["out_for_delivery"],
+//   out_for_delivery: ["delivered"],
+//   delivered: [],
+//   cancelled: [],
+//   returned: []
+// };
+
+// // Stop invalid transitions
+// if (!allowedFlow[prev] || !allowedFlow[prev].includes(next)) {
+//   await session.abortTransaction();
+//   session.endSession();
+//   return res.status(400).json({
+//     success: false,
+//     message: `Cannot change status from '${prevStatus}' to '${status}'`
+//   });
+// }
+
+// // Save normalized status
+// item.status = next;
+
+
+//     // inventory restock if cancelled
+//     if (status === "cancelled" && prevStatus !== "delivered" && prevStatus !== "cancelled") {
+//       const product = await Product.findById(item.product).session(session);
+//       if (product?.variants?.[item.variantIndex]) {
+//         product.variants[item.variantIndex].stock += item.quantity;
+//         await product.save({ session });
+//       }
+//     }
+
+//     // delivered rule
+//     if (status === "delivered") {
+//       item.deliveredDate = new Date();
+//     }
+
+//     item.status = status;
+
+   
+//     if (order.items.every(i => i.status === "delivered")) {
+//       order.orderStatus = "delivered";
+//     }
+
+//     await order.save({ session });
+//     await session.commitTransaction();
+//     session.endSession();
+
+//     return res.json({ success: true, message: "Item status updated", itemId });
+
+//   } catch (err) {
+//     await session.abortTransaction();
+//     session.endSession();
+//     console.error("adminUpdateOrderStatus:", err);
+//     return res.status(500).json({ success: false, message: "Error updating item status" });
+//   }
+// };
+
+
 export const adminUpdateOrderStatus = async (req, res) => {
   const session = await mongoose.startSession();
   session.startTransaction();
@@ -178,52 +274,80 @@ export const adminUpdateOrderStatus = async (req, res) => {
       return res.status(404).json({ success: false, message: "Item not found" });
     }
 
+    const prevStatus = item.status;
 
-    
-const prevStatus = item.status;
-// Normalize DB and incoming UI statuses
-const normalize = (s) =>
-  s.toLowerCase()
-   .replace(/ /g, "_")
-   .replace(/-/g, "_")
-   .trim();
+    const normalize = (s) =>
+      s.toLowerCase().replace(/ /g, "_").replace(/-/g, "_").trim();
 
+    const prev = normalize(prevStatus);
+    const next = normalize(status);
 
-const prev = normalize(prevStatus);
-const next = normalize(status);
+    const allowedFlow = {
+      pending: ["processing"],
+      processing: ["shipped"],
+      shipped: ["out_for_delivery"],
+      out_for_delivery: ["delivered"],
+      delivered: [],
+      cancelled: [],
+      returned: []
+    };
 
+    if (!allowedFlow[prev] || !allowedFlow[prev].includes(next)) {
+      await session.abortTransaction();
+      session.endSession();
+      return res.status(400).json({
+        success: false,
+        message: `Cannot change status from '${prevStatus}' to '${status}'`
+      });
+    }
 
-const allowedFlow = {
-  pending: ["processing"],
-  processing: ["shipped"],
-  shipped: ["out_for_delivery"],
-  out_for_delivery: ["delivered"],
-  delivered: [],
-  cancelled: [],
-  returned: []
-};
+    // Save normalized status
+    item.status = next;
 
-// Stop invalid transitions
-if (!allowedFlow[prev] || !allowedFlow[prev].includes(next)) {
-  await session.abortTransaction();
-  session.endSession();
-  return res.status(400).json({
-    success: false,
-    message: `Cannot change status from '${prevStatus}' to '${status}'`
-  });
-}
-
-// Save normalized status
-item.status = next;
-
-
-    // inventory restock if cancelled
+    // ===============================
+    // CANCEL ACTION BLOCK
+    // ===============================
     if (status === "cancelled" && prevStatus !== "delivered" && prevStatus !== "cancelled") {
+
+      // 1️⃣ Restore inventory
       const product = await Product.findById(item.product).session(session);
       if (product?.variants?.[item.variantIndex]) {
         product.variants[item.variantIndex].stock += item.quantity;
         await product.save({ session });
       }
+
+      // 2️⃣ ⭐ ADDED: WALLET REFUND LOGIC FOR PREPAID ORDERS
+      const refundAmount = Number(item.price) * Number(item.quantity);
+
+      if (
+        (order.paymentMethod === "razorpay" && order.paymentStatus === "paid") ||
+        order.paymentMethod === "wallet"
+      ) {
+        // Avoid double-refund
+        if (!item.refundAmount) {
+          await Wallet.findOneAndUpdate(
+            { user: order.user },
+            {
+              $inc: { balance: refundAmount },
+              $push: {
+                transactions: {
+                  type: "credit",
+                  amount: refundAmount,
+                  description: `Refund for cancelled item ${item._id} (Order ${order.orderId || order._id})`,
+                  date: new Date()
+                }
+              }
+            },
+            { session, upsert: true }
+          );
+
+          item.refundAmount = refundAmount;
+          item.refundStatus = "credited";
+          item.refundMethod = "wallet";
+          item.refundDate = new Date();
+        }
+      }
+      // ⭐ END OF ADDED REFUND LOGIC
     }
 
     // delivered rule
@@ -233,7 +357,6 @@ item.status = next;
 
     item.status = status;
 
-   
     if (order.items.every(i => i.status === "delivered")) {
       order.orderStatus = "delivered";
     }
@@ -251,6 +374,7 @@ item.status = next;
     return res.status(500).json({ success: false, message: "Error updating item status" });
   }
 };
+
 
 export const adminGetCancelledItems = async (req, res) => {
   try {

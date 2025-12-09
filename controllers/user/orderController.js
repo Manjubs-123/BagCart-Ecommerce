@@ -4,6 +4,7 @@ import Category from "../../models/category.js";
 import User from "../../models/userModel.js";
 import Order from "../../models/orderModel.js";
 import Cart from "../../models/cartModel.js";
+import Wallet from "../../models/walletModel.js";
 import PDFDocument from 'pdfkit';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -385,7 +386,6 @@ export const downloadInvoice = async (req, res) => {
 //   }
 // };
 
-
 export const cancelItem = async (req, res) => {
   try {
     const { orderId, itemId } = req.params;
@@ -421,72 +421,55 @@ export const cancelItem = async (req, res) => {
       console.error("Stock return error:", err);
     }
 
-    // Update item
+    // Update item status
     item.status = "cancelled";
     item.cancelReason = reason || "Cancelled by user";
     item.cancelDetails = details || "";
     item.cancelledDate = new Date();
 
-    // -----------------------------------------------
-    // ✅ REFUND LOGIC UPDATED → CREDIT WALLET ONLY
-    // -----------------------------------------------
-
+    // ----------- REFUND TO WALLET ONLY (ONE TIME) ------------
     const isPrepaid =
       (order.paymentMethod === "razorpay" && order.paymentStatus === "paid") ||
       order.paymentMethod === "wallet";
 
-    if (isPrepaid) {
-      try {
-        const refundAmount = Number(item.price) * Number(item.quantity);
+    if (isPrepaid && !item.refundAmount) {
+      const refundAmount = Number(item.price) * Number(item.quantity);
 
-        // Find/create wallet
-        let wallet = await Wallet.findOne({ user: userId });
-        if (!wallet) {
-          wallet = await Wallet.create({
-            user: userId,
-            balance: 0,
-            transactions: []
-          });
-        }
-
-        // Add balance
-        wallet.balance += refundAmount;
-
-        // Add transaction
-        wallet.transactions.push({
-          type: "credit",
-          amount: refundAmount,
-          description: `Refund for cancelled item ${item.itemOrderId || itemId}`,
-          date: new Date()
+      let wallet = await Wallet.findOne({ user: userId });
+      if (!wallet) {
+        wallet = await Wallet.create({
+          user: userId,
+          balance: 0,
+          transactions: []
         });
-
-        await wallet.save();
-
-        // mark item refund info
-        item.refundAmount = refundAmount;
-        item.refundMethod = "wallet";
-        item.refundStatus = "credited";
-        item.refundDate = new Date();
-
-      } catch (err) {
-        console.error("Wallet Refund Error:", err);
       }
+
+      wallet.balance += refundAmount;
+
+      wallet.transactions.push({
+        type: "credit",
+        amount: refundAmount,
+        description: `Refund for cancelled item ${item.itemOrderId || itemId}`,
+        date: new Date()
+      });
+
+      await wallet.save();
+
+      item.refundAmount = refundAmount;
+      item.refundMethod = "wallet";
+      item.refundStatus = "credited";
+      item.refundDate = new Date();
     }
 
-    // -----------------------------------------------
-    // ❌ Old Razorpay refund removed — NO DIRECT REFUND
-    // -----------------------------------------------
-
-    // Entire order cancelled?
+    // ----------- ORDER SUMMARY UPDATE ------------
     const allCancelled = order.items.every(i =>
       ["cancelled", "returned"].includes(i.status)
     );
 
     if (allCancelled) {
       order.orderStatus = "cancelled";
-
       if (order.paymentMethod === "razorpay") {
-        order.paymentStatus = "refunded"; // internal marker only
+        order.paymentStatus = "refunded"; 
       }
     }
 
@@ -499,6 +482,7 @@ export const cancelItem = async (req, res) => {
     return res.status(500).json({ success: false, message: "Something went wrong" });
   }
 };
+
 
 
 export const returnItem = async (req, res) => {
