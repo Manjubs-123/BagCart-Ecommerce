@@ -89,7 +89,7 @@ function getCouponDiscountAndLog(order) {
 
   for (const f of fields) {
     if (f.value !== undefined && f.value !== null && !isNaN(f.value)) {
-      // console.log(`SALES REPORT: coupon from "${f.key}" = ${f.value} for order=${order.orderId}`);
+      console.log(`SALES REPORT: coupon from "${f.key}" = ${f.value} for order=${order.orderId}`);
       return Number(f.value);
     }
   }
@@ -112,8 +112,14 @@ orders.forEach((order) => {
   totalRevenue += Number(order.totalAmount) || 0;
 
   // Coupon discount (make sure numeric)
-totalCouponDiscount += getCouponDiscountAndLog(order);
-
+totalCouponDiscount += Number(
+    order.coupon?.discountAmount ??
+    order.coupon?.discount ??
+    order.discountApplied ??
+    order.couponDiscount ??
+    order.discountAmount ??
+    0
+);
 
 
   // Offer discount: prefer stored order.offerDiscount (if valid number > 0).
@@ -377,7 +383,6 @@ const couponDiscount = Number(
 
 /* -------------------------------------------------------
    DOWNLOAD SALES REPORT - WITH PROPER DISCOUNTS
-
 ------------------------------------------------------- */
 export const downloadSalesReport = async (req, res) => {
   try {
@@ -410,7 +415,7 @@ export const downloadSalesReport = async (req, res) => {
       const dateStr = o.createdAt ? new Date(o.createdAt).toLocaleDateString() : "";
       const itemsCount = Array.isArray(o.items) ? o.items.length : 0;
       const subtotal = typeof o.subtotal === "number" ? o.subtotal : 0;
-const couponDiscount = Number(String(o.coupon?.discountAmount || 0).replace(/[^\d.-]/g, ""));
+      const couponDiscount = o.coupon?.discountAmount || 0;
       
       // Calculate offer discount
       let offerDiscount = o.offerDiscount || 0;
@@ -612,22 +617,14 @@ const couponDiscount = Number(String(o.coupon?.discountAmount || 0).replace(/[^\
     /* -------------------------------------------------------
        PDF DOWNLOAD - PROPERLY ALIGNED
     ------------------------------------------------------- */
-
-    // Clean numbers to remove weird UTF characters like ’
-const clean = (v) => {
-  if (v === null || v === undefined) return "0";
-  return String(v).replace(/[^\d.-]/g, ""); 
-};
-
    /* -------------------------------------------------------
-   PDF DOWNLOAD - FIXED & CLEAN
+   PDF DOWNLOAD - PROPERLY ALIGNED WITH UNICODE SUPPORT
 ------------------------------------------------------- */
-
 if (format === "pdf") {
-  const doc = new PDFDocument({
-    margin: 30,
+  const doc = new PDFDocument({ 
+    margin: 30, 
     size: "A4",
-    layout: "landscape",
+    layout: "landscape"
   });
 
   res.setHeader("Content-Type", "application/pdf");
@@ -638,9 +635,34 @@ if (format === "pdf") {
 
   doc.pipe(res);
 
+  // Register Unicode font (use a font file available on your server)
+  // Option 1: If you have the font file locally
+  // doc.registerFont('Regular', path.join(__dirname, '../fonts/NotoSans-Regular.ttf'));
+  // doc.registerFont('Bold', path.join(__dirname, '../fonts/NotoSans-Bold.ttf'));
+  
+  // Option 2: For development/testing - use built-in Courier (limited Unicode)
+  // For production, download NotoSans or Roboto fonts and use Option 1
+  
+  // Using Helvetica as base but we'll handle ₹ specially
+  const useUnicodeFont = false; // Set to true when you have font files
+
+  // Helper function to draw text with proper rupee symbol
+  const drawText = (text, x, y, options = {}) => {
+    const textStr = String(text);
+    if (textStr.includes('₹')) {
+      // Replace ₹ with Rs. for now (or use Unicode font when available)
+      const replaced = textStr.replace(/₹/g, 'Rs.');
+      doc.text(replaced, x, y, options);
+    } else {
+      doc.text(textStr, x, y, options);
+    }
+  };
+
   // Title
-  doc.fontSize(18).font("Helvetica-Bold").text("Sales Report", { align: "center" });
-  doc.fontSize(10).font("Helvetica").text(`Period: ${fromDate} → ${toDate}`, { align: "center" });
+  doc.fontSize(18).font(useUnicodeFont ? 'Bold' : 'Helvetica-Bold')
+     .text("Sales Report", { align: "center" });
+  doc.fontSize(10).font(useUnicodeFont ? 'Regular' : 'Helvetica')
+     .text(`Period: ${fromDate} → ${toDate}`, { align: "center" });
   doc.moveDown(1);
 
   // Summary section
@@ -648,30 +670,31 @@ if (format === "pdf") {
   const totalCouponDisc = rows.reduce((sum, r) => sum + r.couponDiscount, 0);
   const totalOfferDisc = rows.reduce((sum, r) => sum + r.offerDiscount, 0);
 
-  doc.fontSize(10).font("Helvetica-Bold");
-  doc.text(`Total Orders: ${rows.length}`, 40);
-  doc.text(`Total Revenue: ₹${totalRevenue.toLocaleString("en-IN", { minimumFractionDigits: 2 })}`, 40);
-  doc.text(`Total Coupon Discount: ₹${totalCouponDisc.toLocaleString("en-IN", { minimumFractionDigits: 2 })}`, 40);
-  doc.text(`Total Offer Discount: ₹${totalOfferDisc.toLocaleString("en-IN", { minimumFractionDigits: 2 })}`, 40);
-  doc.moveDown(1);
+  doc.fontSize(10).font(useUnicodeFont ? 'Bold' : 'Helvetica-Bold');
+  drawText(`Total Orders: ${rows.length}`, 40, doc.y);
+  doc.moveDown(0.3);
+  drawText(`Total Revenue: ₹${totalRevenue.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`, 40, doc.y);
+  doc.moveDown(0.3);
+  drawText(`Total Coupon Discount: ₹${totalCouponDisc.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`, 40, doc.y);
+  doc.moveDown(0.3);
+  drawText(`Total Offer Discount: ₹${totalOfferDisc.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`, 40, doc.y);
+  doc.moveDown(1.5);
 
-  // Column sizes
-const colWidths = {
-  orderId: 60,
-  date: 55,
-  customer: 70,
-  items: 35,
-  categories: 100,
-  subtotal: 55,
-  couponDisc: 50,
-  offerDisc: 50,
-  totalDisc: 55,
-  final: 60,      // <-- Final amount
-  payment: 60,
-  status: 55,
-};
-
-
+  // Table configuration with adjusted widths
+  const colWidths = {
+    orderId: 65,
+    date: 55,
+    customer: 75,
+    items: 30,
+    categories: 85,
+    subtotal: 55,
+    couponDisc: 50,
+    offerDisc: 50,
+    totalDisc: 50,
+    total: 55,
+    payment: 65,
+    status: 50,
+  };
 
   const headers = [
     "Order ID",
@@ -688,91 +711,151 @@ const colWidths = {
     "Status",
   ];
 
-  const clean = (v) => String(v || "0").replace(/[^\d.-]/g, "");
+  const startX = 30;
+  const tableWidth = Object.values(colWidths).reduce((a, b) => a + b, 0);
 
-  const startX = 40;
-  let y = doc.y;
+  // Function to draw table header
+  const drawTableHeader = () => {
+    const headerY = doc.y;
+    
+    // Draw header background
+    doc.rect(startX, headerY - 3, tableWidth, 18)
+       .fill('#366092');
+    
+    // Draw header text
+    doc.font(useUnicodeFont ? 'Bold' : 'Helvetica-Bold')
+       .fontSize(8)
+       .fillColor('white');
+    
+    let x = startX;
+    Object.keys(colWidths).forEach((key, i) => {
+      const width = colWidths[key];
+      doc.text(headers[i], x + 2, headerY, { 
+        width: width - 4, 
+        align: 'center',
+        lineBreak: false
+      });
+      x += width;
+    });
+    
+    doc.fillColor('black');
+    doc.moveDown(1.2);
+  };
 
-  // Header row
-  doc.font("Helvetica-Bold").fontSize(8);
-  let x = startX;
-  Object.values(colWidths).forEach((w, i) => {
-    doc.text(headers[i], x, y, { width: w, align: "center" });
-    x += w;
-  });
+  // Draw initial header
+  drawTableHeader();
 
-  doc.moveDown(0.5);
-  y = doc.y;
+  // Data rows
+  doc.font(useUnicodeFont ? 'Regular' : 'Helvetica').fontSize(7);
 
-  // Separator line
-  doc.moveTo(startX, y).lineTo(startX + Object.values(colWidths).reduce((a, b) => a + b, 0), y).stroke();
-  doc.moveDown(0.3);
+  rows.forEach((r, rowIndex) => {
+    // Prepare row data with proper formatting
+    const rowData = [
+      r.orderId || '',
+      r.date || '',
+      r.customer.substring(0, 18) || '',
+      String(r.items) || '0',
+      r.categories.substring(0, 22) || '',
+      r.subtotal.toFixed(2),
+      r.couponDiscount.toFixed(2),
+      r.offerDiscount.toFixed(2),
+      r.totalDiscount.toFixed(2),
+      r.total.toFixed(2),
+      r.paymentMethod || '',
+      r.status || '',
+    ];
 
-  // ROWS
-  doc.font("Helvetica").fontSize(7);
-// Clean numeric and text values
-const cleanNum = (v) => String(v || "0").replace(/[^\d.-]/g, "");
-const cleanTxt = (v) => String(v || "").replace(/[^\w\s,-]/g, "");
-
-// ----------- MAIN PDF ROW LOOP ------------
-rows.forEach((r) => {
-  const rowData = [
-    cleanTxt(r.orderId),
-    r.date,
-    cleanTxt(r.customer).substring(0, 18),
-    String(r.items || 0),
-    cleanTxt(r.categories).substring(0, 28),
-
-    `₹${cleanNum(r.subtotal)}`,
-    `₹${cleanNum(r.couponDiscount)}`,
-    `₹${cleanNum(r.offerDiscount)}`,
-    `₹${cleanNum(r.totalDiscount)}`,
-    `₹${cleanNum(r.total)}`,
-
-    cleanTxt(r.paymentMethod),
-    cleanTxt(r.status),
-  ];
-
-  // Calculate height
-  let maxHeight = 12;
-  Object.values(colWidths).forEach((w, i) => {
-    const h = doc.heightOfString(rowData[i], { width: w });
-    if (h > maxHeight) maxHeight = h;
-  });
-
-  // Page break
-  if (doc.y + maxHeight > doc.page.height - 50) {
-    doc.addPage();
-    doc.y = 40;
-  }
-
-  // Draw cells
-  let drawX = startX;
-  const drawY = doc.y;
-
-  Object.values(colWidths).forEach((w, i) => {
-    const moneyColumns = [5, 6, 7, 8, 9];
-    const alignRight = moneyColumns.includes(i);
-
-    doc.text(rowData[i], drawX, drawY, {
-      width: w,
-      align: alignRight ? "right" : "left",
+    // Calculate row height needed (check all columns)
+    let maxHeight = 12; // Minimum row height
+    Object.keys(colWidths).forEach((key, i) => {
+      const width = colWidths[key];
+      const value = String(rowData[i]);
+      const height = doc.heightOfString(value, { 
+        width: width - 4,
+        lineBreak: true
+      });
+      if (height > maxHeight) maxHeight = height;
     });
 
-    drawX += w;
-  });
+    // Check if we need a new page (leave 50px margin at bottom)
+    if (doc.y + maxHeight + 10 > doc.page.height - 50) {
+      doc.addPage({ layout: 'landscape' });
+      doc.y = 40;
+      drawTableHeader();
+    }
 
-  doc.y = drawY + maxHeight + 3;
+    const rowY = doc.y;
+    
+    // Draw alternating row background for readability
+    if (rowIndex % 2 === 0) {
+      doc.rect(startX, rowY - 2, tableWidth, maxHeight + 4)
+         .fill('#f8f9fa')
+         .fillColor('black');
+    }
+
+    // Draw cell borders and content
+    let x = startX;
+    Object.keys(colWidths).forEach((key, i) => {
+      const width = colWidths[key];
+      const value = rowData[i];
+      
+      // Determine alignment (right-align numeric columns)
+      const isNumeric = i >= 5 && i <= 9;
+      const align = isNumeric ? 'right' : 'left';
+      
+      // Add padding
+const padding = 3;
+
+// Draw text with rupee symbol handling
+const displayValue = (i >= 5 && i <= 9) ? `₹${value}` : value;
+
+drawText(displayValue, x + padding, rowY, {
+  width: width - (padding * 2),
+  align: align,        // left or right
+  lineBreak: true
 });
 
+      
+      // Draw vertical border (light gray)
+      if (i < Object.keys(colWidths).length - 1) {
+        doc.strokeColor('#e0e0e0')
+           .moveTo(x + width, rowY - 2)
+           .lineTo(x + width, rowY + maxHeight + 2)
+           .stroke()
+           .strokeColor('black');
+      }
+      
+      x += width;
+    });
 
- 
+    // Draw horizontal border at bottom of row
+    doc.strokeColor('#e0e0e0')
+       .moveTo(startX, rowY + maxHeight + 2)
+       .lineTo(startX + tableWidth, rowY + maxHeight + 2)
+       .stroke()
+       .strokeColor('black');
+
+    // Move to next row
+    doc.y = rowY + maxHeight + 4;
+  });
+
+  // Add footer with page numbers
+  const pages = doc.bufferedPageRange();
+  for (let i = 0; i < pages.count; i++) {
+    doc.switchToPage(i);
+    doc.fontSize(8)
+       .font(useUnicodeFont ? 'Regular' : 'Helvetica')
+       .text(
+         `Page ${i + 1} of ${pages.count}`,
+         0,
+         doc.page.height - 30,
+         { align: 'center' }
+       );
+  }
 
   doc.end();
   return;
 }
-
-
     return res.status(400).json({ 
       success: false, 
       message: "Unsupported format. Use 'csv', 'excel', or 'pdf'" 
