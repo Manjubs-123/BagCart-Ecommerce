@@ -656,7 +656,7 @@ if (format === "pdf") {
   doc.moveDown(1);
 
   // Column sizes
- const colWidths = {
+const colWidths = {
   orderId: 60,
   date: 55,
   customer: 70,
@@ -666,10 +666,11 @@ if (format === "pdf") {
   couponDisc: 50,
   offerDisc: 50,
   totalDisc: 55,
-  total: 60,
+  final: 60,      // <-- Final amount
   payment: 60,
   status: 55,
 };
+
 
 
   const headers = [
