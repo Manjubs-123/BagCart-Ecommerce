@@ -313,7 +313,6 @@ export const downloadInvoice = async (req, res) => {
 };
 
 
-
 export const cancelItem = async (req, res) => {
   const session = await mongoose.startSession();
   session.startTransaction();
@@ -356,48 +355,55 @@ export const cancelItem = async (req, res) => {
       (order.paymentMethod === "razorpay" &&
        ["paid", "partial_refunded"].includes(order.paymentStatus));
 
-    /* ---------------- REFUND BLOCK ---------------- */
+    /* ---------------- REFUND BLOCK (CORRECTED) ---------------- */
     if (isPrepaid && !item.refundAmount) {
 
-      const price = Number(item.price);
-      const qty = Number(item.quantity);
-      const itemTotal = price * qty;
+      const itemPrice = Number(item.price);
+      const itemQty = Number(item.quantity);
+      const itemTotal = itemPrice * itemQty;
 
-      /* --------- COUPON SHARE (MATCH RETURN LOGIC) -------- */
-      const baseSubtotal =
-        order.coupon?.subtotalBeforeCoupon > 0
-          ? order.coupon.subtotalBeforeCoupon
-          : order.subtotal;
-
-      let couponShare = 0;
-      if (order.coupon && order.coupon.discountAmount > 0 && baseSubtotal > 0) {
-        const itemShare = itemTotal / baseSubtotal;
-        couponShare = order.coupon.discountAmount * itemShare;
+      /* --------- COUPON SHARE (CORRECTED FORMULA) -------- */
+      let itemCouponShare = 0;
+      
+      if (order.coupon && order.coupon.discountAmount > 0) {
+        const baseSubtotal = order.coupon.subtotalBeforeCoupon || order.subtotal;
+        
+        if (baseSubtotal > 0) {
+          // Proportional coupon share based on item's contribution to subtotal
+          itemCouponShare = (itemTotal / baseSubtotal) * order.coupon.discountAmount;
+        }
       }
 
-      const refundBase = Math.max(0, itemTotal - couponShare);
+      // Item amount after coupon discount
+      const itemAfterCoupon = Math.max(0, itemTotal - itemCouponShare);
 
-      /* --------- TAX SHARE -------- */
-      const taxShare =
-        order.subtotal > 0
-          ? (refundBase / order.subtotal) * order.tax
-          : 0;
+      /* --------- TAX SHARE (CORRECTED) -------- */
+      let itemTaxShare = 0;
+      
+      // Tax is calculated on (subtotal - coupon), so we need item's share of that
+      const totalAfterCoupon = order.subtotal - (order.coupon?.discountAmount || 0);
+      
+      if (totalAfterCoupon > 0 && order.tax > 0) {
+        itemTaxShare = (itemAfterCoupon / totalAfterCoupon) * order.tax;
+      }
 
-      /* --------- SHIPPING REFUND ONLY ON LAST CANCEL -------- */
-      let shippingRefund = 0;
+      /* --------- SHIPPING REFUND (ONLY ON LAST CANCEL) -------- */
+      let itemShippingShare = 0;
 
       const otherItems = order.items.filter(i => i._id.toString() !== itemId);
       const allOthersDone = otherItems.every(i =>
         ["cancelled", "returned"].includes(i.status)
       );
 
+      // Refund full shipping if this is the only item OR all others are cancelled/returned
       if (order.items.length === 1 || allOthersDone) {
-        shippingRefund = order.shippingFee;
+        itemShippingShare = order.shippingFee;
       }
 
-      /* --------- FINAL REFUND AMOUNT -------- */
-      let refundAmount = refundBase + taxShare + shippingRefund;
+      /* --------- FINAL REFUND AMOUNT (WHAT USER ACTUALLY PAID) -------- */
+      let refundAmount = itemAfterCoupon + itemTaxShare + itemShippingShare;
 
+      /* --------- SAFETY CAP: Cannot exceed remaining refundable amount -------- */
       const previousRefunds = order.items.reduce(
         (sum, i) => sum + (i.refundAmount || 0),
         0
@@ -405,6 +411,7 @@ export const cancelItem = async (req, res) => {
       const refundableRemaining = order.totalAmount - previousRefunds;
 
       refundAmount = Math.min(refundAmount, refundableRemaining);
+      refundAmount = Math.max(0, refundAmount); // Cannot be negative
       refundAmount = +refundAmount.toFixed(2);
 
       /* --------- WALLET UPDATE -------- */
@@ -421,18 +428,21 @@ export const cancelItem = async (req, res) => {
       wallet.transactions.push({
         type: "credit",
         amount: refundAmount,
-        description: `Refund for cancelled item ${item.itemOrderId}`,
+        description: `Refund for cancelled item ${item.itemOrderId || itemId}`,
         date: new Date(),
         meta: {
-          refundBase: refundBase.toFixed(2),
-          taxShare: taxShare.toFixed(2),
-          shippingRefund: shippingRefund.toFixed(2),
-          couponShare: couponShare.toFixed(2)
+          itemTotal: itemTotal.toFixed(2),
+          couponShare: itemCouponShare.toFixed(2),
+          itemAfterCoupon: itemAfterCoupon.toFixed(2),
+          taxShare: itemTaxShare.toFixed(2),
+          shippingShare: itemShippingShare.toFixed(2),
+          refundAmount: refundAmount.toFixed(2)
         }
       });
 
       await wallet.save({ session });
 
+      /* --------- SAVE REFUND INFO IN ITEM -------- */
       item.refundAmount = refundAmount;
       item.refundMethod = "wallet";
       item.refundStatus = "credited";
@@ -448,7 +458,11 @@ export const cancelItem = async (req, res) => {
       order.orderStatus = "cancelled";
       order.paymentStatus = "refunded";
     } else {
-      order.paymentStatus = "partial_refunded";
+      // At least one item cancelled/returned but not all
+      const anyRefunded = order.items.some(i => i.refundAmount > 0);
+      if (anyRefunded) {
+        order.paymentStatus = "partial_refunded";
+      }
     }
 
     await order.save({ session });
@@ -458,14 +472,19 @@ export const cancelItem = async (req, res) => {
 
     return res.json({
       success: true,
-      message: "Item cancelled successfully"
+      message: "Item cancelled successfully",
+      refundAmount: item.refundAmount || 0
     });
 
   } catch (err) {
     await session.abortTransaction();
     session.endSession();
     console.error("Cancel Error:", err);
-    return res.status(500).json({ success: false, message: "Something went wrong", error: err.message });
+    return res.status(500).json({ 
+      success: false, 
+      message: "Something went wrong", 
+      error: err.message 
+    });
   }
 };
 
@@ -506,7 +525,7 @@ export const cancelItem = async (req, res) => {
 //     item.cancelDetails = details || "";
 //     item.cancelledDate = new Date();
 
-//     /* ---------------- PREPAID CHECK FIXED ---------------- */
+//     /* ---------------- PREPAID CHECK ---------------- */
 //     const isPrepaid =
 //       order.paymentMethod === "wallet" ||
 //       (order.paymentMethod === "razorpay" &&
@@ -515,41 +534,23 @@ export const cancelItem = async (req, res) => {
 //     /* ---------------- REFUND BLOCK ---------------- */
 //     if (isPrepaid && !item.refundAmount) {
 
-//       // const price = Number(item.price);
-//       // const qty = Number(item.quantity);
-//       // const itemTotal = price * qty;
+//       const price = Number(item.price);
+//       const qty = Number(item.quantity);
+//       const itemTotal = price * qty;
 
-//       /* --------- COUPON SHARE -------- */
+//       /* --------- COUPON SHARE (MATCH RETURN LOGIC) -------- */
+//       const baseSubtotal =
+//         order.coupon?.subtotalBeforeCoupon > 0
+//           ? order.coupon.subtotalBeforeCoupon
+//           : order.subtotal;
 
-//       /* ------------ COUPON SHARE (MATCHING RETURN LOGIC) ---------------- */
-// const price = Number(item.price);
-// const qty = Number(item.quantity);
-// const itemTotal = price * qty;
+//       let couponShare = 0;
+//       if (order.coupon && order.coupon.discountAmount > 0 && baseSubtotal > 0) {
+//         const itemShare = itemTotal / baseSubtotal;
+//         couponShare = order.coupon.discountAmount * itemShare;
+//       }
 
-// // Always use subtotalBeforeCoupon if available
-// const baseSubtotal =
-//   order.coupon?.subtotalBeforeCoupon > 0
-//     ? order.coupon.subtotalBeforeCoupon
-//     : order.subtotal;
-
-// let couponShare = 0;
-
-// if (order.coupon && order.coupon.discountAmount > 0 && baseSubtotal > 0) {
-//   const itemShare = itemTotal / baseSubtotal;
-//   couponShare = order.coupon.discountAmount * itemShare;
-// }
-
-// const refundBase = Math.max(0, itemTotal - couponShare);
-
-//       // const baseSubtotal =
-//       //   order.coupon?.subtotalBeforeCoupon || order.subtotal || 0;
-
-//       // let couponShare = 0;
-//       // if (order.coupon?.discountAmount > 0 && baseSubtotal > 0) {
-//       //   couponShare = (itemTotal / baseSubtotal) * order.coupon.discountAmount;
-//       // }
-
-//       // const refundBase = itemTotal - couponShare;
+//       const refundBase = Math.max(0, itemTotal - couponShare);
 
 //       /* --------- TAX SHARE -------- */
 //       const taxShare =
@@ -569,7 +570,7 @@ export const cancelItem = async (req, res) => {
 //         shippingRefund = order.shippingFee;
 //       }
 
-//       /* --------- FINAL REFUND -------- */
+//       /* --------- FINAL REFUND AMOUNT -------- */
 //       let refundAmount = refundBase + taxShare + shippingRefund;
 
 //       const previousRefunds = order.items.reduce(
@@ -613,7 +614,7 @@ export const cancelItem = async (req, res) => {
 //       item.refundDate = new Date();
 //     }
 
-//     /* ---------------- ORDER STATUS FIX ---------------- */
+//     /* ---------------- ORDER STATUS UPDATE ---------------- */
 //     const allCancelled = order.items.every(i =>
 //       ["cancelled", "returned"].includes(i.status)
 //     );
@@ -622,7 +623,7 @@ export const cancelItem = async (req, res) => {
 //       order.orderStatus = "cancelled";
 //       order.paymentStatus = "refunded";
 //     } else {
-//       order.paymentStatus = "partial_refunded"; // <-- does not block second refund
+//       order.paymentStatus = "partial_refunded";
 //     }
 
 //     await order.save({ session });
@@ -643,217 +644,6 @@ export const cancelItem = async (req, res) => {
 //   }
 // };
 
-
-// export const cancelItem = async (req, res) => {
-//   const session = await mongoose.startSession();
-//   session.startTransaction();
-//   try {
-//     const { orderId, itemId } = req.params;
-//     const { reason, details } = req.body;
-//     const userId = req.session?.user?.id;
-//     if (!userId) {
-//       await session.abortTransaction();
-//       session.endSession();
-//       return res.status(401).json({ success: false, message: "Not logged in" });
-//     }
-
-//     const order = await Order.findOne({ _id: orderId, user: userId }).session(session);
-//     if (!order) {
-//       await session.abortTransaction();
-//       session.endSession();
-//       return res.status(404).json({ success: false, message: "Order not found" });
-//     }
-
-//     const item = order.items.id(itemId);
-//     if (!item) {
-//       await session.abortTransaction();
-//       session.endSession();
-//       return res.status(404).json({ success: false, message: "Item not found" });
-//     }
-
-//     if (["delivered", "cancelled", "returned"].includes(item.status)) {
-//       await session.abortTransaction();
-//       session.endSession();
-//       return res.json({ success: false, message: "Cannot cancel this item" });
-//     }
-
-//     // 1) Restore stock (best-effort; continue if it fails)
-//     try {
-//       const product = await Product.findById(item.product).session(session);
-//       if (product && product.variants?.[item.variantIndex]) {
-//         product.variants[item.variantIndex].stock += item.quantity;
-//         await product.save({ session });
-//       }
-//     } catch (err) {
-//       console.error("Stock return error:", err);
-//       // continue — stock restore failure shouldn't block refund logic here
-//     }
-
-//     // 2) Mark item cancelled
-//     item.status = "cancelled";
-//     item.cancelReason = reason || "Cancelled by user";
-//     item.cancelDetails = details || "";
-//     item.cancelledDate = new Date();
-
-//     // 3) Decide whether we must process refund to wallet
-//     // Important: check payment METHOD (not status). We still prevent double-refund per-item by checking item.refundAmount
-//     const isPrepaidMethod = ["razorpay", "wallet"].includes(order.paymentMethod);
-
-//     if (isPrepaidMethod && !item.refundAmount) {
-//       // compute item-level values (match order creation logic)
-//       const price = Number(item.price || 0);
-//       const qty = Number(item.quantity || 1);
-//       const itemTotal = price * qty;
-
-//       // coupon share (use subtotalBeforeCoupon if stored)
-//       const baseSubtotal = Number(order.coupon?.subtotalBeforeCoupon ?? order.subtotal ?? 0);
-//       let couponShare = 0;
-//       if (order.coupon?.discountAmount > 0 && baseSubtotal > 0) {
-//         const itemShare = itemTotal / baseSubtotal;
-//         couponShare = (order.coupon.discountAmount || 0) * itemShare;
-//       }
-
-//       const refundBase = Math.max(0, itemTotal - couponShare);
-
-//       // tax share proportional to refundBase (defensive)
-//       const orderSubtotalSafe = Number(order.subtotal || 0);
-//       const taxShare = orderSubtotalSafe > 0 ? (refundBase / orderSubtotalSafe) * Number(order.tax || 0) : 0;
-
-//       // shipping refund rules
-//       let shippingRefund = 0;
-
-//       // If original order had only one item -> refund full shipping
-//       if (order.items.length === 1) {
-//         shippingRefund = Number(order.shippingFee || 0);
-//       } else {
-//         // multi-item: refund shipping only when all other items already cancelled/returned
-//         const otherItems = order.items.filter(i => i._id.toString() !== itemId);
-//         const allOtherDone = otherItems.length > 0 && otherItems.every(i => ["cancelled", "returned"].includes(i.status));
-// // If this is the last item → refund remaining balance
-// if (allOtherDone) {
-//     const totalAlreadyRefunded = order.items
-//         .filter(i => i.refundAmount && i._id.toString() !== itemId)
-//         .reduce((sum, i) => sum + Number(i.refundAmount || 0), 0);
-
-//     const remaining = order.totalAmount - totalAlreadyRefunded;
-
-//     refundAmount = remaining;  // <-- FINAL FIX
-// }
-//       }
-
-//       // Ensure we don't double-credit shipping — compute already-refunded shipping across other items (if any)
-//       const alreadyShippingRefunded = order.items.reduce((acc, it) => {
-//         if (it.refundMeta && Number(it.refundMeta.shippingRefund || 0) > 0) {
-//           return acc + Number(it.refundMeta.shippingRefund || 0);
-//         }
-//         return acc;
-//       }, 0);
-
-//       // If shippingRefund > 0 but alreadyShippingRefunded covers it, zero it out
-//       if (shippingRefund > 0 && alreadyShippingRefunded >= shippingRefund) {
-//         shippingRefund = 0;
-//       }
-
-//       // Preliminary refund amount
-//       let calculatedRefund = refundBase + taxShare + shippingRefund;
-
-//       // Cap refund so cumulative refunds never exceed what user actually paid.
-//       const alreadyRefundedTotal = order.items.reduce((s, it) => s + Number(it.refundAmount || 0), 0);
-//       const orderTotalPaid = Number(order.totalAmount || 0);
-
-//       const remainingRefundable = Math.max(0, orderTotalPaid - alreadyRefundedTotal);
-
-//       // final refund amount is the min of calculatedRefund and remainingRefundable
-//       let refundAmount = Math.min(calculatedRefund, remainingRefundable);
-//       refundAmount = +refundAmount.toFixed(2);
-
-//       // If refundAmount is zero (already fully refunded), skip wallet update
-//       if (refundAmount > 0) {
-//         // Find or create wallet within same session
-//         let wallet = await Wallet.findOne({ user: userId }).session(session);
-//         if (!wallet) {
-//           const created = await Wallet.create([{
-//             user: userId,
-//             balance: 0,
-//             transactions: []
-//           }], { session });
-//           wallet = created[0];
-//         }
-
-//         // credit wallet
-//         wallet.balance = Number(wallet.balance || 0) + refundAmount;
-//         wallet.transactions.push({
-//           type: "credit",
-//           amount: refundAmount,
-//           description: `Refund for cancelled item ${item.itemOrderId || itemId}`,
-//           meta: {
-//             refundBase: (+refundBase).toFixed(2),
-//             taxShare: (+taxShare).toFixed(2),
-//             shippingRefund: (+shippingRefund).toFixed(2),
-//             couponShare: (+couponShare).toFixed(2)
-//           },
-//           date: new Date()
-//         });
-
-//         await wallet.save({ session });
-
-//         // mark item refund information (store meta so later cancellations know what was refunded)
-//         item.refundAmount = refundAmount;
-//         item.refundMethod = "wallet";
-//         item.refundStatus = "credited";
-//         item.refundDate = new Date();
-//         item.refundMeta = {
-//           refundBase: +refundBase.toFixed(2),
-//           taxShare: +taxShare.toFixed(2),
-//           shippingRefund: +shippingRefund.toFixed(2),
-//           couponShare: +couponShare.toFixed(2)
-//         };
-//       } else {
-//         // nothing refundable left — record that we attempted but nothing to credit
-//         item.refundAmount = 0;
-//         item.refundMethod = "none";
-//         item.refundStatus = "skipped";
-//         item.refundDate = new Date();
-//         item.refundMeta = {
-//           refundBase: +refundBase.toFixed(2),
-//           taxShare: +taxShare.toFixed(2),
-//           shippingRefund: +shippingRefund.toFixed(2),
-//           couponShare: +couponShare.toFixed(2)
-//         };
-//       }
-//     } // end isPrepaid && not refunded
-
-//     // 4) Update order-level statuses carefully
-//     const allCancelled = order.items.every(i => ["cancelled", "returned"].includes(i.status));
-//     const anyRefunded = order.items.some(i => Number(i.refundAmount || 0) > 0);
-
-//     if (allCancelled) {
-//       order.orderStatus = "cancelled";
-//       // fully refunded only if cumulative refunded equals what user paid
-//       const totalRefundedSoFar = order.items.reduce((s, it) => s + Number(it.refundAmount || 0), 0);
-//       if (Number(order.totalAmount || 0) > 0 && totalRefundedSoFar >= Number(order.totalAmount || 0)) {
-//         order.paymentStatus = "refunded";
-//       } else if (anyRefunded) {
-//         order.paymentStatus = "partial_refunded";
-//       }
-//     } else if (anyRefunded) {
-//       order.paymentStatus = "partial_refunded";
-//     }
-
-//     // save inside transaction
-//     await order.save({ session });
-
-//     await session.commitTransaction();
-//     session.endSession();
-
-//     return res.json({ success: true, message: "Item cancelled successfully" });
-//   } catch (err) {
-//     await session.abortTransaction();
-//     session.endSession();
-//     console.error("Cancel Error:", err);
-//     return res.status(500).json({ success: false, message: "Something went wrong" });
-//   }
-// };
 
 
 export const returnItem = async (req, res) => {
