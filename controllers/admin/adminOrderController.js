@@ -252,27 +252,19 @@ export const adminGetOrder = async (req, res) => {
 //   }
 // };
 
-
 export const adminUpdateOrderStatus = async (req, res) => {
   const session = await mongoose.startSession();
   session.startTransaction();
+
   try {
     const { orderId, itemId } = req.params;
     const { status } = req.body;
 
     const order = await Order.findById(orderId).session(session);
-    if (!order) {
-      await session.abortTransaction();
-      session.endSession();
-      return res.status(404).json({ success: false, message: "Order not found" });
-    }
+    if (!order) throw new Error("Order not found");
 
     const item = order.items.id(itemId);
-    if (!item) {
-      await session.abortTransaction();
-      session.endSession();
-      return res.status(404).json({ success: false, message: "Item not found" });
-    }
+    if (!item) throw new Error("Item not found");
 
     const prevStatus = item.status;
 
@@ -282,49 +274,52 @@ export const adminUpdateOrderStatus = async (req, res) => {
     const prev = normalize(prevStatus);
     const next = normalize(status);
 
-    const allowedFlow = {
-      pending: ["processing"],
-      processing: ["shipped"],
-      shipped: ["out_for_delivery"],
-      out_for_delivery: ["delivered"],
-      delivered: [],
-      cancelled: [],
-      returned: []
-    };
+    // =============================
+    // UPDATED allowedFlow
+    // =============================
+const allowedFlow = {
+  pending: ["processing", "cancelled"],
+  processing: ["shipped", "cancelled"],
+  shipped: ["out_for_delivery", "cancelled"],
+  out_for_delivery: ["delivered"],
+  delivered: [],        // LOCKED - cannot change backward
+  cancelled: [],        // LOCKED
+  returned: []          // handled only by return controller
+};
 
+
+
+    // BLOCK invalid transitions
     if (!allowedFlow[prev] || !allowedFlow[prev].includes(next)) {
-      await session.abortTransaction();
-      session.endSession();
-      return res.status(400).json({
-        success: false,
-        message: `Cannot change status from '${prevStatus}' to '${status}'`
-      });
+      throw new Error(`Cannot change status from '${prevStatus}' to '${status}'`);
     }
 
     // Save normalized status
     item.status = next;
 
-    // ===============================
-    // CANCEL ACTION BLOCK
-    // ===============================
-    if (status === "cancelled" && prevStatus !== "delivered" && prevStatus !== "cancelled") {
 
-      // 1️⃣ Restore inventory
+    // ===============================
+    // CANCEL BLOCK (ADMIN CANCEL)
+    // ===============================
+    if (next === "cancelled" && prev !== "cancelled" && prev !== "delivered") {
+
+      // Restore inventory safely
       const product = await Product.findById(item.product).session(session);
-      if (product?.variants?.[item.variantIndex]) {
+
+      if (product && product.variants && item.variantIndex != null) {
         product.variants[item.variantIndex].stock += item.quantity;
         await product.save({ session });
       }
 
-      // 2️⃣ ⭐ ADDED: WALLET REFUND LOGIC FOR PREPAID ORDERS
-      const refundAmount = Number(item.price) * Number(item.quantity);
+      // Refund logic
+      const refundAmount = item.price * item.quantity;
 
       if (
         (order.paymentMethod === "razorpay" && order.paymentStatus === "paid") ||
         order.paymentMethod === "wallet"
       ) {
-        // Avoid double-refund
         if (!item.refundAmount) {
+          // process refund
           await Wallet.findOneAndUpdate(
             { user: order.user },
             {
@@ -333,7 +328,7 @@ export const adminUpdateOrderStatus = async (req, res) => {
                 transactions: {
                   type: "credit",
                   amount: refundAmount,
-                  description: `Refund for cancelled item ${item._id} (Order ${order.orderId || order._id})`,
+                  description: `Refund for cancelled item ${item._id}`,
                   date: new Date()
                 }
               }
@@ -347,19 +342,22 @@ export const adminUpdateOrderStatus = async (req, res) => {
           item.refundDate = new Date();
         }
       }
-      // ⭐ END OF ADDED REFUND LOGIC
     }
 
-    // delivered rule
-    if (status === "delivered") {
+    // Delivered rule
+    if (next === "delivered") {
       item.deliveredDate = new Date();
     }
 
-    item.status = status;
-
-    if (order.items.every(i => i.status === "delivered")) {
+    // If ALL items delivered → order delivered
+    if (order.items.every((i) => i.status === "delivered")) {
       order.orderStatus = "delivered";
     }
+
+    // FIX: some old orders have orderStatus = "created"
+if (order.orderStatus === "created") {
+  order.orderStatus = "pending"; // change it to a valid status
+}
 
     await order.save({ session });
     await session.commitTransaction();
@@ -370,10 +368,11 @@ export const adminUpdateOrderStatus = async (req, res) => {
   } catch (err) {
     await session.abortTransaction();
     session.endSession();
-    console.error("adminUpdateOrderStatus:", err);
-    return res.status(500).json({ success: false, message: "Error updating item status" });
+    console.error("ADMIN UPDATE STATUS ERROR >>>", err);
+    return res.status(500).json({ success: false, message: err.message });
   }
 };
+
 
 
 export const adminGetCancelledItems = async (req, res) => {
