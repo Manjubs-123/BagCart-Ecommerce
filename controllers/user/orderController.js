@@ -225,36 +225,107 @@ export const getMyOrders = async (req, res) => {
 };
 
 
-export const downloadInvoice = async (req, res) => {
-  try {
-    const { orderId, itemId } = req.params; 
-    const userId = req.session.user?.id;
+// export const downloadInvoice = async (req, res) => {
+//   try {
+//     const { orderId, itemId } = req.params; 
+//     const userId = req.session.user?.id;
 
-    console.log(" Download Invoice Request:", { orderId, itemId, userId });
+//     console.log(" Download Invoice Request:", { orderId, itemId, userId });
 
     
+//     const order = await Order.findOne({ _id: orderId, user: userId })
+//       .populate("items.product")
+//       .lean();
+
+//     if (!order) {
+//       console.log(" Order not found");
+//       return res.status(404).send("Order not found");
+//     }
+
+//     const item = order.items.find(i => i._id.toString() === itemId);
+//     if (!item) {
+//       console.log("Item not found");
+//       return res.status(404).send("Order item not found");
+//     }
+
+//     //  Use custom orderId for display
+//     const displayOrderId = order.orderId;
+//     const displayItemOrderId = item.itemOrderId || `${displayOrderId}-${order.items.indexOf(item) + 1}`;
+
+//     console.log(" Generating invoice for:", { displayOrderId, displayItemOrderId });
+
+//     const fileName = `Invoice-${displayOrderId}-${displayItemOrderId}.pdf`;
+
+//     res.setHeader("Content-Type", "application/pdf");
+//     res.setHeader("Content-Disposition", `attachment; filename="${fileName}"`);
+
+//     const doc = new PDFDocument({ margin: 40 });
+//     const fontPath = path.join(__dirname, "../../public/fonts/DejaVuSans.ttf");
+
+//     doc.registerFont("Unicode", fontPath);
+//     doc.font("Unicode");
+//     doc.pipe(res);
+
+//     // HEADER
+//     doc.fontSize(22).text("BagHub", { align: "center" });
+//     doc.moveDown();
+//     doc.fontSize(16).text("INVOICE", { align: "center" });
+//     doc.moveDown(2);
+
+//     // ORDER INFO - Using custom orderId for display
+//     doc.fontSize(12).text(`Order ID: ${displayOrderId}`);
+//     doc.text(`Item Order ID: ${displayItemOrderId}`);
+//     doc.text(`Date: ${new Date(order.createdAt).toLocaleString()}`);
+//     doc.moveDown(1);
+
+//     // SHIPPING ADDRESS
+//     const sa = order.shippingAddress;
+//     doc.fontSize(12).text("Shipping Address:", { underline: true });
+//     doc.text(sa.fullName);
+//     doc.text(sa.addressLine1);
+//     if (sa.addressLine2) doc.text(sa.addressLine2);
+//     doc.text(`${sa.city}, ${sa.state} - ${sa.pincode}`);
+//     doc.text(`Phone: ${sa.phone}`);
+//     doc.moveDown(1);
+
+//     // ITEM INFO
+//     doc.fontSize(12).text("Product Details:", { underline: true });
+//     doc.text(`Product: ${item.product?.name}`);
+//     doc.text(`Color: ${item.color}`);
+//     doc.text(`Quantity: ${item.quantity}`);
+//     doc.text(`Unit Price: ₹${item.price}`);
+//     doc.text(`Item Total: ₹${(item.price * item.quantity).toFixed(2)}`);
+//     doc.moveDown(1);
+
+//     // ORDER TOTALS
+//     doc.text(`Subtotal: ₹${order.subtotal.toFixed(2)}`);
+//     doc.text(`Tax: ₹${order.tax.toFixed(2)}`);
+//     doc.text(`Shipping: ₹${order.shippingFee.toFixed(2)}`);
+//     doc.moveDown();
+//     doc.fontSize(14).text(`Grand Total: ₹${order.totalAmount.toFixed(2)}`);
+
+//     doc.end();
+
+//   } catch (err) {
+//     console.error(" downloadInvoice Error:", err);
+//     res.status(500).send("Could not generate invoice");
+//   }
+// };
+
+
+export const downloadInvoice = async (req, res) => {
+  try {
+    const { orderId } = req.params; 
+    const userId = req.session.user?.id;
+
     const order = await Order.findOne({ _id: orderId, user: userId })
       .populate("items.product")
       .lean();
 
-    if (!order) {
-      console.log(" Order not found");
-      return res.status(404).send("Order not found");
-    }
+    if (!order) return res.status(404).send("Order not found");
 
-    const item = order.items.find(i => i._id.toString() === itemId);
-    if (!item) {
-      console.log("Item not found");
-      return res.status(404).send("Order item not found");
-    }
-
-    //  Use custom orderId for display
-    const displayOrderId = order.orderId;
-    const displayItemOrderId = item.itemOrderId || `${displayOrderId}-${order.items.indexOf(item) + 1}`;
-
-    console.log(" Generating invoice for:", { displayOrderId, displayItemOrderId });
-
-    const fileName = `Invoice-${displayOrderId}-${displayItemOrderId}.pdf`;
+    const displayOrderId = order.orderId || order._id;
+    const fileName = `Invoice-${displayOrderId}.pdf`;
 
     res.setHeader("Content-Type", "application/pdf");
     res.setHeader("Content-Disposition", `attachment; filename="${fileName}"`);
@@ -272,15 +343,14 @@ export const downloadInvoice = async (req, res) => {
     doc.fontSize(16).text("INVOICE", { align: "center" });
     doc.moveDown(2);
 
-    // ORDER INFO - Using custom orderId for display
+    // ORDER INFO
     doc.fontSize(12).text(`Order ID: ${displayOrderId}`);
-    doc.text(`Item Order ID: ${displayItemOrderId}`);
     doc.text(`Date: ${new Date(order.createdAt).toLocaleString()}`);
     doc.moveDown(1);
 
     // SHIPPING ADDRESS
     const sa = order.shippingAddress;
-    doc.fontSize(12).text("Shipping Address:", { underline: true });
+    doc.text("Shipping Address:", { underline: true });
     doc.text(sa.fullName);
     doc.text(sa.addressLine1);
     if (sa.addressLine2) doc.text(sa.addressLine2);
@@ -288,26 +358,39 @@ export const downloadInvoice = async (req, res) => {
     doc.text(`Phone: ${sa.phone}`);
     doc.moveDown(1);
 
-    // ITEM INFO
-    doc.fontSize(12).text("Product Details:", { underline: true });
-    doc.text(`Product: ${item.product?.name}`);
-    doc.text(`Color: ${item.color}`);
-    doc.text(`Quantity: ${item.quantity}`);
-    doc.text(`Unit Price: ₹${item.price}`);
-    doc.text(`Item Total: ₹${(item.price * item.quantity).toFixed(2)}`);
-    doc.moveDown(1);
+    // ITEMS TABLE
+    doc.fontSize(12).text("Order Items:", { underline: true });
+    doc.moveDown(0.5);
+
+    order.items.forEach((item, index) => {
+      const itemOrderId = item.itemOrderId || `${displayOrderId}-${index + 1}`;
+      
+      doc.text(`Item ${index + 1}:`);
+      doc.text(`Item Order ID: ${itemOrderId}`);
+      doc.text(`Product: ${item.product?.name}`);
+      doc.text(`Color: ${item.color}`);
+      doc.text(`Quantity: ${item.quantity}`);
+      doc.text(`Unit Price: ₹${item.price}`);
+      doc.text(`Item Total: ₹${(item.price * item.quantity).toFixed(2)}`);
+      doc.moveDown(1);
+    });
 
     // ORDER TOTALS
     doc.text(`Subtotal: ₹${order.subtotal.toFixed(2)}`);
+    if (order.coupon?.discountAmount > 0) {
+      doc.text(`Coupon Discount: -₹${order.coupon.discountAmount.toFixed(2)}`);
+    }
     doc.text(`Tax: ₹${order.tax.toFixed(2)}`);
     doc.text(`Shipping: ₹${order.shippingFee.toFixed(2)}`);
     doc.moveDown();
+
     doc.fontSize(14).text(`Grand Total: ₹${order.totalAmount.toFixed(2)}`);
+    doc.moveDown();
 
     doc.end();
 
   } catch (err) {
-    console.error(" downloadInvoice Error:", err);
+    console.error("downloadInvoice Error:", err);
     res.status(500).send("Could not generate invoice");
   }
 };
