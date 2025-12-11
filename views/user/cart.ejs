@@ -250,6 +250,15 @@
   <div id="notificationContainer" class="fixed top-4 right-4 z-50 space-y-2"></div>
 
   <script>
+
+    function debounce(fn, delay) {
+  let timer;
+  return function (...args) {
+    clearTimeout(timer);
+    timer = setTimeout(() => fn.apply(this, args), delay);
+  };
+}
+
     // Cart API endpoints
     const API_ENDPOINTS = {
       getCart: '/api/cart',
@@ -340,27 +349,28 @@
       }
     }
 
-    async function updateCartItem(itemId, newQuantity) {
-      try {
-        setLoading(true);
-        const response = await axios.put(`/user/cart/update/${itemId}`, { quantity: newQuantity });
+ const updateCartItem = debounce(async (itemId, newQuantity) => {
+  try {
+    setLoading(true);
+    const response = await axios.put(`/user/cart/update/${itemId}`, { quantity: newQuantity });
 
-        if (response.data.success) {
-          updateCartSummary();
-          showNotification('Cart updated successfully', 'success');
-          return true;
-        } else {
-          showNotification(response.data.message || 'Failed to update cart', 'error');
-          return false;
-        }
-      } catch (error) {
-        console.error('Error updating cart item:', error);
-        showNotification('Failed to update cart item', 'error');
-        return false;
-      } finally {
-        setLoading(false);
-      }
+    if (response.data.success) {
+      updateCartSummary();
+      showNotification('Cart updated successfully', 'success');
+      return true;
+    } else {
+      showNotification(response.data.message || 'Failed to update cart', 'error');
+      return false;
     }
+  } catch (error) {
+    console.error('Error updating cart item:', error);
+    showNotification('Failed to update cart item', 'error');
+    return false;
+  } finally {
+    setLoading(false);
+  }
+}, 400);  // wait 400ms before sending another request
+
 
     // Update item total display + update struck MRP × qty
     function updateItemTotal(itemId, quantity) {
