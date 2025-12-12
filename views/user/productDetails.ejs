@@ -421,13 +421,15 @@
                         <i class="fas fa-bolt"></i>
                         Buy Now
                     </button> -->
-      <button onclick="toggleWishlist('<%= product._id %>', this)"
-    class="flex-1 bg-red-500 text-white py-3 md:py-4 rounded-xl font-semibold 
-           hover:bg-red-600 transition flex items-center justify-center gap-2 
-           md:gap-3 text-base md:text-lg">
-    <i class="fas fa-heart"></i>
+    <button onclick="toggleWishlist('<%= product._id %>', this)"
+        id="wishlistBtn"
+        class="flex-1 bg-red-500 text-white py-3 md:py-4 rounded-xl font-semibold 
+               hover:bg-red-600 transition flex items-center justify-center gap-2 
+               md:gap-3 text-base md:text-lg">
+    <i id="wishlistIcon" class="<%= userWishlist.includes(product._id.toString()) ? 'fas fa-heart text-red-500' : 'far fa-heart text-white' %>"></i>
     Add to Wishlist
 </button>
+
 
 
                 </div>
@@ -609,6 +611,14 @@ async function selectColor(color) {
     variantIndex = data.variantIndex;
 
     const variant = data.variant;
+    // Update color selection UI
+document.querySelectorAll(".color-option").forEach(btn => {
+    btn.classList.remove("selected");
+    if (btn.dataset.color.toLowerCase() === color.toLowerCase()) {
+        btn.classList.add("selected");
+    }
+});
+
     const offer = data.offerData;
 
     if (variant.images && variant.images.length > 0) {
@@ -640,14 +650,7 @@ async function selectColor(color) {
     document.getElementById("stockText").textContent = `${variant.stock} available in stock`;
     document.getElementById("quantity").max = variant.stock;
 
-    const heart = document.querySelector(".wishlist-btn i");
-    if (userWishlist.includes("<%= product._id.toString() %>")) {
-      heart.classList.remove("far", "text-gray-400");
-      heart.classList.add("fas", "text-red-500");
-    } else {
-      heart.classList.remove("fas", "text-red-500");
-      heart.classList.add("far", "text-gray-400");
-    }
+ 
 
     updateStockStatus(variant.stock)
 
