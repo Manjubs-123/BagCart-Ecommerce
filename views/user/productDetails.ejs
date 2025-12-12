@@ -319,7 +319,7 @@
                         <!-- Stock Information -->
                         <div id="stockInfo" class="stock-info in-stock">
                             <i class="fas fa-check-circle"></i>
-                            <span id="stockText"><%= product.stock || 100 %> available in stock</span>
+                            <span id="stockText"><%= product.stock %> available in stock</span>
                         </div>
                     </div>
 
@@ -565,7 +565,7 @@
       let variantIndex = 0;
 
         let selectedVariantId = "<%= product._id %>";
-        let currentStock = <%= product.stock || 100 %>;
+        let currentStock = <%= product.stock  %>;
         let userWishlist = <%- JSON.stringify(userWishlist || []) %>;
 
         document.addEventListener("DOMContentLoaded", () => {
@@ -648,6 +648,9 @@ async function selectColor(color) {
       heart.classList.remove("fas", "text-red-500");
       heart.classList.add("far", "text-gray-400");
     }
+
+    updateStockStatus(variant.stock)
+
 
   } catch (err) {
     console.error(err);
