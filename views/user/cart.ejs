@@ -519,13 +519,35 @@
     }
 
     function showNotification(message, type) {
-      const notification = document.createElement('div');
-      notification.className = `p-4 rounded-lg shadow-lg transform transition-all duration-300 notification ${ type === 'success' ? 'bg-green-500 text-white' : 'bg-red-500 text-white' }`;
-      notification.innerHTML = `<div class="flex items-center gap-3"><i class="fas fa-${type === 'success' ? 'check' : 'exclamation'}-circle"></i><span class="font-medium">${message}</span></div>`;
-      const container = document.getElementById('notificationContainer');
-      container.appendChild(notification);
-      setTimeout(() => { notification.style.opacity = '0'; setTimeout(() => { if (container.contains(notification)) container.removeChild(notification); }, 300); }, 5000);
-    }
-  </script>
+  const container = document.getElementById('notificationContainer');
+
+  // 🔥 REMOVE existing success notifications to prevent stacking
+  if (type === "success") {
+    container.querySelectorAll('.notification.success').forEach(n => n.remove());
+  }
+
+  const notification = document.createElement('div');
+  notification.className = `notification success p-4 rounded-lg shadow-lg transform transition-all duration-300
+    ${type === 'success' ? 'bg-green-500 text-white' : 'bg-red-500 text-white'}`;
+
+  notification.innerHTML = `
+    <div class="flex items-center gap-3">
+      <i class="fas fa-${type === 'success' ? 'check' : 'exclamation'}-circle"></i>
+      <span class="font-medium">${message}</span>
+    </div>
+  `;
+
+  container.appendChild(notification);
+
+  // hide after 2 sec
+  setTimeout(() => {
+    notification.style.opacity = '0';
+    setTimeout(() => {
+      if (container.contains(notification)) container.removeChild(notification);
+    }, 300);
+  }, 2000);
+}
+
+ </script>
 </body>
 </html>
