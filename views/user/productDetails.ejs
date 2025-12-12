@@ -239,18 +239,26 @@
 
     <!-- Breadcrumb -->
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-        <div class="breadcrumb">
-            <a href="/">Home</a>
+    <div class="breadcrumb">
+        <a href="/">Home</a>
+        <span class="separator">/</span>
+
+        <a href="/user/shop">Shop</a>
+        <span class="separator">/</span>
+
+        <% if (product.category?.name) { %>
+            <a href="/user/shop?category=<%= product.category._id %>">
+                <%= product.category.name %>
+            </a>
             <span class="separator">/</span>
-            <a href="/shop">Shop</a>
-            <span class="separator">/</span>
-            <% if (product.category?.name) { %>
-                <a href="/shop?category=<%= product.category._id %>"><%= product.category.name %></a>
-                <span class="separator">/</span>
-            <% } %>
-            <span class="text-gray-900 font-medium"><%= product.productName %></span>
-        </div>
+        <% } %>
+
+        <span class="text-gray-900 font-medium">
+            <%= product.productName %>
+        </span>
     </div>
+</div>
+
 
     <!-- Product Details Section -->
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 md:py-8 lg:py-12">
