@@ -188,7 +188,7 @@
       </div>
     </section>
 
-    <!-- FEATURED PRODUCTS -->
+<!-- FEATURED PRODUCTS -->
 <section id="featured" class="py-16 bg-white">
   <div class="max-w-7xl mx-auto px-4">
     <h2 class="section-title center-title text-3xl font-bold text-center text-gray-900">
@@ -200,8 +200,11 @@
 
         <% if (featuredProducts && featuredProducts.length > 0) { %>
           <% featuredProducts.forEach(product => { %>
+
             <div class="swiper-slide">
               <div class="card-hover bg-white border border-gray-200 rounded-xl p-4 h-full flex flex-col">
+
+                <!-- IMAGE -->
                 <div class="relative">
                   <img
                     src="<%= product.variants?.[0]?.images?.[0]?.url || '/images/no-image.jpg' %>"
@@ -210,36 +213,51 @@
                   />
                   <span class="badge new-badge">NEW</span>
                 </div>
+
+                <!-- NAME -->
                 <h3 class="font-bold text-lg mb-2 text-gray-900"><%= product.name %></h3>
+
+                <!-- PRICE -->
                 <div class="flex items-center mb-4">
                   <p class="text-gray-900 font-bold text-xl">₹<%= product.variants?.[0]?.price || 0 %></p>
                 </div>
-                <div class="mt-auto flex space-x-2">
-                  <!-- <button class="btn-primary text-white px-4 py-2 rounded-lg text-sm font-medium flex-1">
-                    Add to Cart
-                  </button> -->
-                  <button 
-  class="btn-primary add-to-cart-btn text-white px-4 py-2 rounded-lg text-sm font-medium flex-1"
-  onclick="addToCartFrontend('<%= product._id %>')">
-  Add to Cart
-</button>
+
+               <div class="mt-auto flex flex-col gap-3">
+
+  <!-- VIEW DETAILS (full width) -->
+  <a 
+    href="<%= user ? '/user/product/' + product._id : '/user/login' %>"
+    class="bg-gray-700 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-800 transition w-full text-center">
+    View Details
+  </a>
+
+  <div class="flex items-center gap-3">
+
+    <!-- ADD TO CART (flex-grow full width) -->
+    <button 
+      class="btn-primary add-to-cart-btn text-white px-4 py-2 rounded-lg text-sm font-medium flex-1"
+      onclick="addToCartFrontend('<%= product._id %>')">
+      Add to Cart
+    </button>
+
+     <!-- WISHLIST -->
+    <button 
+      class="border border-gray-300 text-gray-700 px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-50 transition wishlist-btn flex items-center justify-center"
+      onclick="toggleWishlist('<%= product._id %>', this)">
+        <i class="<%= userWishlistIds.includes(product._id.toString()) 
+                  ? 'fas fa-heart text-red-500'
+                  : 'far fa-heart' %>"></i>
+    </button>
+
+  </div>
+
+</div>
 
 
-<button 
-  class="wishlist-btn border border-gray-300 text-gray-700 px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-50 transition"
-  onclick="toggleWishlist('<%= product._id %>', this)">
-    <i class="<%= userWishlistIds.includes(product._id.toString()) 
-              ? 'fas fa-heart text-red-500' 
-              : 'far fa-heart' %>"></i>
-</button>
-
-
-
-
-                </div>
               </div>
             </div>
-          <% }); %>
+
+          <% }) %>
         <% } else { %>
           <p class="text-gray-500 text-center">No featured products found</p>
         <% } %>
@@ -249,6 +267,7 @@
       <div class="swiper-button-next mt-10"></div>
       <div class="swiper-button-prev mt-10"></div>
     </div>
+
   </div>
 </section>
 
@@ -300,33 +319,38 @@
                 </p>
 
                 <!-- BUTTONS -->
-                <div class="mt-auto flex space-x-2">
+               <div class="mt-auto flex flex-col gap-3">
 
-                  <!-- Add to Cart Button -->
-                  <!-- <button class="btn-primary text-white px-4 py-2 rounded-lg text-sm font-medium flex-1">
-                    Add to Cart
-                  </button> -->
-                  <button 
-  class="btn-primary add-to-cart-btn text-white px-4 py-2 rounded-lg text-sm font-medium flex-1"
-  onclick="addToCartFrontend('<%= product._id %>')">
-  Add to Cart
-</button>
+  <!-- VIEW DETAILS BUTTON -->
+  <a 
+    href="<%= user ? '/user/product/' + product._id : '/user/login' %>"
+    class="bg-gray-700 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-800 transition w-full text-center">
+    View Details
+  </a>
 
+  <!-- SECOND ROW -->
+  <div class="flex items-center gap-4">
 
-                  <!-- Wishlist Button -->
-                  <button 
-                    class="border border-gray-300 text-gray-700 px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-50 transition wishlist-btn flex items-center justify-center"
-                    onclick="toggleWishlist('<%= product._id %>', this)"
-                  >
-                    <i class="
-                      <%= userWishlistIds.includes(product._id.toString()) 
-                        ? 'fas fa-heart text-red-500'
-                        : 'far fa-heart'
-                      %>
-                    "></i>
-                  </button>
+    <!-- ADD TO CART -->
+    <button 
+      class="btn-primary add-to-cart-btn text-white px-4 py-2 rounded-lg text-sm font-medium flex-1"
+      onclick="addToCartFrontend('<%= product._id %>')">
+      Add to Cart
+    </button>
 
-                </div>
+    <!-- WISHLIST -->
+    <button 
+      class="border border-gray-300 text-gray-700 px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-50 transition wishlist-btn flex items-center justify-center"
+      onclick="toggleWishlist('<%= product._id %>', this)">
+        <i class="<%= userWishlistIds.includes(product._id.toString()) 
+                  ? 'fas fa-heart text-red-500'
+                  : 'far fa-heart' %>"></i>
+    </button>
+
+  </div>
+
+</div>
+
               </div>
             </div>
 
