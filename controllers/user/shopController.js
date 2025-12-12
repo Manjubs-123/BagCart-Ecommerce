@@ -17,6 +17,18 @@ export const getShopPage = async (req, res) => {
 
     // Filters from query string
     const search = (req.query.search || "").trim();
+// Prevent invalid regex behavior from symbol-only searches (like *, %%, ^^)
+let safeSearch = search;
+
+// Case 1: If search is empty or only special characters → treat as empty search
+if (!/[a-zA-Z0-9]/.test(safeSearch)) {
+  safeSearch = "";
+} else {
+  // Case 2: Escape special regex characters to prevent crashes
+  safeSearch = safeSearch.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+
     const categories = req.query.category
       ? Array.isArray(req.query.category) ? req.query.category : [req.query.category]
       : [];
@@ -35,13 +47,14 @@ export const getShopPage = async (req, res) => {
 
     if (categories.length) filter.category = { $in: categories.map(id => id) };
 
-    if (search) {
-      filter.$or = [
-        { name: { $regex: search, $options: "i" } },
-        { description: { $regex: search, $options: "i" } },
-        { brand: { $regex: search, $options: "i" } },
-      ];
-    }
+   if (safeSearch) {
+  filter.$or = [
+    { name: { $regex: safeSearch, $options: "i" } },
+    { description: { $regex: safeSearch, $options: "i" } },
+    { brand: { $regex: safeSearch, $options: "i" } },
+  ];
+}
+
 
     if (colors.length) {
       filter["variants.color"] = { $in: colors };
