@@ -1383,19 +1383,33 @@ function renderOrderItems() {
             hideError('phoneError');
             return true;
         }
+function validateAddressLine1(value) {
+    const address = value.trim();
 
-        function validateAddressLine1(value) {
-            if (!value.trim()) {
-                showError('addressLine1Error', 'Address line 1 is required');
-                return false;
-            }
-            if (value.trim().length < 5) {
-                showError('addressLine1Error', 'Address must be at least 5 characters');
-                return false;
-            }
-            hideError('addressLine1Error');
-            return true;
-        }
+    if (!address) {
+        showError('addressLine1Error', 'Address is required');
+        return false;
+    }
+
+    if (address.length < 5) {
+        showError('addressLine1Error', 'Address must be at least 5 characters');
+        return false;
+    }
+
+    // ✅ Allow letters, numbers, spaces, , . - / #
+    const addressRegex = /^[A-Za-z0-9\s,.-/#]+$/;
+
+    if (!addressRegex.test(address)) {
+        showError(
+            'addressLine1Error',
+            'Address can contain only letters, numbers, spaces, and , . - / #'
+        );
+        return false;
+    }
+
+    hideError('addressLine1Error');
+    return true;
+}
 
         function validateCity(value) {
             if (!value.trim()) {
