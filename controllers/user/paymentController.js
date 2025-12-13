@@ -178,7 +178,12 @@ export const retryPayment = async (req, res) => {
 
     if (!order) return res.status(404).send("Order not found");
 
-    // Create fresh Razorpay order
+    // ✅ CRITICAL FIX: block retry if already paid
+    if (order.paymentStatus === "paid") {
+        return res.redirect(`/order/confirmation/${order._id}`);
+    }
+
+    // Create fresh Razorpay order ONLY if unpaid
     const rzpOrder = await razorpayInstance.orders.create({
         amount: Math.round(order.totalAmount * 100),
         currency: "INR",
@@ -189,7 +194,8 @@ export const retryPayment = async (req, res) => {
         orderId: order._id,
         amount: order.totalAmount,
         razorpayOrderId: rzpOrder.id,
-        keyId: process.env.RZP_KEY_ID  
+        keyId: process.env.RZP_KEY_ID
     });
 };
+
 

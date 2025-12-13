@@ -551,6 +551,19 @@
       document.addEventListener("DOMContentLoaded", launchConfetti);
     </script>
 
+    <script>
+  // 🚫 Prevent back navigation to payment pages
+  if (window.history && window.history.replaceState) {
+    window.history.replaceState(null, "", window.location.href);
+  }
+
+  // Extra safety: block back button
+  window.addEventListener("popstate", function () {
+    window.location.replace(window.location.href);
+  });
+</script>
+
+
 </body>
 
 </html>
