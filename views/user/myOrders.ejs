@@ -597,6 +597,12 @@ else { %>
         <textarea id="cancelOtherText" name="details" class="w-full p-2 border rounded" rows="3"></textarea>
       </div>
 
+      <div id="cancelError" class="hidden text-red-600 text-sm mt-2">
+  <i class="fas fa-exclamation-circle mr-1"></i>
+  <span id="cancelErrorText"></span>
+</div>
+
+
       <div class="flex justify-end gap-2">
         <button type="button" onclick="hideCancelModal()" class="px-4 py-2 border rounded">Close</button>
         <button type="submit" class="bg-red-600 text-white px-4 py-2 rounded">Confirm Cancel</button>
@@ -770,13 +776,20 @@ function validateCancelInputs() {
     }
 
     // Form submissions
-    document.getElementById('cancelForm')?.addEventListener('submit', async function(e) {
-      e.preventDefault();
-      if (!validateCancelInputs()) {
-        return;
-      }
-      await submitAction(this, '/order/' + this.orderId.value + '/item/' + this.itemId.value + '/cancel', 'cancel');
-    });
+   document.getElementById('cancelForm')?.addEventListener('submit', async function(e) {
+  e.preventDefault();
+
+  if (!validateCancelReasonRealtime()) {
+    showNotification("Please enter a valid cancellation reason", "error");
+    return;
+  }
+
+  await submitAction(
+    this,
+    '/order/' + this.orderId.value + '/item/' + this.itemId.value + '/cancel',
+    'cancel'
+  );
+});
 
     document.getElementById('returnForm')?.addEventListener('submit', async function(e) {
       e.preventDefault();
@@ -871,6 +884,47 @@ function validateCancelInputs() {
         });
       }
     });
+function validateCancelReasonRealtime() {
+  const reason = document.getElementById("cancelReasonSelect")?.value || "";
+  const detailsEl = document.getElementById("cancelOtherText");
+  const details = detailsEl?.value.trim() || "";
+
+  // Allow letters, numbers, spaces, basic punctuation
+  const validTextRegex = /^[a-zA-Z0-9\s.,\-()]*$/;
+
+  // If reason is "Other", details are mandatory
+  if (reason === "Other") {
+    if (details.length < 5) {
+      detailsEl.classList.add("border-red-500");
+      return false;
+    }
+    if (!validTextRegex.test(details)) {
+      detailsEl.classList.add("border-red-500");
+      return false;
+    }
+  }
+
+  detailsEl?.classList.remove("border-red-500");
+  return true;
+}
+
+document.getElementById("cancelReasonSelect")?.addEventListener("change", function () {
+  const box = document.getElementById("cancelOtherBox");
+  const textarea = document.getElementById("cancelOtherText");
+
+  if (this.value === "Other") {
+    box.classList.remove("hidden");
+  } else {
+    box.classList.add("hidden");
+    textarea.value = "";
+    textarea.classList.remove("border-red-500");
+  }
+});
+
+document.getElementById("cancelOtherText")?.addEventListener("input", function () {
+  validateCancelReasonRealtime();
+});
+
   </script>
 </body>
 </html>
