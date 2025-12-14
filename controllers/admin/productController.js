@@ -2,12 +2,10 @@ import Product from "../../models/productModel.js";
 import Category from "../../models/category.js";
 import { cloudinary } from "../../config/cloudinary.js";
 
-// Escape regex special characters
 const escapeRegex = (text) => {
   return text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 };
 
-// List products (WITH DYNAMIC CARDS)
 export const listProducts = async (req, res) => {
   try {
     const page = Math.max(1, parseInt(req.query.page || "1", 10));
@@ -30,16 +28,13 @@ export const listProducts = async (req, res) => {
        CARD COUNTS (DYNAMIC)
     ========================= */
 
-    // 1. Total Products
     const totalProductsCount = await Product.countDocuments({ isDeleted: false });
 
-    // 2. Active Products
     const activeProductsCount = await Product.countDocuments({
       isDeleted: false,
       isActive: true,
     });
 
-    // Fetch all products ONCE for stock calculation
     const allProducts = await Product.find({ isDeleted: false })
       .select("variants")
       .lean();
@@ -54,7 +49,7 @@ export const listProducts = async (req, res) => {
       );
 
       if (totalStock === 0) outOfStockCount++;
-      else if (totalStock < 10) lowStockCount++; // threshold = 10
+      else if (totalStock < 10) lowStockCount++; 
     });
 
     /* =========================
@@ -80,7 +75,6 @@ export const listProducts = async (req, res) => {
       totalPages,
       limit,
 
-      // 🔥 SEND CARD DATA
       totalProductsCount,
       activeProductsCount,
       lowStockCount,
@@ -169,7 +163,6 @@ export const addProduct = async (req, res) => {
 
     let { name, description, brand, category, variants } = req.body;
 
-    //  Parse or normalize variants
     if (typeof variants === "string") {
       try {
         variants = JSON.parse(variants);
@@ -180,15 +173,13 @@ export const addProduct = async (req, res) => {
     }
 
 
-    // Handle images for each variant 
     if (Array.isArray(variants) && req.files?.length) {
       variants = variants.map((variant, index) => {
-        // Find matching images for this variant using file name pattern
         const images = req.files
           .filter(f => f.originalname.startsWith(`variant${index}_`))
           .map(f => ({
-            url: f.path,        // Cloudinary image URL
-            publicId: f.filename // Cloudinary public ID
+            url: f.path,        
+            publicId: f.filename 
           }));
 
         return {
@@ -220,15 +211,13 @@ export const addProduct = async (req, res) => {
         success:false
       });
     }
-     //  Validation
-
+     
     if (!name || !description || !brand || !category)
       return res.status(400).json({ message: "Missing required fields" });
 
     if (!variants || variants.length === 0)
       return res.status(400).json({ message: "At least one variant is required" });
 
-    // Create and save product
     const newProduct = new Product({
       name: name.trim(),
       description: description.trim(),
@@ -257,7 +246,6 @@ export const addProduct = async (req, res) => {
 
 
 
-// Render Edit Product Page
 
 export const renderEditProduct = async (req, res) => {
   try {
@@ -297,7 +285,6 @@ export const updateProduct = async (req, res) => {
     const { id } = req.params;
     let { name, description, brand, category, variants } = req.body;
 
-    //  Parse variants safely
     if (typeof variants === "string") {
       try {
         variants = JSON.parse(variants);
@@ -314,15 +301,13 @@ export const updateProduct = async (req, res) => {
     const strOr = (s, fallback = "") =>
       (typeof s === "string" ? s.trim() : (s ?? "")).trim() || fallback;
 
-    //  Find existing product
     const product = await Product.findOne({ _id: id, isDeleted: false });
     if (!product)
       return res.status(404).json({ success: false, message: "Product not found" });
 
-      // Duplicate name check (case-insensitive, exclude current product)
     if (name && name.trim()) {
       const existingWithSameName = await Product.findOne({
-        _id: { $ne: id }, // exclude same product
+        _id: { $ne: id }, 
         name: { $regex: `^${name.trim()}$`, $options: "i" }, 
         isDeleted: false
       });
@@ -335,17 +320,16 @@ export const updateProduct = async (req, res) => {
       }
     }
 
-    // Update base fields
+    
     product.name = strOr(name, product.name);
     product.description = strOr(description, product.description);
     product.brand = strOr(brand, product.brand);
     if (category) product.category = category;
 
-    // Handle variants
+ 
     const updatedVariants = [];
     const existingVariants = product.variants || [];
 
-    // Helper to collect uploaded images
     const getUploadedImages = (variantIndex) =>
       (req.files || [])
         .filter((f) => f.originalname.startsWith(`variant${variantIndex}_slot`))
@@ -360,7 +344,6 @@ export const updateProduct = async (req, res) => {
       const oldVariant = existingVariants[i];
       const uploadedImages = getUploadedImages(i);
 
-      //  NEW VARIANT
       if (!oldVariant) {
         const newImages = uploadedImages.map((img) => ({
           url: img.url,
@@ -376,7 +359,6 @@ export const updateProduct = async (req, res) => {
         continue;
       }
 
-      //  EXISTING VARIANT
       const totalSlots = Math.max(
         oldVariant.images?.length || 0,
         ...uploadedImages.map((img) => img.slot + 1),
@@ -389,7 +371,6 @@ export const updateProduct = async (req, res) => {
         const existingImg = oldVariant.images?.[slot] || null;
 
         if (replaced) {
-          // Delete old Cloudinary image
           if (existingImg?.publicId) {
             try {
               await cloudinary.uploader.destroy(existingImg.publicId);
@@ -408,7 +389,6 @@ export const updateProduct = async (req, res) => {
         }
       }
 
-      //  Always update all fields (no fallback to undefined)
       updatedVariants.push({
         color: strOr(vMeta.color, oldVariant.color),
         price: numOr(vMeta.price, oldVariant.price, false),
@@ -417,7 +397,6 @@ export const updateProduct = async (req, res) => {
       });
     }
 
-    //  Delete removed variants  and Cloudinary images
     for (let i = variants.length; i < existingVariants.length; i++) {
       for (const img of existingVariants[i]?.images || []) {
         try {
@@ -428,7 +407,6 @@ export const updateProduct = async (req, res) => {
       }
     }
 
-    //  Prevent duplicate colors
     const seenColors = new Set();
     for (const v of updatedVariants) {
       const c = v.color.toLowerCase();
@@ -441,7 +419,6 @@ export const updateProduct = async (req, res) => {
       seenColors.add(c);
     }
 
-    //  Save final product
     product.variants = updatedVariants;
     await product.save();
     await product.populate("category");
@@ -510,7 +487,6 @@ export const uploadImage = async (req, res) => {
 };
 
 
-// Delete image from Cloudinary
 export const deleteImage = async (req, res) => {
   try {
     const { publicId } = req.body;
@@ -538,7 +514,6 @@ export const deleteImage = async (req, res) => {
   }
 };
 
-// Toggle product active status (block/unblock)
 export const toggleProductStatus = async (req, res) => {
   try {
     const { id } = req.params;

@@ -14,7 +14,7 @@ export const adminListOrders = async (req, res) => {
     
     let filter = {};
 
-    // STATUS FILTER
+  
     if (status && status !== "all") {
       const orderLevelStatuses = [
         "pending", "processing", "shipped",
@@ -33,7 +33,7 @@ export const adminListOrders = async (req, res) => {
       }
     }
 
-    // DATE FILTER
+    
     if (fromDate || toDate) {
       filter.createdAt = {};
 
@@ -57,21 +57,20 @@ export const adminListOrders = async (req, res) => {
         { "items.itemOrderId": regex }
       ];
 
-      // search by item ObjectId
+      
       if (mongoose.isValidObjectId(search)) {
         orConditions.push({
           "items._id": new mongoose.Types.ObjectId(search)
         });
       }
 
-      // Ensure $and exists
       if (!filter.$and) filter.$and = [];
 
       filter.$and.push({ $or: orConditions });
     }
 
     
-    // COUNT STATS
+   
    
     const totalOrders = await Order.countDocuments(filter);
 
@@ -142,7 +141,7 @@ export const adminGetOrder = async (req, res) => {
 
     if (!order) return res.status(404).send("Order not found");
 
-    // ITEM ORDER ID FOR ADMIN VIEW
+   
     order.items = order.items.map((item, index) => ({
       ...item,
       itemOrderId: item.itemOrderId || `${order._id}-${index + 1}`
@@ -156,101 +155,6 @@ export const adminGetOrder = async (req, res) => {
   }
 };
 
-
-// export const adminUpdateOrderStatus = async (req, res) => {
-//   const session = await mongoose.startSession();
-//   session.startTransaction();
-//   try {
-//     const { orderId, itemId } = req.params;
-//     const { status } = req.body;
-
-//     const order = await Order.findById(orderId).session(session);
-//     if (!order) {
-//       await session.abortTransaction();
-//       session.endSession();
-//       return res.status(404).json({ success: false, message: "Order not found" });
-//     }
-
-//     const item = order.items.id(itemId);
-//     if (!item) {
-//       await session.abortTransaction();
-//       session.endSession();
-//       return res.status(404).json({ success: false, message: "Item not found" });
-//     }
-
-
-    
-// const prevStatus = item.status;
-// // Normalize DB and incoming UI statuses
-// const normalize = (s) =>
-//   s.toLowerCase()
-//    .replace(/ /g, "_")
-//    .replace(/-/g, "_")
-//    .trim();
-
-
-// const prev = normalize(prevStatus);
-// const next = normalize(status);
-
-
-// const allowedFlow = {
-//   pending: ["processing"],
-//   processing: ["shipped"],
-//   shipped: ["out_for_delivery"],
-//   out_for_delivery: ["delivered"],
-//   delivered: [],
-//   cancelled: [],
-//   returned: []
-// };
-
-// // Stop invalid transitions
-// if (!allowedFlow[prev] || !allowedFlow[prev].includes(next)) {
-//   await session.abortTransaction();
-//   session.endSession();
-//   return res.status(400).json({
-//     success: false,
-//     message: `Cannot change status from '${prevStatus}' to '${status}'`
-//   });
-// }
-
-// // Save normalized status
-// item.status = next;
-
-
-//     // inventory restock if cancelled
-//     if (status === "cancelled" && prevStatus !== "delivered" && prevStatus !== "cancelled") {
-//       const product = await Product.findById(item.product).session(session);
-//       if (product?.variants?.[item.variantIndex]) {
-//         product.variants[item.variantIndex].stock += item.quantity;
-//         await product.save({ session });
-//       }
-//     }
-
-//     // delivered rule
-//     if (status === "delivered") {
-//       item.deliveredDate = new Date();
-//     }
-
-//     item.status = status;
-
-   
-//     if (order.items.every(i => i.status === "delivered")) {
-//       order.orderStatus = "delivered";
-//     }
-
-//     await order.save({ session });
-//     await session.commitTransaction();
-//     session.endSession();
-
-//     return res.json({ success: true, message: "Item status updated", itemId });
-
-//   } catch (err) {
-//     await session.abortTransaction();
-//     session.endSession();
-//     console.error("adminUpdateOrderStatus:", err);
-//     return res.status(500).json({ success: false, message: "Error updating item status" });
-//   }
-// };
 
 export const adminUpdateOrderStatus = async (req, res) => {
   const session = await mongoose.startSession();
@@ -282,19 +186,18 @@ const allowedFlow = {
   processing: ["shipped", "cancelled"],
   shipped: ["out_for_delivery", "cancelled"],
   out_for_delivery: ["delivered"],
-  delivered: [],        // LOCKED - cannot change backward
-  cancelled: [],        // LOCKED
-  returned: []          // handled only by return controller
+  delivered: [],        
+  cancelled: [],       
+  returned: []          
 };
 
 
 
-    // BLOCK invalid transitions
+    
     if (!allowedFlow[prev] || !allowedFlow[prev].includes(next)) {
       throw new Error(`Cannot change status from '${prevStatus}' to '${status}'`);
     }
 
-    // Save normalized status
     item.status = next;
 
 
@@ -303,7 +206,7 @@ const allowedFlow = {
     // ===============================
     if (next === "cancelled" && prev !== "cancelled" && prev !== "delivered") {
 
-      // Restore inventory safely
+     
       const product = await Product.findById(item.product).session(session);
 
       if (product && product.variants && item.variantIndex != null) {
@@ -311,7 +214,7 @@ const allowedFlow = {
         await product.save({ session });
       }
 
-      // Refund logic
+    
       const refundAmount = item.price * item.quantity;
 
       if (
@@ -319,7 +222,7 @@ const allowedFlow = {
         order.paymentMethod === "wallet"
       ) {
         if (!item.refundAmount) {
-          // process refund
+          
           await Wallet.findOneAndUpdate(
             { user: order.user },
             {
@@ -344,19 +247,16 @@ const allowedFlow = {
       }
     }
 
-    // Delivered rule
     if (next === "delivered") {
       item.deliveredDate = new Date();
     }
 
-    // If ALL items delivered → order delivered
     if (order.items.every((i) => i.status === "delivered")) {
       order.orderStatus = "delivered";
     }
 
-    // FIX: some old orders have orderStatus = "created"
 if (order.orderStatus === "created") {
-  order.orderStatus = "pending"; // change it to a valid status
+  order.orderStatus = "pending"; 
 }
 
     await order.save({ session });
@@ -458,7 +358,7 @@ export const approveReturn = async (req, res) => {
       const qty = Number(item.quantity);
       const itemTotal = price * qty;
 
-      // Use subtotalBeforeCoupon if available
+      
       const baseSubtotal =
         order.coupon?.subtotalBeforeCoupon > 0
           ? order.coupon.subtotalBeforeCoupon 
@@ -473,14 +373,14 @@ export const approveReturn = async (req, res) => {
       const computedRefundBase = Math.max(0, itemTotal - couponShare);
       taxAmount = computedRefundBase * 0.10;
 
-      //  No shipping refund
+     
       let shippingRefund = 0;
 
-      //  Check if this is the LAST item being returned
+      
       const otherItems = order.items.filter(i => i._id.toString() !== itemId);
       const allOtherReturned = otherItems.every(i => i.status === "returned");
 
-      // If last item → refund full shipping fee
+    
       if (allOtherReturned) {
         shippingRefund = order.shippingFee || 50;
       }
@@ -489,14 +389,14 @@ export const approveReturn = async (req, res) => {
       actualCouponDeduction = couponShare;
     }
 
-    // Restock variant
+    
     const product = await Product.findById(item.product);
     if (product && product.variants[item.variantIndex]) {
       product.variants[item.variantIndex].stock += item.quantity;
       await product.save();
     }
 
-    // Wallet update
+    
     const userId = order.user._id;
     let wallet = await Wallet.findOne({ user: userId });
 

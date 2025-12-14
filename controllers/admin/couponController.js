@@ -65,10 +65,9 @@ export const getCouponListPage = async (req, res) => {
 
 export const getCreateCouponPage = async (req, res) => {
   try {
-    // Generate default dates for the form
     const now = new Date();
-    const defaultFrom = new Date(now.getTime() + 5 * 60 * 1000); // 5 minutes from now
-    const defaultTo = new Date(now.getTime() + 24 * 60 * 60 * 1000); // 24 hours from now
+    const defaultFrom = new Date(now.getTime() + 5 * 60 * 1000); 
+    const defaultTo = new Date(now.getTime() + 24 * 60 * 60 * 1000); 
 
     res.render("admin/couponCreate", {
       error: null,
@@ -112,7 +111,6 @@ export const createCoupon = async (req, res) => {
     const now = new Date();
     const errors = [];
 
-    // Normalize and convert
     code = code?.trim().toUpperCase();
     discountValue = Number(discountValue);
     maxDiscountAmount = Number(maxDiscountAmount || 0);
@@ -130,22 +128,18 @@ export const createCoupon = async (req, res) => {
     if (!validFromDate) errors.push("Valid From is required!");
     if (!validToDate) errors.push("Valid To is required!");
 
-    // Discount range 5–90
     if (discountValue < 5 || discountValue > 90) {
       errors.push("Discount must be between 5–90%");
     }
 
-    // maxDiscountAmount < minOrderAmount
     if (maxDiscountAmount >= minOrderAmount) {
       errors.push("Max Discount Amount must be LESS than Min Order Amount");
     }
 
-    // maxUsagePerUser ≤ maxUsage
     if (maxUsage && maxUsagePerUser && maxUsagePerUser > maxUsage) {
       errors.push("Max usage per user cannot exceed total max usage");
     }
 
-    // Date validations
     const GRACE_MINUTES = 1;
     const safeNow = new Date(now.getTime() - GRACE_MINUTES * 60 * 1000);
     
@@ -153,13 +147,11 @@ export const createCoupon = async (req, res) => {
     if (validToDate <= validFromDate) errors.push("Valid To must be later than Valid From!");
     if (validToDate <= safeNow) errors.push("Valid To must be in the future!");
 
-    // Unique code check
     if (!errors.length) {
       const existing = await Coupon.findOne({ code });
       if (existing) errors.push(`Coupon "${code}" already exists!`);
     }
 
-    // If errors exist
     if (errors.length > 0) {
       return res.render("admin/couponCreate", {
         error: errors,
@@ -173,7 +165,6 @@ export const createCoupon = async (req, res) => {
       });
     }
 
-    // Save to DB
     await Coupon.create({
       code,
       discountType: "PERCENTAGE",
@@ -262,7 +253,6 @@ export const updateCoupon = async (req, res) => {
     if (!validFrom) errors.push("Valid From is required!");
     if (!validTo) errors.push("Valid To is required!");
 
-    // Discount range 5–90
     if (discountValue < 5 || discountValue > 90) {
       errors.push("Discount must be between 5–90%");
     }
@@ -291,13 +281,11 @@ export const updateCoupon = async (req, res) => {
       if (existing) errors.push(`Coupon "${code}" already exists!`);
     }
 
-    //  If any error  block save
     if (errors.length > 0) {
       console.error(" VALIDATION FAILED:", errors);
       return res.status(400).json({ success: false, message: errors });
     }
 
-    //  UPDATE to DB
     const updateData = {
       code,
       discountValue,
@@ -341,7 +329,6 @@ export const toggleCouponStatus = async (req, res) => {
       return res.status(404).json({ success: false, message: "Coupon not found!" });
     }
 
-    //  Toggle active / inactive
     coupon.isActive = !coupon.isActive;
     await coupon.save();
 

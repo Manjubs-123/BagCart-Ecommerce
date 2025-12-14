@@ -12,22 +12,17 @@ const calculateItemOfferDiscount = (item, product) => {
     const qty = Number(item.quantity) || 0;
     if (qty === 0) return 0;
 
-    // If product/variant exists we can try to recover original list price
     const variant = product?.variants?.[item.variantIndex];
 
-    // original (list) price - prefer variant.price, fallback to item.price
     const originalPrice = Number(variant?.price ?? item.originalPrice ?? item.price ?? 0);
 
-    // price paid for the line item (snapshot). This is the most reliable source.
-    // item.price should represent the price charged per unit when order was placed.
+    
     const paidPrice = Number(item.price ?? variant?.offerPrice ?? originalPrice);
 
-    // discount per unit cannot be negative
     const discountPerUnit = Math.max(0, originalPrice - paidPrice);
 
     return discountPerUnit * qty;
   } catch (e) {
-    // fail safe
     return 0;
   }
 };
@@ -43,7 +38,6 @@ export const getSalesReport = async (req, res) => {
     limit = parseInt(limit) || 10;
     const skip = (page - 1) * limit;
 
-    // Date filter
     const filter = {};
     if (fromDate && toDate) {
       filter.createdAt = {
@@ -52,7 +46,6 @@ export const getSalesReport = async (req, res) => {
       };
     }
 
-    // Fetch orders with proper population
     const orders = await Order.find(filter)
       .populate("user")
       .populate({
@@ -63,20 +56,8 @@ export const getSalesReport = async (req, res) => {
       .skip(skip)
       .limit(limit);
 
-      // ---------- DEBUG: inspect coupon-like fields (safe) ----------
-// try {
-//   console.log("SALES REPORT DEBUG: orders fetched:", orders.length);
-//   orders.slice(0, 3).forEach((o, idx) => {
-//     console.log(`SALES REPORT DEBUG (#${idx+1}) orderId=${o.orderId || o._id}`);
-//     console.log("  coupon:", o.coupon);
-//     console.log("  couponDiscount:", o.couponDiscount, " discountApplied:", o.discountApplied, " discountAmount:", o.discountAmount);
-//     console.log("  keys:", Object.keys(o).slice(0, 40));
-//   });
-// } catch (err) {
-//   console.log("SALES REPORT DEBUG error:", err);
-// }
+   
 
-// ---------- HELPER: get coupon discount from ANY field ----------
 function getCouponDiscountAndLog(order) {
   const fields = [
     { key: "coupon.discountAmount", value: order?.coupon?.discountAmount },
@@ -107,11 +88,9 @@ function getCouponDiscountAndLog(order) {
     let totalCouponDiscount = 0;
     let totalOfferDiscount = 0;
 
-   // When computing totals for each fetched order
 orders.forEach((order) => {
   totalRevenue += Number(order.totalAmount) || 0;
 
-  // Coupon discount (make sure numeric)
 totalCouponDiscount += Number(
     order.coupon?.discountAmount ??
     order.coupon?.discount ??
@@ -122,12 +101,10 @@ totalCouponDiscount += Number(
 );
 
 
-  // Offer discount: prefer stored order.offerDiscount (if valid number > 0).
-  // Otherwise calculate from items using the robust helper.
+ 
   let orderOfferDiscount = Number(order.offerDiscount) || 0;
 
   if (!orderOfferDiscount || orderOfferDiscount === 0) {
-    // Calculate from items using snapshot prices
     if (Array.isArray(order.items)) {
       for (const item of order.items) {
         orderOfferDiscount += calculateItemOfferDiscount(item, item.product);
@@ -165,8 +142,7 @@ const couponDiscount = Number(
     }
   }
 
-  // itemDetails: compute originalPrice from variant.price when possible,
-  // and use item.price as the paid / effective price for totals.
+ 
   const itemDetails = order.items.map(item => {
     const product = item.product || {};
     const variant = product?.variants?.[item.variantIndex];
@@ -399,7 +375,6 @@ export const downloadSalesReport = async (req, res) => {
     const end = new Date(toDate);
     end.setHours(23, 59, 59, 999);
 
-    // Fetch all orders in date range with proper population
     const orders = await Order.find({
       createdAt: { $gte: start, $lte: end },
     })
@@ -410,14 +385,12 @@ export const downloadSalesReport = async (req, res) => {
       })
       .sort({ createdAt: -1 });
 
-    // Prepare detailed rows with all discount information
     const rows = orders.map((o) => {
       const dateStr = o.createdAt ? new Date(o.createdAt).toLocaleDateString() : "";
       const itemsCount = Array.isArray(o.items) ? o.items.length : 0;
       const subtotal = typeof o.subtotal === "number" ? o.subtotal : 0;
       const couponDiscount = o.coupon?.discountAmount || 0;
       
-      // Calculate offer discount
       let offerDiscount = o.offerDiscount || 0;
       if (offerDiscount === 0 && o.items && o.items.length > 0) {
         o.items.forEach((item) => {
@@ -431,7 +404,6 @@ export const downloadSalesReport = async (req, res) => {
       const status = o.orderStatus || "";
       const customer = o.user ? o.user.name || "Unknown" : "Unknown";
 
-      // Get product categories for the order
       const categories = o.items
         .map(item => item.product?.category?.name || "Uncategorized")
         .filter((v, i, a) => a.indexOf(v) === i)
@@ -467,7 +439,6 @@ export const downloadSalesReport = async (req, res) => {
       const workbook = new ExcelJS.Workbook();
       const sheet = workbook.addWorksheet("Sales Report");
 
-      // Add summary section
       sheet.addRow(["SALES REPORT SUMMARY"]);
       sheet.addRow([`Period: ${fromDate} to ${toDate}`]);
       sheet.addRow([]);
@@ -482,7 +453,6 @@ export const downloadSalesReport = async (req, res) => {
       sheet.addRow(["Total Offer Discount:", `₹${totalOfferDisc.toFixed(2)}`]);
       sheet.addRow([]);
 
-      // Add column headers
       sheet.columns = [
         { header: "Order ID", key: "orderId", width: 15 },
         { header: "Item Order ID", key: "itemOrderId", width: 15 },
@@ -499,7 +469,6 @@ export const downloadSalesReport = async (req, res) => {
         { header: "Status", key: "status", width: 12 },
       ];
 
-      // Style header row
       const headerRow = sheet.getRow(sheet.rowCount);
       headerRow.eachCell((cell) => {
         cell.font = { bold: true, size: 11, color: { argb: "FFFFFF" } };
@@ -517,7 +486,6 @@ export const downloadSalesReport = async (req, res) => {
         cell.alignment = { vertical: "middle", horizontal: "center" };
       });
 
-      // Add data rows
       rows.forEach((r) => {
         const row = sheet.addRow({
           orderId: r.orderId,
@@ -535,7 +503,6 @@ export const downloadSalesReport = async (req, res) => {
           status: r.status,
         });
 
-        // Style data cells
         row.eachCell((cell, colNumber) => {
           cell.border = {
             top: { style: "thin" },
@@ -544,7 +511,6 @@ export const downloadSalesReport = async (req, res) => {
             right: { style: "thin" },
           };
 
-          // Format number columns
           if (colNumber >= 7 && colNumber <= 11) {
             cell.numFmt = "#,##0.00";
             cell.alignment = { horizontal: "right" };
@@ -579,7 +545,7 @@ if (format === "pdf") {
     size: "A4",
     layout: "landscape",
     margin: 30,
-    bufferPages: false // 🔥 CRITICAL FIX
+    bufferPages: false 
   });
 
   res.setHeader("Content-Type", "application/pdf");
@@ -670,7 +636,7 @@ if (format === "pdf") {
       r.status
     ];
 
-    // 🔥 Calculate row height safely
+    
     let rowHeight = 14;
     colKeys.forEach((key, i) => {
       const h = doc.heightOfString(String(row[i]), {
@@ -680,7 +646,7 @@ if (format === "pdf") {
       rowHeight = Math.max(rowHeight, h);
     });
 
-    // 🔥 Page break BEFORE drawing
+    
     if (y + rowHeight > doc.page.height - 40) {
       doc.addPage();
       y = 30;

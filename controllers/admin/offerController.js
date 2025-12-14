@@ -5,14 +5,12 @@ import Offer from "../../models/offerModel.js";
 
 
 
-// Create a function to check duplicate names everywhere
 async function validateOfferName(name, excludeId = null) {
   const lower = name.trim().toLowerCase();
 
   const offerQuery = { name: { $regex: `^${lower}$`, $options: "i" } };
   if (excludeId) offerQuery._id = { $ne: excludeId };
 
-  // Check against offers
   const offerExist = await Offer.findOne(offerQuery);
   if (offerExist) return "Offer name already exists";
 
@@ -70,7 +68,6 @@ export const getOffers = async (req, res) => {
       filter.validTo = { $lt: now };
     }
 
-    // Count total offers with filters
     const totalOffers = await Offer.countDocuments(filter);
 
 
@@ -82,7 +79,6 @@ export const getOffers = async (req, res) => {
       .limit(limit)
       .lean();
 
-    // Dashboard statitics
     const stats = {
       totalOffers: await Offer.countDocuments(),
       activeOffers: await Offer.countDocuments({
@@ -283,7 +279,6 @@ export const postCreateOffer = async (req, res) => {
     }
 
    
-    // PRODUCT or CATEGORY VALIDATION
    
     let productIds = [];
     let categoryIds = [];
@@ -309,7 +304,6 @@ export const postCreateOffer = async (req, res) => {
     }
 
    
-    // CREATE OFFER DOCUMENT
 
     const newOffer = new Offer({
       name,
@@ -456,11 +450,11 @@ export const updateOffer = async (req, res) => {
       return res.status(400).json({ success: false, message: "End date must be after start date" });
     }
     
-    // Unique name validation
+  
     const normalizedName = name.trim().toLowerCase();
 
     const existingOffer = await Offer.findOne({
-      _id: { $ne: offerId }, // exclude current offer
+      _id: { $ne: offerId }, 
       name: { $regex: `^${normalizedName}$`, $options: "i" }
     });
 
@@ -482,7 +476,6 @@ export const updateOffer = async (req, res) => {
       });
     }
 
-    // Normalize products/categories
     let productIds = [];
     let categoryIds = [];
 
@@ -497,7 +490,6 @@ export const updateOffer = async (req, res) => {
     const offer = await Offer.findById(offerId);
     if (!offer) return res.status(404).json({ success: false, message: "Offer not found" });
 
-    // Update fields
     offer.name = name;
     offer.type = type;
     offer.discountValue = discount;

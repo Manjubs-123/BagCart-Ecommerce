@@ -25,12 +25,12 @@ export const postAdminLogin = async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    // ❌ Missing fields → redirect (NOT render)
+    
     if (!email || !password) {
       return res.redirect("/admin?error=missing");
     }
 
-    // ✅ Correct credentials
+    
     if (
       email === process.env.ADMIN_EMAIL &&
       password === process.env.ADMIN_PASSWORD
@@ -46,7 +46,7 @@ export const postAdminLogin = async (req, res) => {
       });
 
     } else {
-      // ❌ Invalid credentials → redirect
+      
       return res.redirect("/admin?error=invalid");
     }
 
@@ -57,21 +57,11 @@ export const postAdminLogin = async (req, res) => {
 };
 
 
-// export const postAdminLogin = async (req, res) => {
-//   const { email, password } = req.body;
-//   if (email === process.env.ADMIN_EMAIL && password === process.env.ADMIN_PASSWORD) {
-//     req.session.isAdmin = true;
-//     res.redirect("/admin/dashboard");
-//   } else {
-//     res.render("admin/login", { error: "Invalid credentials" });
-//   }
-// };
-
 
 export const renderAdminDashboard = async (req, res) => {
   try {
 
-    // BEST SELLING PRODUCTS //
+    
     const bestProducts = await Order.aggregate([
       { $unwind: "$items" },
       {
@@ -111,9 +101,7 @@ export const renderAdminDashboard = async (req, res) => {
       { $limit: 10 }
     ]);
 
-    // TOP 10 CATEGORIES //
-// BEST SELLING CATEGORIES
-// BEST CATEGORIES
+    
 const bestCategories = await Order.aggregate([
   { $unwind: "$items" },
   {
@@ -149,20 +137,19 @@ const bestCategories = await Order.aggregate([
        DASHBOARD SUMMARY STATS
     ---------------------*/
 
-    // Total revenue
+    
     const totalRevenueResult = await Order.aggregate([
       { $group: { _id: null, total: { $sum: "$totalAmount" } } }
     ]);
     const totalRevenueRaw = (totalRevenueResult.length ? totalRevenueResult[0].total : 0) || 0;
     const totalRevenue = Number(totalRevenueRaw);
-    const totalRevenueDisplay = totalRevenue.toLocaleString("en-IN", { maximumFractionDigits: 2 }); // "72,405.90"
+    const totalRevenueDisplay = totalRevenue.toLocaleString("en-IN", { maximumFractionDigits: 2 }); 
 
-    // Unique buyers (distinct user ids from orders)
+ 
     const uniqueUserIds = await Order.distinct("user");
     const totalCustomersBuyers = Array.isArray(uniqueUserIds) ? uniqueUserIds.length : 0;
 
-    // (Optional) Registered users count - uncomment if you want this stat instead
-    // const totalCustomersRegistered = await User.countDocuments({ isDeleted: { $ne: true } });
+    
 
     // Total orders
     const totalOrders = await Order.countDocuments();
@@ -176,7 +163,7 @@ const bestCategories = await Order.aggregate([
     const ordersThisMonth = await Order.countDocuments({ createdAt: { $gte: startOfThisMonth } });
     const ordersPrevMonth = await Order.countDocuments({ createdAt: { $gte: startOfPrevMonth, $lte: endOfPrevMonth } });
 
-    // customers this/prev month (unique)
+  
     const customersThisMonthIds = await Order.aggregate([
       { $match: { createdAt: { $gte: startOfThisMonth } } },
       { $group: { _id: "$user" } }
@@ -224,7 +211,7 @@ const bestCategories = await Order.aggregate([
     // monthly goal
     const monthlyGoal = 1000;
     const monthlyProgress = Math.min((ordersThisMonth / monthlyGoal) * 100, 100);
-    const monthlyProgressDisplay = Math.round(monthlyProgress * 10) / 10; // one decimal
+    const monthlyProgressDisplay = Math.round(monthlyProgress * 10) / 10; // 
     const ordersLeft = Math.max(monthlyGoal - ordersThisMonth, 0);
 
     // Recent 5 orders
@@ -234,25 +221,20 @@ const recentOrders = await Order.find()
   .sort({ createdAt: -1 })
   .limit(5);
 
-
-    // ---- pass variables to ejs (use names your template expects) ----
-    // Your EJS uses: totalRevenue, totalCustomers, totalOrders, monthlyProgress, ordersLeft
-    // So we map totalCustomers -> totalCustomersBuyers (unique buyers). If you prefer registered users,
-    // replace totalCustomersBuyers by totalCustomersRegistered (and compute above).
     res.render("admin/dashboard", {
       title: "Admin Dashboard",
 
       bestProducts,
       bestCategories,
 
-      // numeric metrics (strings suitable for display)
-      totalRevenue: totalRevenueDisplay,      // "72,405.90"
-      totalRevenueRaw: totalRevenue,          // numeric raw total
-      totalCustomers: totalCustomersBuyers,   // number shown in card (unique buyers)
-      // totalCustomersRegistered,            // optional alternate stat if used
+   
+      totalRevenue: totalRevenueDisplay,      
+      totalRevenueRaw: totalRevenue,          
+      totalCustomers: totalCustomersBuyers,   
+                
       totalOrders,
 
-      // growth & subtitle numbers
+ 
       revenueGrowth,
       customersGrowth,
       ordersGrowth,
@@ -313,7 +295,7 @@ const dailyRevenue = async (req, res) => {
       { $group: { _id: null, total: { $sum: "$totalAmount" } } }
     ]);
 
-    labels.push(day.format("ddd")); // Mon Tue Wed
+    labels.push(day.format("ddd")); 
     values.push(revenue.length ? revenue[0].total : 0);
   }
 
@@ -372,7 +354,7 @@ const monthlyRevenue = async (req, res) => {
       { $group: { _id: null, total: { $sum: "$totalAmount" } } }
     ]);
 
-    labels.push(month.format("MMM")); // Jan Feb Mar
+    labels.push(month.format("MMM"));
     values.push(revenue.length ? revenue[0].total : 0);
   }
 
@@ -412,7 +394,7 @@ export const adminLogout = (req, res) => {
   req.session.destroy((err) => {
     if (err) console.error("Session destroy error:", err);
     res.clearCookie("connect.sid");
-    res.redirect("/admin"); // redirects to login page
+    res.redirect("/admin"); 
   });
 };
 

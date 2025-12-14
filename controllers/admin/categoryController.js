@@ -20,7 +20,7 @@ const filter = q
   : {};
 
 
-    // Total filtered categories count
+    
     const totalCategories = await Category.countDocuments(filter);
 
     const pages = Math.ceil(totalCategories / limit);
@@ -32,7 +32,7 @@ const filter = q
       .limit(limit)
       .lean();
 
-    // Status counts
+ 
     const activeCategories = await Category.countDocuments({ isActive: true, isDeleted: false });
     const blockedCategories = await Category.countDocuments({ isActive: false, isDeleted: false });
 
@@ -54,7 +54,6 @@ const filter = q
 };
 
 
-// Render Add Category page
 export const renderAddCategory = async (req, res) => {
   try {
     res.render("admin/addCategory"); 
@@ -64,7 +63,6 @@ export const renderAddCategory = async (req, res) => {
   }
 };
 
-// Add new category
 
 
 export const addCategory = async (req, res) => {
@@ -79,7 +77,6 @@ export const addCategory = async (req, res) => {
       return res.redirect("/admin/category/addCategory?error=Description must be at least 10 characters long");
     }
 
-    //  Case-insensitive duplicate check
     const existing = await Category.findOne({
       name: { $regex: `^${name.trim()}$`, $options: "i" },
       isDeleted: false
@@ -89,7 +86,6 @@ export const addCategory = async (req, res) => {
       return res.redirect("/admin/category/addCategory?error=Category name already exists");
     }
 
-    // Create new category
     await Category.create({
       name: name.trim(),
       description: description.trim(),
@@ -118,7 +114,6 @@ export const getCategory = async (req, res) => {
   }
 };
 
-// Update category
 export const updateCategory = async (req, res) => {
   try {
     const { name, description } = req.body;
@@ -152,7 +147,6 @@ export const toggleCategoryStatus = async (req, res, next) => {
       return res.status(404).json({ success: false, message: 'Category not found' });
     }
 
-    // Toggle the active/block status
     category.isActive = !category.isActive; 
     await category.save();
 
@@ -172,7 +166,6 @@ export const softDeleteCategory = async (req, res) => {
     try {
         const { id } = req.params;
         
-        // Find by ID and update the isDeleted flag
         const result = await Category.findByIdAndUpdate(
             id, 
             { isDeleted: true }, 
