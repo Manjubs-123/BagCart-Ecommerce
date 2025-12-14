@@ -86,10 +86,35 @@
             border-radius: 16px;
             padding: 1.5rem;
         }
+        
+        /* Mobile overlay */
+        @media (max-width: 1023px) {
+            .mobile-overlay {
+                display: none;
+                position: fixed;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background-color: rgba(0, 0, 0, 0.5);
+                z-index: 40;
+            }
+            
+            .mobile-overlay.active {
+                display: block;
+            }
+            
+            body.sidebar-open {
+                overflow: hidden;
+            }
+        }
     </style>
 </head>
 
 <body class="bg-gray-50 font-sans flex flex-col min-h-screen">
+
+    <!-- Mobile Overlay -->
+    <div class="mobile-overlay lg:hidden" id="mobile-overlay"></div>
 
     <!-- Main Layout Container -->
     <div class="flex flex-1">
@@ -97,125 +122,127 @@
         <%- include('../partials/sidebar', { currentPage: 'users' }) %>
 
             <!-- Main Content -->
-            <main class="flex-1 p-8 ml-64 min-h-screen">
+            <main class="flex-1 w-full p-4 sm:p-6 lg:p-8 lg:ml-64 min-h-screen transition-all duration-300">
                 <!-- Page Header -->
-                <div class="flex justify-between items-center mb-8">
-                    <div>
-                        <h1 class="text-3xl font-bold text-gray-800 mb-2">User Management</h1>
-                        <p class="text-gray-600">Manage customer accounts and access permissions</p>
-                    </div>
-                    <div class="flex items-center space-x-4">
-                        <div class="relative">
-                            <i
-                                class="fas fa-bell text-gray-500 text-xl hover:text-blue-600 cursor-pointer transition-colors"></i>
-                            <span
-                                class="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center">3</span>
+                <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-6 lg:mb-8">
+                    <div class="flex-1">
+                        <div class="flex items-center justify-between mb-2">
+                            <h1 class="text-2xl sm:text-3xl font-bold text-gray-800">User Management</h1>
+                            <!-- Mobile menu button -->
+                            <button
+                                id="mobile-menu-button"
+                                class="lg:hidden p-2 rounded-lg bg-gray-100 text-gray-700 hover:bg-gray-200 transition-colors"
+                                aria-label="Toggle menu"
+                            >
+                                <i class="fas fa-bars text-lg"></i>
+                            </button>
                         </div>
+                        <p class="text-gray-600 text-sm sm:text-base">Manage customer accounts and access permissions</p>
+                    </div>
+                    <div class="flex items-center justify-end gap-3">
+                       
                         <div
-                            class="w-10 h-10 bg-gradient-to-r from-blue-500 to-emerald-500 rounded-full flex items-center justify-center shadow-md">
-                            <span class="text-white font-semibold text-sm">A</span>
+                            class="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-r from-blue-500 to-emerald-500 rounded-full flex items-center justify-center shadow-md">
+                            <span class="text-white font-semibold text-xs sm:text-sm">A</span>
                         </div>
                     </div>
                 </div>
 
                 <!-- Stats Cards -->
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                <div class="grid grid-cols-1 xs:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5 lg:gap-6 mb-6 lg:mb-8">
                     <!-- Total Users -->
-                    <div class="stats-card card-hover border-l-4 border-blue-500">
-                        <div class="flex items-center justify-between mb-4">
-                            <div class="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center">
-                                <i class="fas fa-users text-blue-600 text-lg"></i>
+                    <div class="stats-card card-hover border-l-4 border-blue-500 rounded-xl lg:rounded-2xl p-4 sm:p-5 lg:p-6">
+                        <div class="flex items-center justify-between mb-3 lg:mb-4">
+                            <div class="w-10 h-10 sm:w-12 sm:h-12 bg-blue-100 rounded-lg lg:rounded-xl flex items-center justify-center">
+                                <i class="fas fa-users text-blue-600 text-base sm:text-lg"></i>
                             </div>
-                            <span class="text-green-500 text-sm font-semibold bg-green-50 px-2 py-1 rounded-full">
+                            <span class="text-green-500 text-xs sm:text-sm font-semibold bg-green-50 px-2 py-1 sm:px-3 sm:py-1 rounded-full">
                                 <i class="fas fa-arrow-up mr-1"></i>8.2%
                             </span>
                         </div>
-                        <h3 class="text-2xl font-bold text-gray-800 mb-1">
-                            <%= total %>
+                        <h3 class="text-xl sm:text-2xl font-bold text-gray-800 mb-1">
+                            <%= totalUsers %>
                         </h3>
                         <p class="text-gray-600 text-sm">Total Users</p>
-                        <p class="text-gray-400 text-xs mt-2">All registered customers</p>
+                        <p class="text-gray-400 text-xs sm:text-sm mt-1 lg:mt-2">All registered customers</p>
                     </div>
 
                     <!-- Active Users -->
-                    <div class="stats-card card-hover border-l-4 border-green-500">
-                        <div class="flex items-center justify-between mb-4">
-                            <div class="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center">
-                                <i class="fas fa-user-check text-green-600 text-lg"></i>
+                    <div class="stats-card card-hover border-l-4 border-green-500 rounded-xl lg:rounded-2xl p-4 sm:p-5 lg:p-6">
+                        <div class="flex items-center justify-between mb-3 lg:mb-4">
+                            <div class="w-10 h-10 sm:w-12 sm:h-12 bg-green-100 rounded-lg lg:rounded-xl flex items-center justify-center">
+                                <i class="fas fa-user-check text-green-600 text-base sm:text-lg"></i>
                             </div>
-                            <span class="text-green-500 text-sm font-semibold bg-green-50 px-2 py-1 rounded-full">
+                            <span class="text-green-500 text-xs sm:text-sm font-semibold bg-green-50 px-2 py-1 sm:px-3 sm:py-1 rounded-full">
                                 <i class="fas fa-arrow-up mr-1"></i>5.3%
                             </span>
                         </div>
-                        <h3 class="text-2xl font-bold text-gray-800 mb-1">
-                            <% const activeUsers=users.filter(user=> !user.isBlocked).length;
-                                %>
-                                <%= activeUsers %>
+                        <h3 class="text-xl sm:text-2xl font-bold text-gray-800 mb-1">
+                            <%= activeUsers %>
                         </h3>
                         <p class="text-gray-600 text-sm">Active Users</p>
-                        <p class="text-gray-400 text-xs mt-2">Currently accessible accounts</p>
+                        <p class="text-gray-400 text-xs sm:text-sm mt-1 lg:mt-2">Currently accessible accounts</p>
                     </div>
 
                     <!-- Blocked Users -->
-                    <div class="stats-card card-hover border-l-4 border-red-500">
-                        <div class="flex items-center justify-between mb-4">
-                            <div class="w-12 h-12 bg-red-100 rounded-xl flex items-center justify-center">
-                                <i class="fas fa-user-slash text-red-600 text-lg"></i>
+                    <div class="stats-card card-hover border-l-4 border-red-500 rounded-xl lg:rounded-2xl p-4 sm:p-5 lg:p-6">
+                        <div class="flex items-center justify-between mb-3 lg:mb-4">
+                            <div class="w-10 h-10 sm:w-12 sm:h-12 bg-red-100 rounded-lg lg:rounded-xl flex items-center justify-center">
+                                <i class="fas fa-user-slash text-red-600 text-base sm:text-lg"></i>
                             </div>
-                            <span class="text-red-500 text-sm font-semibold bg-red-50 px-2 py-1 rounded-full">
+                            <span class="text-red-500 text-xs sm:text-sm font-semibold bg-red-50 px-2 py-1 sm:px-3 sm:py-1 rounded-full">
                                 <i class="fas fa-arrow-down mr-1"></i>2.1%
                             </span>
                         </div>
-                        <h3 class="text-2xl font-bold text-gray-800 mb-1">
-                            <% const blockedUsers=users.filter(user=> user.isBlocked).length;
-                                %>
-                                <%= blockedUsers %>
-                        </h3>
+                        <h3 class="text-xl sm:text-2xl font-bold text-gray-800 mb-1">
+                            <%= blockedUsers %></h3>
+                        
                         <p class="text-gray-600 text-sm">Blocked Users</p>
-                        <p class="text-gray-400 text-xs mt-2">Suspended accounts</p>
+                        <p class="text-gray-400 text-xs sm:text-sm mt-1 lg:mt-2">Suspended accounts</p>
                     </div>
 
                     <!-- This Month -->
-                    <div class="stats-card card-hover border-l-4 border-purple-500">
-                        <div class="flex items-center justify-between mb-4">
-                            <div class="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center">
-                                <i class="fas fa-chart-line text-purple-600 text-lg"></i>
+                    <div class="stats-card card-hover border-l-4 border-purple-500 rounded-xl lg:rounded-2xl p-4 sm:p-5 lg:p-6">
+                        <div class="flex items-center justify-between mb-3 lg:mb-4">
+                            <div class="w-10 h-10 sm:w-12 sm:h-12 bg-purple-100 rounded-lg lg:rounded-xl flex items-center justify-center">
+                                <i class="fas fa-chart-line text-purple-600 text-base sm:text-lg"></i>
                             </div>
-                            <span class="text-blue-500 text-sm font-semibold">+24</span>
+                            <span class="text-blue-500 text-xs sm:text-sm font-semibold">+24</span>
                         </div>
-                        <h3 class="text-2xl font-bold text-gray-800 mb-1">New This Month</h3>
+                        <h3 class="text-xl sm:text-2xl font-bold text-gray-800 mb-1">New This Month</h3>
                         <p class="text-gray-600 text-sm">User Growth</p>
-                        <p class="text-gray-400 text-xs mt-2">24 new registrations</p>
+                        <p class="text-gray-400 text-xs sm:text-sm mt-1 lg:mt-2">24 new registrations</p>
                     </div>
                 </div>
 
                 <!-- Search and Actions Bar -->
-                <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
-                    <div class="flex flex-col md:flex-row items-start md:items-center gap-4 w-full md:w-auto">
-                        <!-- Search Bar -->
-                        <form action="/admin/users" method="get" class="flex items-center gap-3 w-full md:w-auto">
-                            <div class="relative w-full md:w-64">
-                                <input type="text" name="q" value="<%= q || '' %>" placeholder="Search users..."
-                                    class="border border-gray-300 rounded-lg px-4 py-2.5 w-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent pl-10" />
-                                <i class="fas fa-search text-gray-400 absolute left-3 top-3.5"></i>
-                            </div>
+                <div class="flex flex-col md:flex-row justify-between items-stretch md:items-center mb-6 gap-4">
+                    <!-- Search Bar -->
+                    <form action="/admin/users" method="get" class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full md:w-auto">
+                        <div class="relative flex-1">
+                            <input type="text" name="q" value="<%= q || '' %>" placeholder="Search users..."
+                                class="border border-gray-300 rounded-lg px-4 py-2.5 w-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent pl-10 text-sm sm:text-base" />
+                            <i class="fas fa-search text-gray-400 absolute left-3 top-3.5"></i>
+                        </div>
+                        <div class="flex gap-2">
                             <button type="submit"
-                                class="bg-blue-600 text-white px-4 py-2.5 rounded-lg hover:bg-blue-700 transition-all flex items-center gap-2 action-btn">
+                                class="bg-blue-600 text-white px-4 py-2.5 rounded-lg hover:bg-blue-700 transition-all flex items-center justify-center gap-2 action-btn flex-1 sm:flex-none">
                                 <i class="fas fa-search"></i>
-                                <span>Search</span>
+                                <span class="hidden xs:inline">Search</span>
                             </button>
                             <a href="/admin/users"
-                                class="bg-gray-500 text-white px-4 py-2.5 rounded-lg hover:bg-gray-600 transition-all flex items-center gap-2 action-btn">
+                                class="bg-gray-500 text-white px-4 py-2.5 rounded-lg hover:bg-gray-600 transition-all flex items-center justify-center gap-2 action-btn flex-1 sm:flex-none">
                                 <i class="fas fa-times"></i>
-                                <span>Clear</span>
+                                <span class="hidden xs:inline">Clear</span>
                             </a>
-                        </form>
-                    </div>
+                        </div>
+                    </form>
                 </div>
 
                 <!-- Users Table -->
-                <div class="bg-white rounded-2xl shadow-lg overflow-hidden card-hover">
-                    <div class="overflow-x-auto">
+                <div class="bg-white rounded-xl lg:rounded-2xl shadow-lg overflow-hidden card-hover">
+                    <!-- Desktop Table (lg and above) -->
+                    <div class="hidden lg:block overflow-x-auto">
                         <table class="min-w-full text-sm">
                             <thead>
                                 <tr class="bg-gradient-to-r from-gray-50 to-gray-100 text-gray-600 uppercase text-xs">
@@ -231,16 +258,16 @@
                                         <td class="px-6 py-4">
                                             <div class="flex items-center space-x-3">
                                                 <div
-                                                    class="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center shadow-md">
+                                                    class="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center shadow-md flex-shrink-0">
                                                     <span class="text-white font-semibold text-sm">
                                                         <%= user.name.charAt(0).toUpperCase() %>
                                                     </span>
                                                 </div>
-                                                <div>
-                                                    <span class="font-medium text-gray-800">
+                                                <div class="min-w-0">
+                                                    <span class="font-medium text-gray-800 truncate block">
                                                         <%= user.name %>
                                                     </span>
-                                                    <p class="text-xs text-gray-500">User ID: <%=
+                                                    <p class="text-xs text-gray-500 truncate">User ID: <%=
                                                             user._id.toString().slice(-8) %>
                                                     </p>
                                                 </div>
@@ -248,7 +275,7 @@
                                         </td>
                                         <td class="px-6 py-4">
                                             <div class="flex flex-col">
-                                                <span class="text-gray-800 font-medium">
+                                                <span class="text-gray-800 font-medium truncate">
                                                     <%= user.email %>
                                                 </span>
                                             </div>
@@ -268,14 +295,13 @@
                                         </td>
                                         <td class="px-6 py-4">
                                             <div class="flex gap-2 justify-center">
-                                                
                                                 <button type="button"
                                                     onclick="confirmToggle('<%= user._id %>', '<%= user.isBlocked %>')"
-                                                    class="<%= user.isBlocked ? 'bg-green-600 hover:bg-green-700' : 'bg-red-600 hover:bg-red-700' %> text-white px-4 py-2 rounded-lg transition-all">
+                                                    class="<%= user.isBlocked ? 'bg-green-600 hover:bg-green-700' : 'bg-red-600 hover:bg-red-700' %> text-white px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg transition-all text-sm sm:text-base">
                                                     <% if (user.isBlocked) { %>
-                                                        <i class="fas fa-unlock"></i> Unblock
+                                                        <i class="fas fa-unlock mr-1"></i><span>Unblock</span>
                                                         <% } else { %>
-                                                            <i class="fas fa-ban"></i> Block
+                                                            <i class="fas fa-ban mr-1"></i><span>Block</span>
                                                             <% } %>
                                                 </button>
                                             </div>
@@ -286,45 +312,143 @@
                         </table>
                     </div>
 
-                    <!-- Empty State -->
-                    <% if (users.length===0) { %>
-                        <div class="text-center py-12">
-                            <i class="fas fa-users text-gray-300 text-5xl mb-4"></i>
-                            <h3 class="text-lg font-medium text-gray-700 mb-2">No users found</h3>
-                            <p class="text-gray-500 mb-6">Try adjusting your search criteria</p>
-                        </div>
+                    <!-- Mobile & Tablet View (below lg) -->
+                    <div class="lg:hidden">
+                        <% if (users.length===0) { %>
+                            <div class="text-center py-8 sm:py-12">
+                                <i class="fas fa-users text-gray-300 text-4xl sm:text-5xl mb-3 sm:mb-4"></i>
+                                <h3 class="text-base sm:text-lg font-medium text-gray-700 mb-1 sm:mb-2">No users found</h3>
+                                <p class="text-gray-500 text-sm sm:text-base mb-4 sm:mb-6">Try adjusting your search criteria</p>
+                            </div>
+                        <% } else { %>
+                            <div class="space-y-3 sm:space-y-4 p-3 sm:p-4">
+                                <% users.forEach(user=> { %>
+                                    <div class="border border-gray-200 rounded-xl p-3 sm:p-4 bg-gray-50 hover:bg-gray-100 transition-colors">
+                                        <div class="flex justify-between items-start mb-3">
+                                            <div class="flex items-start gap-3 flex-1 min-w-0">
+                                                <div
+                                                    class="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center shadow-md flex-shrink-0">
+                                                    <span class="text-white font-semibold text-sm">
+                                                        <%= user.name.charAt(0).toUpperCase() %>
+                                                    </span>
+                                                </div>
+                                                <div class="min-w-0 flex-1">
+                                                    <h4 class="font-semibold text-gray-800 text-sm sm:text-base truncate">
+                                                        <%= user.name %>
+                                                    </h4>
+                                                    <p class="text-xs text-gray-600 mt-1 truncate">
+                                                        <%= user.email %>
+                                                    </p>
+                                                    <p class="text-xs text-gray-500 mt-1">ID: <%= user._id.toString().slice(-8) %></p>
+                                                </div>
+                                            </div>
+                                            <div class="ml-2">
+                                                <% if (user.isBlocked) { %>
+                                                    <span class="status-badge bg-red-100 text-red-800 text-xs">
+                                                        <i class="fas fa-ban text-red-500 text-xs"></i>
+                                                        <span>Blocked</span>
+                                                    </span>
+                                                <% } else { %>
+                                                    <span class="status-badge bg-green-100 text-green-800 text-xs">
+                                                        <i class="fas fa-check-circle text-green-500 text-xs"></i>
+                                                        <span>Active</span>
+                                                    </span>
+                                                <% } %>
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="flex justify-end">
+                                            <button type="button"
+                                                onclick="confirmToggle('<%= user._id %>', '<%= user.isBlocked %>')"
+                                                class="<%= user.isBlocked ? 'bg-green-600 hover:bg-green-700' : 'bg-red-600 hover:bg-red-700' %> text-white px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg transition-all text-sm sm:text-base w-full sm:w-auto">
+                                                <% if (user.isBlocked) { %>
+                                                    <i class="fas fa-unlock mr-1"></i><span>Unblock User</span>
+                                                <% } else { %>
+                                                    <i class="fas fa-ban mr-1"></i><span>Block User</span>
+                                                <% } %>
+                                            </button>
+                                        </div>
+                                    </div>
+                                <% }) %>
+                            </div>
                         <% } %>
+                    </div>
                 </div>
 
                 <!-- Pagination -->
                 <% if (pages> 1) { %>
-                    <div class="flex justify-center items-center gap-2 mt-8">
+                    <div class="flex flex-wrap justify-center items-center gap-2 mt-6 lg:mt-8">
                         <% if (page> 1) { %>
                             <a href="/admin/users?page=<%= page - 1 %>&limit=<%= limit %><%= q ? '&q=' + q : '' %>"
-                                class="px-4 py-2 border rounded-lg bg-white hover:bg-gray-50 transition-all flex items-center gap-2 action-btn">
+                                class="px-3 sm:px-4 py-2 border rounded-lg bg-white hover:bg-gray-50 transition-all flex items-center gap-1 sm:gap-2 action-btn text-sm">
                                 <i class="fas fa-chevron-left text-xs"></i>
-                                <span>Previous</span>
+                                <span class="hidden xs:inline">Previous</span>
                             </a>
+                        <% } %>
+
+                        <div class="flex flex-wrap gap-1 sm:gap-2 justify-center">
+                            <% for (let i=1; i <=pages; i++) { %>
+                                <a href="/admin/users?page=<%= i %>&limit=<%= limit %><%= q ? '&q=' + q : '' %>"
+                                    class="px-3 sm:px-4 py-2 border rounded-lg <%= i === page ? 'bg-blue-600 text-white' : 'bg-white hover:bg-gray-50' %> transition-all action-btn text-sm">
+                                    <%= i %>
+                                </a>
                             <% } %>
+                        </div>
 
-                                <% for (let i=1; i <=pages; i++) { %>
-                                    <a href="/admin/users?page=<%= i %>&limit=<%= limit %><%= q ? '&q=' + q : '' %>"
-                                        class="px-4 py-2 border rounded-lg <%= i === page ? 'bg-blue-600 text-white' : 'bg-white hover:bg-gray-50' %> transition-all action-btn">
-                                        <%= i %>
-                                    </a>
-                                    <% } %>
-
-                                        <% if (page < pages) { %>
-                                            <a href="/admin/users?page=<%= page + 1 %>&limit=<%= limit %><%= q ? '&q=' + q : '' %>"
-                                                class="px-4 py-2 border rounded-lg bg-white hover:bg-gray-50 transition-all flex items-center gap-2 action-btn">
-                                                <span>Next</span>
-                                                <i class="fas fa-chevron-right text-xs"></i>
-                                            </a>
-                                            <% } %>
+                        <% if (page < pages) { %>
+                            <a href="/admin/users?page=<%= page + 1 %>&limit=<%= limit %><%= q ? '&q=' + q : '' %>"
+                                class="px-3 sm:px-4 py-2 border rounded-lg bg-white hover:bg-gray-50 transition-all flex items-center gap-1 sm:gap-2 action-btn text-sm">
+                                <span class="hidden xs:inline">Next</span>
+                                <i class="fas fa-chevron-right text-xs"></i>
+                            </a>
+                        <% } %>
                     </div>
-                    <% } %>
+                <% } %>
             </main>
     </div>
+
+    <!-- Sidebar Toggle Script -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const mobileMenuButton = document.getElementById('mobile-menu-button');
+            const sidebar = document.getElementById('admin-sidebar');
+            const overlay = document.getElementById('mobile-overlay');
+            const body = document.body;
+
+            function toggleSidebar() {
+                sidebar.classList.toggle('-translate-x-full');
+                overlay.classList.toggle('active');
+                body.classList.toggle('sidebar-open');
+            }
+
+            function closeSidebar() {
+                sidebar.classList.add('-translate-x-full');
+                overlay.classList.remove('active');
+                body.classList.remove('sidebar-open');
+            }
+
+            if (mobileMenuButton && sidebar && overlay) {
+                mobileMenuButton.addEventListener('click', toggleSidebar);
+                overlay.addEventListener('click', closeSidebar);
+            }
+
+            // Close sidebar when clicking on any link
+            document.querySelectorAll('#admin-sidebar a').forEach(link => {
+                link.addEventListener('click', () => {
+                    if (window.innerWidth < 1024) {
+                        closeSidebar();
+                    }
+                });
+            });
+
+            // Close sidebar on escape key
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape' && window.innerWidth < 1024) {
+                    closeSidebar();
+                }
+            });
+        });
+    </script>
 
     <script>
 
@@ -372,20 +496,19 @@
         }
 
         document.addEventListener('DOMContentLoaded', function () {
-    const searchInput = document.querySelector('input[name="q"]');
-    const searchForm = document.querySelector('form[action="/admin/users"]');
+            const searchInput = document.querySelector('input[name="q"]');
+            const searchForm = document.querySelector('form[action="/admin/users"]');
 
-    if (!searchForm) return;
+            if (!searchForm) return;
 
-    searchForm.addEventListener('submit', function () {
-        const btn = this.querySelector('button[type="submit"]');
-        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Searching...';
-        btn.disabled = true;
-    });
-});
-
-
+            searchForm.addEventListener('submit', function () {
+                const btn = this.querySelector('button[type="submit"]');
+                btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Searching...';
+                btn.disabled = true;
+            });
+        });
     </script>
+    
     <script>
         function confirmToggle(userId, isBlocked) {
             const action = isBlocked === "true" ? "unblock" : "block";

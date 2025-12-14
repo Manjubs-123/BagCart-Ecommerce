@@ -4,18 +4,30 @@ import User from "../../models/userModel.js";
 
 export const getUsers = async (req, res) => {
   try {
+
+    const escapeRegex = (text = "") =>
+  text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
     const page = Math.max(1, parseInt(req.query.page || "1", 10));
     const limit = Math.max(1, parseInt(req.query.limit || "10", 10));
-    const q = (req.query.q || "").trim();
+ 
 
-    const filter = q
-      ? {
-          $or: [
-            { name: { $regex: q, $options: "i" } },
-            { email: { $regex: q, $options: "i" } },
-          ],
-        }
-      : {};
+    const q = (req.query.q || "").trim();
+const safeQ = escapeRegex(q);
+
+const filter = safeQ
+  ? {
+      $or: [
+        { name: { $regex: safeQ, $options: "i" } },
+        { email: { $regex: safeQ, $options: "i" } },
+      ],
+    }
+  : {};
+
+
+      const totalUsers = await User.countDocuments({});
+const activeUsers = await User.countDocuments({ isBlocked: false });
+const blockedUsers = await User.countDocuments({ isBlocked: true });
 
     const total = await User.countDocuments(filter);
     const pages = Math.ceil(total / limit);
@@ -27,14 +39,18 @@ export const getUsers = async (req, res) => {
       .limit(limit)
       .lean();
 
-    res.render("admin/users", {
-      users,
-      page,
-      pages,
-      limit,
-      q,
-      total,
-    });
+   res.render("admin/users", {
+  users,
+  page,
+  pages,
+  limit,
+  q,
+  total,
+  totalUsers,
+  activeUsers,
+  blockedUsers
+});
+
   } catch (err) {
     console.error("Get Users Error:", err);
     res.status(500).send("Server Error");
