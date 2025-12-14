@@ -2,15 +2,23 @@ import Category from "../../models/category.js";
 
 export const listCategories = async (req, res) => {
   try {
+    const escapeRegex = (text = "") =>
+  text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
     let page = parseInt(req.query.page) || 1;
     let limit = parseInt(req.query.limit) || 10;
-    let q = req.query.q ? req.query.q.trim() : "";
+   const q = (req.query.q || "").trim();
+const safeQ = escapeRegex(q);
 
+const filter = q
+  ? {
+      $or: [
+        { name: { $regex: safeQ, $options: "i" } },
+        { email: { $regex: safeQ, $options: "i" } },
+      ],
+    }
+  : {};
 
-    const filter = {
-      isDeleted: false,
-      ...(q && { name: { $regex: q, $options: "i" } })
-    };
 
     // Total filtered categories count
     const totalCategories = await Category.countDocuments(filter);
