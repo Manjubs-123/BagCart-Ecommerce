@@ -318,6 +318,22 @@ export const updateUserProfile = async (req, res) => {
     const { name, phone } = req.body;
     const DEFAULT_AVATAR_ID = "AdobeStock_1185421594_Preview_cvfm1v";
 
+
+    let isUpdated = false; // ⭐ KEY FLAG
+
+    // NAME CHANGE CHECK
+    if (name && name !== user.name) {
+      user.name = name;
+      isUpdated = true;
+    }
+
+    // PHONE CHANGE CHECK
+    if (phone !== user.phone) {
+      user.phone = phone;
+      isUpdated = true;
+    }
+
+
     // If user uploaded new image
     if (req.file) {
 
@@ -337,10 +353,17 @@ export const updateUserProfile = async (req, res) => {
       };
 
       fs.unlinkSync(req.file.path);
+      isUpdated = true;
     }
 
-    user.name = name;
-    user.phone = phone;
+     // ❌ NOTHING CHANGED
+    if (!isUpdated) {
+      return res.json({
+        success: false,
+        message: "No changes detected"
+      });
+    }
+
 
     await user.save();
     req.session.user.name = user.name;
