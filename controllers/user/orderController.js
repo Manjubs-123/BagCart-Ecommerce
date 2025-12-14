@@ -19,11 +19,29 @@ const generateOrderId = () => {
 export const createOrder = async (req, res) => {
     try {
         const userId = req.session.user.id;
-        const { addressId, paymentMethod } = req.body;
+      const { addressId, paymentMethod } = req.body;
 
-        if (!addressId || !paymentMethod) {
-            return res.json({ success: false, message: "Missing data" });
-        }
+if (!addressId && !paymentMethod) {
+  return res.json({
+    success: false,
+    message: "Please select a delivery address and payment method"
+  });
+}
+
+if (!addressId) {
+  return res.json({
+    success: false,
+    message: "Delivery address is not selected"
+  });
+}
+
+if (!paymentMethod) {
+  return res.json({
+    success: false,
+    message: "Payment method is not selected"
+  });
+}
+
 
         const cart = await Cart.findOne({ user: userId })
             .populate("items.product");

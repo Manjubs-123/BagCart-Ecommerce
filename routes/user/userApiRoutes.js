@@ -254,8 +254,28 @@ router.post("/orders", async (req, res) => {
     const userId = req.session.user?.id;
     if (!userId) return res.json({ success: false, message: "User not login " });
 
-    const { addressId, paymentMethod, couponCode } = req.body;
-    if (!addressId || !paymentMethod) return res.json({ success: false, message: "Missing data" });
+  const { addressId, paymentMethod, couponCode } = req.body;
+
+if (!addressId && !paymentMethod) {
+  return res.json({
+    success: false,
+    message: "Please select a delivery address and payment method"
+  });
+}
+
+if (!addressId) {
+  return res.json({
+    success: false,
+    message: "Delivery address is not selected"
+  });
+}
+
+if (!paymentMethod) {
+  return res.json({
+    success: false,
+    message: "Payment method is not selected"
+  });
+}
 
     // Load cart (with product populated)
     const cart = await Cart.findOne({ user: userId }).populate("items.product");
