@@ -1,15 +1,19 @@
 import Coupon from "../../models/couponModel.js";
 
+ const escapeRegex = (text = "") =>
+  text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
 export const getCouponListPage = async (req, res) => {
   try {
-    const { q="", status="", type="", sort="", page=1, limit=10 } = req.query;
+    const { q = "", status = "", type = "", sort = "", page = 1, limit = 10 } = req.query;
     const now = new Date();
+
+    const safeQ = escapeRegex(q.trim());
 
     let query = {};
 
     if (q.trim()) {
-      query.code = { $regex: q.trim(), $options: "i" };
+      query.code = { $regex: safeQ, $options: "i" };
     }
 
     if (type === "percentage") query.discountType = "PERCENTAGE";
@@ -24,40 +28,40 @@ export const getCouponListPage = async (req, res) => {
     if (sort === "newest") sortQuery.createdAt = -1;
     if (sort === "discountHigh") sortQuery.discountValue = -1;
     if (sort === "expiryNear") sortQuery.expiryDate = 1;
+
     const totalCoupons = await Coupon.countDocuments(query);
 
     const coupons = await Coupon.find(query)
       .sort(sortQuery)
       .skip((page - 1) * Number(limit))
-
-      .limit(limit)
+      .limit(Number(limit))
       .lean();
 
-   const totalUsageAgg = await Coupon.aggregate([
-  { $group: { _id: null, total: { $sum: "$usedCount" } } }
-]);
+    const totalUsageAgg = await Coupon.aggregate([
+      { $group: { _id: null, total: { $sum: "$usedCount" } } }
+    ]);
 
-res.render("admin/couponList", {
-  coupons,
- totalCoupons, 
-  activeCoupons: await Coupon.countDocuments({ isActive: true }), //overall active count
-  expiredCoupons: await Coupon.countDocuments({ expiryDate: { $lt: now } }), //overall expired count
-  totalUsage: totalUsageAgg[0]?.total || 0, //  correct total usage
-  q,
-  statusFilter: status,
-  typeFilter: type,
-  sort,
-  page: Number(page),
-  limit: Number(limit),
-  pages: Math.ceil(totalCoupons / Number(limit))
-});
-
+    res.render("admin/couponList", {
+      coupons,
+      totalCoupons,
+      activeCoupons: await Coupon.countDocuments({ isActive: true }),
+      expiredCoupons: await Coupon.countDocuments({ expiryDate: { $lt: now } }),
+      totalUsage: totalUsageAgg[0]?.total || 0,
+      q,
+      statusFilter: status,
+      typeFilter: type,
+      sort,
+      page: Number(page),
+      limit: Number(limit),
+      pages: Math.ceil(totalCoupons / Number(limit))
+    });
 
   } catch (err) {
-    console.error(" LIST PAGE ERROR:", err.message);
+    console.error("LIST PAGE ERROR:", err.message);
     res.status(500).send("Failed loading coupons");
   }
 };
+
 
 export const getCreateCouponPage = async (req, res) => {
   try {
