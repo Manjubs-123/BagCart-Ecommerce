@@ -8,46 +8,218 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  
   <style>
-    /* copy your styles from createOffer — keep UI identical */
-    /* (omitted here for brevity — paste the same styles you used in createOffer) */
+    /* Responsive styles */
+    .type-card {
+      border: 2px solid #e5e7eb;
+      border-radius: 12px;
+      padding: 1rem;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    
+    .type-card:hover {
+      border-color: #3b82f6;
+      background-color: #f8fafc;
+    }
+    
+    .type-card.selected {
+      border-color: #3b82f6;
+      background-color: #eff6ff;
+      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    }
+    
+    .dropdown-container {
+      position: relative;
+    }
+    
+    .dropdown-options {
+      display: none;
+      position: absolute;
+      top: 100%;
+      left: 0;
+      right: 0;
+      max-height: 300px;
+      overflow-y: auto;
+      background: white;
+      border: 1px solid #e5e7eb;
+      border-radius: 8px;
+      box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+      z-index: 50;
+      margin-top: 4px;
+    }
+    
+    .dropdown-option {
+      padding: 12px 16px;
+      cursor: pointer;
+      transition: background-color 0.2s;
+      border-bottom: 1px solid #f3f4f6;
+    }
+    
+    .dropdown-option:last-child {
+      border-bottom: none;
+    }
+    
+    .dropdown-option:hover {
+      background-color: #f3f4f6;
+    }
+    
+    .dropdown-option.selected {
+      background-color: #eff6ff;
+    }
+    
+    .selected-items {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      max-height: 200px;
+      overflow-y: auto;
+      padding: 8px;
+      border: 1px solid #e5e7eb;
+      border-radius: 8px;
+      background-color: #f9fafb;
+    }
+    
+    .selected-item {
+      display: inline-flex;
+      align-items: center;
+      padding: 6px 12px;
+      background: white;
+      border: 1px solid #d1d5db;
+      border-radius: 20px;
+      font-size: 14px;
+      gap: 6px;
+      max-width: 100%;
+    }
+    
+    .selected-item span {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      max-width: 200px;
+    }
+    
+    /* Mobile overlay */
+    @media (max-width: 1023px) {
+      .mobile-overlay {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: rgba(0, 0, 0, 0.5);
+        z-index: 40;
+      }
+      
+      .mobile-overlay.active {
+        display: block;
+      }
+      
+      body.sidebar-open {
+        overflow: hidden;
+      }
+    }
+    
+    /* Validation styles */
+    .input-error {
+      border-color: #ef4444 !important;
+      box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1) !important;
+    }
+    
+    .input-success {
+      border-color: #10b981 !important;
+      box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1) !important;
+    }
+    
+    /* Toggle switch */
+    .toggle-checkbox:checked + .toggle-label .toggle-dot {
+      transform: translateX(100%);
+      background-color: #3b82f6;
+    }
+    
+    .toggle-checkbox:checked + .toggle-label {
+      background-color: #3b82f6;
+    }
+    
+    /* Responsive adjustments */
+    @media (max-width: 640px) {
+      .selected-item span {
+        max-width: 120px;
+      }
+      
+      .dropdown-options {
+        max-height: 250px;
+      }
+    }
+    
+    @media (max-width: 768px) {
+      .type-card {
+        padding: 0.75rem;
+      }
+      
+      .selected-items {
+        max-height: 150px;
+      }
+    }
   </style>
 </head>
 <body class="bg-gray-50 min-h-screen">
-  <%- include('../partials/sidebar', { currentPage: 'offers' }) %>
-  <main class="ml-64 flex-1 p-6">
-    <div class="mb-8">
-      <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-2">
-        <div>
-          <h1 class="text-2xl sm:text-3xl font-bold">Edit Offer</h1>
-          <p class="text-gray-600">Update offer details</p>
+
+<!-- Mobile Overlay -->
+<div class="mobile-overlay lg:hidden" id="mobile-overlay"></div>
+
+<%- include('../partials/sidebar', { currentPage: 'offers' }) %>
+
+  <main class="ml-0 lg:ml-64 flex-1 p-4 sm:p-6 transition-all duration-300">
+    <div class="mb-6 lg:mb-8">
+      <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 sm:gap-4 mb-2">
+        <div class="flex items-center justify-between">
+          <div>
+            <h1 class="text-xl sm:text-2xl lg:text-3xl font-bold">Edit Offer</h1>
+            <p class="text-gray-600 text-sm sm:text-base">Update offer details</p>
+          </div>
+          <!-- Mobile menu button -->
+          <button
+            id="mobile-menu-button"
+            class="lg:hidden p-2 rounded-lg bg-gray-100 text-gray-700 hover:bg-gray-200 transition-colors ml-2"
+            aria-label="Toggle menu"
+          >
+            <i class="fas fa-bars text-lg"></i>
+          </button>
         </div>
-        <a href="/admin/offers" class="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 inline-flex items-center">
+        <a href="/admin/offers" class="px-3 sm:px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 inline-flex items-center justify-center sm:justify-start text-sm sm:text-base mt-2 sm:mt-0">
           <i class="fas fa-arrow-left mr-2"></i> Back to Offers
         </a>
       </div>
     </div>
 
     <div class="max-w-2xl mx-auto">
-      <!-- NOTE: we do NOT rely on the <form> submit. We'll use JS + axios.patch -->
       <form id="offerForm">
         <div class="bg-white rounded-xl p-4 sm:p-6 mb-6 shadow-sm">
           <h2 class="text-lg font-semibold mb-4">Select Offer Type</h2>
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
             <div class="type-card" id="productType" onclick="selectType('product')">
               <div class="flex items-center">
-                <div class="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center mr-3">
-                  <i class="fas fa-box text-blue-600"></i>
+                <div class="w-8 h-8 sm:w-10 sm:h-10 bg-blue-100 rounded-lg flex items-center justify-center mr-2 sm:mr-3 flex-shrink-0">
+                  <i class="fas fa-box text-blue-600 text-sm sm:text-base"></i>
                 </div>
-                <div><h3 class="font-medium">Product Offer</h3><p class="text-xs text-gray-500">Apply to specific products</p></div>
+                <div class="min-w-0">
+                  <h3 class="font-medium text-sm sm:text-base">Product Offer</h3>
+                  <p class="text-xs text-gray-500 truncate">Apply to specific products</p>
+                </div>
               </div>
             </div>
             <div class="type-card" id="categoryType" onclick="selectType('category')">
               <div class="flex items-center">
-                <div class="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center mr-3">
-                  <i class="fas fa-layer-group text-green-600"></i>
+                <div class="w-8 h-8 sm:w-10 sm:h-10 bg-green-100 rounded-lg flex items-center justify-center mr-2 sm:mr-3 flex-shrink-0">
+                  <i class="fas fa-layer-group text-green-600 text-sm sm:text-base"></i>
                 </div>
-                <div><h3 class="font-medium">Category Offer</h3><p class="text-xs text-gray-500">Apply to categories</p></div>
+                <div class="min-w-0">
+                  <h3 class="font-medium text-sm sm:text-base">Category Offer</h3>
+                  <p class="text-xs text-gray-500 truncate">Apply to categories</p>
+                </div>
               </div>
             </div>
           </div>
@@ -59,8 +231,9 @@
           <div class="mb-4">
             <label class="text-sm font-medium">Offer Name *</label>
             <input id="nameInput" name="name" type="text" required
-                   class="w-full px-4 py-3 border rounded-lg" 
+                   class="w-full px-3 sm:px-4 py-2.5 sm:py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base" 
                    value="<%= offer.name %>">
+            <div id="nameErrorMessage" class="text-red-500 text-xs mt-1 hidden"></div>
           </div>
 
           <!-- Discount -->
@@ -68,35 +241,41 @@
             <label class="text-sm font-medium">Discount Percentage *</label>
             <div class="relative">
               <input id="discountInput" name="discountValue" type="number" min="5" max="90" required
-                     class="w-full px-4 py-3 border rounded-lg pl-12"
+                     class="w-full px-3 sm:px-4 py-2.5 sm:py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent pl-10 sm:pl-12 text-sm sm:text-base"
                      value="<%= offer.discountValue %>">
-              <span class="absolute left-4 top-3 text-gray-500">%</span>
+              <span class="absolute left-3 sm:left-4 top-2.5 sm:top-3 text-gray-500">%</span>
             </div>
+            <div id="discountErrorMessage" class="text-red-500 text-xs mt-1 hidden"></div>
           </div>
 
           <!-- Dates -->
-          <div class="mb-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div class="mb-4 grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
             <div>
               <label class="text-xs text-gray-600">Start Date & Time</label>
-              <input id="fromInput" name="validFrom" type="datetime-local" class="w-full px-4 py-3 border rounded-lg"
+              <input id="fromInput" name="validFrom" type="datetime-local" 
+                     class="w-full px-3 sm:px-4 py-2.5 sm:py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base"
                      value="<%= new Date(offer.validFrom).toISOString().slice(0,16) %>">
             </div>
             <div>
               <label class="text-xs text-gray-600">End Date & Time</label>
-              <input id="toInput" name="validTo" type="datetime-local" class="w-full px-4 py-3 border rounded-lg"
+              <input id="toInput" name="validTo" type="datetime-local" 
+                     class="w-full px-3 sm:px-4 py-2.5 sm:py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base"
                      value="<%= new Date(offer.validTo).toISOString().slice(0,16) %>">
             </div>
           </div>
+          <div id="dateErrorMessage" class="text-red-500 text-xs mb-4 hidden"></div>
 
           <!-- Product selection -->
           <div id="productSelection" class="mb-4">
             <label class="text-sm font-medium">Select Products *</label>
             <div class="dropdown-container mb-3">
               <div class="relative">
-                <input id="productSearch" type="text" placeholder="Search products..." class="w-full px-4 py-3 border rounded-lg" onfocus="showProductDropdown()" oninput="searchProducts()">
-                <i class="fas fa-chevron-down absolute right-4 top-3.5 text-gray-400"></i>
+                <input id="productSearch" type="text" placeholder="Search products..." 
+                       class="w-full px-3 sm:px-4 py-2.5 sm:py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base" 
+                       onfocus="showProductDropdown()" oninput="searchProducts()">
+                <i class="fas fa-chevron-down absolute right-3 sm:right-4 top-2.5 sm:top-3.5 text-gray-400 text-sm"></i>
                 <div id="productDropdown" class="dropdown-options">
-                  <div id="productLoading" class="p-4 text-center"><i class="fas fa-spinner fa-spin"></i></div>
+                  <div id="productLoading" class="p-3 sm:p-4 text-center text-sm"><i class="fas fa-spinner fa-spin mr-2"></i>Loading...</div>
                   <div id="productList"></div>
                 </div>
               </div>
@@ -104,10 +283,12 @@
 
             <div class="flex justify-between items-center mb-2">
               <span class="text-sm text-gray-600">Selected Products (<span id="productCount">0</span>)</span>
-              <button type="button" id="clearProductsBtn" onclick="clearAllProducts()" class="text-xs text-red-600" disabled>Clear All</button>
+              <button type="button" id="clearProductsBtn" onclick="clearAllProducts()" 
+                      class="text-xs text-red-600 hover:text-red-800 disabled:opacity-50 disabled:cursor-not-allowed" disabled>Clear All</button>
             </div>
             <div id="selectedProducts" class="selected-items"></div>
             <input type="hidden" id="productsInput" name="products" value="<%= (offer.products || []).map(p => p._id).join(',') %>">
+            <div id="productErrorMessage" class="text-red-500 text-xs mt-1 hidden">Please select at least one product</div>
           </div>
 
           <!-- Category selection -->
@@ -115,10 +296,12 @@
             <label class="text-sm font-medium">Select Categories *</label>
             <div class="dropdown-container mb-3">
               <div class="relative">
-                <input id="categorySearch" type="text" placeholder="Search categories..." class="w-full px-4 py-3 border rounded-lg" onfocus="showCategoryDropdown()" oninput="searchCategories()">
-                <i class="fas fa-chevron-down absolute right-4 top-3.5 text-gray-400"></i>
+                <input id="categorySearch" type="text" placeholder="Search categories..." 
+                       class="w-full px-3 sm:px-4 py-2.5 sm:py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base" 
+                       onfocus="showCategoryDropdown()" oninput="searchCategories()">
+                <i class="fas fa-chevron-down absolute right-3 sm:right-4 top-2.5 sm:top-3.5 text-gray-400 text-sm"></i>
                 <div id="categoryDropdown" class="dropdown-options">
-                  <div id="categoryLoading" class="p-4 text-center"><i class="fas fa-spinner fa-spin"></i></div>
+                  <div id="categoryLoading" class="p-3 sm:p-4 text-center text-sm"><i class="fas fa-spinner fa-spin mr-2"></i>Loading...</div>
                   <div id="categoryList"></div>
                 </div>
               </div>
@@ -126,24 +309,28 @@
 
             <div class="flex justify-between items-center mb-2">
               <span class="text-sm text-gray-600">Selected Categories (<span id="categoryCount">0</span>)</span>
-              <button type="button" id="clearCategoriesBtn" onclick="clearAllCategories()" class="text-xs text-red-600" disabled>Clear All</button>
+              <button type="button" id="clearCategoriesBtn" onclick="clearAllCategories()" 
+                      class="text-xs text-red-600 hover:text-red-800 disabled:opacity-50 disabled:cursor-not-allowed" disabled>Clear All</button>
             </div>
             <div id="selectedCategories" class="selected-items"></div>
             <input type="hidden" id="categoriesInput" name="categories" value="<%= (offer.categories || []).map(c => c._id).join(',') %>">
+            <div id="categoryErrorMessage" class="text-red-500 text-xs mt-1 hidden">Please select at least one category</div>
           </div>
 
           <!-- Active toggle -->
           <div class="mt-6">
             <label class="flex items-center cursor-pointer">
-              <input id="activeCheckbox" name="isActive" type="checkbox" class="sr-only" <%= offer.isActive ? 'checked' : '' %>>
-              <div class="block bg-gray-300 w-10 h-6 rounded-full"></div>
-              <div class="dot absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition"></div>
+              <input id="activeCheckbox" name="isActive" type="checkbox" class="sr-only toggle-checkbox" <%= offer.isActive ? 'checked' : '' %>>
+              <div class="toggle-label relative inline-flex items-center h-6 rounded-full w-11 bg-gray-300 transition-colors duration-300">
+                <div class="toggle-dot inline-block w-4 h-4 transform bg-white rounded-full transition-transform duration-300 absolute left-1"></div>
+              </div>
               <span class="ml-3 text-sm font-medium">Activate offer</span>
             </label>
           </div>
 
           <div class="mt-6">
-            <button id="submitBtn" type="button" class="px-8 py-3 bg-blue-600 text-white rounded-lg">
+            <button id="submitBtn" type="button" 
+                    class="w-full sm:w-auto px-6 sm:px-8 py-2.5 sm:py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center justify-center text-sm sm:text-base">
               <i class="fas fa-save mr-2"></i> Update Offer
             </button>
           </div>
@@ -152,6 +339,48 @@
     </div>
   </main>
 
+<!-- Sidebar Toggle Script -->
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const mobileMenuButton = document.getElementById('mobile-menu-button');
+        const sidebar = document.getElementById('admin-sidebar');
+        const overlay = document.getElementById('mobile-overlay');
+        const body = document.body;
+
+        function toggleSidebar() {
+            sidebar.classList.toggle('-translate-x-full');
+            overlay.classList.toggle('active');
+            body.classList.toggle('sidebar-open');
+        }
+
+        function closeSidebar() {
+            sidebar.classList.add('-translate-x-full');
+            overlay.classList.remove('active');
+            body.classList.remove('sidebar-open');
+        }
+
+        if (mobileMenuButton && sidebar && overlay) {
+            mobileMenuButton.addEventListener('click', toggleSidebar);
+            overlay.addEventListener('click', closeSidebar);
+        }
+
+        // Close sidebar when clicking on any link
+        document.querySelectorAll('#admin-sidebar a').forEach(link => {
+            link.addEventListener('click', () => {
+                if (window.innerWidth < 1024) {
+                    closeSidebar();
+                }
+            });
+        });
+
+        // Close sidebar on escape key
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && window.innerWidth < 1024) {
+                closeSidebar();
+            }
+        });
+    });
+</script>
 
 <script>
 /* =========================================
@@ -254,32 +483,22 @@ document.addEventListener("DOMContentLoaded", function () {
        5. Initialize toggle switch
        --------------------------- */
     const checkbox = document.getElementById('activeCheckbox');
-    const toggle = checkbox.parentElement;
+    const toggleLabel = checkbox.nextElementSibling;
+    const toggleDot = toggleLabel.querySelector('.toggle-dot');
     
     // Set initial state based on server data
     if (checkbox.checked) {
-        toggle.querySelector('.dot').classList.remove('left-1');
-        toggle.querySelector('.dot').classList.add('left-5');
-        toggle.querySelector('.block').classList.remove('bg-gray-300');
-        toggle.querySelector('.block').classList.add('bg-blue-500');
-    } else {
-        toggle.querySelector('.dot').classList.remove('left-5');
-        toggle.querySelector('.dot').classList.add('left-1');
-        toggle.querySelector('.block').classList.remove('bg-blue-500');
-        toggle.querySelector('.block').classList.add('bg-gray-300');
+        toggleLabel.style.backgroundColor = '#3b82f6';
+        toggleDot.style.transform = 'translateX(125%)';
     }
     
     checkbox.addEventListener('change', function() {
         if (this.checked) {
-            toggle.querySelector('.dot').classList.remove('left-1');
-            toggle.querySelector('.dot').classList.add('left-5');
-            toggle.querySelector('.block').classList.remove('bg-gray-300');
-            toggle.querySelector('.block').classList.add('bg-blue-500');
+            toggleLabel.style.backgroundColor = '#3b82f6';
+            toggleDot.style.transform = 'translateX(125%)';
         } else {
-            toggle.querySelector('.dot').classList.remove('left-5');
-            toggle.querySelector('.dot').classList.add('left-1');
-            toggle.querySelector('.block').classList.remove('bg-blue-500');
-            toggle.querySelector('.block').classList.add('bg-gray-300');
+            toggleLabel.style.backgroundColor = '#d1d5db';
+            toggleDot.style.transform = 'translateX(0)';
         }
     });
 
@@ -305,10 +524,9 @@ document.addEventListener("DOMContentLoaded", function () {
     submitBtn.addEventListener('click', submitForm);
     
     // Ensure button is always visible and has basic styling
-    submitBtn.style.display = 'block';
+    submitBtn.style.display = 'flex';
     submitBtn.style.visibility = 'visible';
     submitBtn.style.opacity = '1';
-    submitBtn.classList.remove('hidden', 'invisible', 'opacity-0');
     
     /* ---------------------------
        8. Setup real-time validation
@@ -423,19 +641,13 @@ function validateForm() {
     // Update button state
     submitBtn.disabled = !allValid;
     
-    // Update button visibility and styling - FIXED
-    submitBtn.style.display = 'inline-flex';
-    submitBtn.style.visibility = 'visible';
-    submitBtn.style.opacity = '1';
-    
+    // Update button styling
     if (allValid) {
-        submitBtn.classList.remove('bg-gray-400', 'cursor-not-allowed', 'opacity-50');
+        submitBtn.classList.remove('bg-gray-400', 'cursor-not-allowed');
         submitBtn.classList.add('bg-blue-600', 'hover:bg-blue-700', 'cursor-pointer');
-        submitBtn.innerHTML = '<i class="fas fa-save mr-2"></i> Update Offer';
     } else {
         submitBtn.classList.remove('bg-blue-600', 'hover:bg-blue-700', 'cursor-pointer');
-        submitBtn.classList.add('bg-gray-400', 'cursor-not-allowed', 'opacity-75');
-        submitBtn.innerHTML = '<i class="fas fa-save mr-2"></i> Update Offer';
+        submitBtn.classList.add('bg-gray-400', 'cursor-not-allowed');
     }
 
     return allValid;
@@ -609,14 +821,14 @@ function loadProducts(search = "") {
                     div.dataset.id = p._id;
                     div.innerHTML = `
                         <div class="flex items-center justify-between w-full">
-                            <div class="flex items-center gap-3">
-                                ${p.image ? `<img src="${p.image}" alt="${p.name}" class="w-8 h-8 object-cover rounded">` : ''}
-                                <div>
-                                    <div class="font-medium text-gray-900">${p.name}</div>
+                            <div class="flex items-center gap-2 sm:gap-3">
+                                ${p.image ? `<img src="${p.image}" alt="${p.name}" class="w-6 h-6 sm:w-8 sm:h-8 object-cover rounded flex-shrink-0">` : ''}
+                                <div class="min-w-0">
+                                    <div class="font-medium text-gray-900 text-sm sm:text-base truncate">${p.name}</div>
                                     <div class="text-xs text-gray-500">₹${p.price}</div>
                                 </div>
                             </div>
-                            ${isSelected ? '<i class="fas fa-check text-blue-500"></i>' : ''}
+                            ${isSelected ? '<i class="fas fa-check text-blue-500 text-sm sm:text-base"></i>' : ''}
                         </div>
                     `;
                     
@@ -627,11 +839,14 @@ function loadProducts(search = "") {
                     
                     list.appendChild(div);
                 });
+            } else {
+                list.innerHTML = `<div class="p-4 text-center text-gray-500">No products found</div>`;
             }
         })
         .catch(err => {
             console.error("Error loading products:", err);
             if (loading) loading.style.display = "none";
+            list.innerHTML = `<div class="p-4 text-center text-red-500">Error loading products</div>`;
         });
 }
 
@@ -814,8 +1029,8 @@ function loadCategories(search = "") {
                     div.dataset.id = c._id;
                     div.innerHTML = `
                         <div class="flex items-center justify-between w-full">
-                            <div class="font-medium text-gray-900">${c.name}</div>
-                            ${isSelected ? '<i class="fas fa-check text-blue-500"></i>' : ''}
+                            <div class="font-medium text-gray-900 text-sm sm:text-base truncate">${c.name}</div>
+                            ${isSelected ? '<i class="fas fa-check text-blue-500 text-sm sm:text-base"></i>' : ''}
                         </div>
                     `;
                     
@@ -826,11 +1041,14 @@ function loadCategories(search = "") {
                     
                     list.appendChild(div);
                 });
+            } else {
+                list.innerHTML = `<div class="p-4 text-center text-gray-500">No categories found</div>`;
             }
         })
         .catch(err => {
             console.error("Error loading categories:", err);
             if (loading) loading.style.display = "none";
+            list.innerHTML = `<div class="p-4 text-center text-red-500">Error loading categories</div>`;
         });
 }
 
@@ -868,7 +1086,7 @@ function addCategory(id, name) {
     div.className = "selected-item";
     div.dataset.id = id;
     div.innerHTML = `
-        <span>${name}</span>
+        <span class="truncate">${name}</span>
         <button type="button" onclick="removeCategory('${id}')" 
                 class="text-red-500 hover:text-red-700 ml-2 flex-shrink-0">
             <i class="fas fa-times"></i>
@@ -1067,5 +1285,3 @@ function submitForm(e) {
 </script>
 </body>
 </html>
-
-

@@ -458,56 +458,7 @@ export const downloadSalesReport = async (req, res) => {
 
     const filenameBase = `sales-report-${fromDate}-to-${toDate}`;
 
-    /* -------------------------------------------------------
-       CSV DOWNLOAD - WITH ALL DISCOUNT COLUMNS
-    ------------------------------------------------------- */
-    if (format === "csv") {
-      const header = [
-        "Order ID",
-        "Item Order ID",
-        "Date",
-        "Customer",
-        "Items",
-        "Categories",
-        "Subtotal",
-        "Coupon Discount",
-        "Offer Discount",
-        "Total Discount",
-        "Final Amount",
-        "Payment Method",
-        "Status",
-      ];
 
-      const csvLines = [header.join(",")];
-
-      rows.forEach((r) => {
-        const values = [
-          r.orderId,
-          r.itemOrderId,
-          r.date,
-          `"${r.customer}"`,
-          r.items,
-          `"${r.categories}"`,
-          r.subtotal,
-          r.couponDiscount,
-          r.offerDiscount,
-          r.totalDiscount,
-          r.total,
-          r.paymentMethod,
-          r.status,
-        ];
-        csvLines.push(values.join(","));
-      });
-
-      const csv = csvLines.join("\n");
-
-      res.setHeader("Content-Type", "text/csv; charset=utf-8");
-      res.setHeader(
-        "Content-Disposition",
-        `attachment; filename="${filenameBase}.csv"`
-      );
-      return res.send(csv);
-    }
 
     /* -------------------------------------------------------
        EXCEL DOWNLOAD - PROPERLY FORMATTED
@@ -620,11 +571,15 @@ export const downloadSalesReport = async (req, res) => {
    /* -------------------------------------------------------
    PDF DOWNLOAD - PROPERLY ALIGNED WITH UNICODE SUPPORT
 ------------------------------------------------------- */
+/* -------------------------------------------------------
+   PDF DOWNLOAD - PLAIN TEXT, PERFECTLY ALIGNED
+------------------------------------------------------- */
 if (format === "pdf") {
-  const doc = new PDFDocument({ 
-    margin: 30, 
+  const doc = new PDFDocument({
     size: "A4",
-    layout: "landscape"
+    layout: "landscape",
+    margin: 30,
+    bufferPages: false // 🔥 CRITICAL FIX
   });
 
   res.setHeader("Content-Type", "application/pdf");
@@ -635,227 +590,122 @@ if (format === "pdf") {
 
   doc.pipe(res);
 
-  // Register Unicode font (use a font file available on your server)
-  // Option 1: If you have the font file locally
-  // doc.registerFont('Regular', path.join(__dirname, '../fonts/NotoSans-Regular.ttf'));
-  // doc.registerFont('Bold', path.join(__dirname, '../fonts/NotoSans-Bold.ttf'));
-  
-  // Option 2: For development/testing - use built-in Courier (limited Unicode)
-  // For production, download NotoSans or Roboto fonts and use Option 1
-  
-  // Using Helvetica as base but we'll handle ₹ specially
-  const useUnicodeFont = false; // Set to true when you have font files
-
-  // Helper function to draw text with proper rupee symbol
-  const drawText = (text, x, y, options = {}) => {
-    const textStr = String(text);
-    if (textStr.includes('₹')) {
-      // Replace ₹ with Rs. for now (or use Unicode font when available)
-      const replaced = textStr.replace(/₹/g, 'Rs.');
-      doc.text(replaced, x, y, options);
-    } else {
-      doc.text(textStr, x, y, options);
-    }
-  };
-
-  // Title
-  doc.fontSize(18).font(useUnicodeFont ? 'Bold' : 'Helvetica-Bold')
-     .text("Sales Report", { align: "center" });
-  doc.fontSize(10).font(useUnicodeFont ? 'Regular' : 'Helvetica')
-     .text(`Period: ${fromDate} → ${toDate}`, { align: "center" });
+  /* ---------------- TITLE ---------------- */
+  doc.fontSize(14).text("Sales Report", { align: "center" });
+  doc.fontSize(10).text(`Period: ${fromDate} to ${toDate}`, { align: "center" });
   doc.moveDown(1);
 
-  // Summary section
-  const totalRevenue = rows.reduce((sum, r) => sum + r.total, 0);
-  const totalCouponDisc = rows.reduce((sum, r) => sum + r.couponDiscount, 0);
-  const totalOfferDisc = rows.reduce((sum, r) => sum + r.offerDiscount, 0);
+  const totalRevenue = rows.reduce((s, r) => s + r.total, 0);
+  const totalCouponDisc = rows.reduce((s, r) => s + r.couponDiscount, 0);
+  const totalOfferDisc = rows.reduce((s, r) => s + r.offerDiscount, 0);
 
-  doc.fontSize(10).font(useUnicodeFont ? 'Bold' : 'Helvetica-Bold');
-  drawText(`Total Orders: ${rows.length}`, 40, doc.y);
-  doc.moveDown(0.3);
-  drawText(`Total Revenue: ₹${totalRevenue.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`, 40, doc.y);
-  doc.moveDown(0.3);
-  drawText(`Total Coupon Discount: ₹${totalCouponDisc.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`, 40, doc.y);
-  doc.moveDown(0.3);
-  drawText(`Total Offer Discount: ₹${totalOfferDisc.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`, 40, doc.y);
-  doc.moveDown(1.5);
+  doc.fontSize(10);
+  doc.text(`Total Orders: ${rows.length}`);
+  doc.text(`Total Revenue: Rs.${totalRevenue.toFixed(2)}`);
+  doc.text(`Total Coupon Discount: Rs.${totalCouponDisc.toFixed(2)}`);
+  doc.text(`Total Offer Discount: Rs.${totalOfferDisc.toFixed(2)}`);
+  doc.moveDown(1);
 
-  // Table configuration with adjusted widths
-  const colWidths = {
-    orderId: 65,
-    date: 55,
-    customer: 75,
-    items: 30,
-    categories: 85,
-    subtotal: 55,
-    couponDisc: 50,
-    offerDisc: 50,
-    totalDisc: 50,
-    total: 55,
-    payment: 65,
-    status: 50,
+  /* ---------------- TABLE SETUP ---------------- */
+  const startX = 30;
+  let y = doc.y;
+
+  const col = {
+    orderId: 80,
+    date: 70,
+    customer: 90,
+    items: 40,
+    categories: 120,
+    subtotal: 70,
+    coupon: 70,
+    offer: 70,
+    totalDisc: 80,
+    final: 80,
+    payment: 70,
+    status: 70
   };
 
   const headers = [
-    "Order ID",
-    "Date",
-    "Customer",
-    "Items",
-    "Categories",
-    "Subtotal",
-    "Coupon",
-    "Offer",
-    "Total Disc",
-    "Final",
-    "Payment",
-    "Status",
+    "Order ID", "Date", "Customer", "Items", "Categories",
+    "Subtotal", "Coupon", "Offer", "Total Disc",
+    "Final", "Payment", "Status"
   ];
 
-  const startX = 30;
-  const tableWidth = Object.values(colWidths).reduce((a, b) => a + b, 0);
+  const colKeys = Object.keys(col);
 
-  // Function to draw table header
-  const drawTableHeader = () => {
-    const headerY = doc.y;
-    
-    // Draw header background
-    doc.rect(startX, headerY - 3, tableWidth, 18)
-       .fill('#366092');
-    
-    // Draw header text
-    doc.font(useUnicodeFont ? 'Bold' : 'Helvetica-Bold')
-       .fontSize(8)
-       .fillColor('white');
-    
+  /* ---------------- DRAW HEADER ---------------- */
+  const drawHeader = () => {
     let x = startX;
-    Object.keys(colWidths).forEach((key, i) => {
-      const width = colWidths[key];
-      doc.text(headers[i], x + 2, headerY, { 
-        width: width - 4, 
-        align: 'center',
-        lineBreak: false
+    doc.fontSize(8);
+    headers.forEach((h, i) => {
+      doc.text(h, x, y, {
+        width: col[colKeys[i]],
+        align: "left"
       });
-      x += width;
+      x += col[colKeys[i]];
     });
-    
-    doc.fillColor('black');
-    doc.moveDown(1.2);
+    y += 14;
+    doc.moveTo(startX, y).lineTo(startX + Object.values(col).reduce((a, b) => a + b, 0), y).stroke();
+    y += 6;
   };
 
-  // Draw initial header
-  drawTableHeader();
+  drawHeader();
 
-  // Data rows
-  doc.font(useUnicodeFont ? 'Regular' : 'Helvetica').fontSize(7);
+  /* ---------------- ROWS ---------------- */
+  doc.fontSize(8);
 
-  rows.forEach((r, rowIndex) => {
-    // Prepare row data with proper formatting
-    const rowData = [
-      r.orderId || '',
-      r.date || '',
-      r.customer.substring(0, 18) || '',
-      String(r.items) || '0',
-      r.categories.substring(0, 22) || '',
-      r.subtotal.toFixed(2),
-      r.couponDiscount.toFixed(2),
-      r.offerDiscount.toFixed(2),
-      r.totalDiscount.toFixed(2),
-      r.total.toFixed(2),
-      r.paymentMethod || '',
-      r.status || '',
+  for (const r of rows) {
+    const row = [
+      r.orderId,
+      r.date,
+      r.customer,
+      String(r.items),
+      r.categories,
+      `Rs.${r.subtotal.toFixed(2)}`,
+      `Rs.${r.couponDiscount.toFixed(2)}`,
+      `Rs.${r.offerDiscount.toFixed(2)}`,
+      `Rs.${r.totalDiscount.toFixed(2)}`,
+      `Rs.${r.total.toFixed(2)}`,
+      r.paymentMethod,
+      r.status
     ];
 
-    // Calculate row height needed (check all columns)
-    let maxHeight = 12; // Minimum row height
-    Object.keys(colWidths).forEach((key, i) => {
-      const width = colWidths[key];
-      const value = String(rowData[i]);
-      const height = doc.heightOfString(value, { 
-        width: width - 4,
-        lineBreak: true
+    // 🔥 Calculate row height safely
+    let rowHeight = 14;
+    colKeys.forEach((key, i) => {
+      const h = doc.heightOfString(String(row[i]), {
+        width: col[key],
+        align: "left"
       });
-      if (height > maxHeight) maxHeight = height;
+      rowHeight = Math.max(rowHeight, h);
     });
 
-    // Check if we need a new page (leave 50px margin at bottom)
-    if (doc.y + maxHeight + 10 > doc.page.height - 50) {
-      doc.addPage({ layout: 'landscape' });
-      doc.y = 40;
-      drawTableHeader();
+    // 🔥 Page break BEFORE drawing
+    if (y + rowHeight > doc.page.height - 40) {
+      doc.addPage();
+      y = 30;
+      drawHeader();
     }
 
-    const rowY = doc.y;
-    
-    // Draw alternating row background for readability
-    if (rowIndex % 2 === 0) {
-      doc.rect(startX, rowY - 2, tableWidth, maxHeight + 4)
-         .fill('#f8f9fa')
-         .fillColor('black');
-    }
-
-    // Draw cell borders and content
+    // Draw row
     let x = startX;
-    Object.keys(colWidths).forEach((key, i) => {
-      const width = colWidths[key];
-      const value = rowData[i];
-      
-      // Determine alignment (right-align numeric columns)
-      const isNumeric = i >= 5 && i <= 9;
-      const align = isNumeric ? 'right' : 'left';
-      
-      // Add padding
-const padding = 3;
-
-// Draw text with rupee symbol handling
-const displayValue = (i >= 5 && i <= 9) ? `₹${value}` : value;
-
-drawText(displayValue, x + padding, rowY, {
-  width: width - (padding * 2),
-  align: align,        // left or right
-  lineBreak: true
-});
-
-      
-      // Draw vertical border (light gray)
-      if (i < Object.keys(colWidths).length - 1) {
-        doc.strokeColor('#e0e0e0')
-           .moveTo(x + width, rowY - 2)
-           .lineTo(x + width, rowY + maxHeight + 2)
-           .stroke()
-           .strokeColor('black');
-      }
-      
-      x += width;
+    row.forEach((val, i) => {
+      doc.text(String(val), x, y, {
+        width: col[colKeys[i]],
+        align: "left"
+      });
+      x += col[colKeys[i]];
     });
 
-    // Draw horizontal border at bottom of row
-    doc.strokeColor('#e0e0e0')
-       .moveTo(startX, rowY + maxHeight + 2)
-       .lineTo(startX + tableWidth, rowY + maxHeight + 2)
-       .stroke()
-       .strokeColor('black');
-
-    // Move to next row
-    doc.y = rowY + maxHeight + 4;
-  });
-
-  // Add footer with page numbers
-  const pages = doc.bufferedPageRange();
-  for (let i = 0; i < pages.count; i++) {
-    doc.switchToPage(i);
-    doc.fontSize(8)
-       .font(useUnicodeFont ? 'Regular' : 'Helvetica')
-       .text(
-         `Page ${i + 1} of ${pages.count}`,
-         0,
-         doc.page.height - 30,
-         { align: 'center' }
-       );
+    y += rowHeight + 6;
   }
 
   doc.end();
   return;
 }
+
+
+
     return res.status(400).json({ 
       success: false, 
       message: "Unsupported format. Use 'csv', 'excel', or 'pdf'" 
