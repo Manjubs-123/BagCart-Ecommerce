@@ -4,32 +4,68 @@ import Order from "../../models/orderModel.js";
 import User from "../../models/userModel.js";
 import moment from "moment";
 
-
 export const renderAdminLogin = (req, res) => {
-
-  // Prevent caching of login page
   res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, private");
   res.setHeader("Pragma", "no-cache");
   res.setHeader("Expires", "0");
 
-  // If already logged in redirect to dashboard
   if (req.session.isAdmin) {
     return res.redirect("/admin/dashboard");
   }
 
-  res.render("admin/login", { error: null });
-};
+  const error =
+    req.query.error === "invalid" ? "Invalid email or password" :
+    req.query.error === "missing" ? "Email and password are required" :
+    null;
 
+  res.render("admin/login", { error });
+};
 
 export const postAdminLogin = async (req, res) => {
-  const { email, password } = req.body;
-  if (email === process.env.ADMIN_EMAIL && password === process.env.ADMIN_PASSWORD) {
-    req.session.isAdmin = true;
-    res.redirect("/admin/dashboard");
-  } else {
-    res.render("admin/login", { error: "Invalid credentials" });
+  try {
+    const { email, password } = req.body;
+
+    // ❌ Missing fields → redirect (NOT render)
+    if (!email || !password) {
+      return res.redirect("/admin?error=missing");
+    }
+
+    // ✅ Correct credentials
+    if (
+      email === process.env.ADMIN_EMAIL &&
+      password === process.env.ADMIN_PASSWORD
+    ) {
+      req.session.regenerate(err => {
+        if (err) {
+          console.error("Session regenerate error:", err);
+          return res.redirect("/admin?error=server");
+        }
+
+        req.session.isAdmin = true;
+        return res.redirect("/admin/dashboard");
+      });
+
+    } else {
+      // ❌ Invalid credentials → redirect
+      return res.redirect("/admin?error=invalid");
+    }
+
+  } catch (err) {
+    console.error("Admin login error:", err);
+    return res.redirect("/admin?error=server");
   }
 };
+
+
+// export const postAdminLogin = async (req, res) => {
+//   const { email, password } = req.body;
+//   if (email === process.env.ADMIN_EMAIL && password === process.env.ADMIN_PASSWORD) {
+//     req.session.isAdmin = true;
+//     res.redirect("/admin/dashboard");
+//   } else {
+//     res.render("admin/login", { error: "Invalid credentials" });
+//   }
+// };
 
 
 export const renderAdminDashboard = async (req, res) => {
