@@ -323,7 +323,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
 // SAVE COUPON FUNCTION - FIXED VERSION
 async function saveCoupon() {
-  console.log("🔄 Save coupon called");
+  console.log(" Save coupon called");
   
   // Run all validations
   const isCodeValid = validateCode();
@@ -358,7 +358,7 @@ async function saveCoupon() {
     isActive: document.getElementById("isActive").checked
   };
 
-  console.log("📤 Sending payload:", payload);
+  console.log(" Sending payload:", payload);
 
   try {
     // Disable submit button to prevent double submission
@@ -367,7 +367,7 @@ async function saveCoupon() {
 
     const response = await axios.patch(`/admin/coupon/update/${id}`, payload);
     
-    console.log("✅ Server response:", response.data);
+    console.log(" Server response:", response.data);
     
     if (response.data.success) {
       Swal.fire({
@@ -384,7 +384,7 @@ async function saveCoupon() {
     }
 
   } catch (error) {
-    console.error("❌ Save error:", error);
+    console.error(" Save error:", error);
     
     // Re-enable submit button
     submitBtn.disabled = false;

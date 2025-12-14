@@ -383,49 +383,7 @@ let currentEmail = '';
             
             return true;
         }
-        
-        // Send OTP function
-        // async function sendOTP() {
-        //     if (!validateEmailForm()) return;
-            
-        //     const newEmail = newEmailInput.value.trim();
-        //     currentEmail = newEmail;
-            
-        //     try {
-        //         // Update button state
-        //         sendOtpBtn.disabled = true;
-        //         sendOtpBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i><span>Sending...</span>';
-                
-        //         // Simulate API call to send OTP
-        //         // In a real application, this would be an axios call to your backend
-        //         const response = await mockSendOTP(newEmail);
-                
-        //         if (response.success) {
-        //             // Show OTP verification card
-        //             emailEntryCard.classList.add('hidden');
-        //             otpVerificationCard.classList.remove('hidden');
-                    
-        //             // Update email display
-        //             otpEmailDisplay.textContent = newEmail;
-                    
-        //             // Start countdown timer
-        //             startOTPTimer();
-                    
-        //             // Focus first OTP input
-        //             document.querySelector('.otp-input').focus();
-        //         } else {
-        //             showError('emailError', response.message || 'Failed to send verification code');
-        //         }
-        //     } catch (error) {
-        //         console.error('Error sending OTP:', error);
-        //         showError('emailError', 'An error occurred. Please try again.');
-        //     } finally {
-        //         // Reset button state
-        //         sendOtpBtn.disabled = false;
-        //         sendOtpBtn.innerHTML = '<i class="fas fa-paper-plane"></i><span>Send Verification Code</span>';
-        //     }
-        // }
-     
+       
         async function sendOTP() {
     if (!validateEmailForm()) return;
 
@@ -565,53 +523,7 @@ function startOTPTimer() {
             return otp;
         }
         
-        // Verify OTP
-        // async function verifyOTP() {
-        //     const otp = getOTP();
-            
-        //     // Validate OTP
-        //     if (otp.length !== 6) {
-        //         showError('otpError', 'Please enter the complete 6-digit code');
-        //         return;
-        //     }
-            
-        //     if (!/^\d+$/.test(otp)) {
-        //         showError('otpError', 'OTP should contain only numbers');
-        //         return;
-        //     }
-            
-        //     hideError('otpError');
-            
-        //     try {
-        //         // Update button state
-        //         verifyOtpBtn.disabled = true;
-        //         verifyOtpBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i><span>Verifying...</span>';
-                
-        //         // Simulate API call to verify OTP
-        //         const response = await mockVerifyOTP(otp, currentEmail);
-                
-        //         if (response.success) {
-        //             // Show success card
-        //             otpVerificationCard.classList.add('hidden');
-        //             successCard.classList.remove('hidden');
-        //             successEmail.textContent = currentEmail;
-                    
-        //             // Clear timer
-        //             clearInterval(otpTimer);
-        //         } else {
-        //             showError('otpError', response.message || 'Invalid verification code');
-        //         }
-        //     } catch (error) {
-        //         console.error('Error verifying OTP:', error);
-        //         showError('otpError', 'An error occurred. Please try again.');
-        //     } finally {
-        //         // Reset button state
-        //         verifyOtpBtn.disabled = false;
-        //         verifyOtpBtn.innerHTML = '<i class="fas fa-check-circle"></i><span>Verify & Update Email</span>';
-        //     }
-        // }
-        
-
+       
         async function verifyOTP() {
     const otp = getOTP();
 

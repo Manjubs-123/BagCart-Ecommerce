@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <title>Order Details | Admin Dashboard</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflar e.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <style>
     .status-pending { background-color: #fef3c7; color: #92400e; }
     .status-processing { background-color: #dbeafe; color: #1e40af; }
@@ -109,29 +109,57 @@
 <form class="item-status-form" data-item-id="<%= item._id %>">
   <div class="flex items-center gap-3">
     <label class="text-sm font-medium text-gray-700">Update Status:</label>
-    <select name="status" class="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
-      <% 
-        const currentStatus = item.status || 'pending';
-        const statusOptions = [
-          { value: 'pending', label: 'Pending', disabled: currentStatus !== 'pending' },
-          { value: 'processing', label: 'Processing', disabled: !['pending'].includes(currentStatus) },
-          { value: 'shipped', label: 'Shipped', disabled: !['processing'].includes(currentStatus) },
-          { value: 'out_for_delivery', label: 'Out for Delivery', disabled: !['shipped'].includes(currentStatus) },
-          { value: 'delivered', label: 'Delivered', disabled: !['out_for_delivery'].includes(currentStatus) },
-          { value: 'cancelled', label: 'Cancelled', disabled: !['pending', 'processing', 'shipped'].includes(currentStatus) },
-          { value: 'returned', label: 'Returned', disabled: currentStatus !== 'delivered' }
-        ];
-      %>
-      <% statusOptions.forEach(option => { %>
-        <option 
-          value="<%= option.value %>" 
-          <%= currentStatus === option.value ? 'selected' : '' %>
-          <%= option.disabled ? 'disabled' : '' %>
-        >
-          <%= option.label %>
-        </option>
-      <% }) %>
-    </select>
+    <select name="status" 
+  class="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+
+  <%
+    const currentStatus = item.status || "pending";
+  %>
+
+  <option value="pending"
+    <%= currentStatus === "pending" ? "selected" : "" %>
+    <%= currentStatus !== "pending" ? "disabled" : "" %>>
+    Pending
+  </option>
+
+  <option value="processing"
+    <%= currentStatus === "processing" ? "selected" : "" %>
+    <%= !["pending"].includes(currentStatus) ? "disabled" : "" %>>
+    Processing
+  </option>
+
+  <option value="shipped"
+    <%= currentStatus === "shipped" ? "selected" : "" %>
+    <%= !["processing"].includes(currentStatus) ? "disabled" : "" %>>
+    Shipped
+  </option>
+
+  <option value="out_for_delivery"
+    <%= currentStatus === "out_for_delivery" ? "selected" : "" %>
+    <%= !["shipped"].includes(currentStatus) ? "disabled" : "" %>>
+    Out for Delivery
+  </option>
+
+  <option value="delivered"
+    <%= currentStatus === "delivered" ? "selected" : "" %>
+    <%= !["out_for_delivery"].includes(currentStatus) ? "disabled" : "" %>>
+    Delivered
+  </option>
+
+  <option value="returned"
+    <%= currentStatus === "returned" ? "selected" : "" %>
+    <%= !["delivered"].includes(currentStatus) ? "disabled" : "" %>>
+    Returned
+  </option>
+
+  <option value="cancelled"
+    <%= currentStatus === "cancelled" ? "selected" : "" %>
+    <%= !["pending","processing","shipped"].includes(currentStatus) ? "disabled" : "" %>>
+    Cancelled
+  </option>
+
+</select>
+
     <button 
       type="submit" 
       class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition text-sm font-medium disabled:bg-gray-400 disabled:cursor-not-allowed"

@@ -1,7 +1,5 @@
 import Coupon from "../../models/couponModel.js";
-import Product from "../../models/productModel.js";
-import Category from "../../models/category.js";
-// GET: Show create coupon form
+
 
 export const getCouponListPage = async (req, res) => {
   try {
@@ -41,17 +39,17 @@ export const getCouponListPage = async (req, res) => {
 
 res.render("admin/couponList", {
   coupons,
- totalCoupons,  // ✅ already counted above
-  activeCoupons: await Coupon.countDocuments({ isActive: true }), // ✅ overall active count
-  expiredCoupons: await Coupon.countDocuments({ expiryDate: { $lt: now } }), // ✅ overall expired count
-  totalUsage: totalUsageAgg[0]?.total || 0, // ✅ now shows correct total usage
+ totalCoupons, 
+  activeCoupons: await Coupon.countDocuments({ isActive: true }), //overall active count
+  expiredCoupons: await Coupon.countDocuments({ expiryDate: { $lt: now } }), //overall expired count
+  totalUsage: totalUsageAgg[0]?.total || 0, //  correct total usage
   q,
   statusFilter: status,
   typeFilter: type,
   sort,
   page: Number(page),
   limit: Number(limit),
-  pages: Math.ceil(totalCoupons / Number(limit)) // ✅ real pagination page count
+  pages: Math.ceil(totalCoupons / Number(limit))
 });
 
 
@@ -122,7 +120,6 @@ export const createCoupon = async (req, res) => {
     const validFromDate = validFrom ? new Date(validFrom) : null;
     const validToDate = validTo ? new Date(validTo) : null;
 
-    // Required field checks
     if (!code || code.length < 3) errors.push("Coupon Code must be at least 3 characters!");
     if (isNaN(discountValue)) errors.push("Discount percentage is required!");
     if (isNaN(maxDiscountAmount)) errors.push("Maximum Discount Amount is required!");
@@ -158,7 +155,7 @@ export const createCoupon = async (req, res) => {
       if (existing) errors.push(`Coupon "${code}" already exists!`);
     }
 
-    // If errors → return page
+    // If errors exist
     if (errors.length > 0) {
       return res.render("admin/couponCreate", {
         error: errors,
@@ -236,11 +233,11 @@ export const updateCoupon = async (req, res) => {
       isActive
     } = req.body;
 
-    console.log(" UPDATE PAYLOAD:", req.body); // Debug log
+    console.log(" UPDATE PAYLOAD:", req.body); 
 
     const errors = [];
 
-    // Format fields
+    // Normalize and convert
     code = code?.trim().toUpperCase();
     discountValue = Number(discountValue);
     maxDiscountAmount = Number(maxDiscountAmount);
@@ -252,9 +249,9 @@ export const updateCoupon = async (req, res) => {
     const validFromDate = new Date(validFrom);
     const validToDate = new Date(validTo);
 
-    console.log(" DATES - From:", validFromDate, "To:", validToDate); // Debug log
+    console.log(" DATES - From:", validFromDate, "To:", validToDate); 
 
-    // Required field checks
+  
     if (!code || code.length < 3) errors.push("Coupon Code must be at least 3 characters!");
     if (isNaN(discountValue)) errors.push("Discount percentage is required!");
     if (isNaN(maxDiscountAmount)) errors.push("Maximum Discount Amount is required!");
@@ -290,7 +287,7 @@ export const updateCoupon = async (req, res) => {
       if (existing) errors.push(`Coupon "${code}" already exists!`);
     }
 
-    //  If any error → block save
+    //  If any error  block save
     if (errors.length > 0) {
       console.error(" VALIDATION FAILED:", errors);
       return res.status(400).json({ success: false, message: errors });
@@ -310,7 +307,7 @@ export const updateCoupon = async (req, res) => {
       isActive
     };
 
-    console.log(" SAVING TO DB:", updateData); // Debug log
+    console.log(" SAVING TO DB:", updateData); 
 
     const updatedCoupon = await Coupon.findByIdAndUpdate(
       id, 
@@ -340,7 +337,7 @@ export const toggleCouponStatus = async (req, res) => {
       return res.status(404).json({ success: false, message: "Coupon not found!" });
     }
 
-    //  Toggle active ↔ inactive
+    //  Toggle active / inactive
     coupon.isActive = !coupon.isActive;
     await coupon.save();
 

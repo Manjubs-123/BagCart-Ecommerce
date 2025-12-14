@@ -239,18 +239,26 @@
 
     <!-- Breadcrumb -->
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-        <div class="breadcrumb">
-            <a href="/">Home</a>
+    <div class="breadcrumb">
+        <a href="/">Home</a>
+        <span class="separator">/</span>
+
+        <a href="/user/shop">Shop</a>
+        <span class="separator">/</span>
+
+        <% if (product.category?.name) { %>
+            <a href="/user/shop?category=<%= product.category._id %>">
+                <%= product.category.name %>
+            </a>
             <span class="separator">/</span>
-            <a href="/shop">Shop</a>
-            <span class="separator">/</span>
-            <% if (product.category?.name) { %>
-                <a href="/shop?category=<%= product.category._id %>"><%= product.category.name %></a>
-                <span class="separator">/</span>
-            <% } %>
-            <span class="text-gray-900 font-medium"><%= product.productName %></span>
-        </div>
+        <% } %>
+
+        <span class="text-gray-900 font-medium">
+            <%= product.productName %>
+        </span>
     </div>
+</div>
+
 
     <!-- Product Details Section -->
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 md:py-8 lg:py-12">
@@ -311,7 +319,7 @@
                         <!-- Stock Information -->
                         <div id="stockInfo" class="stock-info in-stock">
                             <i class="fas fa-check-circle"></i>
-                            <span id="stockText"><%= product.stock || 100 %> available in stock</span>
+                            <span id="stockText"><%= product.stock %> available in stock</span>
                         </div>
                     </div>
 
@@ -413,13 +421,15 @@
                         <i class="fas fa-bolt"></i>
                         Buy Now
                     </button> -->
-      <button onclick="toggleWishlist('<%= product._id %>', this)"
-    class="flex-1 bg-red-500 text-white py-3 md:py-4 rounded-xl font-semibold 
-           hover:bg-red-600 transition flex items-center justify-center gap-2 
-           md:gap-3 text-base md:text-lg">
-    <i class="fas fa-heart"></i>
+    <button onclick="toggleWishlist('<%= product._id %>', this)"
+        id="wishlistBtn"
+        class="flex-1 bg-red-500 text-white py-3 md:py-4 rounded-xl font-semibold 
+               hover:bg-red-600 transition flex items-center justify-center gap-2 
+               md:gap-3 text-base md:text-lg">
+    <i id="wishlistIcon" class="<%= userWishlist.includes(product._id.toString()) ? 'fas fa-heart text-red-500' : 'far fa-heart text-white' %>"></i>
     Add to Wishlist
 </button>
+
 
 
                 </div>
@@ -557,7 +567,7 @@
       let variantIndex = 0;
 
         let selectedVariantId = "<%= product._id %>";
-        let currentStock = <%= product.stock || 100 %>;
+        let currentStock = <%= product.stock  %>;
         let userWishlist = <%- JSON.stringify(userWishlist || []) %>;
 
         document.addEventListener("DOMContentLoaded", () => {
@@ -601,6 +611,14 @@ async function selectColor(color) {
     variantIndex = data.variantIndex;
 
     const variant = data.variant;
+    // Update color selection UI
+document.querySelectorAll(".color-option").forEach(btn => {
+    btn.classList.remove("selected");
+    if (btn.dataset.color.toLowerCase() === color.toLowerCase()) {
+        btn.classList.add("selected");
+    }
+});
+
     const offer = data.offerData;
 
     if (variant.images && variant.images.length > 0) {
@@ -615,7 +633,7 @@ async function selectColor(color) {
         </button>
       `).join("");
 
-    // ✔ APPLY OFFER PRICES
+    //  APPLY OFFER PRICES
     document.getElementById("productPrice").textContent = `₹${offer.finalPrice}`;
     document.getElementById("productMrp").textContent = `₹${offer.regularPrice}`;
 
@@ -624,7 +642,7 @@ async function selectColor(color) {
     );
     document.getElementById("productDiscount").textContent = `${discount}% off`;
 
-    // ⭐ ADD THIS (UPDATE SAVE AMOUNT)
+    // ADD THIS (UPDATE SAVE AMOUNT)
     document.getElementById("saveAmount").textContent =
       `Save ₹${(offer.regularPrice - offer.finalPrice).toFixed(0)}`;
 
@@ -632,14 +650,10 @@ async function selectColor(color) {
     document.getElementById("stockText").textContent = `${variant.stock} available in stock`;
     document.getElementById("quantity").max = variant.stock;
 
-    const heart = document.querySelector(".wishlist-btn i");
-    if (userWishlist.includes("<%= product._id.toString() %>")) {
-      heart.classList.remove("far", "text-gray-400");
-      heart.classList.add("fas", "text-red-500");
-    } else {
-      heart.classList.remove("fas", "text-red-500");
-      heart.classList.add("far", "text-gray-400");
-    }
+ 
+
+    updateStockStatus(variant.stock)
+
 
   } catch (err) {
     console.error(err);
@@ -760,7 +774,7 @@ async function addToCart() {
   const payload = {
     productId: "<%= product._id %>",
     quantity,
-    variantIndex   // 🔥 correct now
+    variantIndex   
   };
 
   const res = await fetch("/user/cart/add", {

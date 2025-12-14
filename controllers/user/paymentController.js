@@ -13,32 +13,7 @@ export const razorpayInstance = new Razorpay({
 });
 
 
-// Create server-side razorpay order
-// export const createRazorpayOrder = async (req, res) => {
-//     try {
-//         const { orderId, amount } = req.body;
 
-//         console.log("Creating Razorpay Order:", { orderId, amount });
-
-//         const rzpOrder = await razorpayInstance.orders.create({
-//             amount: Math.round(amount * 100),   // convert Rs → paise (correct)
-//             currency: "INR",
-//             receipt: orderId,
-//         });
-
-//         return res.json({
-//             success: true,
-//             razorpayOrderId: rzpOrder.id,
-//             amount: rzpOrder.amount,
-//             currency: rzpOrder.currency,
-//             orderId
-//         });
-
-//     } catch (err) {
-//         console.log("Razorpay error:", err);
-//         return res.json({ success: false, message: "Failed to create Razorpay order" });
-//     }
-// };
 
 // Create server-side razorpay order
 export const createRazorpayOrder = async (req, res) => {
@@ -48,17 +23,17 @@ export const createRazorpayOrder = async (req, res) => {
         console.log("Creating Razorpay Order:", { orderId, amount });
 
         if (!amount) {
-            return res.json({ success: false, message: "Amount missing ❌" });
+            return res.json({ success: false, message: "Amount missing " });
         }
 
-        // ✅ NECESSARY FIX
+        //  NECESSARY FIX
         const dbOrder = await Order.findById(orderId);
         if (!dbOrder) {
             return res.json({ success: false, message: "Order not found" });
         }
 
         const rzpOrder = await razorpayInstance.orders.create({
-            amount: Math.round(amount * 100),   // convert rupees → paise
+            amount: Math.round(amount * 100),   // convert rupees to paise
             currency: "INR",
             receipt: String(orderId),
         });
@@ -77,7 +52,7 @@ export const createRazorpayOrder = async (req, res) => {
 };
 
 
-// controllers/paymentController.js (append)
+
 export const verifyRazorpayPayment = async (req, res) => {
   try {
     const { razorpayOrderId, razorpayPaymentId, razorpaySignature, orderId, failed, details } = req.body;
@@ -153,12 +128,11 @@ async function decrementStockForOrder(order) {
 
 
 export const razorpayWebhook = async (req, res) => {
-  // raw body required — configure express to provide raw body for this route
-  // app.use('/api/payment/webhook', express.raw({type: 'application/json'}));
+  
   try {
     const webhookSecret = process.env.RZP_WEBHOOK_SECRET;
     const crypto = require('crypto');
-    const body = req.body; // raw buffer
+    const body = req.body; 
     const expectedSignature = crypto.createHmac('sha256', webhookSecret).update(body).digest('hex');
     const signature = req.headers['x-razorpay-signature'];
 
@@ -167,12 +141,16 @@ export const razorpayWebhook = async (req, res) => {
     }
 
     const payload = JSON.parse(body.toString());
+
     // handle events:
+
     if (payload.event === 'payment.captured') {
       const { payment } = payload.payload;
       const razorpayOrderId = payment.entity.order_id;
       const razorpayPaymentId = payment.entity.id;
+
       // Find our Order by razorpayOrderId and mark PAID if not already
+
       const order = await Order.findOne({ "payment.razorpayOrderId": razorpayOrderId });
       if (order && order.payment.status !== "PAID") {
         order.payment.status = "PAID";
@@ -184,7 +162,7 @@ export const razorpayWebhook = async (req, res) => {
     } else if (payload.event === 'payment.failed') {
       // mark order failed
     }
-    // ... handle refunds, payment authorized, etc.
+    
 
     res.json({ ok: true });
   } catch (err) {
@@ -200,7 +178,12 @@ export const retryPayment = async (req, res) => {
 
     if (!order) return res.status(404).send("Order not found");
 
-    // Create fresh Razorpay order
+    // ✅ CRITICAL FIX: block retry if already paid
+    if (order.paymentStatus === "paid") {
+        return res.redirect(`/order/confirmation/${order._id}`);
+    }
+
+    // Create fresh Razorpay order ONLY if unpaid
     const rzpOrder = await razorpayInstance.orders.create({
         amount: Math.round(order.totalAmount * 100),
         currency: "INR",
@@ -211,7 +194,8 @@ export const retryPayment = async (req, res) => {
         orderId: order._id,
         amount: order.totalAmount,
         razorpayOrderId: rzpOrder.id,
-        keyId: process.env.RZP_KEY_ID  
+        keyId: process.env.RZP_KEY_ID
     });
 };
+
 

@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>My Wishlist - BagHub</title>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -327,21 +328,39 @@
 <!-- JS -->
 <script>
 function removeFromWishlist(productId) {
-    if (!confirm("Are you sure you want to remove this item from your wishlist?")) return;
-    
-    fetch(`/user/wishlist/remove/${productId}`, { method: "POST" })
-        .then(res => res.json())
-        .then(data => { 
-            if (data.success) {
-                // Remove from UI
-                const card = document.querySelector(`[data-product-id="${productId}"]`);
-                if (card) {
-                    card.style.opacity = "0";
-                    setTimeout(() => card.remove(), 300);
+    Swal.fire({
+        title: "Remove item?",
+        text: "Are you sure you want to remove this item from your wishlist?",
+        icon: "warning",
+        showCancelButton: true,
+        confirmButtonColor: "#d33",
+        cancelButtonColor: "#3085d6",
+        confirmButtonText: "Yes, remove"
+    }).then((result) => {
+        if (!result.isConfirmed) return;
+
+        fetch(`/user/wishlist/remove/${productId}`, { method: "POST" })
+            .then(res => res.json())
+            .then(data => { 
+                if (data.success) {
+                    const card = document.querySelector(`[data-product-id="${productId}"]`);
+                    if (card) {
+                        card.style.opacity = "0";
+                        setTimeout(() => card.remove(), 300);
+                    }
+
+                    Swal.fire({
+                        title: "Removed!",
+                        text: "Item removed from wishlist",
+                        icon: "success",
+                        timer: 1200,
+                        showConfirmButton: false
+                    });
                 }
-            }
-        });
+            });
+    });
 }
+
 
 function addToCartFromWishlist(productId, variantIndex = 0) {
     // Get selected variant index from data attribute if available
@@ -368,7 +387,11 @@ function addToCartFromWishlist(productId, variantIndex = 0) {
     .then(res => res.json())
     .then(async data => {
         if (!data.success) {
-            alert(data.message || "Failed to add to cart");
+Swal.fire({
+    icon: "error",
+    title: "Oops...",
+    text: data.message || "Failed to add to cart"
+});
             button.disabled = false;
             button.innerHTML = originalText;
             return;
@@ -391,7 +414,11 @@ function addToCartFromWishlist(productId, variantIndex = 0) {
     })
     .catch(err => {
         console.error("Error:", err);
-        alert("Error adding to cart");
+Swal.fire({
+    icon: "error",
+    title: "Error",
+    text: "Error adding to cart"
+});
         button.disabled = false;
         button.innerHTML = originalText;
     });

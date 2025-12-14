@@ -4,6 +4,7 @@ import Cart from "../../models/cartModel.js";
 import Product from "../../models/productModel.js";
 import Order from "../../models/orderModel.js";
 import Coupon from "../../models/couponModel.js";
+import Wallet from "../../models/walletModel.js"; 
 import { applyOfferToProduct } from "../../utils/applyOffer.js";
 
 const router = express.Router();
@@ -11,24 +12,6 @@ const router = express.Router();
 /* -----------------------------------------------------------
    GET CART (for checkout)
 ----------------------------------------------------------- */
-// router.get("/cart", async (req, res) => {
-//     try {
-//         const userId = req.session.user?.id;
-//         if (!userId) return res.json({ success: false });
-
-//         const cart = await Cart.findOne({ user: userId })
-//             .populate("items.product");
-
-//         return res.json({
-//             success: true,
-//             cart: cart || { items: [] }
-//         });
-
-//     } catch (err) {
-//         console.error("API CART ERROR:", err);
-//         return res.json({ success: false });
-//     }
-// });
 
 router.get("/cart", async (req, res) => {
     try {
@@ -43,7 +26,7 @@ router.get("/cart", async (req, res) => {
             return res.json({ success: true, cart: { items: [] } });
         }
 
-        // 🔥 APPLY OFFER TO EACH CART ITEM
+        //  APPLY OFFER TO EACH CART ITEM
         for (let item of cart.items) {
             const product = item.product;
             const variant = product.variants[item.variantIndex];
@@ -129,59 +112,6 @@ function isSequential(str) {
 /* -----------------------------------------------------------
    UPDATE ADDRESS (EDIT)
 ----------------------------------------------------------- */
-// router.put("/addresses/:id", async (req, res) => {
-//     try {
-//         const userId = req.session.user?.id;
-//         const addressId = req.params.id;
-
-//         if (!userId) {
-//             return res.json({ success: false, message: "Not logged in" });
-//         }
-
-//         const user = await User.findById(userId);
-//         if (!user) {
-//             return res.json({ success: false, message: "User not found" });
-//         }
-
-//         const updatedData = req.body;
-
-
-
-//         // Make sure only 1 default exists
-//         if (updatedData.isDefault) {
-//             user.addresses.forEach(a => (a.isDefault = false));  
-//         }
-
-//         const address = user.addresses.id(addressId);
-//         if (!address) {
-//             return res.json({ success: false, message: "Address not found" });
-//         }
-
-//         // Update fields
-//         address.fullName = updatedData.fullName;
-//         address.phone = updatedData.phone;
-//         address.addressLine1 = updatedData.addressLine1;
-//         address.addressLine2 = updatedData.addressLine2;
-//         address.city = updatedData.city;
-//         address.state = updatedData.state;
-//         address.pincode = updatedData.pincode;
-//         address.country = updatedData.country;
-//         address.addressType = updatedData.addressType;
-//         address.isDefault = updatedData.isDefault;
-
-//         await user.save();
-
-//         return res.json({
-//             success: true,
-//             address
-//         });
-
-//     } catch (err) {
-//         console.log("UPDATE ADDRESS ERROR:", err);
-//         return res.json({ success: false });
-//     }
-// });
-
 router.put("/addresses/:id", async (req, res) => {
     try {
         const userId = req.session.user?.id;
@@ -251,31 +181,6 @@ router.put("/addresses/:id", async (req, res) => {
 /* -----------------------------------------------------------
    ADD ADDRESS
 ----------------------------------------------------------- */
-// router.post("/addresses", async (req, res) => {
-//     try {
-//         const userId = req.session.user.id;
-//         const user = await User.findById(userId);
-
-//         const newAddress = req.body;
-
-//         if (newAddress.isDefault) {
-//             user.addresses.forEach(a => (a.isDefault = false));
-//         }
-
-//         user.addresses.push(newAddress);
-//         await user.save();
-
-//         return res.json({
-//             success: true,
-//             address: user.addresses[user.addresses.length - 1]
-//         });
-
-//     } catch (err) {
-//         console.error("ADD ADDRESS ERROR", err);
-//         return res.json({ success: false });
-//     }
-// });
-
 router.post("/addresses", async (req, res) => {
     try {
         const userId = req.session.user.id;
@@ -283,7 +188,7 @@ router.post("/addresses", async (req, res) => {
 
         const newAddress = req.body;
 
-        // VALIDATION HERE
+        // VALIDATION
         if (!isValidName(newAddress.fullName))
             return res.json({ success: false, message: "Invalid full name" });
 
@@ -322,20 +227,24 @@ router.post("/addresses", async (req, res) => {
 /* -----------------------------------------------------------
    WALLET BALANCE
 ----------------------------------------------------------- */
+
+
 router.get("/wallet/balance", async (req, res) => {
     try {
         const userId = req.session.user.id;
-        const user = await User.findById(userId).lean();
+
+        const wallet = await Wallet.findOne({ user: userId }).lean();
 
         return res.json({
             success: true,
-            balance: user.walletBalance || 0
+            balance: wallet?.balance || 0
         });
 
     } catch (err) {
-        return res.json({ success: true, balance: 0 });
+        return res.json({ success: false, balance: 0 });
     }
 });
+
 
 /* -----------------------------------------------------------
    PLACE ORDER — FINAL STABLE VERSION
@@ -343,7 +252,7 @@ router.get("/wallet/balance", async (req, res) => {
 router.post("/orders", async (req, res) => {
   try {
     const userId = req.session.user?.id;
-    if (!userId) return res.json({ success: false, message: "User not login ❌" });
+    if (!userId) return res.json({ success: false, message: "User not login " });
 
     const { addressId, paymentMethod, couponCode } = req.body;
     if (!addressId || !paymentMethod) return res.json({ success: false, message: "Missing data" });
@@ -442,6 +351,37 @@ router.post("/orders", async (req, res) => {
     // Final amount
     const totalAmount = +((subtotal + tax + shippingFee - (discountApplied || 0))).toFixed(2);
 
+
+    /* ------------------------------
+   BLOCK COD FOR AMOUNT > ₹1000
+------------------------------ */
+if (paymentMethod === "cod" && totalAmount > 1000) {
+  return res.json({
+    success: false,
+    message: "Cash on Delivery is not available for orders above ₹1000"
+  });
+}
+
+    /* ------------------------------
+   WALLET FULL PAYMENT CHECK
+------------------------------ */
+if (paymentMethod === "wallet") {
+
+    // Load wallet
+    const wallet = await Wallet.findOne({ user: userId });
+
+    // If no wallet or no balance
+    if (!wallet || wallet.balance < totalAmount) {
+        return res.json({
+            success: false,
+            message: "Insufficient wallet balance "
+        });
+    }
+
+    // Wallet is enough → continue normally
+}
+
+
     /* ------------------------------
        STOCK CHECK (before creating order)
        ------------------------------ */
@@ -454,7 +394,7 @@ router.post("/orders", async (req, res) => {
       if (newStock < 0) {
         return res.json({
           success: false,
-          message: `Stock not available ❌ Only ${variant.stock} left for ${prod.name}`
+          message: `Stock not available  Only ${variant.stock} left for ${prod.name}`
         });
       }
     }
@@ -479,6 +419,8 @@ router.post("/orders", async (req, res) => {
       coupon: couponInfo,
       paymentStatus: paymentMethod === "cod" ? "pending" : "paid"
     });
+
+
 
     // Ensure each order item has itemOrderId
     let needSave = false;
@@ -506,10 +448,10 @@ router.post("/orders", async (req, res) => {
        UPDATE COUPON USAGE (after success)
        ------------------------------ */
     if (couponDoc) {
-      // re-fetch to avoid race issues (optional)
+      
       const coupon = await Coupon.findOne({ _id: couponDoc._id });
       if (coupon) {
-        // expiry / usage rechecks
+        
         const now = new Date();
         if (coupon.expiryDate && coupon.expiryDate < now) {
           // coupon expired after validation — just continue but don't increment usage
@@ -529,12 +471,53 @@ router.post("/orders", async (req, res) => {
     cart.items = [];
     await cart.save();
 
+//    SAFE WALLET DEDUCTION
+
+if (paymentMethod === "wallet") {
+
+    const wallet = await Wallet.findOne({ user: userId });
+
+    // extra safety check
+    if (!wallet || wallet.balance < totalAmount) {
+        return res.json({
+            success: false,
+            message: "Wallet balance changed, try again "
+        });
+    }
+
+    // Deduct amount
+    wallet.balance -= totalAmount;
+
+    wallet.transactions.push({
+        type: "debit",
+        amount: totalAmount,
+        description: `Order Payment ${order.orderId}`,
+        status: "success",
+        date: new Date()
+    });
+
+    await wallet.save();
+
+    // Mark order as paid
+    order.paymentStatus = "paid";
+    order.orderStatus = "confirmed";
+    await order.save();
+
+    // Return success response
+    return res.json({
+        success: true,
+        orderId: order._id,
+        customOrderId: order.orderId,
+        totalAmount: order.totalAmount,
+        message: "Order placed successfully using wallet 🎉"
+    });
+}
     return res.json({
       success: true,
       orderId: order._id,
       customOrderId: order.orderId,
-       totalAmount: order.totalAmount,   // ⬅ send amount here
-    razorpayAmount: order.totalAmount * 100, // optional
+       totalAmount: order.totalAmount,   
+    razorpayAmount: order.totalAmount * 100, 
       message: "Order placed successfully",
     });
   } catch (err) {

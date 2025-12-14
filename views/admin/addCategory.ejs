@@ -219,25 +219,6 @@
       return text.trim() ? text.trim().split(/\s+/).filter(word => word.length > 0).length : 0;
     }
 
-    // Validation functions
-    // function validateName(value) {
-    //   const trimmedValue = value.trim();
-      
-    //   if (!trimmedValue) {
-    //     return { valid: false, message: 'Category name is required' };
-    //   }
-      
-    //   if (trimmedValue.length < 2) {
-    //     return { valid: false, message: 'Category name must be at least 2 characters' };
-    //   }
-      
-    //   if (trimmedValue.length > 50) {
-    //     return { valid: false, message: 'Category name must be less than 50 characters' };
-    //   }
-      
-    //   return { valid: true, message: '' };
-    // }
-
 function validateName(value) {
   const trimmedValue = value.trim();
 

@@ -250,6 +250,15 @@
   <div id="notificationContainer" class="fixed top-4 right-4 z-50 space-y-2"></div>
 
   <script>
+
+    function debounce(fn, delay) {
+  let timer;
+  return function (...args) {
+    clearTimeout(timer);
+    timer = setTimeout(() => fn.apply(this, args), delay);
+  };
+}
+
     // Cart API endpoints
     const API_ENDPOINTS = {
       getCart: '/api/cart',
@@ -340,27 +349,28 @@
       }
     }
 
-    async function updateCartItem(itemId, newQuantity) {
-      try {
-        setLoading(true);
-        const response = await axios.put(`/user/cart/update/${itemId}`, { quantity: newQuantity });
+ const updateCartItem = debounce(async (itemId, newQuantity) => {
+  try {
+    setLoading(true);
+    const response = await axios.put(`/user/cart/update/${itemId}`, { quantity: newQuantity });
 
-        if (response.data.success) {
-          updateCartSummary();
-          showNotification('Cart updated successfully', 'success');
-          return true;
-        } else {
-          showNotification(response.data.message || 'Failed to update cart', 'error');
-          return false;
-        }
-      } catch (error) {
-        console.error('Error updating cart item:', error);
-        showNotification('Failed to update cart item', 'error');
-        return false;
-      } finally {
-        setLoading(false);
-      }
+    if (response.data.success) {
+      updateCartSummary();
+      showNotification('Cart updated successfully', 'success');
+      return true;
+    } else {
+      showNotification(response.data.message || 'Failed to update cart', 'error');
+      return false;
     }
+  } catch (error) {
+    console.error('Error updating cart item:', error);
+    showNotification('Failed to update cart item', 'error');
+    return false;
+  } finally {
+    setLoading(false);
+  }
+}, 400);  // wait 400ms before sending another request
+
 
     // Update item total display + update struck MRP × qty
     function updateItemTotal(itemId, quantity) {
@@ -509,13 +519,35 @@
     }
 
     function showNotification(message, type) {
-      const notification = document.createElement('div');
-      notification.className = `p-4 rounded-lg shadow-lg transform transition-all duration-300 notification ${ type === 'success' ? 'bg-green-500 text-white' : 'bg-red-500 text-white' }`;
-      notification.innerHTML = `<div class="flex items-center gap-3"><i class="fas fa-${type === 'success' ? 'check' : 'exclamation'}-circle"></i><span class="font-medium">${message}</span></div>`;
-      const container = document.getElementById('notificationContainer');
-      container.appendChild(notification);
-      setTimeout(() => { notification.style.opacity = '0'; setTimeout(() => { if (container.contains(notification)) container.removeChild(notification); }, 300); }, 5000);
-    }
-  </script>
+  const container = document.getElementById('notificationContainer');
+
+  // 🔥 REMOVE existing success notifications to prevent stacking
+  if (type === "success") {
+    container.querySelectorAll('.notification.success').forEach(n => n.remove());
+  }
+
+  const notification = document.createElement('div');
+  notification.className = `notification success p-4 rounded-lg shadow-lg transform transition-all duration-300
+    ${type === 'success' ? 'bg-green-500 text-white' : 'bg-red-500 text-white'}`;
+
+  notification.innerHTML = `
+    <div class="flex items-center gap-3">
+      <i class="fas fa-${type === 'success' ? 'check' : 'exclamation'}-circle"></i>
+      <span class="font-medium">${message}</span>
+    </div>
+  `;
+
+  container.appendChild(notification);
+
+  // hide after 2 sec
+  setTimeout(() => {
+    notification.style.opacity = '0';
+    setTimeout(() => {
+      if (container.contains(notification)) container.removeChild(notification);
+    }, 300);
+  }, 2000);
+}
+
+ </script>
 </body>
 </html>

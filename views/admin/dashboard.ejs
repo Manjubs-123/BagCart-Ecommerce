@@ -93,7 +93,7 @@
 <%- include('../partials/sidebar', { currentPage: 'dashboard' }) %>
 
   <!-- Main Content -->
-  <main class="flex-1 p-8 ml-64 min-h-screen">
+<main class="flex-1 p-4 md:p-8 md:ml-64 min-h-screen">
     <!-- Dashboard Header -->
     <div class="flex justify-between items-center mb-8">
       <div>
@@ -101,195 +101,198 @@
         <p class="text-gray-600">Welcome back, Admin! Here's what's happening with your store today.</p>
       </div>
       <div class="flex items-center space-x-4">
-        <div class="relative">
-          <i class="fas fa-bell text-gray-500 text-xl hover:text-blue-600 cursor-pointer transition-colors"></i>
-          <span class="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center">3</span>
-        </div>
+       
         <div class="w-10 h-10 bg-gradient-to-r from-blue-500 to-emerald-500 rounded-full flex items-center justify-center shadow-md">
           <span class="text-white font-semibold text-sm">A</span>
         </div>
       </div>
     </div>
 
-    <!-- Stats Grid -->
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-      <!-- Total Revenue Card -->
-      <div class="stat-card rounded-2xl p-6 card-hover border-l-4 border-blue-500">
-        <div class="flex items-center justify-between mb-4">
-          <div class="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center">
-            <i class="fas fa-rupee-sign text-blue-600 text-lg"></i>
-          </div>
-          <span class="text-green-500 text-sm font-semibold bg-green-50 px-2 py-1 rounded-full">
-            <i class="fas fa-arrow-up mr-1"></i>12.5%
-          </span>
-        </div>
-        <h3 class="text-2xl font-bold text-gray-800 mb-1">₹4,235</h3>
-        <p class="text-gray-600 text-sm">Total Revenue</p>
-        <p class="text-gray-400 text-xs mt-2">+₹450 from last month</p>
+  <!-- Stats Grid (replace your current section with this) -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+  <!-- Total Revenue Card -->
+  <div class="stat-card rounded-2xl p-6 card-hover border-l-4 border-blue-500">
+    <div class="flex items-center justify-between mb-4">
+      <div class="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center">
+        <i class="fas fa-rupee-sign text-blue-600 text-lg"></i>
       </div>
-
-      <!-- Customers Card -->
-      <div class="stat-card rounded-2xl p-6 card-hover border-l-4 border-green-500">
-        <div class="flex items-center justify-between mb-4">
-          <div class="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center">
-            <i class="fas fa-users text-green-600 text-lg"></i>
-          </div>
-          <span class="text-green-500 text-sm font-semibold bg-green-50 px-2 py-1 rounded-full">
-            <i class="fas fa-arrow-up mr-1"></i>8.2%
+      <div>
+        <% if (revenueGrowth && typeof revenueGrowth.percent !== 'undefined') { %>
+          <span class="inline-flex items-center text-sm font-semibold rounded-full px-3 py-1 <%= revenueGrowth.isUp ? 'text-green-600 bg-green-50' : 'text-red-600 bg-red-50' %>">
+            <i class="fas <%= revenueGrowth.isUp ? 'fa-arrow-up' : 'fa-arrow-down' %> mr-1"></i>
+            <%= Math.abs(revenueGrowth.percent) %>%
           </span>
-        </div>
-        <h3 class="text-2xl font-bold text-gray-800 mb-1">2,571</h3>
-        <p class="text-gray-600 text-sm">Total Customers</p>
-        <p class="text-gray-400 text-xs mt-2">+192 this month</p>
-      </div>
-
-      <!-- Orders Card -->
-      <div class="stat-card rounded-2xl p-6 card-hover border-l-4 border-purple-500">
-        <div class="flex items-center justify-between mb-4">
-          <div class="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center">
-            <i class="fas fa-shopping-cart text-purple-600 text-lg"></i>
-          </div>
-          <span class="text-green-500 text-sm font-semibold bg-green-50 px-2 py-1 rounded-full">
-            <i class="fas fa-arrow-up mr-1"></i>15.3%
-          </span>
-        </div>
-        <h3 class="text-2xl font-bold text-gray-800 mb-1">734</h3>
-        <p class="text-gray-600 text-sm">Total Orders</p>
-        <p class="text-gray-400 text-xs mt-2">+98 this week</p>
-      </div>
-
-      <!-- Progress Card -->
-      <div class="stat-card rounded-2xl p-6 card-hover border-l-4 border-orange-500">
-        <div class="flex items-center justify-between mb-4">
-          <div class="w-12 h-12 bg-orange-100 rounded-xl flex items-center justify-center">
-            <i class="fas fa-target text-orange-600 text-lg"></i>
-          </div>
-          <span class="text-blue-500 text-sm font-semibold">73%</span>
-        </div>
-        <h3 class="text-2xl font-bold text-gray-800 mb-1">Monthly Goal</h3>
-        <p class="text-gray-600 text-sm">1,000 Orders</p>
-        <div class="w-full bg-gray-200 rounded-full h-2 mt-3">
-          <div class="progress-gradient h-2 rounded-full" style="width: 73%;"></div>
-        </div>
-        <p class="text-gray-400 text-xs mt-2">266 orders to reach target</p>
+        <% } %>
       </div>
     </div>
 
+    <h3 class="text-2xl font-bold text-gray-800 mb-1">₹<%= totalRevenue %></h3>
+    <p class="text-gray-600 text-sm">Total Revenue</p>
+    <p class="text-gray-400 text-xs mt-2">
+      <% if (ordersThisMonth) { %>
+        +₹<%= totalRevenue %> this month
+      <% } else { %>
+        No sales this month
+      <% } %>
+    </p>
+  </div>
+
+  <!-- Customers Card -->
+  <div class="stat-card rounded-2xl p-6 card-hover border-l-4 border-green-500">
+    <div class="flex items-center justify-between mb-4">
+      <div class="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center">
+        <i class="fas fa-users text-green-600 text-lg"></i>
+      </div>
+      <% if (customersGrowth && typeof customersGrowth.percent !== 'undefined') { %>
+        <span class="inline-flex items-center text-sm font-semibold rounded-full px-3 py-1 <%= customersGrowth.isUp ? 'text-green-600 bg-green-50' : 'text-red-600 bg-red-50' %>">
+          <i class="fas <%= customersGrowth.isUp ? 'fa-arrow-up' : 'fa-arrow-down' %> mr-1"></i>
+          <%= Math.abs(customersGrowth.percent) %>%
+        </span>
+      <% } %>
+    </div>
+
+    <h3 class="text-2xl font-bold text-gray-800 mb-1"><%= totalCustomers %></h3>
+    <p class="text-gray-600 text-sm">Total Customers</p>
+    <p class="text-gray-400 text-xs mt-2">
+      +<%= customersThisMonth %> this month
+    </p>
+  </div>
+
+  <!-- Orders Card -->
+  <div class="stat-card rounded-2xl p-6 card-hover border-l-4 border-purple-500">
+    <div class="flex items-center justify-between mb-4">
+      <div class="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center">
+        <i class="fas fa-shopping-cart text-purple-600 text-lg"></i>
+      </div>
+      <% if (ordersGrowth && typeof ordersGrowth.percent !== 'undefined') { %>
+        <span class="inline-flex items-center text-sm font-semibold rounded-full px-3 py-1 <%= ordersGrowth.isUp ? 'text-green-600 bg-green-50' : 'text-red-600 bg-red-50' %>">
+          <i class="fas <%= ordersGrowth.isUp ? 'fa-arrow-up' : 'fa-arrow-down' %> mr-1"></i>
+          <%= Math.abs(ordersGrowth.percent) %>%
+        </span>
+      <% } %>
+    </div>
+
+    <h3 class="text-2xl font-bold text-gray-800 mb-1"><%= totalOrders %></h3>
+    <p class="text-gray-600 text-sm">Total Orders</p>
+    <p class="text-gray-400 text-xs mt-2">+<%= ordersThisWeek %> this week</p>
+  </div>
+
+  <!-- Progress Card -->
+  <div class="stat-card rounded-2xl p-6 card-hover border-l-4 border-orange-500">
+    <div class="flex items-center justify-between mb-4">
+      <div class="w-12 h-12 bg-orange-100 rounded-xl flex items-center justify-center">
+        <i class="fas fa-target text-orange-600 text-lg"></i>
+      </div>
+      <span class="text-blue-500 text-sm font-semibold"><%= monthlyProgress %>%</span>
+    </div>
+
+    <h3 class="text-2xl font-bold text-gray-800 mb-1">Monthly Goal</h3>
+    <p class="text-gray-600 text-sm">1,000 Orders</p>
+
+    <div class="w-full bg-gray-200 rounded-full h-2 mt-3 overflow-hidden">
+      <div class="progress-gradient h-2" style="width: <%= monthlyProgress %>%"></div>
+    </div>
+
+    <p class="text-gray-400 text-xs mt-2"><%= ordersLeft %> orders to reach target</p>
+  </div>
+</div>
+
+   
     <!-- Charts and Best Sellers Section -->
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
       <!-- Sales Chart -->
-      <div class="bg-white rounded-2xl shadow-lg p-6 card-hover">
-        <div class="flex justify-between items-center mb-6">
-          <h3 class="text-xl font-semibold text-gray-800">Revenue Analytics</h3>
-          <select class="text-sm border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
-            <option>This Week</option>
-            <option>This Month</option>
-            <option>This Year</option>
-          </select>
-        </div>
-        <div class="bg-gradient-to-b from-blue-50 to-white rounded-xl p-4 h-64 flex items-end justify-between">
-          <!-- Chart Bars -->
-          <div class="flex items-end space-x-2 w-full h-48">
-            <div class="flex-1 bg-gradient-to-t from-blue-500 to-blue-300 rounded-t-lg" style="height: 70%"></div>
-            <div class="flex-1 bg-gradient-to-t from-green-500 to-green-300 rounded-t-lg" style="height: 85%"></div>
-            <div class="flex-1 bg-gradient-to-t from-purple-500 to-purple-300 rounded-t-lg" style="height: 60%"></div>
-            <div class="flex-1 bg-gradient-to-t from-orange-500 to-orange-300 rounded-t-lg" style="height: 90%"></div>
-            <div class="flex-1 bg-gradient-to-t from-red-500 to-red-300 rounded-t-lg" style="height: 75%"></div>
-            <div class="flex-1 bg-gradient-to-t from-indigo-500 to-indigo-300 rounded-t-lg" style="height: 80%"></div>
-            <div class="flex-1 bg-gradient-to-t from-pink-500 to-pink-300 rounded-t-lg" style="height: 65%"></div>
-          </div>
-        </div>
-        <div class="flex justify-between text-xs text-gray-500 mt-4">
-          <span>Mon</span>
-          <span>Tue</span>
-          <span>Wed</span>
-          <span>Thu</span>
-          <span>Fri</span>
-          <span>Sat</span>
-          <span>Sun</span>
-        </div>
-      </div>
+    <!-- Revenue Analytics -->
+<div class="bg-white rounded-2xl shadow-lg p-6 card-hover">
+  <div class="flex justify-between items-center mb-6">
+    <h3 class="text-xl font-semibold text-gray-800">Revenue Analytics</h3>
+
+    <select id="chartFilter" 
+      class="text-sm border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+      <option value="daily">Daily</option>
+      <option value="weekly">Weekly</option>
+      <option value="monthly">Monthly</option>
+      <option value="yearly">Yearly</option>
+    </select>
+  </div>
+
+  <div id="revenueBars" class="bg-gradient-to-b from-blue-50 to-white rounded-xl p-4 h-64 flex items-end justify-between">
+  <!-- Dynamic bars will be injected here -->
+</div>
+
+<div id="revenueLabels" class="flex justify-between text-xs text-gray-500 mt-4">
+  <!-- Day/Month labels will be injected here -->
+</div>
+
+
+  <!-- <canvas id="revenueChart" class="w-full h-64"></canvas> -->
+</div>
+
 
       <!-- Best Selling Products -->
       <div class="bg-white rounded-2xl shadow-lg p-6 card-hover">
-        <div class="flex justify-between items-center mb-6">
-          <h3 class="text-xl font-semibold text-gray-800">Best Selling Products</h3>
-          <span class="text-sm text-gray-500">This Month</span>
-        </div>
-        <div class="space-y-4">
-          <!-- Product 1 -->
-          <div class="flex items-center justify-between p-4 bg-gradient-to-r from-blue-50 to-white rounded-xl hover:shadow-md transition-all">
-            <div class="flex items-center space-x-4">
-              <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
-                <i class="fas fa-briefcase text-blue-600"></i>
-              </div>
-              <div>
-                <h4 class="font-semibold text-gray-800">American Tourister</h4>
-                <p class="text-sm text-gray-600">Travel & Luggage</p>
-              </div>
-            </div>
-            <div class="text-right">
-              <p class="font-bold text-gray-800">₹940</p>
-              <p class="text-sm text-green-600">45 units sold</p>
-            </div>
-          </div>
+  <div class="flex justify-between items-center mb-6">
+    <h3 class="text-xl font-semibold text-gray-800">Top 10 Best Selling Products</h3>
+  </div>
 
-          <!-- Product 2 -->
-          <div class="flex items-center justify-between p-4 bg-gradient-to-r from-green-50 to-white rounded-xl hover:shadow-md transition-all">
-            <div class="flex items-center space-x-4">
-              <div class="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
-                <i class="fas fa-bag-shopping text-green-600"></i>
-              </div>
-              <div>
-                <h4 class="font-semibold text-gray-800">Odisisya</h4>
-                <p class="text-sm text-gray-600">Fashion Bags</p>
-              </div>
+  <% if (bestProducts && bestProducts.length > 0) { %>
+    <div class="space-y-4">
+      <% bestProducts.forEach((item, index) => { %>
+        <div class="flex items-center justify-between p-4 bg-gradient-to-r from-gray-50 to-white rounded-xl hover:shadow-md transition-all">
+          <div class="flex items-center space-x-4">
+            <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+              <i class="fas fa-bag-shopping text-blue-600"></i>
             </div>
-            <div class="text-right">
-              <p class="font-bold text-gray-800">₹790</p>
-              <p class="text-sm text-green-600">32 units sold</p>
+            <div>
+              <h4 class="font-semibold text-gray-800"><%= item.productName %></h4>
+              <p class="text-sm text-gray-600"><%= item.categoryName %></p>
             </div>
           </div>
-
-          <!-- Product 3 -->
-          <div class="flex items-center justify-between p-4 bg-gradient-to-r from-purple-50 to-white rounded-xl hover:shadow-md transition-all">
-            <div class="flex items-center space-x-4">
-              <div class="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
-                <i class="fas fa-backpack text-purple-600"></i>
-              </div>
-              <div>
-                <h4 class="font-semibold text-gray-800">Urban Bags</h4>
-                <p class="text-sm text-gray-600">Casual Collection</p>
-              </div>
-            </div>
-            <div class="text-right">
-              <p class="font-bold text-gray-800">₹740</p>
-              <p class="text-sm text-green-600">28 units sold</p>
-            </div>
+          <div class="text-right">
+            <p class="font-bold text-gray-800">₹<%= item.totalRevenue %></p>
+            <p class="text-sm text-green-600"><%= item.unitsSold %> units sold</p>
           </div>
         </div>
-        
-        <div class="mt-6 p-4 bg-gradient-to-r from-gray-50 to-white rounded-xl">
-          <div class="flex justify-between items-center">
-            <span class="text-lg font-bold text-gray-800">Total Sales</span>
-            <span class="text-2xl font-bold text-blue-600">₹2,470</span>
-          </div>
-        </div>
-      </div>
+      <% }) %>
     </div>
+  <% } else { %>
+    <p class="text-gray-500">No data available</p>
+  <% } %>
+</div>
+<!-- //Add Top Categories & Brands -->
+<div class="bg-white rounded-2xl shadow-lg p-6 card-hover mt-8">
+  <h3 class="text-xl font-semibold text-gray-800 mb-6">Top 10 Categories</h3>
+
+  <% if (bestCategories && bestCategories.length > 0) { %>
+    <ul class="space-y-3">
+      <% bestCategories.forEach(c => { %>
+        <li class="p-3 rounded-lg bg-gray-50 flex justify-between">
+          <span class="font-medium text-gray-800"><%= c.category %></span>
+          <span class="text-green-600 font-semibold"><%= c.totalSold %> sold</span>
+        </li>
+      <% }) %>
+    </ul>
+  <% } else { %>
+    <p class="text-gray-500">No data available</p>
+  <% } %>
+</div>
+
+
+    </div>
+    
 
     <!-- Recent Orders -->
     <div class="bg-white rounded-2xl shadow-lg p-6 card-hover">
       <div class="flex justify-between items-center mb-6">
         <h3 class="text-xl font-semibold text-gray-800">Recent Orders</h3>
-        <button class="bg-gradient-to-r from-blue-500 to-blue-600 text-white px-4 py-2 rounded-lg font-semibold hover:from-blue-600 hover:to-blue-700 transition-all flex items-center space-x-2">
-          <i class="fas fa-eye"></i>
-          <span>View All Orders</span>
-        </button>
+       <a href="/admin/orders"
+   class="bg-gradient-to-r from-blue-500 to-blue-600 text-white px-4 py-2 rounded-lg 
+          font-semibold hover:from-blue-600 hover:to-blue-700 transition-all 
+          flex items-center space-x-2">
+    <i class="fas fa-eye"></i>
+    <span>View All Orders</span>
+      </a>
       </div>
-      
-      <div class="overflow-x-auto">
-        <table class="w-full text-sm">
+      <div class="overflow-x-auto"> <table class="w-full text-sm">
           <thead>
             <tr class="bg-gradient-to-r from-gray-50 to-gray-100 text-gray-600 uppercase text-xs">
               <th class="p-4 text-left font-semibold rounded-l-xl">Product</th>
@@ -300,76 +303,76 @@
               <th class="p-4 text-left font-semibold rounded-r-xl">Status</th>
             </tr>
           </thead>
-          <tbody class="divide-y divide-gray-200">
-            <tr class="table-row-hover">
-              <td class="p-4">
-                <div class="flex items-center space-x-3">
-                  <div class="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
-                    <i class="fas fa-briefcase text-blue-600 text-sm"></i>
-                  </div>
-                  <span class="font-medium text-gray-800">American Tourister</span>
-                </div>
-              </td>
-              <td class="p-4 text-gray-600">#ORD-7821</td>
-              <td class="p-4 text-gray-600">20 Mar, 2023</td>
-              <td class="p-4">
-                <div class="flex items-center space-x-2">
-                  <div class="w-6 h-6 bg-gray-300 rounded-full"></div>
-                  <span class="text-gray-800">John Smith</span>
-                </div>
-              </td>
-              <td class="p-4 font-semibold text-gray-800">₹75.00</td>
-              <td class="p-4">
-                <span class="status-badge bg-yellow-100 text-yellow-800">Processing</span>
-              </td>
-            </tr>
-            
-            <tr class="table-row-hover">
-              <td class="p-4">
-                <div class="flex items-center space-x-3">
-                  <div class="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
-                    <i class="fas fa-laptop text-green-600 text-sm"></i>
-                  </div>
-                  <span class="font-medium text-gray-800">Laptop Bag</span>
-                </div>
-              </td>
-              <td class="p-4 text-gray-600">#ORD-7819</td>
-              <td class="p-4 text-gray-600">19 Mar, 2023</td>
-              <td class="p-4">
-                <div class="flex items-center space-x-2">
-                  <div class="w-6 h-6 bg-gray-300 rounded-full"></div>
-                  <span class="text-gray-800">Sarah Johnson</span>
-                </div>
-              </td>
-              <td class="p-4 font-semibold text-gray-800">₹22.00</td>
-              <td class="p-4">
-                <span class="status-badge bg-yellow-100 text-yellow-800">Processing</span>
-              </td>
-            </tr>
-            
-            <tr class="table-row-hover">
-              <td class="p-4">
-                <div class="flex items-center space-x-3">
-                  <div class="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
-                    <i class="fas fa-gem text-purple-600 text-sm"></i>
-                  </div>
-                  <span class="font-medium text-gray-800">Genuine Leather</span>
-                </div>
-              </td>
-              <td class="p-4 text-gray-600">#ORD-7805</td>
-              <td class="p-4 text-gray-600">7 Feb, 2023</td>
-              <td class="p-4">
-                <div class="flex items-center space-x-2">
-                  <div class="w-6 h-6 bg-gray-300 rounded-full"></div>
-                  <span class="text-gray-800">Mike Davis</span>
-                </div>
-              </td>
-              <td class="p-4 font-semibold text-gray-800">₹57.00</td>
-              <td class="p-4">
-                <span class="status-badge bg-green-100 text-green-800">Completed</span>
-              </td>
-            </tr>
-          </tbody>
+     <tbody class="divide-y divide-gray-200">
+
+  <% if (!recentOrders || recentOrders.length === 0) { %>
+    <tr>
+      <td colspan="6" class="text-center py-4 text-gray-500">
+        No recent orders found.
+      </td>
+    </tr>
+  <% } %>
+
+  <% recentOrders.forEach(order => { %>
+    <% const firstItem = order.items[0]; %>
+
+    <tr class="table-row-hover">
+
+      <!-- PRODUCT -->
+      <td class="p-4">
+        <div class="flex items-center space-x-3">
+          <div class="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+            <i class="fas fa-bag-shopping text-blue-600 text-sm"></i>
+          </div>
+
+          <span class="font-medium text-gray-800">
+            <%= firstItem.product ? firstItem.product.name : 'Unknown Product' %>
+          </span>
+        </div>
+      </td>
+
+      <!-- ORDER ID -->
+      <td class="p-4 text-gray-600">
+  <%= order.orderId %>
+</td>
+
+
+      <!-- DATE -->
+      <td class="p-4 text-gray-600">
+        <%= order.createdAt.toLocaleDateString("en-GB", {
+          day: "2-digit", month: "short", year: "numeric"
+        }) %>
+      </td>
+
+      <!-- CUSTOMER -->
+      <td class="p-4">
+        <div class="flex items-center space-x-2">
+          <div class="w-6 h-6 bg-gray-300 rounded-full"></div>
+          <span class="text-gray-800">
+            <%= order.user ? order.user.name : "Guest User" %>
+          </span>
+        </div>
+      </td>
+
+      <!-- AMOUNT -->
+      <td class="p-4 font-semibold text-gray-800">
+        ₹<%= order.totalAmount.toFixed(2) %>
+      </td>
+
+      <!-- STATUS -->
+      <td class="p-4">
+       <span class="status-badge <%= getStatusClass(order.orderStatus || order.status) %>">
+  <%= (order.orderStatus || order.status || "Pending") %>
+</span>
+
+      </td>
+
+    </tr>
+  <% }) %>
+
+</tbody>
+
+
         </table>
       </div>
     </div>
@@ -407,5 +410,78 @@
       });
     });
   </script>
+ <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+
+  const barColors = [
+    "from-blue-500 to-blue-300",
+    "from-green-500 to-green-300",
+    "from-purple-500 to-purple-300",
+    "from-orange-500 to-orange-300",
+    "from-red-500 to-red-300",
+    "from-indigo-500 to-indigo-300",
+    "from-pink-500 to-pink-300"
+  ];
+
+  async function loadRevenue(filter = "daily") {
+
+    const res = await fetch(`/admin/revenue-data?filter=${filter}`);
+    let data = await res.json();
+
+    const revenueBars = document.getElementById("revenueBars");
+    const revenueLabels = document.getElementById("revenueLabels");
+
+    revenueBars.innerHTML = "";
+    revenueLabels.innerHTML = "";
+
+    // ALWAYS show 7 bars
+    while (data.values.length < 7) {
+      data.values.push(0);
+      data.labels.push("");
+    }
+
+    const maxValue = Math.max(...data.values);
+
+    data.values.forEach((value, i) => {
+      const heightPercent = maxValue === 0 ? 10 : (value / maxValue) * 100;
+
+      const bar = `
+        <div class="flex-1 bg-gradient-to-t ${barColors[i % 7]} rounded-t-lg"
+             style="height: ${heightPercent}%"></div>
+      `;
+      const label = `<span>${data.labels[i] || ""}</span>`;
+
+      revenueBars.innerHTML += bar;
+      revenueLabels.innerHTML += label;
+    });
+  }
+
+  // Default load
+  loadRevenue("daily");
+
+  document.getElementById("chartFilter").addEventListener("change", (e) => {
+    loadRevenue(e.target.value);
+  });
+
+});
+</script>
+
+
+<%
+function getStatusClass(status) {
+  const map = {
+    "pending": "bg-yellow-100 text-yellow-800",
+    "processing": "bg-blue-100 text-blue-800",
+    "shipped": "bg-purple-100 text-purple-800",
+    "out_for_delivery": "bg-pink-100 text-pink-800",
+    "delivered": "bg-green-100 text-green-800",
+    "cancelled": "bg-red-100 text-red-800",
+  };
+  return map[status] || "bg-gray-100 text-gray-600";
+}
+%>
+
+
 </body>
 </html>
