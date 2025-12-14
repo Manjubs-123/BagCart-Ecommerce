@@ -2,33 +2,69 @@ import Product from "../../models/productModel.js";
 import Category from "../../models/category.js";
 import { cloudinary } from "../../config/cloudinary.js";
 
+// Escape regex special characters
+const escapeRegex = (text) => {
+  return text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+};
 
-
-// List products 
+// List products (WITH DYNAMIC CARDS)
 export const listProducts = async (req, res) => {
-
   try {
-    
     const page = Math.max(1, parseInt(req.query.page || "1", 10));
     const limit = Math.max(1, parseInt(req.query.limit || "10", 10));
     const q = (req.query.q || "").trim();
 
     const filter = { isDeleted: false };
 
-    
-    if (q) {
-      filter.$or = [
-        { name: { $regex: q, $options: "i" } },
-        { brand: { $regex: q, $options: "i" } },
-      ];
-    }
+  if (q) {
+  const safeQuery = escapeRegex(q);
 
-    
+  filter.$or = [
+    { name: { $regex: safeQuery, $options: "i" } },
+    { brand: { $regex: safeQuery, $options: "i" } },
+  ];
+}
+
+
+    /* =========================
+       CARD COUNTS (DYNAMIC)
+    ========================= */
+
+    // 1. Total Products
+    const totalProductsCount = await Product.countDocuments({ isDeleted: false });
+
+    // 2. Active Products
+    const activeProductsCount = await Product.countDocuments({
+      isDeleted: false,
+      isActive: true,
+    });
+
+    // Fetch all products ONCE for stock calculation
+    const allProducts = await Product.find({ isDeleted: false })
+      .select("variants")
+      .lean();
+
+    let lowStockCount = 0;
+    let outOfStockCount = 0;
+
+    allProducts.forEach(p => {
+      const totalStock = (p.variants || []).reduce(
+        (sum, v) => sum + (v.stock || 0),
+        0
+      );
+
+      if (totalStock === 0) outOfStockCount++;
+      else if (totalStock < 10) lowStockCount++; // threshold = 10
+    });
+
+    /* =========================
+       PAGINATED PRODUCT LIST
+    ========================= */
+
     const totalProducts = await Product.countDocuments(filter);
     const totalPages = Math.max(1, Math.ceil(totalProducts / limit));
     const skip = (page - 1) * limit;
 
-    
     const products = await Product.find(filter)
       .populate("category", "name")
       .sort({ createdAt: -1 })
@@ -42,8 +78,15 @@ export const listProducts = async (req, res) => {
       q,
       page,
       totalPages,
-      limit
+      limit,
+
+      // 🔥 SEND CARD DATA
+      totalProductsCount,
+      activeProductsCount,
+      lowStockCount,
+      outOfStockCount
     });
+
   } catch (error) {
     console.error("Error loading products:", error);
     res.status(500).send("Server Error");
