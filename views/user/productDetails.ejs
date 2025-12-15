@@ -301,20 +301,7 @@
                     
                     <!-- Rating, Reviews and Stock Information -->
                     <div class="flex flex-col sm:flex-row sm:items-center gap-3 mb-4">
-                        <!-- Rating -->
-                        <div class="rating-badge flex items-center gap-2">
-                            <div class="flex items-center">
-                                <% for (let i = 0; i < 5; i++) { %>
-                                    <i class="fas fa-star text-amber-400 text-xs sm:text-sm <%= i < Math.floor(product.rating || 0) ? 'fas' : 'far' %>"></i>
-                                <% } %>
-                            </div>
-                            <span class="font-semibold"><%= (product.rating || 0).toFixed(1) %></span>
-                        </div>
-                        
-                        <!-- Reviews -->
-                        <span class="text-sm text-gray-600">
-                            <%= product.reviews || 0 %> Reviews
-                        </span>
+                       
                         
                         <!-- Stock Information -->
                         <div id="stockInfo" class="stock-info in-stock">

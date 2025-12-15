@@ -443,10 +443,47 @@ export const approveReturn = async (req, res) => {
 };
 
 
+// export const rejectReturn = async (req, res) => {
+//   try {
+//     const { orderId, itemId } = req.params;
+//     const { rejectionReason } = req.body;
+
+//     const order = await Order.findById(orderId);
+//     if (!order) return res.status(404).json({ success: false, message: "Order not found" });
+
+//     const item = order.items.id(itemId);
+//     if (!item) return res.status(404).json({ success: false, message: "Item not found" });
+
+//     item.status = "return-rejected";
+//     item.returnRejectReason = rejectionReason || "Return request rejected";
+
+//     await order.save();
+
+//     return res.json({ success: true });
+//   } catch (err) {
+//     console.error(err);
+//     res.status(500).json({ success: false, message: "Reject return error" });
+//   }
+// };
+
 export const rejectReturn = async (req, res) => {
   try {
     const { orderId, itemId } = req.params;
     const { rejectionReason } = req.body;
+
+    /* ===== VALIDATION (ADDED — DOES NOT BREAK FLOW) ===== */
+    if (
+      !rejectionReason ||
+      typeof rejectionReason !== "string" ||
+      rejectionReason.trim().length < 5 ||
+      !/[a-zA-Z]/.test(rejectionReason)
+    ) {
+      return res.status(400).json({
+        success: false,
+        message: "Please provide a valid rejection reason"
+      });
+    }
+    /* ===== END VALIDATION ===== */
 
     const order = await Order.findById(orderId);
     if (!order) return res.status(404).json({ success: false, message: "Order not found" });
@@ -455,8 +492,8 @@ export const rejectReturn = async (req, res) => {
     if (!item) return res.status(404).json({ success: false, message: "Item not found" });
 
     item.status = "return-rejected";
-    item.returnRejectReason = rejectionReason || "Return request rejected";
-
+item.returnDetails = rejectionReason;     
+item.returnRejectedDate = new Date(); 
     await order.save();
 
     return res.json({ success: true });
