@@ -99,7 +99,7 @@
               <div id="codeError" class="error-message"></div>
             </div>
 
-            <!-- Discount % -->
+            <!-- Discount -->
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-1">
                 Discount Percentage <span class="text-red-500">*</span>
@@ -276,8 +276,7 @@ function validateCode() {
     return false;
   }
 
-  // ❌ Reject special symbols & spaces
-  // ✅ Allow only A–Z and 0–9
+
   const couponRegex = /^[A-Z0-9]+$/;
 
   if (!couponRegex.test(code)) {
@@ -288,7 +287,6 @@ function validateCode() {
     return false;
   }
 
-  // ✅ Valid
   input.value = code; // normalize input
   clearError(errorElement);
   return true;

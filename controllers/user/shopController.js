@@ -11,20 +11,18 @@ export const getShopPage = async (req, res) => {
       return res.redirect("/user/login");
     }
 
-    // Pagination params
     const perPage = parseInt(req.query.perPage, 10) || 12;
     const page = Math.max(1, parseInt(req.query.page, 10) || 1);
 
-    // Filters from query string
     const search = (req.query.search || "").trim();
-// Prevent invalid regex behavior from symbol-only searches (like *, %%, ^^)
+
 let safeSearch = search;
 
-// Case 1: If search is empty or only special characters → treat as empty search
+
 if (!/[a-zA-Z0-9]/.test(safeSearch)) {
   safeSearch = "";
 } else {
-  // Case 2: Escape special regex characters to prevent crashes
+  
   safeSearch = safeSearch.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
@@ -42,7 +40,6 @@ if (!/[a-zA-Z0-9]/.test(safeSearch)) {
       : [];
     const sort = req.query.sort || "";
 
-    // Build filter
     const filter = { isDeleted: false, isActive: true };
 
     if (categories.length) filter.category = { $in: categories.map(id => id) };
@@ -64,7 +61,7 @@ if (!/[a-zA-Z0-9]/.test(safeSearch)) {
       filter.brand = { $in: brands };
     }
 
-    // Price filter
+   
     if (minPrice != null || maxPrice != null) {
       const priceFilter = {};
       if (minPrice != null) priceFilter.$gte = minPrice;
@@ -72,10 +69,9 @@ if (!/[a-zA-Z0-9]/.test(safeSearch)) {
       filter["variants.price"] = priceFilter;
     }
 
-    // FIXED: Count total matching - use the same filter object
+    
     const totalCount = await Product.countDocuments(filter);
 
-    // Sorting
     let sortObj = { createdAt: -1 }; 
     switch (sort) {
       case "price-low":
@@ -97,7 +93,7 @@ if (!/[a-zA-Z0-9]/.test(safeSearch)) {
         break;
     }
 
-    // Fetch products (with pagination)
+    
     const products = await Product.find(filter)
       .populate({ path: "category", match: { isDeleted: false, isActive: true } })
       .sort(sortObj)
@@ -105,30 +101,28 @@ if (!/[a-zA-Z0-9]/.test(safeSearch)) {
       .limit(perPage)
       .lean();
 
-    // Remove products with invalid category
+    
     const cleanedProducts = products.filter(p => p.category);
 
-    // Apply offers to each product
     const productsWithOffers = await Promise.all(
       cleanedProducts.map(async (product) => {
         const offerData = await applyOfferToProduct(product);
         
-        // Get first variant for default display
+
         const firstVariant = product.variants?.[0] || {};
         
-        // Get main image
+       
         let mainImage = '/images/placeholder.jpg';
         if (firstVariant.images && firstVariant.images.length > 0) {
           mainImage = firstVariant.images[0].url;
         } else {
-          // Try to find any image from any variant
+         
           const variantWithImage = product.variants?.find(v => v.images && v.images.length > 0);
           if (variantWithImage) {
             mainImage = variantWithImage.images[0].url;
           }
         }
         
-        // Pick the offer for the FIRST variant (default display)
 const defaultVariantOffer =
   offerData.variants && offerData.variants[0]
     ? offerData.variants[0]
@@ -141,19 +135,15 @@ const defaultVariantOffer =
 return {
   ...product,
 
-  // Correct variant-based prices
   regularPrice: defaultVariantOffer.regularPrice,
   finalPrice: defaultVariantOffer.finalPrice,
   appliedOffer: defaultVariantOffer.appliedOffer,
 
-  // Keep original variant data
   variantPrice: firstVariant.price || 0,
   variantMRP: firstVariant.mrp || firstVariant.price || 0,
 
-  // Image
   mainImage: mainImage,
 
-  // Correct discount calculation
   discountPercent:
     defaultVariantOffer.regularPrice > defaultVariantOffer.finalPrice
       ? Math.round(
@@ -167,16 +157,13 @@ return {
       })
     );
 
-    // Unique colors and brands for sidebar UI
     const allProductsForFilters = await Product.find({ isDeleted: false, isActive: true }).lean();
 
     const colorsList = [...new Set(allProductsForFilters.flatMap(p => p.variants?.map(v => v.color?.trim()).filter(Boolean) || []))];
     const brandsList = [...new Set(allProductsForFilters.map(p => p.brand).filter(Boolean))];
 
-    // categories for sidebar
     const categoriesList = await Category.find({ isDeleted: false, isActive: true }).sort({ name: 1 }).lean();
 
-    // wishlist ids for current user
     let userWishlistIds = [];
     if (req.session.user) {
       const u = await User.findById(req.session.user.id).select("wishlist");
@@ -185,7 +172,6 @@ return {
 
     const totalPages = Math.max(1, Math.ceil(totalCount / perPage));
 
-    // Pass the current query back so we can preserve inputs in the form
     const currentQuery = {
       search,
       category: categories,
@@ -198,17 +184,16 @@ return {
       perPage
     };
 
-    // Add pagination URL builder to preserve filters
+    
     const buildPaginationUrl = (pageNum) => {
       const params = new URLSearchParams();
       
-      // Preserve all filters
+      
       if (search) params.set('search', search);
       if (minPrice) params.set('minPrice', minPrice);
       if (maxPrice) params.set('maxPrice', maxPrice);
       if (sort) params.set('sort', sort);
       
-      // Preserve array filters
       categories.forEach(cat => params.append('category', cat));
       colors.forEach(color => params.append('color', color));
       brands.forEach(brand => params.append('brand', brand));
@@ -245,7 +230,6 @@ export const getProductDetails = async (req, res) => {
   try {
     const productId = req.params.id;
 
-    // Fetch product with category populated
     const product = await Product.findById(productId)
       .populate("category", "_id name")
       .lean();
@@ -257,10 +241,8 @@ export const getProductDetails = async (req, res) => {
     
     const offerData = await applyOfferToProduct(product);
     
-    // Get first variant for default display
     const firstVariant = (product.variants || [])[0] || {};
 
-    // Prepare variant images grouped by color
     const variantImages = {};
     (product.variants || []).forEach(v => {
       if (v.color && v.images?.length) {
@@ -280,19 +262,18 @@ export const getProductDetails = async (req, res) => {
             appliedOffer: null
           };
 
-    // Main Product object for EJS - UPDATED WITH OFFER PRICES
     const viewProduct = {
       _id: product._id,
       productName: product.name,
-      // Use offer calculated prices (for default variant)
+      
       salePrice: defaultVariantOffer.finalPrice,      // Final discounted price
       regularPrice: defaultVariantOffer.regularPrice, // Original price to be crossed
-      // Keep variant prices for reference
+    
       variantPrice: firstVariant.price || 0,
       variantMRP: firstVariant.mrp || firstVariant.price || 0,
-      // Offer data
+      
       appliedOffer: defaultVariantOffer.appliedOffer,
-      // Other product details
+      
       description: product.description || "",
       productFeatures: product.productFeatures || [],
       colors: (product.variants || []).map(v => v.color).filter(Boolean),
@@ -302,13 +283,12 @@ export const getProductDetails = async (req, res) => {
       reviews: product.reviewsCount || 0,
       category: product.category,
       brand: product.brand || "BagHub",
-      // Calculate discount percentage for display (based on default variant offer)
       discountPercent: defaultVariantOffer.regularPrice > defaultVariantOffer.finalPrice 
         ? Math.round(((defaultVariantOffer.regularPrice - defaultVariantOffer.finalPrice) / defaultVariantOffer.regularPrice) * 100)
         : 0
     };
 
-    // Related products 
+    
     let relatedProducts = [];
 
     if (product.category?._id) {
@@ -342,7 +322,6 @@ export const getProductDetails = async (req, res) => {
       ]);
     }
 
-    // Apply offers to related products
     const formattedRelated = await Promise.all(
       relatedProducts.map(async (p) => {
         const relatedOfferData = await applyOfferToProduct(p);
@@ -351,7 +330,6 @@ export const getProductDetails = async (req, res) => {
           .flatMap(v => (v.images || []).map(img => typeof img === "string" ? img : img.url))
           .filter(Boolean)[0] || "/default-product.jpg";
 
-        // pick related's default (first) variant offer safely
         const relatedDefaultOffer =
           relatedOfferData && Array.isArray(relatedOfferData.variants) && relatedOfferData.variants[0]
             ? relatedOfferData.variants[0]
@@ -365,7 +343,6 @@ export const getProductDetails = async (req, res) => {
           _id: p._id,
           name: p.name || "Untitled Product",
           brand: p.brand || "BagHub",
-          // Use offer calculated prices (for related's default variant)
           salePrice: relatedDefaultOffer.finalPrice,
           regularPrice: relatedDefaultOffer.regularPrice,
           appliedOffer: relatedDefaultOffer.appliedOffer,
@@ -379,7 +356,6 @@ export const getProductDetails = async (req, res) => {
       })
     );
 
-    // Fetch user wishlist
     let userWishlist = [];
     if (req.session.user && req.session.user.id) {
       const usr = await User.findById(req.session.user.id).select("wishlist");
@@ -437,16 +413,13 @@ export const getVariantByColor = async (req, res) => {
 
     const variant = product.variants[variantIndex];
 
-    // Build a product object that contains only the selected variant
     const variantProduct = {
       ...product,
       variants: [variant]
     };
 
-    // Apply offer to this specific variant
     const offerData = await applyOfferToProduct(variantProduct);
 
-    // Safely pick the variant-level offer result
     const variantOffer =
       offerData && Array.isArray(offerData.variants) && offerData.variants[0]
         ? offerData.variants[0]
@@ -456,7 +429,6 @@ export const getVariantByColor = async (req, res) => {
             appliedOffer: null
           };
 
-    // Normalize images (support string urls or objects like { url })
     const images =
       Array.isArray(variant.images) && variant.images.length
         ? variant.images.map(img => (typeof img === "string" ? img : img.url)).filter(Boolean)
@@ -472,7 +444,6 @@ export const getVariantByColor = async (req, res) => {
         stock: variant.stock || 0,
         images
       },
-      // Offer data for this selected variant (numbers guaranteed)
       offerData: {
         regularPrice: Number(variantOffer.regularPrice) || 0,
         finalPrice: Number(variantOffer.finalPrice) || 0,

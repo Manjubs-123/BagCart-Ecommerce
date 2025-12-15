@@ -277,12 +277,12 @@
     function validateName(value) {
       const trimmedValue = value.trim();
 
-      // 1. Required
+      //  Required
       if (!trimmedValue) {
         return { valid: false, message: 'Category name is required' };
       }
 
-      // 2. Length check
+      //  Length check
       if (trimmedValue.length < 2) {
         return { valid: false, message: 'Category name must be at least 2 characters' };
       }
@@ -291,13 +291,13 @@
         return { valid: false, message: 'Category name must be less than 50 characters' };
       }
 
-      // 3. Allow only A–Z and space (no numbers or symbols)
+      //  Allow only A–Z and space (no numbers or symbols)
       const regex = /^[A-Za-z ]+$/;
       if (!regex.test(trimmedValue)) {
         return { valid: false, message: 'Only alphabets (A–Z) and spaces are allowed' };
       }
 
-      // 4. Prevent double/multiple spaces
+      //  Prevent double/multiple spaces
       if (/\s{2,}/.test(trimmedValue)) {
         return { valid: false, message: 'Multiple spaces are not allowed' };
       }
@@ -308,29 +308,29 @@
     function validateDescription(value) {
       const trimmedValue = value.trim();
 
-      // 1. Required check
+      //  Required check
       if (!trimmedValue) {
         return { valid: false, message: "Description is required" };
       }
 
-      // 2. Must contain at least one alphabet (A–Z)
+      //  Must contain at least one alphabet (A–Z)
       if (!/[A-Za-z]/.test(trimmedValue)) {
         return { valid: false, message: "Description must contain meaningful text" };
       }
 
-      // 3. Reject descriptions with only symbols
+      //  Reject descriptions with only symbols
       const onlySymbolsRegex = /^[^A-Za-z0-9\s]+$/;
       if (onlySymbolsRegex.test(trimmedValue)) {
         return { valid: false, message: "Description cannot contain only symbols" };
       }
 
-      // 4. Word count (max 10 words)
+      //  Word count (max 10 words)
       const wordCount = trimmedValue.split(/\s+/).length;
       if (wordCount > 10) {
         return { valid: false, message: "Description must be maximum 10 words" };
       }
 
-      // ✅ Valid description
+      // Valid description
       return { valid: true, message: "" };
     }
 
@@ -389,7 +389,7 @@
     form.addEventListener("submit", async function (e) {
       e.preventDefault();
 
-      // 1️⃣ VALIDATION
+      //  VALIDATION
       const nameValidation = validateName(nameInput.value);
       const descValidation = validateDescription(descriptionInput.value);
 

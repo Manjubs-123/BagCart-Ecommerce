@@ -78,7 +78,7 @@
     <!-- Main Content -->
     <div class="container mx-auto px-4 py-8">
         <div class="flex flex-col lg:flex-row gap-8">
-            <!-- Sidebar Navigation - Updated to match profile.ejs -->
+            <!-- Sidebar Navigation  -->
             <%- include('../partials/userProfileSiderbar', {
     activePage: 'addresses',
     user,
@@ -86,15 +86,15 @@
     wishlistCount,
     unreadNotifications
 }) %>
-<div id="cropperModal" class="fixed inset-0 bg-black/50 hidden items-center justify-center">
-  <div class="bg-white p-5 rounded-xl">
-      <img id="cropImage" class="max-w-[400px] max-h-[400px]" />
-      <div class="flex justify-end gap-4 mt-4">
-          <button onclick="cancelCrop()" class="bg-gray-500 text-white px-4 py-2 rounded">Cancel</button>
-          <button onclick="applyCrop()" class="bg-blue-600 text-white px-4 py-2 rounded">Crop & Save</button>
-      </div>
-  </div>
-</div>
+        <div id="cropperModal" class="fixed inset-0 bg-black/50 hidden items-center justify-center">
+        <div class="bg-white p-5 rounded-xl">
+            <img id="cropImage" class="max-w-[400px] max-h-[400px]" />
+            <div class="flex justify-end gap-4 mt-4">
+                <button onclick="cancelCrop()" class="bg-gray-500 text-white px-4 py-2 rounded">Cancel</button>
+                <button onclick="applyCrop()" class="bg-blue-600 text-white px-4 py-2 rounded">Crop & Save</button>
+            </div>
+        </div>
+        </div>
 
             <!-- Main Content Area -->
             <div class="lg:w-3/4">
@@ -125,22 +125,18 @@
                         </button>
                     </div>
 
-                    <!-- Address List -->
-                    <div id="addressList" class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <% if (addresses && addresses.length > 0) { %>
-                            <% addresses.forEach(address => { %>
-                                <!-- <div class="address-card border border-gray-200 rounded-xl p-6 relative <%= address.isDefault ? 'selected' : '' %>"> -->
-                                   <div class="address-card border border-gray-200 rounded-xl p-6 relative <%= address.isDefault ? 'selected' : '' %>"
-     data-address-id="<%= address._id %>">
+                            <!-- Address List -->
+                            <div id="addressList" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <% if (addresses && addresses.length > 0) { %>
+                                    <% addresses.forEach(address => { %>
+                                        <div class="address-card border border-gray-200 rounded-xl p-6 relative <%= address.isDefault ? 'selected' : '' %>"
+            data-address-id="<%= address._id %>">
 
-                                    <% if (address.isDefault) { %>
-                                        <span class="absolute top-4 right-4 bg-blue-100 text-blue-800 text-xs font-semibold px-2 py-1 rounded-full">
-                                            Default
-                                        </span>
-<!-- 
-                                        <span class="default-badge absolute top-4 right-4 bg-blue-100 text-blue-800 text-xs font-semibold px-2 py-1 rounded-full">
-    Default
-</span> -->
+                                            <% if (address.isDefault) { %>
+                                                <span class="absolute top-4 right-4 bg-blue-100 text-blue-800 text-xs font-semibold px-2 py-1 rounded-full">
+                                                    Default
+                                                </span>
+
 
                                     <% } %>
                                     
@@ -171,13 +167,7 @@
                                             Set as Default
                                         </button>
                                        
-                                       <!-- <button 
-    onclick="setDefaultAddress('<%= address._id %>')"
-    class="set-default-btn flex-1 bg-gray-100 text-gray-700 py-2 rounded-lg hover:bg-gray-200 transition-all text-sm <%= address.isDefault ? 'hidden' : '' %>"
->
-    Set as Default
-</button> -->
-
+               
 
                                         <button 
                                             onclick="editAddress('<%= address._id %>')"
@@ -187,9 +177,9 @@
                                         </button>
                                        
 
-                                        <button onclick="deleteAddress('<%= address._id %>')"
-class="flex-1 bg-red-600 text-white py-2 rounded-lg hover:bg-red-700 transition-all text-sm <%= address.isDefault ? 'hidden' : '' %>">
-    Delete
+                                                    <button onclick="deleteAddress('<%= address._id %>')"
+            class="flex-1 bg-red-600 text-white py-2 rounded-lg hover:bg-red-700 transition-all text-sm <%= address.isDefault ? 'hidden' : '' %>">
+                Delete
 </button>
 
                                     </div>

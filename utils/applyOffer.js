@@ -5,7 +5,6 @@ export async function applyOfferToProduct(product) {
         const now = new Date();
         const categoryId = product.category?._id || product.category;
 
-        // Fetch all applicable offers
         const offers = await Offer.find({
             isActive: true,
             validFrom: { $lte: now },
@@ -16,7 +15,6 @@ export async function applyOfferToProduct(product) {
             ]
         }).lean();
 
-        // If no offers exist → return original prices for all variants
         if (!offers.length) {
             return {
                 variants: product.variants.map((v) => ({
@@ -27,7 +25,6 @@ export async function applyOfferToProduct(product) {
             };
         }
 
-        // Process each variant separately
         const processedVariants = product.variants.map((v) => {
             const mrp = Number(v.mrp) || Number(v.price);
             let bestOffer = null;
@@ -63,7 +60,6 @@ export async function applyOfferToProduct(product) {
     } catch (err) {
         console.error("Error applying offer:", err);
 
-        // Fallback: return original pricing
         return {
             variants: product.variants.map((v) => ({
                 regularPrice: v.mrp || v.price,

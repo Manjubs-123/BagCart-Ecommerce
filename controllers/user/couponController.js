@@ -4,7 +4,6 @@ import Order from "../../models/orderModel.js";
 import Product from "../../models/productModel.js";
 import Cart from "../../models/cartModel.js";
 
-// Get Available Coupons
 export const getAvailableCoupons = async (req, res) => {
   try {
     const userId = req.session.user?.id;
@@ -38,13 +37,11 @@ export const applyCoupon = async (req, res) => {
 
     console.log("Applying coupon:", couponCode, "for user:", userId);
 
-    // Get cart
     const cart = await Cart.findOne({ user: userId }).populate("items.product");
     if (!cart || cart.items.length === 0) {
       return res.json({ success: false, message: "Cart empty " });
     }
 
-    // Calculate cart total
     let cartTotal = 0;
     cart.items.forEach(item => {
       const variant = item.product.variants[item.variantIndex];
@@ -53,7 +50,6 @@ export const applyCoupon = async (req, res) => {
 
     console.log("Cart total:", cartTotal);
 
-    // Find coupon
     const coupon = await Coupon.findOne({
       code: couponCode,
       isActive: true,
@@ -68,7 +64,6 @@ export const applyCoupon = async (req, res) => {
 
     console.log(" Coupon found:", coupon.code, "Min order:", coupon.minOrderAmount);
 
-    // Check minimum order amount
     if (cartTotal < coupon.minOrderAmount) {
       return res.json({ 
         success: false, 
@@ -76,7 +71,6 @@ export const applyCoupon = async (req, res) => {
       });
     }
 
-    // Check max usage limit
     if (coupon.maxUsage && coupon.usedCount >= coupon.maxUsage) {
       return res.json({ 
         success: false, 
@@ -84,7 +78,6 @@ export const applyCoupon = async (req, res) => {
       });
     }
 
-    // Check user usage limit
     const userUsageCount = await Order.countDocuments({
       user: userId,
       'coupon.code': couponCode,
@@ -98,7 +91,6 @@ export const applyCoupon = async (req, res) => {
       });
     }
 
-    // Calculate discount
     const discountAmount = Math.min(
       (cartTotal * coupon.discountValue) / 100,
       coupon.maxDiscountAmount

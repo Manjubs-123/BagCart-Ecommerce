@@ -1,4 +1,4 @@
-<!-- views/partials/header.ejs -->
+
 <header class="sticky top-0 z-50 bg-white shadow-sm border-b border-gray-200">
   <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
     <div class="flex justify-between items-center py-4">
@@ -18,73 +18,40 @@
       <nav class="hidden lg:flex items-center space-x-8">
         <a href="/" class="text-gray-700 hover:text-blue-600 font-medium transition-colors duration-200">Home</a>
         <a href="/user/shop" class="text-gray-700 hover:text-blue-600 font-medium transition-colors duration-200">Shop</a>
-        <!-- <a href="/categories" class="text-gray-700 hover:text-blue-600 font-medium transition-colors duration-200">Categories</a>
-        <a href="/about" class="text-gray-700 hover:text-blue-600 font-medium transition-colors duration-200">About Us</a> -->
+    
       </nav>
 
       <!-- User Actions -->
       <div class="flex items-center space-x-4">
        
-     
-<!-- Wishlist -->
-<a href="/user/profile/wishlist" class="relative text-gray-600 hover:text-blue-600 transition-colors duration-200 p-2 rounded-lg hover:bg-gray-100">
-  <i class="fas fa-heart text-lg"></i>
-  
-</a>
+            
+        <!-- Wishlist -->
+        <a href="/user/profile/wishlist" class="relative text-gray-600 hover:text-blue-600 transition-colors duration-200 p-2 rounded-lg hover:bg-gray-100">
+          <i class="fas fa-heart text-lg"></i>
+          
+        </a>
 
-      <!-- Cart -->
-<!-- Cart -->
-<a href="/user/cart" class="relative text-gray-600 hover:text-blue-600 transition-colors duration-200 p-2 rounded-lg hover:bg-gray-100">
-  <i class="fas fa-shopping-cart text-lg"></i>
-  
-</a>
-        <!-- User Profile Dropdown -->
-        <!-- <div class="relative group">
-          <button class="flex items-center space-x-2 text-gray-700 hover:text-blue-600 transition-colors duration-200 p-2 rounded-lg hover:bg-gray-100">
-            <div class="w-8 h-8 bg-gradient-to-r from-blue-500 to-emerald-500 rounded-full flex items-center justify-center shadow-sm">
-              <% if (typeof user !== 'undefined' && user) { %>
-                <span class="text-white text-sm font-semibold">
-                  <%= user.name ? user.name.charAt(0).toUpperCase() : 'U' %>
-                </span>
-              <% } else { %>
-                <i class="fas fa-user text-white text-sm"></i>
-              <% } %>
-            </div> -->
-        <!-- <div class="w-8 h-8 rounded-full overflow-hidden shadow-sm">
-  <% if (user && user.profileImage && user.profileImage.url) { %>
-      <img src="<%= user.profileImage.url %>" class="w-full h-full object-cover">
-  <% } else { %>
-      <div class="w-full h-full bg-gradient-to-r from-blue-500 to-emerald-500 flex items-center justify-center text-white text-sm font-semibold">
-        <%= user ? user.name.charAt(0).toUpperCase() : "U" %>
+              
+        <!-- Cart -->
+        <a href="/user/cart" class="relative text-gray-600 hover:text-blue-600 transition-colors duration-200 p-2 rounded-lg hover:bg-gray-100">
+          <i class="fas fa-shopping-cart text-lg"></i>
+          
+        </a>
+       
+  <!-- User Profile Dropdown -->
+  <div class="relative group">
+    <button class="flex items-center space-x-2 text-gray-700 hover:text-blue-600 transition-colors duration-200 p-2 rounded-lg hover:bg-gray-100">
+
+      <!-- Avatar (Replace the old one with this) -->
+      <div class="w-8 h-8 rounded-full overflow-hidden shadow-sm">
+        <% if (user && user.profileImage && user.profileImage.url) { %>
+          <img src="<%= user.profileImage.url %>" alt="avatar" class="w-full h-full object-cover">
+        <% } else { %>
+          <div class="w-full h-full bg-gradient-to-r from-blue-500 to-emerald-500 flex items-center justify-center text-white text-sm font-semibold">
+            <%= user && user.name ? user.name.charAt(0).toUpperCase() : "U" %>
+          </div>
+        <% } %>
       </div>
-  <% } %>
-</div>
-
-
-<span class="hidden md:block text-sm font-medium">
-  <% if (typeof user !== 'undefined' && user) { %>
-  Welcome, <%= user.name || 'User' %>
-<% } else { %>
-  <a href="/user/login">Login</a>
-<% } %>
-</span>
-
-            <i class="fas fa-chevron-down text-xs text-gray-400"></i>
-          </button>  -->
-<!-- User Profile Dropdown -->
-<div class="relative group">
-  <button class="flex items-center space-x-2 text-gray-700 hover:text-blue-600 transition-colors duration-200 p-2 rounded-lg hover:bg-gray-100">
-
-    <!-- Avatar (Replace the old one with this) -->
-    <div class="w-8 h-8 rounded-full overflow-hidden shadow-sm">
-      <% if (user && user.profileImage && user.profileImage.url) { %>
-        <img src="<%= user.profileImage.url %>" alt="avatar" class="w-full h-full object-cover">
-      <% } else { %>
-        <div class="w-full h-full bg-gradient-to-r from-blue-500 to-emerald-500 flex items-center justify-center text-white text-sm font-semibold">
-          <%= user && user.name ? user.name.charAt(0).toUpperCase() : "U" %>
-        </div>
-      <% } %>
-    </div>
 
     <span class="hidden md:block text-sm font-medium">
       <% if (user) { %>
@@ -153,7 +120,6 @@
         <a href="/user/shop" class="block py-2 px-4 text-gray-700 hover:bg-blue-50 hover:text-blue-600 rounded-lg transition-colors duration-200 font-medium">Shop</a>
         <a href="/user/shop" class="block py-2 px-4 text-gray-700 hover:bg-blue-50 hover:text-blue-600 rounded-lg transition-colors duration-200 font-medium">Categories</a>
         <a href="/user/shop" class="block py-2 px-4 text-gray-700 hover:bg-blue-50 hover:text-blue-600 rounded-lg transition-colors duration-200 font-medium">Deals</a>
-        <!-- <a href="/about" class="block py-2 px-4 text-gray-700 hover:bg-blue-50 hover:text-blue-600 rounded-lg transition-colors duration-200 font-medium">About Us</a> -->
         
         <!-- Mobile Auth Links -->
         <% if (typeof user === 'undefined' || !user) { %>

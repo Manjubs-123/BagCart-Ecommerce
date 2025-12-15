@@ -1,4 +1,4 @@
-// config/passport.js
+
 import passport from "passport";
 import { Strategy as GoogleStrategy } from "passport-google-oauth20";
 import dotenv from "dotenv";
@@ -39,7 +39,7 @@ passport.use(
   )
 );
 
-// Serialize & Deserialize
+
 passport.serializeUser((user, done) => {
   console.log("Serialize user:", user.email);
   done(null, user.id);

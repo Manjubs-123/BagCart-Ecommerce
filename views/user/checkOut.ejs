@@ -649,7 +649,7 @@
                 if (walletResponse.data.success) {
                     checkoutState.walletBalance = walletResponse.data.balance || 0;
 
-                     // ⭐ ADD THIS PART — UPDATE WALLET UI BLOCK
+                     // UPDATE WALLET UI BLOCK
     const walletBalanceUI = document.getElementById("walletBalanceDisplay");
     if (walletBalanceUI) {
         walletBalanceUI.textContent = checkoutState.walletBalance.toFixed(2);
@@ -728,38 +728,25 @@
             }
         }
 
-        // ========== COUPON FUNCTIONS - ADD THESE NEW FUNCTIONS ==========
-        
-        // Load available coupons
-        // async function loadAvailableCoupons() {
-        //     try {
-        //         const response = await axios.get('/user/coupons/available');
-        //         if (response.data.success) {
-        //             checkoutState.availableCoupons = response.data.coupons || [];
-        //             renderAvailableCoupons();
-        //         }
-        //     } catch (error) {
-        //         console.error('Error loading coupons:', error);
-        //     }
-        // }
+     
 
 
         
 async function loadAvailableCoupons() {
     try {
-        console.log("🔄 Loading available coupons...");
+        console.log(" Loading available coupons...");
         const response = await axios.get('/user/coupons/available');
-        console.log("📦 Coupons response:", response.data);
+        console.log(" Coupons response:", response.data);
         
         if (response.data.success) {
             checkoutState.availableCoupons = response.data.coupons || [];
-            console.log("✅ Loaded coupons:", checkoutState.availableCoupons.length);
+            console.log(" Loaded coupons:", checkoutState.availableCoupons.length);
             renderAvailableCoupons();
         } else {
-            console.log("❌ Failed to load coupons:", response.data.message);
+            console.log(" Failed to load coupons:", response.data.message);
         }
     } catch (error) {
-        console.error("💥 Error loading coupons:", error);
+        console.error(" Error loading coupons:", error);
     }
 }
         // Render available coupons
@@ -817,7 +804,7 @@ async function loadAvailableCoupons() {
         // Apply coupon
         async function applyCoupon() {
             const couponCode = document.getElementById('couponCode').value.trim().toUpperCase();
-             console.log("🎯 Applying coupon:", couponCode);
+             console.log(" Applying coupon:", couponCode);
             const applyBtn = document.getElementById('applyCouponBtn');
             
             if (!couponCode) {
@@ -933,9 +920,7 @@ if (couponStat) {
 
         }
 
-        // ========== ALL YOUR EXISTING FUNCTIONS REMAIN THE SAME ==========
-        // (renderOrderItems, setupEventListeners, handlePlaceOrder, etc.)
-        // ALL YOUR ORIGINAL CODE STAYS EXACTLY THE SAME
+        
 
         // Render order items
 function renderOrderItems() {
@@ -958,7 +943,7 @@ function renderOrderItems() {
         const product = item.product;
         const variant = product.variants[item.variantIndex];
 
-        // ⭐ USE API PRICES (correct)
+        
         const finalPrice = item.finalPrice;
         const regularPrice = item.regularPrice;
         const qty = item.quantity;
@@ -993,7 +978,7 @@ function renderOrderItems() {
                         `}
                     </div>
 
-                    <!-- ⭐ Correct Price Block -->
+                  
                   
                     <div class="mt-3 md:text-right">
 
@@ -1002,7 +987,7 @@ function renderOrderItems() {
         ₹${finalPrice.toFixed(2)}
     </p>
 
-    <!-- ❗ STRIKE THROUGH – total original MRP of all quantities -->
+    <!-- STRIKE THROUGH total original MRP of all quantities -->
     <p class="text-gray-500 text-sm line-through">
         ₹${(regularPrice * qty).toFixed(2)}
     </p>
@@ -1031,7 +1016,7 @@ function renderOrderItems() {
         `;
     }).join('');
 
-    // ⭐ RIGHT-SIDE PREVIEW TOTAL
+    // RIGHT-SIDE PREVIEW TOTAL
     previewContainer.innerHTML = checkoutState.cartItems.map(item => {
         const variant = item.product.variants[item.variantIndex];
         return `
@@ -1051,9 +1036,7 @@ function renderOrderItems() {
 }
 
 
-        // ALL YOUR OTHER EXISTING FUNCTIONS REMAIN EXACTLY THE SAME...
-        // (setupEventListeners, handleQuantityChange, handleRemoveItem, handlePlaceOrder, 
-        // handleAddOrUpdateAddress, openAddressModal, closeAddressModal, validation functions, etc.)
+       
 
         // Setup event listeners
         function setupEventListeners() {
@@ -1296,10 +1279,6 @@ function renderOrderItems() {
             hideAllErrors();
         }
 
-        // ALL YOUR EXISTING VALIDATION FUNCTIONS REMAIN THE SAME...
-        // (validateAddressForm, validateField, validateFullName, validatePhone, etc.)
-        // (showError, hideError, hideAllErrors, showNotification, etc.)
-
         // Setup address modal validation
         function setupAddressModalValidation() {
             const inputs = document.querySelectorAll('#addressForm input, #addressForm select');
@@ -1398,7 +1377,7 @@ function validateAddressLine1(value) {
         return false;
     }
 
-    // ✅ Allow letters, numbers, spaces, , . - / #
+    //  Allow letters, numbers, spaces, , . - / #
     const addressRegex = /^[A-Za-z0-9\s,.-/#]+$/;
 
     if (!addressRegex.test(address)) {
@@ -1588,7 +1567,7 @@ async function initiateRazorpayPayment(orderResponse) {
             }
         },
 
-        //  PAYMENT FAILURE HANDLER (Very important)
+        //  PAYMENT FAILURE HANDLER 
         "prefill": {},
         "theme": {},
     };
@@ -1631,8 +1610,6 @@ function startRazorpay(orderId, amount, razorpayOrderId) {
     new Razorpay(options).open();
 }
 </script>
-
-
 
 </body>
 </html>

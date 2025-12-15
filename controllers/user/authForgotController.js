@@ -4,20 +4,20 @@ import nodemailer from "nodemailer";
 import dotenv from "dotenv";
 dotenv.config();
 
-const OTP_EXPIRY_MS = 1 * 60 * 1000;   // 1 minute
-const RESEND_COOLDOWN_MS = 1 * 60 * 1000;  // 1 minute
+const OTP_EXPIRY_MS = 1 * 60 * 1000;   
+const RESEND_COOLDOWN_MS = 1 * 60 * 1000;  
 
-// Render Forgot Password Page
+
 export const renderForgotPassword = (req, res) => {
   res.render("user/forgotPassword", { error: null });
 };
 
-// Handle Forgot Password Form (Send OTP)
+
 export const postForgotPassword = async (req, res) => {
   const { email } = req.body;
 
   try {
-    // Basic email validation (avoid bad DB lookups)
+    
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!email || !emailRegex.test(email)) {
       return res.render("user/forgotPassword", { error: "Enter a valid email address." });
@@ -39,7 +39,7 @@ export const postForgotPassword = async (req, res) => {
     };
 
     const transporter = nodemailer.createTransport({
-      service: "gmail", // canonical lowercase
+      service: "gmail",
       auth: {
         user: process.env.EMAIL_USER,
         pass: process.env.EMAIL_PASS,
@@ -53,12 +53,12 @@ export const postForgotPassword = async (req, res) => {
       html: `<p>Your OTP for password reset is <b>${otp}</b>. It expires in 1 minute.</p>`,
     });
 
-    // dev-only logging (do NOT log OTPs in production)
+   
     if (process.env.NODE_ENV !== "production") {
       console.log(`Forgot Password OTP sent to ${email}: ${otp}`);
     }
 
-    // persist session before redirect so cooldown/otpExpiry are saved
+    
     req.session.save((err) => {
       if (err) console.error("Session save error:", err);
       res.redirect("/user/forgotOtp");
@@ -69,7 +69,7 @@ export const postForgotPassword = async (req, res) => {
   }
 };
 
-// Render OTP Verification Page
+
 export const renderForgotVerifyOtp = (req, res) => {
   const email = req.session.resetData?.email;
   if (!email) return res.redirect("/user/forgotPassword");
@@ -78,7 +78,6 @@ export const renderForgotVerifyOtp = (req, res) => {
   const now = Date.now();
   const remaining = Math.max(0, Math.ceil((cooldown - now) / 1000));
 
-  // Optionally could send otpRemaining to UI, but keeping your existing interface
   res.render("user/forgotOtp", {
     email,
     error: null,
@@ -88,7 +87,7 @@ export const renderForgotVerifyOtp = (req, res) => {
   });
 };
 
-// Verify OTP
+
 export const postForgotVerifyOtp = async (req, res) => {
   const { otp } = req.body;
   const data = req.session.resetData;
@@ -109,10 +108,8 @@ export const postForgotVerifyOtp = async (req, res) => {
     });
   }
 
-  // mark session to allow password reset
   req.session.allowPasswordReset = true;
 
-  // persist session then redirect (you already used this pattern)
   req.session.save((err) => {
     if (err) {
       console.error("Session save failed:", err);
@@ -125,7 +122,6 @@ export const postForgotVerifyOtp = async (req, res) => {
   });
 };
 
-// Resend OTP
 export const resendForgotOtp = async (req, res) => {
   try {
     const data = req.session.resetData;
@@ -167,7 +163,6 @@ export const resendForgotOtp = async (req, res) => {
       console.log(`Forgot Password Resend OTP to ${data.email}: ${newOtp}`);
     }
 
-    // important: save session so UI sees updated cooldown/expiry
     req.session.save((err) => {
       if (err) {
         console.error("Session save error after resend:", err);
@@ -201,7 +196,6 @@ export const resendForgotOtp = async (req, res) => {
   }
 };
 
-// Render Reset Password Page
 export const renderResetPassword = (req, res) => {
   if (!req.session.allowPasswordReset) return res.redirect("/user/forgotPassword");
 
@@ -209,7 +203,6 @@ export const renderResetPassword = (req, res) => {
   res.render("user/resetPassword", { email, error: null });
 };
 
-// Handle Reset Password Submission
 export const postResetPassword = async (req, res) => {
   const { newPassword, confirmPassword } = req.body;
   const email = req.session.resetData?.email;
@@ -236,11 +229,9 @@ export const postResetPassword = async (req, res) => {
     const hashed = await bcrypt.hash(newPassword, 10);
     await User.updateOne({ email }, { $set: { password: hashed } });
 
-    // Clear sensitive reset data before destroying session
     delete req.session.resetData;
     delete req.session.allowPasswordReset;
 
-    // Securely destroy session after password reset
     req.session.destroy((err) => {
       if (err) console.error("Session destroy error:", err);
       res.clearCookie("connect.sid");

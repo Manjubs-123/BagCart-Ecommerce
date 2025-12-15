@@ -521,7 +521,7 @@
     function showNotification(message, type) {
   const container = document.getElementById('notificationContainer');
 
-  // 🔥 REMOVE existing success notifications to prevent stacking
+  // REMOVE existing success notifications to prevent stacking
   if (type === "success") {
     container.querySelectorAll('.notification.success').forEach(n => n.remove());
   }

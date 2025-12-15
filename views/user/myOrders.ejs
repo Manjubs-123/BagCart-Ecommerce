@@ -366,7 +366,6 @@
                               </div>
 
                               <!-- Action Buttons -->
-                              <!-- Action Buttons -->
 <div class="mt-4 sm:mt-6 pt-4 border-t border-gray-200">
 
 <% if (order.paymentStatus === 'failed') { %>
@@ -639,6 +638,12 @@ else { %>
         <textarea id="otherReasonText" name="details" class="w-full p-2 border rounded" rows="3"></textarea>
       </div>
 
+      <div id="returnError" class="hidden text-red-600 text-sm mt-2">
+  <i class="fas fa-exclamation-circle mr-1"></i>
+  <span id="returnErrorText"></span>
+</div>
+
+
       <!-- BUTTONS -->
       <div class="flex justify-end gap-2">
         <button type="button" onclick="hideReturnModal()" class="px-4 py-2 border rounded">Close</button>
@@ -653,10 +658,7 @@ else { %>
   <%- include('../partials/footer') %>
 
   <script>
-   // Unified accordion toggle. Works on mobile and desktop.
-// - On mobile: toggles accordion and closes others.
-// - On desktop: toggles accordion too (so click works on all sizes).
-// - Keeps icons in sync and sets aria-expanded for accessibility.
+
 function toggleOrderDetails(orderId) {
   const details = document.getElementById('details-' + orderId);
   const icon = document.getElementById('icon-' + orderId);
@@ -715,37 +717,16 @@ function toggleOrderDetails(orderId) {
         button.disabled = false;
       }, 1500);
     }
-function validateCancelInputs() {
-  const reason = document.getElementById("cancelReasonSelect").value || "";
-  const details = document.getElementById("cancelOtherText")?.value.trim() || "";
-
-  // Block obvious malicious patterns but allow normal text (including numbers)
-  const forbidden = /(\)\))|(&&&)|(<\s*script)/i;
-
-  if (forbidden.test(reason) || forbidden.test(details)) {
-    alert("Invalid characters detected in the reason/details.");
-    return false;
-  }
-
-  // optional: require details when reason === 'Other'
-  if (reason === "Other" && (!details || details.length < 3)) {
-    alert("Please provide more details for 'Other'.");
-    return false;
-  }
-
-  return true;
-}
-
 
   // toggle other box
-  document.getElementById("cancelReasonSelect")?.addEventListener("change", function() {
-    const box = document.getElementById("cancelOtherBox");
-    if (!box) return;
-    if (this.value === "Other") box.classList.remove("hidden"); else {
-      box.classList.add("hidden");
-      document.getElementById("cancelOtherText").value = "";
-    }
-  });
+  // document.getElementById("cancelReasonSelect")?.addEventListener("change", function() {
+  //   const box = document.getElementById("cancelOtherBox");
+  //   if (!box) return;
+  //   if (this.value === "Other") box.classList.remove("hidden"); else {
+  //     box.classList.add("hidden");
+  //     document.getElementById("cancelOtherText").value = "";
+  //   }
+  // });
 
  
 
@@ -779,10 +760,13 @@ function validateCancelInputs() {
    document.getElementById('cancelForm')?.addEventListener('submit', async function(e) {
   e.preventDefault();
 
-  if (!validateCancelReasonRealtime()) {
-    showNotification("Please enter a valid cancellation reason", "error");
-    return;
-  }
+ const reason = document.getElementById("cancelReasonSelect").value;
+const details = document.getElementById("cancelOtherText").value;
+const errorBox = document.getElementById("cancelError");
+const errorText = document.getElementById("cancelErrorText");
+
+if (!validateReason(reason, details, errorBox, errorText)) return;
+
 
   await submitAction(
     this,
@@ -791,10 +775,23 @@ function validateCancelInputs() {
   );
 });
 
-    document.getElementById('returnForm')?.addEventListener('submit', async function(e) {
-      e.preventDefault();
-      await submitAction(this, '/order/' + this.orderId.value + '/item/' + this.itemId.value + '/return', 'return');
-    });
+ document.getElementById('returnForm')?.addEventListener('submit', async function(e) {
+  e.preventDefault();
+
+  const reason = document.getElementById("returnReasonSelect").value;
+  const details = document.getElementById("otherReasonText").value;
+  const errorBox = document.getElementById("returnError");
+  const errorText = document.getElementById("returnErrorText");
+
+  if (!validateReason(reason, details, errorBox, errorText)) return;
+
+  await submitAction(
+    this,
+    `/order/${this.orderId.value}/item/${this.itemId.value}/return`,
+    'return'
+  );
+});
+
 
     // Show textarea only if reason = Other
     document.getElementById("returnReasonSelect")?.addEventListener("change", function () {
@@ -843,7 +840,7 @@ function validateCancelInputs() {
     throw new Error(errMsg);
   }
 } catch (error) {
-  console.error("❌ Error:", error);
+  console.error(" Error:", error);
   showNotification('Error: ' + (error.message || 'Something went wrong'), 'error');
   submitBtn.innerHTML = originalText;
   submitBtn.disabled = false;
@@ -884,29 +881,6 @@ function validateCancelInputs() {
         });
       }
     });
-function validateCancelReasonRealtime() {
-  const reason = document.getElementById("cancelReasonSelect")?.value || "";
-  const detailsEl = document.getElementById("cancelOtherText");
-  const details = detailsEl?.value.trim() || "";
-
-  // Allow letters, numbers, spaces, basic punctuation
-  const validTextRegex = /^[a-zA-Z0-9\s.,\-()]*$/;
-
-  // If reason is "Other", details are mandatory
-  if (reason === "Other") {
-    if (details.length < 5) {
-      detailsEl.classList.add("border-red-500");
-      return false;
-    }
-    if (!validTextRegex.test(details)) {
-      detailsEl.classList.add("border-red-500");
-      return false;
-    }
-  }
-
-  detailsEl?.classList.remove("border-red-500");
-  return true;
-}
 
 document.getElementById("cancelReasonSelect")?.addEventListener("change", function () {
   const box = document.getElementById("cancelOtherBox");
@@ -920,12 +894,47 @@ document.getElementById("cancelReasonSelect")?.addEventListener("change", functi
     textarea.classList.remove("border-red-500");
   }
 });
+function validateReason(reason, details, errorBox, errorTextEl) {
+  details = (details || "").trim();
 
-document.getElementById("cancelOtherText")?.addEventListener("input", function () {
-  validateCancelReasonRealtime();
-});
+  const mustHaveLetter = /[a-zA-Z]/;
+  const allowedRegex = /^[a-zA-Z0-9\s.,\-()]+$/;
+
+  if (reason === "Other") {
+    if (!details) {
+      showFieldError("Please enter additional details.", errorBox, errorTextEl);
+      return false;
+    }
+
+    if (details.length < 10) {
+      showFieldError("Details must be at least 10 characters.", errorBox, errorTextEl);
+      return false;
+    }
+
+    if (!allowedRegex.test(details) || !mustHaveLetter.test(details)) {
+      showFieldError("Invalid input. Meaningful text only.", errorBox, errorTextEl);
+      return false;
+    }
+  }
+
+  hideFieldError(errorBox);
+  return true;
+}
+
+function showFieldError(msg, box, textEl) {
+  textEl.textContent = msg;
+  box.classList.remove("hidden");
+}
+
+function hideFieldError(box) {
+  box.classList.add("hidden");
+}
+
+
 
   </script>
+
+  
 </body>
 </html>
 

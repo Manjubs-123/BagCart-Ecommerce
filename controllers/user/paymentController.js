@@ -1,4 +1,4 @@
-// controllers/paymentController.js
+
 import Razorpay from "razorpay";
 import crypto from "crypto";
 import Order from "../../models/orderModel.js";
@@ -15,7 +15,7 @@ export const razorpayInstance = new Razorpay({
 
 
 
-// Create server-side razorpay order
+
 export const createRazorpayOrder = async (req, res) => {
     try {
         let { orderId, amount } = req.body;
@@ -26,14 +26,14 @@ export const createRazorpayOrder = async (req, res) => {
             return res.json({ success: false, message: "Amount missing " });
         }
 
-        //  NECESSARY FIX
+       
         const dbOrder = await Order.findById(orderId);
         if (!dbOrder) {
             return res.json({ success: false, message: "Order not found" });
         }
 
         const rzpOrder = await razorpayInstance.orders.create({
-            amount: Math.round(amount * 100),   // convert rupees to paise
+            amount: Math.round(amount * 100),   
             currency: "INR",
             receipt: String(orderId),
         });
@@ -41,7 +41,7 @@ export const createRazorpayOrder = async (req, res) => {
         res.json({
             success: true,
             razorpayOrderId: rzpOrder.id,
-            amount: rzpOrder.amount / 100, // back to rupees
+            amount: rzpOrder.amount / 100, 
             currency: rzpOrder.currency,
             orderId
         });
@@ -57,12 +57,12 @@ export const verifyRazorpayPayment = async (req, res) => {
   try {
     const { razorpayOrderId, razorpayPaymentId, razorpaySignature, orderId, failed, details } = req.body;
 
-    // Fetch order
+    
     const order = await Order.findById(orderId);
     if(!order) return res.status(404).json({ success: false, message: "Order not found" });
 
     if(failed) {
-      // Payment failed — update order
+      
       order.payment.status = "FAILED";
       await order.save();
       return res.json({ success: false, message: "Payment failed" });
@@ -79,15 +79,10 @@ order.razorpayOrderId = razorpayOrderId;
 order.razorpayPaymentId = razorpayPaymentId;
 order.razorpaySignature = razorpaySignature;
 
-order.orderStatus = "processing"; // or placed
-    //   order.payment.status = "PAID";
-    //   order.payment.razorpayPaymentId = razorpayPaymentId;
-    //   order.payment.razorpaySignature = razorpaySignature;
-    //   order.status = "PLACED";
+order.orderStatus = "processing"; 
       order.updatedAt = new Date();
       await order.save();
-      // You may also reduce stock here (or reduce stock when order created earlier).
-      // For safety, decrement stock now using transaction.
+    
       await decrementStockForOrder(order);
       return res.json({ success: true });
     } else {
@@ -110,7 +105,6 @@ async function decrementStockForOrder(order) {
       const prod = await Product.findById(item.product).session(session);
       if (!prod) throw new Error(`Product ${item.name} not found`);
       if (prod.stock < item.qty) {
-        // handle oversell policy — either allow backorder or throw
         throw new Error(`Insufficient stock for ${prod.name}`);
       }
       prod.stock = prod.stock - item.qty;
@@ -121,7 +115,6 @@ async function decrementStockForOrder(order) {
   } catch (err) {
     await session.abortTransaction();
     session.endSession();
-    // Depending on policy, you may refund or mark order as holding
     throw err;
   }
 }
@@ -142,14 +135,12 @@ export const razorpayWebhook = async (req, res) => {
 
     const payload = JSON.parse(body.toString());
 
-    // handle events:
 
     if (payload.event === 'payment.captured') {
       const { payment } = payload.payload;
       const razorpayOrderId = payment.entity.order_id;
       const razorpayPaymentId = payment.entity.id;
 
-      // Find our Order by razorpayOrderId and mark PAID if not already
 
       const order = await Order.findOne({ "payment.razorpayOrderId": razorpayOrderId });
       if (order && order.payment.status !== "PAID") {
@@ -157,10 +148,9 @@ export const razorpayWebhook = async (req, res) => {
         order.payment.razorpayPaymentId = razorpayPaymentId;
         order.status = "PLACED";
         await order.save();
-        // decrement stock if not already decremented
       }
     } else if (payload.event === 'payment.failed') {
-      // mark order failed
+      
     }
     
 
@@ -178,12 +168,10 @@ export const retryPayment = async (req, res) => {
 
     if (!order) return res.status(404).send("Order not found");
 
-    // ✅ CRITICAL FIX: block retry if already paid
     if (order.paymentStatus === "paid") {
         return res.redirect(`/order/confirmation/${order._id}`);
     }
 
-    // Create fresh Razorpay order ONLY if unpaid
     const rzpOrder = await razorpayInstance.orders.create({
         amount: Math.round(order.totalAmount * 100),
         currency: "INR",

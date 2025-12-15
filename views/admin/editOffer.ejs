@@ -413,18 +413,18 @@ serverCategories.forEach(c => {
 
 document.addEventListener("DOMContentLoaded", function () {
     /* ---------------------------
-       1. Force UI to select type
+       Force UI to select type
        --------------------------- */
     selectType(currentOfferType);
 
     /* ---------------------------
-       2. Initialize hidden inputs with server data
+        Initialize hidden inputs with server data
        --------------------------- */
     document.getElementById("productsInput").value = [...selectedProducts].join(",");
     document.getElementById("categoriesInput").value = [...selectedCategories].join(",");
 
     /* ---------------------------
-       3. Display selected PRODUCTS
+        Display selected PRODUCTS
        --------------------------- */
     const pContainer = document.getElementById("selectedProducts");
     const pCount = document.getElementById("productCount");
@@ -452,7 +452,7 @@ document.addEventListener("DOMContentLoaded", function () {
     pClear.disabled = selectedProducts.size === 0;
 
     /* ---------------------------
-       4. Display selected CATEGORIES
+       Display selected CATEGORIES
        --------------------------- */
     const cContainer = document.getElementById("selectedCategories");
     const cCount = document.getElementById("categoryCount");
@@ -480,7 +480,7 @@ document.addEventListener("DOMContentLoaded", function () {
     cClear.disabled = selectedCategories.size === 0;
 
     /* ---------------------------
-       5. Initialize toggle switch
+        Initialize toggle switch
        --------------------------- */
     const checkbox = document.getElementById('activeCheckbox');
     const toggleLabel = checkbox.nextElementSibling;
@@ -503,7 +503,7 @@ document.addEventListener("DOMContentLoaded", function () {
     });
 
     /* ---------------------------
-       6. Set minimum dates and validation
+        Set minimum dates and validation
        --------------------------- */
     const now = new Date();
     const today = new Date(now.getTime() - now.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
@@ -516,7 +516,7 @@ document.addEventListener("DOMContentLoaded", function () {
     }, 100);
     
     /* ---------------------------
-       7. Setup submit button - FIXED
+     Setup submit button - FIXED
        --------------------------- */
     const submitBtn = document.getElementById('submitBtn');
     // Remove any existing listeners first
@@ -529,7 +529,7 @@ document.addEventListener("DOMContentLoaded", function () {
     submitBtn.style.opacity = '1';
     
     /* ---------------------------
-       8. Setup real-time validation
+        Setup real-time validation
        --------------------------- */
     const nameInput = document.querySelector('input[name="name"]');
     const discountInput = document.querySelector('input[name="discountValue"]');

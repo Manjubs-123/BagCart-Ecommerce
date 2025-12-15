@@ -520,7 +520,7 @@
         
         const invoiceUrl = `/order/${mongoOrderId}/item/${itemId}/invoice`;
 
-        console.log("📤 Downloading invoice:", { mongoOrderId, itemId });
+        console.log(" Downloading invoice:", { mongoOrderId, itemId });
 
         const link = document.createElement("a");
         link.href = invoiceUrl;
@@ -552,7 +552,7 @@
     </script>
 
     <script>
-  // 🚫 Prevent back navigation to payment pages
+  //  Prevent back navigation to payment pages
   if (window.history && window.history.replaceState) {
     window.history.replaceState(null, "", window.location.href);
   }

@@ -578,7 +578,7 @@ function validateName(input) {
         hideError('nameErrorMessage');
     }
 
-    return isValid; //  NO validateForm() here
+    return isValid; 
 }
 
 
@@ -596,7 +596,7 @@ function validateDiscount(input) {
         hideError('discountErrorMessage');
     }
 
-    return isValid; // NO validateForm()
+    return isValid; 
 }
 
 function validateDates() {
@@ -620,7 +620,7 @@ function validateDates() {
         hideError('dateErrorMessage');
     }
 
-    return fromValid && toValid; //  NO validateForm()
+    return fromValid && toValid;
 }
 
 // ===========================================
@@ -1056,7 +1056,7 @@ document.getElementById("offerForm").addEventListener("submit", function(e) {
         }
     });
     
-    // Prepare form data as JSON (so express.json() can parse it)
+    // Prepare form data as JSON 
 const formData = new FormData(this);
 const payload = Object.fromEntries(formData.entries());
 

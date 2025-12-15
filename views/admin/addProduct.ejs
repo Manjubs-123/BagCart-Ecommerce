@@ -455,7 +455,7 @@
                 return false;
             }
 
-            // Only alphabets + single spaces
+            // Only alphabets and single spaces
             const alphabetRegex = /^[A-Za-z ]+$/;
             if (!alphabetRegex.test(value)) {
                 input.classList.add('input-error');

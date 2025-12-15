@@ -17,7 +17,7 @@ export const getSignup = (req, res) => {
   res.render("user/signup", { error: null });
 };
 
-// Handle Signup Submission 
+
 export const signupUser = async (req, res) => {
   try {
     if (mongoose.connection.readyState !== 1) {
@@ -29,7 +29,7 @@ export const signupUser = async (req, res) => {
 
     const { name, email, password, confirmPassword } = req.body;
 
-    //  Validation 
+ 
     if (!name?.trim()) return res.render("user/signup", { error: "Name is required." });
     if (name.trim().length < 6) return res.render("user/signup", { error: "Name must be at least 6 characters." });
     if (!/^[a-zA-Z\s]+$/.test(name)) return res.render("user/signup", { error: "Name can contain only alphabets." });
@@ -73,11 +73,11 @@ if (!emailRegex.test(email)) {
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
     req.session.otp = otp;
     req.session.email = email;
-    req.session.otpExpires = Date.now() + 1 * 60 * 1000; // 5 minutes
+    req.session.otpExpires = Date.now() + 1 * 60 * 1000; 
     req.session.pendingEmail = email;
 
     //  Send OTP via email 
-    await sendOtpMail(email, otp); // Directly use the imported function
+    await sendOtpMail(email, otp); 
 
     console.log(`OTP sent to ${email}: ${otp}`);
     
@@ -113,7 +113,7 @@ export const postVerifyOtp = async (req, res) => {
     const { otp: storedOtp, otpExpires, pendingEmail } = req.session;
     const email = pendingEmail;
 
-    // EXPIRED OTP
+    
     if (!storedOtp || Date.now() > otpExpires) {
       return res.render("user/verifyOtp", { 
         email, 
@@ -124,7 +124,7 @@ export const postVerifyOtp = async (req, res) => {
       });
     }
 
-    // WRONG OTP
+    
     if (otp !== storedOtp) {
       return res.render("user/verifyOtp", { 
         email, 
@@ -135,7 +135,7 @@ export const postVerifyOtp = async (req, res) => {
       });
     }
 
-    // SUCCESS
+   
     const user = await User.findOne({ email });
     if (!user)
       return res.render("user/signup", { error: "User not found. Please sign up again." });
@@ -164,7 +164,7 @@ export const postVerifyOtp = async (req, res) => {
       cartCount: user.cart?.items?.length || 0
     };
 
-    // Clean session
+
     delete req.session.otp;
     delete req.session.otpExpires;
     delete req.session.pendingEmail;
@@ -211,7 +211,7 @@ export const resendOtp = async (req, res) => {
     await sendOtpMail(email, newOtp);
     console.log(`Resent Signup OTP to ${email}: ${newOtp}`);
 
-    // IMPORTANT FIX
+
     req.session.save((err) => {
       if (err) {
         console.error("Session save error:", err);
@@ -259,7 +259,7 @@ export const getLogin = (req, res) => {
 };
 
 
-//  Handle Login (with block check)
+
 export const loginUser = async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -281,7 +281,7 @@ export const loginUser = async (req, res) => {
   }
 };
 
-//  Show Landing Page (Home)
+
 export const showHomePage = async (req, res) => {
   return renderLandingPage(req, res);
 };
@@ -319,30 +319,30 @@ export const updateUserProfile = async (req, res) => {
     const DEFAULT_AVATAR_ID = "AdobeStock_1185421594_Preview_cvfm1v";
 
 
-    let isUpdated = false; // ⭐ KEY FLAG
+    let isUpdated = false; 
 
-    // NAME CHANGE CHECK
+   
     if (name && name !== user.name) {
       user.name = name;
       isUpdated = true;
     }
 
-    // PHONE CHANGE CHECK
+   
     if (phone !== user.phone) {
       user.phone = phone;
       isUpdated = true;
     }
 
 
-    // If user uploaded new image
+   
     if (req.file) {
 
-      // DELETE OLD IMAGE
+      
       if (user.profileImage?.public_id&& user.profileImage.public_id!==DEFAULT_AVATAR_ID) {
         await cloudinary.uploader.destroy(user.profileImage.public_id);
       }
 
-      // UPLOAD NEW ONE
+     
       const result = await cloudinary.uploader.upload(req.file.path, {
         folder: "profiles",
       });
@@ -356,7 +356,7 @@ export const updateUserProfile = async (req, res) => {
       isUpdated = true;
     }
 
-     // ❌ NOTHING CHANGED
+     
     if (!isUpdated) {
       return res.json({
         success: false,
@@ -390,7 +390,7 @@ export const getChangeEmailPage = (req, res) => {
 
 
 
-// Send OTP for Email Change
+
 export const sendChangeEmailOtp = async (req, res) => {
   try {
     const userId = req.session.user.id;
@@ -417,20 +417,20 @@ export const sendChangeEmailOtp = async (req, res) => {
       });
     }
 
-    // Generate OTP
+  
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
 
-    // Store in session
+   
     req.session.changeEmailOtp = otp;
     req.session.changeEmailNewEmail = newEmail;
-    req.session.changeEmailOtpExpires = Date.now() + (1 * 60 * 1000); // 1 MINUTE
-    req.session.changeEmailCooldown = Date.now() + (60 * 1000); // RESEND COOLDOWN 1 MINUTE
+    req.session.changeEmailOtpExpires = Date.now() + (1 * 60 * 1000); 
+    req.session.changeEmailCooldown = Date.now() + (60 * 1000); 
 
-    // Send email
+    
     await sendOtpMail(newEmail, otp);
 
-    // LOGGGG This prints OTP in VS CODE TERMINAL
-    console.log("▶ Email Change OTP Sent");
+   
+    console.log("Email Change OTP Sent");
     console.log("New Email:", newEmail);
     console.log("OTP:", otp);
     console.log("Expires At:", new Date(req.session.changeEmailOtpExpires));
@@ -448,7 +448,7 @@ export const resendChangeEmailOtp = async (req, res) => {
   try {
     const now = Date.now();
 
-    // Cooldown not completed
+    
     if (now < req.session.changeEmailCooldown) {
       const remaining = Math.ceil((req.session.changeEmailCooldown - now) / 1000);
       return res.json({
@@ -471,7 +471,7 @@ export const resendChangeEmailOtp = async (req, res) => {
 
     await sendOtpMail(newEmail, otp);
 
-    console.log("▶ RESEND Email Change OTP");
+    console.log("RESEND Email Change OTP");
     console.log("Email:", newEmail);
     console.log("New OTP:", otp);
 
@@ -493,31 +493,31 @@ export const verifyChangedEmailOtp = async (req, res) => {
       return res.json({ success: false, message: "OTP is required" });
     }
 
-    // Expired?
+   
     if (Date.now() > req.session.changeEmailOtpExpires) {
       return res.json({ success: false, message: "OTP expired" });
     }
 
-    // Incorrect?
+    
     if (otp !== req.session.changeEmailOtp) {
       return res.json({ success: false, message: "Invalid OTP" });
     }
 
     const newEmail = req.session.changeEmailNewEmail;
 
-    // Update DB
+   
     await User.findByIdAndUpdate(userId, { email: newEmail });
 
-    // Update session user
+   
     req.session.user.email = newEmail;
 
-    // Clear OTP sessions
+  
     delete req.session.changeEmailOtp;
     delete req.session.changeEmailNewEmail;
     delete req.session.changeEmailOtpExpires;
     delete req.session.changeEmailCooldown;
 
-    console.log("✔ Email Updated Successfully to:", newEmail);
+    console.log("Email Updated Successfully to:", newEmail);
 
     return res.json({ success: true, newEmail });
 
@@ -579,12 +579,12 @@ export const addAddress = async (req, res) => {
 
         const user = await User.findById(userId);
 
-        // If first address set default
+      
         if (user.addresses.length === 0) {
             newAddress.isDefault = true;
         }
 
-        // If setting new default  remove default from others
+      
         if (newAddress.isDefault) {
             user.addresses.forEach(addr => addr.isDefault = false);
         }
@@ -610,10 +610,10 @@ export const updateAddress = async (req, res) => {
         const address = user.addresses.id(addressId);
         if (!address) return res.json({ success: false, message: "Address not found" });
 
-        // update fields
+       
         Object.assign(address, req.body);
 
-        // if default  update all
+      
         if (req.body.isDefault) {
             user.addresses.forEach(a => a.isDefault = false);
             address.isDefault = true;
@@ -633,9 +633,6 @@ export const deleteAddress = async (req, res) => {
         const userId = req.session.user.id;   
         const addressId = req.params.id;
 
-
-//         console.log("SESSION USER =", req.session.user);
-// console.log("ADDRESS ID =", req.params.id);
 
         const user = await User.findById(userId);
         if (!user) {
@@ -685,13 +682,10 @@ export const setDefaultAddress = async (req, res) => {
       return res.status(404).json({ success: false, message: "User not found" });
     }
 
-    // Ensure addresses is an array
     if (!Array.isArray(user.addresses)) user.addresses = [];
 
-    // Clear default flags
     user.addresses.forEach(a => { a.isDefault = false; });
 
-    // Mongoose subdoc lookup works for arrays of subdocs
     const target = user.addresses.id ? user.addresses.id(addressId) : user.addresses.find(a => a._id && a._id.toString() === addressId);
 
     if (!target) {
@@ -714,7 +708,7 @@ export const setDefaultAddress = async (req, res) => {
 
 export const getSecuritySettings = async (req, res) => {
   try {
-    // console.log("REACHED SECURITY PAGE");
+   
 
     if (!req.session.user) return res.redirect('/user/login');
 
@@ -744,7 +738,6 @@ export const checkCurrentPassword = async (req, res) => {
 
         if (!user) return res.json({ valid: false });
 
-        // BLOCK CURRENT PASSWORD CHECK FOR GOOGLE USERS
         if (user.googleId) {
             return res.json({ valid: false });
         }
@@ -768,7 +761,6 @@ export const changePassword = async (req, res) => {
             return res.json({ success: false, message: "User not found" });
         }
 
-        // BLOCK PASSWORD CHANGE FOR GOOGLE USERS
         if (user.googleId) {
             return res.json({
                 success: false,
@@ -777,13 +769,11 @@ export const changePassword = async (req, res) => {
 
         }
 
-        // Compare old password
         const isMatch = await bcrypt.compare(currentPassword, user.password);
         if (!isMatch) {
             return res.json({ success: false, message: "Incorrect current password" });
         }
 
-        // Hash new password
         const hashed = await bcrypt.hash(newPassword, 10);
         user.password = hashed;
         await user.save();
@@ -818,10 +808,10 @@ export const getWishlistPage = async (req, res) => {
         for (let product of user.wishlist) {
             let productObj = product.toObject();
 
-            // APPLY SAME OFFER LOGIC AS PRODUCT DETAILS PAGE
+
             const offerData = await applyOfferToProduct(productObj);
 
-            // Merge updated variant pricing
+            
             if (offerData && offerData.variants) {
                 productObj.variants = productObj.variants.map((v, index) => ({
                     ...v,

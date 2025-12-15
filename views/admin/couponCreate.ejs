@@ -294,8 +294,7 @@ function validateCode() {
     return false;
   }
 
-  // ❌ Reject special symbols & spaces
-  // ✅ Allow only A–Z and 0–9
+
   const couponRegex = /^[A-Z0-9]+$/;
 
   if (!couponRegex.test(code)) {
@@ -306,7 +305,6 @@ function validateCode() {
     return false;
   }
 
-  // ✅ Valid
   input.value = code; // normalize input
   clearError(errorElement);
   return true;
