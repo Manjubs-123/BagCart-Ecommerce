@@ -30,7 +30,16 @@ router.get("/order/payment-failed/:orderId", async (req, res) => {
     const orderId = req.params.orderId;
 
     // ✅ Fetch order — required to get display ID
-    const order = await Order.findByIdAndUpdate(
+    
+
+    const order = await Order.findById({_id:orderId})
+    // console.log(order)
+    if(order.paymentStatus === 'paid'){
+        console.log('iam the cuprit')
+         return res.redirect(`/order/confirmation/${order._id}`);
+    }
+
+    const newOrder = await Order.findByIdAndUpdate(
         orderId,
         {
             paymentStatus: "failed",
@@ -39,12 +48,12 @@ router.get("/order/payment-failed/:orderId", async (req, res) => {
         { new: true }
     );
 
-    if (!order) return res.status(404).send("Order not found");
+    if (!newOrder) return res.status(404).send("Order not found");
 
     // ✅ Send both values with SAME names used in EJS
     res.render("user/orderFailure", {
-        orderMongoId: order._id,       // used for retry button route
-        orderDisplayId: order.orderId  // shown to user
+        orderMongoId: newOrder._id,       // used for retry button route
+        orderDisplayId: newOrder.orderId  // shown to user
     });
 });
 

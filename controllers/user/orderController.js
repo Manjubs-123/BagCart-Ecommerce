@@ -16,135 +16,140 @@ const generateOrderId = () => {
   return "BH-" + Math.floor(100000 + Math.random() * 900000).toString();
 };
 export const createOrder = async (req, res) => {
-    try {
-        const userId = req.session.user.id;
-      const { addressId, paymentMethod } = req.body;
+  try {
+    const userId = req.session.user.id;
+    const { addressId, paymentMethod } = req.body;
 
-if (!addressId && !paymentMethod) {
-  return res.json({
-    success: false,
-    message: "Please select a delivery address and payment method"
-  });
-}
-
-if (!addressId) {
-  return res.json({
-    success: false,
-    message: "Delivery address is not selected"
-  });
-}
-
-if (!paymentMethod) {
-  return res.json({
-    success: false,
-    message: "Payment method is not selected"
-  });
-}
-
-
-        const cart = await Cart.findOne({ user: userId })
-            .populate("items.product");
-
-        if (!cart || cart.items.length === 0) {
-            return res.json({ success: false, message: "Cart empty" });
-        }
-
-        const user = await User.findById(userId);
-        const address = user.addresses.id(addressId);
-
-        if (!address) {
-            return res.json({ success: false, message: "Address not found" });
-        }
-
-        for (let item of cart.items) {
-            const variant = item.product.variants[item.variantIndex];
-
-            const offerData = await applyOfferToProduct({
-                ...item.product.toObject(),
-                variants: [variant]
-            });
-
-            const offerVariant = offerData.variants[0];
-
-            item._finalPrice = offerVariant.finalPrice;     
-            item._regularPrice = offerVariant.regularPrice; 
-        }
-
-        const orderItems = cart.items.map(item => {
-            const variant = item.product.variants[item.variantIndex];
-
-            return {
-                product: item.product._id,
-                variantIndex: item.variantIndex,
-                quantity: item.quantity,
-
-                price: item._finalPrice,
-                regularPrice: item._regularPrice,
-
-                color: variant.color,
-                image: variant.images?.[0]?.url || ""
-            };
-        });
-
-        const subtotal = orderItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
-        const tax = subtotal * 0.1;
-        const shippingFee = subtotal > 500 ? 0 : 50;
-        const totalAmount = subtotal + tax + shippingFee;
-
-        const customOrderId = generateOrderId();
-
-        const order = await Order.create({
-            orderId: customOrderId,
-            user: userId,
-            items: orderItems,
-            shippingAddress: address,
-            paymentMethod,
-            subtotal,
-            tax,
-            shippingFee,
-            totalAmount,
-            paymentStatus: paymentMethod === "cod" ? "pending" : "paid"
-        });
-
-        for (let item of cart.items) {
-            const product = await Product.findById(item.product._id);
-            if (!product) continue;
-
-            product.variants[item.variantIndex].stock -= item.quantity;
-            product.markModified(`variants.${item.variantIndex}.stock`);
-            await product.save();
-        }
-
-        cart.items = [];
-        await cart.save();
-
-        return res.json({
-            success: true,
-            orderId: order._id,
-            customOrderId: order.orderId
-        });
-
-    } catch (err) {
-        console.error("ORDER ERROR:", err);
-        return res.json({ success: false, message: "Order failed" });
+    if (!addressId && !paymentMethod) {
+      return res.json({
+        success: false,
+        message: "Please select a delivery address and payment method"
+      });
     }
+
+    if (!addressId) {
+      return res.json({
+        success: false,
+        message: "Delivery address is not selected"
+      });
+    }
+
+    if (!paymentMethod) {
+      return res.json({
+        success: false,
+        message: "Payment method is not selected"
+      });
+    }
+
+
+    const cart = await Cart.findOne({ user: userId })
+      .populate("items.product");
+
+    if (!cart || cart.items.length === 0) {
+      return res.json({ success: false, message: "Cart empty" });
+    }
+
+    const user = await User.findById(userId);
+    const address = user.addresses.id(addressId);
+
+    if (!address) {
+      return res.json({ success: false, message: "Address not found" });
+    }
+
+    for (let item of cart.items) {
+      const variant = item.product.variants[item.variantIndex];
+
+      const offerData = await applyOfferToProduct({
+        ...item.product.toObject(),
+        variants: [variant]
+      });
+
+      const offerVariant = offerData.variants[0];
+
+      item._finalPrice = offerVariant.finalPrice;
+      item._regularPrice = offerVariant.regularPrice;
+    }
+
+    const orderItems = cart.items.map(item => {
+      const variant = item.product.variants[item.variantIndex];
+
+      return {
+        product: item.product._id,
+        variantIndex: item.variantIndex,
+        quantity: item.quantity,
+
+        price: item._finalPrice,
+        regularPrice: item._regularPrice,
+
+        color: variant.color,
+        image: variant.images?.[0]?.url || ""
+      };
+    });
+
+    const subtotal = orderItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
+    const tax = subtotal * 0.1;
+    const shippingFee = subtotal > 500 ? 0 : 50;
+    const totalAmount = subtotal + tax + shippingFee;
+
+    const customOrderId = generateOrderId();
+
+    const order = await Order.create({
+      orderId: customOrderId,
+      user: userId,
+      items: orderItems,
+      shippingAddress: address,
+      paymentMethod,
+      subtotal,
+      tax,
+      shippingFee,
+      totalAmount,
+      paymentStatus:
+        paymentMethod === "cod"
+          ? "pending"
+          : paymentMethod === "wallet"
+            ? "paid"
+            : "pending"
+    });
+
+    for (let item of cart.items) {
+      const product = await Product.findById(item.product._id);
+      if (!product) continue;
+
+      product.variants[item.variantIndex].stock -= item.quantity;
+      product.markModified(`variants.${item.variantIndex}.stock`);
+      await product.save();
+    }
+
+    cart.items = [];
+    await cart.save();
+
+    return res.json({
+      success: true,
+      orderId: order._id,
+      customOrderId: order.orderId
+    });
+
+  } catch (err) {
+    console.error("ORDER ERROR:", err);
+    return res.json({ success: false, message: "Order failed" });
+  }
 };
 
 export const getOrderConfirmation = async (req, res) => {
   try {
     const mongoOrderId = req.params.id;
-    
+
     const order = await Order.findById(mongoOrderId)
-      .populate({ 
+      .populate({
         path: "items.product",
-        select: "name brand variants images" 
+        select: "name brand variants images"
       })
       .lean();
 
     if (!order) return res.redirect("/order/orders");
-      if (order.paymentStatus === "paid") {
-    return res.redirect(`/order/success/${orderId}`);
-  }
+    //     if (order.paymentStatus === "paid") {
+    //   return res.redirect(`/order/success/${orderId}`);
+    // }
 
     const items = order.items.map(item => {
 
@@ -173,7 +178,7 @@ export const getOrderConfirmation = async (req, res) => {
 
     const orderDisplayId = order.orderId;
 
-    
+
     const orderForRender = {
       ...order,
       items,
@@ -206,7 +211,7 @@ export const getMyOrders = async (req, res) => {
     orders = orders.map(order => {
       const fixedItems = order.items.map((item, index) => ({
         ...item,
-        itemOrderId: item.itemOrderId || `${order.orderId}-${index + 1}` 
+        itemOrderId: item.itemOrderId || `${order.orderId}-${index + 1}`
       }));
 
       return {
@@ -220,7 +225,7 @@ export const getMyOrders = async (req, res) => {
     res.render("user/myOrders", {
       orders,
       user: req.session.user,
-      ordersCount,        
+      ordersCount,
       currentPage: "orders"
     });
 
@@ -229,7 +234,7 @@ export const getMyOrders = async (req, res) => {
     res.status(500).render("user/myOrders", {
       orders: [],
       user: req.session.user,
-      ordersCount: 0,     
+      ordersCount: 0,
       currentPage: "orders"
     });
   }
@@ -238,7 +243,7 @@ export const getMyOrders = async (req, res) => {
 
 export const downloadInvoice = async (req, res) => {
   try {
-    const { orderId } = req.params; 
+    const { orderId } = req.params;
     const userId = req.session.user?.id;
 
     const order = await Order.findOne({ _id: orderId, user: userId })
@@ -287,7 +292,7 @@ export const downloadInvoice = async (req, res) => {
 
     order.items.forEach((item, index) => {
       const itemOrderId = item.itemOrderId || `${displayOrderId}-${index + 1}`;
-      
+
       doc.text(`Item ${index + 1}:`);
       doc.text(`Item Order ID: ${itemOrderId}`);
       doc.text(`Product: ${item.product?.name}`);
@@ -359,7 +364,7 @@ export const cancelItem = async (req, res) => {
     const isPrepaid =
       order.paymentMethod === "wallet" ||
       (order.paymentMethod === "razorpay" &&
-       ["paid", "partial_refunded"].includes(order.paymentStatus));
+        ["paid", "partial_refunded"].includes(order.paymentStatus));
 
     /* ---------------- REFUND BLOCK (CORRECTED) ---------------- */
     if (isPrepaid && !item.refundAmount) {
@@ -370,12 +375,12 @@ export const cancelItem = async (req, res) => {
 
       /* --------- COUPON SHARE (CORRECTED FORMULA) -------- */
       let itemCouponShare = 0;
-      
+
       if (order.coupon && order.coupon.discountAmount > 0) {
         const baseSubtotal = order.coupon.subtotalBeforeCoupon || order.subtotal;
-        
+
         if (baseSubtotal > 0) {
-         
+
           itemCouponShare = (itemTotal / baseSubtotal) * order.coupon.discountAmount;
         }
       }
@@ -384,10 +389,10 @@ export const cancelItem = async (req, res) => {
 
       /* --------- TAX SHARE (CORRECTED) -------- */
       let itemTaxShare = 0;
-      
+
       // Tax is calculated on (subtotal - coupon), so we need item's share of that
       const totalAfterCoupon = order.subtotal - (order.coupon?.discountAmount || 0);
-      
+
       if (totalAfterCoupon > 0 && order.tax > 0) {
         itemTaxShare = (itemAfterCoupon / totalAfterCoupon) * order.tax;
       }
@@ -485,10 +490,10 @@ export const cancelItem = async (req, res) => {
     await session.abortTransaction();
     session.endSession();
     console.error("Cancel Error:", err);
-    return res.status(500).json({ 
-      success: false, 
-      message: "Something went wrong", 
-      error: err.message 
+    return res.status(500).json({
+      success: false,
+      message: "Something went wrong",
+      error: err.message
     });
   }
 };
@@ -516,7 +521,7 @@ export const returnItem = async (req, res) => {
       return res.json({ success: false, message: "Item not found" });
     }
 
-  
+
     if (item.status === "cancelled") {
       return res.json({ success: false, message: "Cancelled items cannot be returned" });
     }
@@ -529,12 +534,12 @@ export const returnItem = async (req, res) => {
       return res.json({ success: false, message: "Return already requested" });
     }
 
-    
+
     if (item.status !== "delivered") {
       return res.json({ success: false, message: "Only delivered items can be returned" });
     }
 
-   
+
     item.status = "return-requested";
     item.returnReason = reason;
     item.returnDetails = details || "";

@@ -1,0 +1,15 @@
+export const blockPaidOrder = async (req, res, next) => {
+  try {
+    const order = await Order.findById(req.params.id);
+    if (!order) return res.redirect("/order/orders");
+
+    if (order.paymentStatus === "paid") {
+      return res.redirect(`/order/success/${order._id}`);
+    }
+
+    next();
+  } catch (err) {
+    console.error("blockPaidOrder error:", err);
+    return res.redirect("/order/orders");
+  }
+};
