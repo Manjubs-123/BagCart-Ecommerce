@@ -388,19 +388,8 @@ router.post("/orders", async (req, res) => {
       }
     }
 
-    /* ------------------------------
-       STOCK CHECK (NO DEDUCTION)
-    ------------------------------ */
-    for (const cartItem of cart.items) {
-      const prod = await Product.findById(cartItem.product._id);
-      const variant = prod.variants[cartItem.variantIndex];
-      if (variant.stock < cartItem.quantity) {
-        return res.json({
-          success: false,
-          message: `Only ${variant.stock} left for ${prod.name}`
-        });
-      }
-    }
+
+
 
     /* ------------------------------
        CREATE ORDER
@@ -425,6 +414,24 @@ router.post("/orders", async (req, res) => {
        WALLET PAYMENT FINALIZE
     ------------------------------ */
     if (paymentMethod === "wallet") {
+
+         /* ------------------------------
+   STOCK DEDUCTION (FINAL)
+------------------------------ */
+for (const cartItem of cart.items) {
+  const product = await Product.findById(cartItem.product._id);
+  if (!product) continue;
+
+  const variant = product.variants[cartItem.variantIndex];
+  if (!variant) continue;
+
+  variant.stock -= cartItem.quantity;
+
+  if (variant.stock < 0) variant.stock = 0;
+
+  product.markModified(`variants.${cartItem.variantIndex}.stock`);
+  await product.save();
+}
       const wallet = await Wallet.findOne({ user: userId });
       wallet.balance -= totalAmount;
       wallet.transactions.push({

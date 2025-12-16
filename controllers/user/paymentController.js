@@ -136,19 +136,51 @@ export const verifyRazorpayPayment = async (req, res) => {
 
 
 // helper: decrement stock using transaction
+// async function decrementStockForOrder(order) {
+//   const session = await Order.startSession();
+//   session.startTransaction();
+//   try {
+//     for (const item of order.items) {
+//       const prod = await Product.findById(item.product).session(session);
+//       if (!prod) throw new Error(`Product ${item.name} not found`);
+//       if (prod.stock < item.qty) {
+//         throw new Error(`Insufficient stock for ${prod.name}`);
+//       }
+//       prod.stock = prod.stock - item.qty;
+//       await prod.save({ session });
+//     }
+//     await session.commitTransaction();
+//     session.endSession();
+//   } catch (err) {
+//     await session.abortTransaction();
+//     session.endSession();
+//     throw err;
+//   }
+// }
+
 async function decrementStockForOrder(order) {
-  const session = await Order.startSession();
+  const session = await Product.startSession();
   session.startTransaction();
+
   try {
     for (const item of order.items) {
-      const prod = await Product.findById(item.product).session(session);
-      if (!prod) throw new Error(`Product ${item.name} not found`);
-      if (prod.stock < item.qty) {
-        throw new Error(`Insufficient stock for ${prod.name}`);
+      const product = await Product.findById(item.product).session(session);
+      if (!product) continue;
+
+      const variant = product.variants[item.variantIndex];
+      if (!variant) continue;
+
+      if (variant.stock < item.quantity) {
+        throw new Error(`Insufficient stock for ${product.name}`);
       }
-      prod.stock = prod.stock - item.qty;
-      await prod.save({ session });
+
+      variant.stock -= item.quantity;
+      if (variant.stock < 0) variant.stock = 0;
+
+      product.markModified(`variants.${item.variantIndex}.stock`);
+      await product.save({ session });
     }
+
     await session.commitTransaction();
     session.endSession();
   } catch (err) {
@@ -157,6 +189,7 @@ async function decrementStockForOrder(order) {
     throw err;
   }
 }
+
 
 
 export const razorpayWebhook = async (req, res) => {

@@ -248,7 +248,23 @@ const allowedFlow = {
 
     if (next === "delivered") {
       item.deliveredDate = new Date();
+        //  ADD THIS BLOCK (ONLY THIS)
+  if (order.paymentMethod === "cod") {
+    const product = await Product.findById(item.product).session(session);
+
+    if (product && product.variants && item.variantIndex != null) {
+      product.variants[item.variantIndex].stock -= item.quantity;
+
+      if (product.variants[item.variantIndex].stock < 0) {
+        product.variants[item.variantIndex].stock = 0;
+      }
+
+      product.markModified(`variants.${item.variantIndex}.stock`);
+      await product.save({ session });
     }
+  }
+}
+    
 
     if (order.items.every((i) => i.status === "delivered")) {
       order.orderStatus = "delivered";
