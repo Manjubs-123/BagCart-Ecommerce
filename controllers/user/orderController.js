@@ -85,8 +85,12 @@ export const createOrder = async (req, res) => {
         image: variant.images?.[0]?.url || ""
       };
     });
+
+
+
 //price calculation
     const subtotal = orderItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
+ 
     const tax = subtotal * 0.1;
     const shippingFee = subtotal > 500 ? 0 : 50;
     const totalAmount = subtotal + tax + shippingFee;
@@ -239,6 +243,89 @@ export const getMyOrders = async (req, res) => {
 };
 
 
+// export const downloadInvoice = async (req, res) => {
+//   try {
+//     const { orderId } = req.params;
+//     const userId = req.session.user?.id;
+
+//     const order = await Order.findOne({ _id: orderId, user: userId })
+//       .populate("items.product")
+//       .lean();
+
+//     if (!order) return res.status(404).send("Order not found");
+
+//     const displayOrderId = order.orderId || order._id;
+//     const fileName = `Invoice-${displayOrderId}.pdf`;
+
+//     res.setHeader("Content-Type", "application/pdf");
+//     res.setHeader("Content-Disposition", `attachment; filename="${fileName}"`);
+
+//     const doc = new PDFDocument({ margin: 40 });
+//     const fontPath = path.join(__dirname, "../../public/fonts/DejaVuSans.ttf");
+
+//     doc.registerFont("Unicode", fontPath);
+//     doc.font("Unicode");
+//     doc.pipe(res);
+
+//     // HEADER
+//     doc.fontSize(22).text("BagHub", { align: "center" });
+//     doc.moveDown();
+//     doc.fontSize(16).text("INVOICE", { align: "center" });
+//     doc.moveDown(2);
+
+//     // ORDER INFO
+//     doc.fontSize(12).text(`Order ID: ${displayOrderId}`);
+//     doc.text(`Date: ${new Date(order.createdAt).toLocaleString()}`);
+//     doc.moveDown(1);
+
+//     // SHIPPING ADDRESS
+//     const sa = order.shippingAddress;
+//     doc.text("Shipping Address:", { underline: true });
+//     doc.text(sa.fullName);
+//     doc.text(sa.addressLine1);
+//     if (sa.addressLine2) doc.text(sa.addressLine2);
+//     doc.text(`${sa.city}, ${sa.state} - ${sa.pincode}`);
+//     doc.text(`Phone: ${sa.phone}`);
+//     doc.moveDown(1);
+
+//     // ITEMS TABLE
+//     doc.fontSize(12).text("Order Items:", { underline: true });
+//     doc.moveDown(0.5);
+
+//     order.items.forEach((item, index) => {
+//       const itemOrderId = item.itemOrderId || `${displayOrderId}-${index + 1}`;
+
+//       doc.text(`Item ${index + 1}:`);
+//       doc.text(`Item Order ID: ${itemOrderId}`);
+//       doc.text(`Product: ${item.product?.name}`);
+//       doc.text(`Color: ${item.color}`);
+//       doc.text(`Quantity: ${item.quantity}`);
+//       doc.text(`Unit Price: ₹${item.price}`);
+//       doc.text(`Item Total: ₹${(item.price * item.quantity).toFixed(2)}`);
+//       doc.moveDown(1);
+//     });
+
+//     // ORDER TOTALS
+//     doc.text(`Subtotal: ₹${order.subtotal.toFixed(2)}`);
+//     if (order.coupon?.discountAmount > 0) {
+//       doc.text(`Coupon Discount: -₹${order.coupon.discountAmount.toFixed(2)}`);
+//     }
+//     doc.text(`Tax: ₹${order.tax.toFixed(2)}`);
+//     doc.text(`Shipping: ₹${order.shippingFee.toFixed(2)}`);
+//     doc.moveDown();
+
+//     doc.fontSize(14).text(`Grand Total: ₹${order.totalAmount.toFixed(2)}`);
+//     doc.moveDown();
+
+//     doc.end();
+
+//   } catch (err) {
+//     console.error("downloadInvoice Error:", err);
+//     res.status(500).send("Could not generate invoice");
+//   }
+// };
+
+
 export const downloadInvoice = async (req, res) => {
   try {
     const { orderId } = req.params;
@@ -263,58 +350,97 @@ export const downloadInvoice = async (req, res) => {
     doc.font("Unicode");
     doc.pipe(res);
 
-    // HEADER
-    doc.fontSize(22).text("BagHub", { align: "center" });
-    doc.moveDown();
-    doc.fontSize(16).text("INVOICE", { align: "center" });
+    /* ---------------- HEADER ---------------- */
+    doc.fontSize(20).text("BagHub", { align: "center" });
+    doc.moveDown(0.5);
+    doc.fontSize(14).text("INVOICE", { align: "center" });
     doc.moveDown(2);
 
-    // ORDER INFO
-    doc.fontSize(12).text(`Order ID: ${displayOrderId}`);
-    doc.text(`Date: ${new Date(order.createdAt).toLocaleString()}`);
-    doc.moveDown(1);
+    /* ---------------- ORDER INFO (2 COLUMN) ---------------- */
+    const leftX = 40;
+    const rightX = 330;
+    let y = doc.y;
 
-    // SHIPPING ADDRESS
+    doc.fontSize(11);
+    doc.text(`Order ID: ${displayOrderId}`, leftX, y);
+    doc.text(`Date: ${new Date(order.createdAt).toLocaleString()}`, rightX, y);
+
+    y += 14;
+    doc.text(`Customer: ${order.shippingAddress.fullName}`, leftX, y);
+    doc.text(`Payment: ${order.paymentMethod}`, rightX, y);
+
+    doc.moveDown(2);
+
+    /* ---------------- SHIPPING ADDRESS ---------------- */
     const sa = order.shippingAddress;
-    doc.text("Shipping Address:", { underline: true });
+    doc.fontSize(11).text("Shipping Address", { underline: true });
+    doc.moveDown(0.5);
     doc.text(sa.fullName);
     doc.text(sa.addressLine1);
     if (sa.addressLine2) doc.text(sa.addressLine2);
     doc.text(`${sa.city}, ${sa.state} - ${sa.pincode}`);
     doc.text(`Phone: ${sa.phone}`);
-    doc.moveDown(1);
 
-    // ITEMS TABLE
-    doc.fontSize(12).text("Order Items:", { underline: true });
+    doc.moveDown(2);
+
+    /* ---------------- ITEMS (CLEAN LIST STRUCTURE) ---------------- */
+    doc.fontSize(11).text("Order Items", { underline: true });
     doc.moveDown(0.5);
 
-    order.items.forEach((item, index) => {
-      const itemOrderId = item.itemOrderId || `${displayOrderId}-${index + 1}`;
+    // Header line
+    doc.text("Product", leftX);
+    doc.text("Qty", 300, doc.y - 12);
+    doc.text("Price", 350, doc.y - 12);
+    doc.text("Total", 420, doc.y - 12);
 
-      doc.text(`Item ${index + 1}:`);
-      doc.text(`Item Order ID: ${itemOrderId}`);
-      doc.text(`Product: ${item.product?.name}`);
-      doc.text(`Color: ${item.color}`);
-      doc.text(`Quantity: ${item.quantity}`);
-      doc.text(`Unit Price: ₹${item.price}`);
-      doc.text(`Item Total: ₹${(item.price * item.quantity).toFixed(2)}`);
-      doc.moveDown(1);
+    doc.moveTo(leftX, doc.y).lineTo(550, doc.y).stroke();
+    doc.moveDown(0.5);
+
+    order.items.forEach((item) => {
+      const lineY = doc.y;
+
+      doc.text(item.product?.name, leftX, lineY, { width: 240 });
+      doc.text(item.quantity.toString(), 300, lineY);
+      doc.text(`₹${item.price}`, 350, lineY);
+      doc.text(
+        `₹${(item.price * item.quantity).toFixed(2)}`,
+        420,
+        lineY
+      );
+
+      doc.moveDown(0.5);
     });
 
-    // ORDER TOTALS
-    doc.text(`Subtotal: ₹${order.subtotal.toFixed(2)}`);
-    if (order.coupon?.discountAmount > 0) {
-      doc.text(`Coupon Discount: -₹${order.coupon.discountAmount.toFixed(2)}`);
-    }
-    doc.text(`Tax: ₹${order.tax.toFixed(2)}`);
-    doc.text(`Shipping: ₹${order.shippingFee.toFixed(2)}`);
-    doc.moveDown();
+    doc.moveDown(2);
 
-    doc.fontSize(14).text(`Grand Total: ₹${order.totalAmount.toFixed(2)}`);
-    doc.moveDown();
+    /* ---------------- TOTALS (RIGHT ALIGNED, CLEAN) ---------------- */
+    y = doc.y;
+    const totalX = 350;
+
+    doc.text(`Subtotal: ₹${order.subtotal.toFixed(2)}`, totalX, y);
+    y += 14;
+
+    if (order.coupon?.discountAmount > 0) {
+      doc.text(
+        `Coupon Discount: -₹${order.coupon.discountAmount.toFixed(2)}`,
+        totalX,
+        y
+      );
+      y += 14;
+    }
+
+    doc.text(`Tax: ₹${order.tax.toFixed(2)}`, totalX, y);
+    y += 14;
+    doc.text(`Shipping: ₹${order.shippingFee.toFixed(2)}`, totalX, y);
+    y += 18;
+
+    doc.fontSize(13).text(
+      `Grand Total: ₹${order.totalAmount.toFixed(2)}`,
+      totalX,
+      y
+    );
 
     doc.end();
-
   } catch (err) {
     console.error("downloadInvoice Error:", err);
     res.status(500).send("Could not generate invoice");
