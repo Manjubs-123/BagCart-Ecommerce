@@ -179,8 +179,8 @@
                       <button class="quantity-btn px-3 py-1 text-gray-600 hover:bg-gray-100"
                               data-item-id="<%= item._id %>"
                               data-action="increase"
-                              <%= isOutOfStock || item.quantity >= available ? 'disabled' : '' %>>
-                        <i class="fas fa-plus"></i>
+<%= isOutOfStock || item.quantity >= available ? 'disabled' : '' %>>                        
+<i class="fas fa-plus"></i>
                       </button>
                     </div>
 
@@ -251,13 +251,10 @@
 
   <script>
 
-    function debounce(fn, delay) {
-  let timer;
-  return function (...args) {
-    clearTimeout(timer);
-    timer = setTimeout(() => fn.apply(this, args), delay);
-  };
-}
+    // Track max-quantity error per item
+// const maxQtyErrorShown = new Set();
+const MAX_QTY_PER_PRODUCT = 5;
+
 
     // Cart API endpoints
     const API_ENDPOINTS = {
@@ -269,6 +266,30 @@
       checkout: '/api/checkout'
     };
 
+    // Store pending quantity changes
+    const pendingUpdates = new Map();
+
+    // Debounce function for API calls
+    function debounce(fn, delay) {
+      let timer;
+      return function (...args) {
+        clearTimeout(timer);
+        timer = setTimeout(() => fn.apply(this, args), delay);
+      };
+    }
+
+    // Throttle function for UI updates
+    function throttle(fn, limit) {
+      let inThrottle;
+      return function(...args) {
+        if (!inThrottle) {
+          fn.apply(this, args);
+          inThrottle = true;
+          setTimeout(() => inThrottle = false, limit);
+        }
+      };
+    }
+
     // Initialize cart
     document.addEventListener('DOMContentLoaded', function() {
       updateCartSummary();
@@ -277,13 +298,13 @@
 
     // Set up event listeners
     function setupEventListeners() {
-      // Quantity buttons
+      // Quantity buttons - using throttle for immediate UI response
       document.querySelectorAll('.quantity-btn').forEach(button => {
-        button.addEventListener('click', function() {
+        button.addEventListener('click', throttle(function() {
           const itemId = this.getAttribute('data-item-id');
           const action = this.getAttribute('data-action');
           handleQuantityChange(itemId, action);
-        });
+        }, 200));
       });
 
       // Remove item buttons
@@ -308,71 +329,144 @@
     }
 
     // Handle quantity changes
-    async function handleQuantityChange(itemId, action) {
-      const itemEl = document.querySelector(`[data-item-id="${itemId}"]`);
-      if (!itemEl) return;
+    // async function handleQuantityChange(itemId, action) {
+    //   const itemEl = document.querySelector(`[data-item-id="${itemId}"]`);
+    //   if (!itemEl) return;
 
-      const currentQty = parseInt(itemEl.querySelector('.qty-value').textContent);
-      const available = parseInt(itemEl.getAttribute('data-available')) || 0;
+    //   const currentQty = parseInt(itemEl.querySelector('.qty-value').textContent);
+    //   const available = parseInt(itemEl.getAttribute('data-available')) || 0;
 
-      let newQty = currentQty;
+    //   let newQty = currentQty;
 
-      if (action === "increase") {
-        if (currentQty >= available) { showNotification(`Only ${available} available`, "error"); return; }
-        newQty++;
-      }
+    //   if (action === "increase") {
+    //     if (currentQty >= available) { 
+    //       showNotification(`Only ${available} available`, "error"); 
+    //       return; 
+    //     }
+    //     newQty++;
+    //   }
 
-      if (action === "decrease") {
-        if (currentQty <= 1) return; // Prevent zero
-        newQty--;
-      }
+    //   if (action === "decrease") {
+    //     if (currentQty <= 1) return; // Prevent zero
+    //     newQty--;
+    //   }
 
-      const success = await updateCartItem(itemId, newQty);
+    //   // Update UI immediately
+    //   itemEl.querySelector('.qty-value').textContent = newQty;
+    //   itemEl.setAttribute('data-qty', newQty);
+    //   updateItemTotal(itemId, newQty);
 
-      if (success) {
-        // Update UI quantity text
-        itemEl.querySelector('.qty-value').textContent = newQty;
-        itemEl.setAttribute('data-qty', newQty);
+    //   // Update button states
+    //   const plusBtn = itemEl.querySelector('[data-action="increase"]');
+    //   const minusBtn = itemEl.querySelector('[data-action="decrease"]');
+    //   plusBtn.disabled = newQty >= available;
+    //   minusBtn.disabled = newQty <= 1;
 
-        // Update item total price and MRPs
-        updateItemTotal(itemId, newQty);
+    //   // Recalculate totals
+    //   updateCartSummary();
 
-        // Buttons
-        const plusBtn = itemEl.querySelector('[data-action="increase"]');
-        const minusBtn = itemEl.querySelector('[data-action="decrease"]');
+    //   // Store the update and schedule API call
+    //   pendingUpdates.set(itemId, newQty);
+    //   scheduleUpdate(itemId);
+    // }
+async function handleQuantityChange(itemId, action) {
+  const itemEl = document.querySelector(`[data-item-id="${itemId}"]`);
+  if (!itemEl) return;
 
-        plusBtn.disabled = newQty >= available;
-        minusBtn.disabled = newQty <= 1;
+  const qtyEl = itemEl.querySelector('.qty-value');
+  const currentQty = parseInt(qtyEl.textContent);
+  const available = parseInt(itemEl.getAttribute('data-available')) || 0;
+  const MAX_QTY_PER_PRODUCT = 5;
 
-        // Recalculate totals
-        updateCartSummary();
-      }
+  let newQty = currentQty;
+
+  if (action === "increase") {
+    // 🔒 MAX LIMIT (show error EVERY TIME)
+    if (currentQty >= MAX_QTY_PER_PRODUCT) {
+      showNotification(
+        `You can only buy up to ${MAX_QTY_PER_PRODUCT} units of this product`,
+        "error"
+      );
+      return;
     }
 
- const updateCartItem = debounce(async (itemId, newQuantity) => {
-  try {
-    setLoading(true);
-    const response = await axios.put(`/user/cart/update/${itemId}`, { quantity: newQuantity });
-
-    if (response.data.success) {
-      updateCartSummary();
-      showNotification('Cart updated successfully', 'success');
-      return true;
-    } else {
-      showNotification(response.data.message || 'Failed to update cart', 'error');
-      return false;
+    // 🔒 STOCK LIMIT
+    if (currentQty >= available) {
+      showNotification(`Only ${available} available`, "error");
+      return;
     }
-  } catch (error) {
-    console.error('Error updating cart item:', error);
-    showNotification('Failed to update cart item', 'error');
-    return false;
-  } finally {
-    setLoading(false);
+
+    newQty++;
   }
-}, 400);  // wait 400ms before sending another request
 
+  if (action === "decrease") {
+    if (currentQty <= 1) return;
+    newQty--;
+  }
 
-    // Update item total display + update struck MRP × qty
+  // ✅ UI update
+  qtyEl.textContent = newQty;
+  itemEl.setAttribute('data-qty', newQty);
+  updateItemTotal(itemId, newQty);
+  updateCartSummary();
+
+  // ✅ button state - ONLY disable for stock limit, NOT for 5-unit limit
+  const plusBtn = itemEl.querySelector('[data-action="increase"]');
+  const minusBtn = itemEl.querySelector('[data-action="decrease"]');
+
+  // Only disable plus button when stock limit is reached
+  plusBtn.disabled = newQty >= available;
+  minusBtn.disabled = newQty <= 1;
+
+  // ✅ API update
+  pendingUpdates.set(itemId, newQty);
+  scheduleUpdate(itemId);
+}
+    // Schedule API update with debouncing
+    const scheduleUpdate = debounce(async function(itemId) {
+      if (!pendingUpdates.has(itemId)) return;
+      
+      const newQty = pendingUpdates.get(itemId);
+      pendingUpdates.delete(itemId);
+      
+      await updateCartItem(itemId, newQty);
+    }, 500);
+
+    // Update cart item via API
+    async function updateCartItem(itemId, newQuantity) {
+      try {
+        const response = await axios.put(`/user/cart/update/${itemId}`, { 
+          quantity: newQuantity 
+        });
+
+        if (response.data.success) {
+          // Update the item's data attribute to reflect server state
+          const itemEl = document.querySelector(`[data-item-id="${itemId}"]`);
+          if (itemEl) {
+            itemEl.setAttribute('data-qty', newQuantity);
+          }
+          showNotification('Cart updated successfully', 'success');
+          return true;
+        } else {
+          // If server update fails, revert UI to last known server state
+          const itemEl = document.querySelector(`[data-item-id="${itemId}"]`);
+          if (itemEl) {
+            const serverQty = itemEl.getAttribute('data-qty');
+            itemEl.querySelector('.qty-value').textContent = serverQty;
+            updateItemTotal(itemId, parseInt(serverQty));
+            updateCartSummary();
+          }
+          showNotification(response.data.message || 'Failed to update cart', 'error');
+          return false;
+        }
+      } catch (error) {
+        console.error('Error updating cart item:', error);
+        showNotification('Failed to update cart item', 'error');
+        return false;
+      }
+    }
+
+    // Update item total display
     function updateItemTotal(itemId, quantity) {
       const itemElement = document.querySelector(`[data-item-id="${itemId}"]`);
       if (!itemElement) return;
@@ -385,9 +479,9 @@
         itemTotalElement.textContent = `₹${itemTotal.toFixed(2)}`;
       }
 
-      // UPDATE MRP (striked price) × quantity — guarded against NaN
+      // Update MRP (striked price)
       const mrp = parseFloat(itemElement.getAttribute('data-regular-price'));
-      const mrpElement = itemElement.querySelector('.mrp-value'); // specific class
+      const mrpElement = itemElement.querySelector('.mrp-value');
       if (mrpElement && !isNaN(mrp)) {
         mrpElement.textContent = `₹${(mrp * quantity).toFixed(2)}`;
       }
@@ -395,6 +489,9 @@
 
     // Handle remove item
     async function handleRemoveItem(itemId) {
+      // Clear any pending updates for this item
+      pendingUpdates.delete(itemId);
+
       const result = await Swal.fire({
         title: "Remove Item?",
         text: "Are you sure you want to remove this item from your cart?",
@@ -415,20 +512,40 @@
           if (itemElement) {
             itemElement.style.opacity = '0';
             itemElement.style.transform = 'translateX(100%)';
-            setTimeout(() => { itemElement.remove(); updateCartSummary(); }, 300);
+            setTimeout(() => { 
+              itemElement.remove(); 
+              updateCartSummary(); 
+            }, 300);
           }
-          Swal.fire({ title: "Removed!", text: "Item removed from your cart.", icon: "success", timer: 1200, showConfirmButton: false });
+          Swal.fire({ 
+            title: "Removed!", 
+            text: "Item removed from your cart.", 
+            icon: "success", 
+            timer: 1200, 
+            showConfirmButton: false 
+          });
         } else {
-          Swal.fire({ title: "Error!", text: response.data.message || "Failed to remove item", icon: "error" });
+          Swal.fire({ 
+            title: "Error!", 
+            text: response.data.message || "Failed to remove item", 
+            icon: "error" 
+          });
         }
       } catch (err) {
         console.error(err);
-        Swal.fire({ title: "Error!", text: "Something went wrong while removing the item.", icon: "error" });
+        Swal.fire({ 
+          title: "Error!", 
+          text: "Something went wrong while removing the item.", 
+          icon: "error" 
+        });
       }
     }
 
     // Handle clear cart
     async function handleClearCart() {
+      // Clear all pending updates
+      pendingUpdates.clear();
+
       const result = await Swal.fire({
         title: "Clear Entire Cart?",
         text: "This will remove all items from your cart.",
@@ -459,13 +576,27 @@
             </div>
           `;
           updateCartSummary();
-          Swal.fire({ title: "Cleared!", text: "Your cart has been emptied.", icon: "success", timer: 1300, showConfirmButton: false });
+          Swal.fire({ 
+            title: "Cleared!", 
+            text: "Your cart has been emptied.", 
+            icon: "success", 
+            timer: 1300, 
+            showConfirmButton: false 
+          });
         } else {
-          Swal.fire({ title: "Error!", text: response.data.message || "Failed to clear cart", icon: "error" });
+          Swal.fire({ 
+            title: "Error!", 
+            text: response.data.message || "Failed to clear cart", 
+            icon: "error" 
+          });
         }
       } catch (error) {
         console.error(error);
-        Swal.fire({ title: "Error!", text: "Something went wrong while clearing the cart.", icon: "error" });
+        Swal.fire({ 
+          title: "Error!", 
+          text: "Something went wrong while clearing the cart.", 
+          icon: "error" 
+        });
       }
     }
 
@@ -502,32 +633,23 @@
         showNotification('Your cart is empty', 'error');
         return;
       }
-      try {
-        setLoading(true);
-        window.location.href = '/user/checkout';
-      } catch (error) {
-        console.error('Error during checkout:', error);
-        showNotification('Checkout failed. Please try again.', 'error');
-      } finally {
-        setLoading(false);
+      
+      // Ensure all pending updates are sent before checkout
+      for (const [itemId, qty] of pendingUpdates.entries()) {
+        await updateCartItem(itemId, qty);
       }
+      pendingUpdates.clear();
+      
+      window.location.href = '/user/checkout';
     }
-
-    function setLoading(loading) {
-      const mainContent = document.querySelector('.container');
-      if (loading) mainContent.classList.add('loading'); else mainContent.classList.remove('loading');
-    }
-
-    function showNotification(message, type) {
+function showNotification(message, type) {
   const container = document.getElementById('notificationContainer');
 
-  // REMOVE existing success notifications to prevent stacking
-  if (type === "success") {
-    container.querySelectorAll('.notification.success').forEach(n => n.remove());
-  }
+  // ✅ REMOVE all existing notifications before showing new one
+  container.innerHTML = "";
 
   const notification = document.createElement('div');
-  notification.className = `notification success p-4 rounded-lg shadow-lg transform transition-all duration-300
+  notification.className = `notification ${type} p-4 rounded-lg shadow-lg transform transition-all duration-300
     ${type === 'success' ? 'bg-green-500 text-white' : 'bg-red-500 text-white'}`;
 
   notification.innerHTML = `
@@ -539,15 +661,17 @@
 
   container.appendChild(notification);
 
-  // hide after 2 sec
+  // auto hide after 2s
   setTimeout(() => {
     notification.style.opacity = '0';
     setTimeout(() => {
-      if (container.contains(notification)) container.removeChild(notification);
+      if (container.contains(notification)) {
+        container.removeChild(notification);
+      }
     }, 300);
   }, 2000);
 }
 
- </script>
+  </script>
 </body>
 </html>
