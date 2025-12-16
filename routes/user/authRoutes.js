@@ -41,7 +41,7 @@ router.get(
         id: user._id,
         name: user.name,
         email: user.email,
-        profileImage: user.profileImage,   // ✔ IMPORTANT
+        profileImage: user.profileImage,  
         wishlistCount: user.wishlist?.length || 0,
         cartCount: user.cart?.items?.length || 0,
       };

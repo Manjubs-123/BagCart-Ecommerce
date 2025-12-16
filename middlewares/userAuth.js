@@ -1,7 +1,7 @@
 
 import User from "../models/userModel.js";
 
-//  1. Check if user is logged in and not blocked
+//   Check if user is logged in and not blocked
 export const isUserLoggedIn = async (req, res, next) => {
   try {
 
@@ -13,7 +13,7 @@ export const isUserLoggedIn = async (req, res, next) => {
       return res.redirect("/user/login");
     }
 
-    // Always verify from DB (important for dynamic blocking)
+   
     const user = await User.findById(req.session.user.id);
 
     if (!user) {
@@ -40,7 +40,7 @@ export const isUserLoggedIn = async (req, res, next) => {
   }
 };
 
-//  2. Restrict access to login/signup pages if already logged in
+//   Restrict access to login/signup pages if already logged in
 export const isUserLoggedOut = (req, res, next) => {
   if (!req.session || !req.session.isLoggedIn) {
     return next();

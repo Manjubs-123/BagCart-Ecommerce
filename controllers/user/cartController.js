@@ -33,9 +33,9 @@ export const getCartPage = async (req, res) => {
       });
     }
 
-    // ------------------------------------------------------
+    
     //  APPLY OFFER PRICING TO EACH CART ITEM
-    // --------------------------------------------------------
+    
     for (let item of cart.items) {
       const product = item.product;
       const variant = product.variants[item.variantIndex];

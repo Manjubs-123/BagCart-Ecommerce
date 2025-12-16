@@ -178,9 +178,8 @@ export const adminUpdateOrderStatus = async (req, res) => {
     const prev = normalize(prevStatus);
     const next = normalize(status);
 
-    // =============================
-    // UPDATED allowedFlow
-    // =============================
+    
+   
 const allowedFlow = {
   pending: ["processing", "cancelled"],
   processing: ["shipped", "cancelled"],
@@ -201,9 +200,9 @@ const allowedFlow = {
     item.status = next;
 
 
-    // ===============================
-    // CANCEL BLOCK (ADMIN CANCEL)
-    // ===============================
+   
+    // CANCEL BLOCK 
+   
     if (next === "cancelled" && prev !== "cancelled" && prev !== "delivered") {
 
      
@@ -443,35 +442,12 @@ export const approveReturn = async (req, res) => {
 };
 
 
-// export const rejectReturn = async (req, res) => {
-//   try {
-//     const { orderId, itemId } = req.params;
-//     const { rejectionReason } = req.body;
-
-//     const order = await Order.findById(orderId);
-//     if (!order) return res.status(404).json({ success: false, message: "Order not found" });
-
-//     const item = order.items.id(itemId);
-//     if (!item) return res.status(404).json({ success: false, message: "Item not found" });
-
-//     item.status = "return-rejected";
-//     item.returnRejectReason = rejectionReason || "Return request rejected";
-
-//     await order.save();
-
-//     return res.json({ success: true });
-//   } catch (err) {
-//     console.error(err);
-//     res.status(500).json({ success: false, message: "Reject return error" });
-//   }
-// };
-
 export const rejectReturn = async (req, res) => {
   try {
     const { orderId, itemId } = req.params;
     const { rejectionReason } = req.body;
 
-    /* ===== VALIDATION (ADDED — DOES NOT BREAK FLOW) ===== */
+
     if (
       !rejectionReason ||
       typeof rejectionReason !== "string" ||
@@ -483,7 +459,7 @@ export const rejectReturn = async (req, res) => {
         message: "Please provide a valid rejection reason"
       });
     }
-    /* ===== END VALIDATION ===== */
+   
 
     const order = await Order.findById(orderId);
     if (!order) return res.status(404).json({ success: false, message: "Order not found" });

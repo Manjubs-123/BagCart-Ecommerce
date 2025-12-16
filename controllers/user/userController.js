@@ -153,7 +153,7 @@ export const postVerifyOtp = async (req, res) => {
     }
 
     await user.save();
-
+//Intialize user session
     req.session.isLoggedIn = true;
     req.session.user = {
       id: user._id,
@@ -164,7 +164,7 @@ export const postVerifyOtp = async (req, res) => {
       cartCount: user.cart?.items?.length || 0
     };
 
-
+//clear otp session data 
     delete req.session.otp;
     delete req.session.otpExpires;
     delete req.session.pendingEmail;
@@ -271,7 +271,7 @@ export const loginUser = async (req, res) => {
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) return res.render("user/login", { error: "Invalid email or password." });
 
-    req.session.isLoggedIn = true;
+    req.session.isLoggedIn = true;//mark user as logged in 
     req.session.user = { id: user._id, name: user.name, email: user.email,profileImage:user.profileImage,wishlistCount:user.wishlist?.length||0, cartCount: user.cart?.items?.length || 0 };
 
     res.redirect("/user/landing");
@@ -336,13 +336,10 @@ export const updateUserProfile = async (req, res) => {
 
    
     if (req.file) {
-
-      
       if (user.profileImage?.public_id&& user.profileImage.public_id!==DEFAULT_AVATAR_ID) {
         await cloudinary.uploader.destroy(user.profileImage.public_id);
       }
-
-     
+//upload new img 
       const result = await cloudinary.uploader.upload(req.file.path, {
         folder: "profiles",
       });

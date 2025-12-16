@@ -10,7 +10,7 @@ import { applyOfferToProduct } from "../../utils/applyOffer.js";
 const router = express.Router();
 
 /* -----------------------------------------------------------
-   GET CART (for checkout)
+   GET CART 
 ----------------------------------------------------------- */
 
 router.get("/cart", async (req, res) => {
@@ -26,20 +26,20 @@ router.get("/cart", async (req, res) => {
             return res.json({ success: true, cart: { items: [] } });
         }
 
-        //  APPLY OFFER TO EACH CART ITEM
+        
         for (let item of cart.items) {
             const product = item.product;
             const variant = product.variants[item.variantIndex];
 
             const offerData = await applyOfferToProduct({
                 ...product,
-                variants: [variant] // apply only to this variant
+                variants: [variant] 
             });
 
             const offerVariant = offerData.variants[0];
 
-            item.finalPrice = offerVariant.finalPrice;     // discounted
-            item.regularPrice = offerVariant.regularPrice; // original MRP
+            item.finalPrice = offerVariant.finalPrice;     
+            item.regularPrice = offerVariant.regularPrice; 
             item.totalFinal = offerVariant.finalPrice * item.quantity;
             item.appliedOffer = offerVariant.appliedOffer;
         }
@@ -110,7 +110,7 @@ function isSequential(str) {
 }
 
 /* -----------------------------------------------------------
-   UPDATE ADDRESS (EDIT)
+   UPDATE ADDRESS 
 ----------------------------------------------------------- */
 router.put("/addresses/:id", async (req, res) => {
     try {
@@ -128,7 +128,7 @@ router.put("/addresses/:id", async (req, res) => {
 
         const updatedData = req.body;
 
-        // VALIDATION HERE
+        
         if (!isValidName(updatedData.fullName))
             return res.json({ success: false, message: "Invalid full name" });
 
@@ -144,7 +144,7 @@ router.put("/addresses/:id", async (req, res) => {
         if (!isValidPincode(updatedData.pincode))
             return res.json({ success: false, message: "Invalid pincode" });
 
-        // Ensure only one default address
+       
         if (updatedData.isDefault) {
             user.addresses.forEach(a => (a.isDefault = false));
         }
@@ -154,7 +154,7 @@ router.put("/addresses/:id", async (req, res) => {
             return res.json({ success: false, message: "Address not found" });
         }
 
-        // Update fields
+        
         address.fullName = updatedData.fullName;
         address.phone = updatedData.phone;
         address.addressLine1 = updatedData.addressLine1;
@@ -188,7 +188,7 @@ router.post("/addresses", async (req, res) => {
 
         const newAddress = req.body;
 
-        // VALIDATION
+        
         if (!isValidName(newAddress.fullName))
             return res.json({ success: false, message: "Invalid full name" });
 
@@ -204,7 +204,7 @@ router.post("/addresses", async (req, res) => {
         if (!isValidPincode(newAddress.pincode))
             return res.json({ success: false, message: "Invalid pincode" });
 
-        // Ensure only one default
+       
         if (newAddress.isDefault) {
             user.addresses.forEach(a => (a.isDefault = false));
         }
@@ -249,306 +249,6 @@ router.get("/wallet/balance", async (req, res) => {
 /* -----------------------------------------------------------
    PLACE ORDER — FINAL STABLE VERSION
 ----------------------------------------------------------- */
-// router.post("/orders", async (req, res) => {
-//   try {
-//     const userId = req.session.user?.id;
-//     if (!userId) return res.json({ success: false, message: "User not login " });
-
-//   const { addressId, paymentMethod, couponCode } = req.body;
-
-// if (!addressId && !paymentMethod) {
-//   return res.json({
-//     success: false,
-//     message: "Please select a delivery address and payment method"
-//   });
-// }
-
-// if (!addressId) {
-//   return res.json({
-//     success: false,
-//     message: "Delivery address is not selected"
-//   });
-// }
-
-// if (!paymentMethod) {
-//   return res.json({
-//     success: false,
-//     message: "Payment method is not selected"
-//   });
-// }
-
-//     // Load cart (with product populated)
-//     const cart = await Cart.findOne({ user: userId }).populate("items.product");
-//     if (!cart || !cart.items.length) return res.json({ success: false, message: "Cart empty" });
-
-//     const user = await User.findById(userId);
-//     const address = user.addresses.id(addressId);
-//     if (!address) return res.json({ success: false, message: "Address not found" });
-
-//     /* ------------------------------
-//        BUILD ORDER ITEMS (APPLY OFFERS)
-//        ------------------------------ */
-//     let orderItems = [];
-//     let subtotal = 0;
-//     let totalRegularPrice = 0;
-
-//     for (const cartItem of cart.items) {
-//       const product = cartItem.product;
-//       const variant = product.variants[cartItem.variantIndex];
-
-//       // Defensive: ensure variant exists
-//       if (!variant) {
-//         return res.json({ success: false, message: "Product variant not found" });
-//       }
-
-//       // Apply offer to this variant (applyOfferToProduct should return numeric prices)
-//       const offerData = await applyOfferToProduct({
-//         ...product.toObject(),
-//         variants: [variant]
-//       });
-//       const offerVariant = (offerData && offerData.variants && offerData.variants[0]) || {};
-
-//       // Fallbacks to avoid NaN
-//       const finalPrice = Number(offerVariant.finalPrice ?? variant.price ?? 0);
-//       const regularPrice = Number(offerVariant.regularPrice ?? (variant.mrp ?? variant.price) ?? finalPrice);
-//       const qty = Number(cartItem.quantity || 1);
-
-//       subtotal += finalPrice * qty;
-//       totalRegularPrice += regularPrice * qty;
-
-//       orderItems.push({
-//         product: product._id,
-//         variantIndex: cartItem.variantIndex,
-//         quantity: qty,
-//         price: +finalPrice.toFixed(2),         // discounted price (store)
-//         regularPrice: +regularPrice.toFixed(2),// original MRP (store)
-//         savings: +Math.max(0, (regularPrice - finalPrice) * qty).toFixed(2),
-//         appliedOffer: offerVariant.appliedOffer || null, // store offer metadata (if any)
-//         color: variant.color,
-//         image: variant.images?.[0]?.url || ""
-//       });
-//     }
-
-//     // Round subtotal
-//     subtotal = +subtotal.toFixed(2);
-//     const tax = +((subtotal * 0.1)).toFixed(2);
-//     const shippingFee = subtotal > 500 ? 0 : 50;
-
-//     /* ------------------------------
-//        COUPON CALCULATION
-//        ------------------------------ */
-//     let discountApplied = 0;
-//     let couponInfo = null;
-//     let couponDoc = null;
-
-//     if (couponCode) {
-//       couponDoc = await Coupon.findOne({ code: couponCode.toUpperCase(), isActive: true });
-//       if (!couponDoc) return res.json({ success: false, message: "Invalid coupon ❌" });
-
-//       const now = new Date();
-//       if (couponDoc.expiryDate && couponDoc.expiryDate < now) {
-//         return res.json({ success: false, message: "Coupon expired ❌" });
-//       }
-
-//       if (subtotal < (couponDoc.minOrderAmount || 0)) {
-//         return res.json({ success: false, message: `Minimum order ₹${couponDoc.minOrderAmount} required ❌` });
-//       }
-
-//       // percentage discount, capped by max discount
-//       const rawDiscount = (subtotal * (couponDoc.discountValue || 0)) / 100;
-//       discountApplied = Math.min(rawDiscount, couponDoc.maxDiscountAmount || rawDiscount);
-//       discountApplied = Math.round(discountApplied * 100) / 100;
-
-//       couponInfo = {
-//         code: couponDoc.code,
-//         discountValue: couponDoc.discountValue,
-//         discountAmount: discountApplied,
-//         maxDiscountAmount: couponDoc.maxDiscountAmount,
-//         subtotalBeforeCoupon: subtotal
-//       };
-//     }
-
-//     // Final amount
-//     const totalAmount = +((subtotal + tax + shippingFee - (discountApplied || 0))).toFixed(2);
-
-
-//     /* ------------------------------
-//    BLOCK COD FOR AMOUNT > ₹1000
-// ------------------------------ */
-// if (paymentMethod === "cod" && totalAmount > 1000) {
-//   return res.json({
-//     success: false,
-//     message: "Cash on Delivery is not available for orders above ₹1000"
-//   });
-// }
-
-//     /* ------------------------------
-//    WALLET FULL PAYMENT CHECK
-// ------------------------------ */
-// if (paymentMethod === "wallet") {
-
-//     // Load wallet
-//     const wallet = await Wallet.findOne({ user: userId });
-
-//     // If no wallet or no balance
-//     if (!wallet || wallet.balance < totalAmount) {
-//         return res.json({
-//             success: false,
-//             message: "Insufficient wallet balance "
-//         });
-//     }
-
-//     // Wallet is enough → continue normally
-// }
-
-
-//     /* ------------------------------
-//        STOCK CHECK (before creating order)
-//        ------------------------------ */
-//     for (const cartItem of cart.items) {
-//       const prod = await Product.findById(cartItem.product._id);
-//       const variant = prod?.variants?.[cartItem.variantIndex];
-//       if (!variant) return res.json({ success: false, message: "Product/variant not found (stock check)" });
-
-//       const newStock = variant.stock - cartItem.quantity;
-//       if (newStock < 0) {
-//         return res.json({
-//           success: false,
-//           message: `Stock not available  Only ${variant.stock} left for ${prod.name}`
-//         });
-//       }
-//     }
-
-//     /* ------------------------------
-//        CREATE ORDER (safe data stored)
-//        ------------------------------ */
-//     const customOrderId = "BH-" + Math.floor(100000 + Math.random() * 900000).toString();
-
-//     const order = await Order.create({
-//       orderId: customOrderId,
-//       user: userId,
-//       items: orderItems,
-//       shippingAddress: address,
-//       paymentMethod,
-//       subtotal,
-//       tax,
-//       shippingFee,
-//       totalAmount,
-//       totalRegularPrice: +totalRegularPrice.toFixed(2),
-//       totalSavings: +(Math.max(0, totalRegularPrice - subtotal) + (discountApplied || 0)).toFixed(2),
-//       coupon: couponInfo,
-//       paymentStatus: paymentMethod === "cod" ? "pending" : "paid"
-//     });
-
-
-
-//     // Ensure each order item has itemOrderId
-//     let needSave = false;
-//     order.items = order.items.map((it, idx) => {
-//       if (!it.itemOrderId) {
-//         it.itemOrderId = `${order.orderId}-${idx + 1}`;
-//         needSave = true;
-//       }
-//       return it;
-//     });
-//     if (needSave) await order.save();
-
-//     /* ------------------------------
-//        UPDATE STOCK (now reduce)
-//        ------------------------------ */
-//     // for (const cartItem of cart.items) {
-//     //   const prod = await Product.findById(cartItem.product._id);
-//     //   const variant = prod.variants[cartItem.variantIndex];
-//     //   variant.stock = variant.stock - cartItem.quantity;
-//     //   prod.markModified(`variants.${cartItem.variantIndex}.stock`);
-//     //   await prod.save();
-//     // }
-
-//     /* ------------------------------
-//        UPDATE COUPON USAGE (after success)
-//        ------------------------------ */
-//     if (couponDoc) {
-      
-//       const coupon = await Coupon.findOne({ _id: couponDoc._id });
-//       if (coupon) {
-        
-//         const now = new Date();
-//         if (coupon.expiryDate && coupon.expiryDate < now) {
-//           // coupon expired after validation — just continue but don't increment usage
-//         } else {
-//           // user usage
-//           const userRecord = coupon.usedByUsers.find(u => u.userId.toString() === userId.toString());
-//           coupon.usedCount = (coupon.usedCount || 0) + 1;
-//           if (userRecord) userRecord.count = (userRecord.count || 0) + 1;
-//           else coupon.usedByUsers.push({ userId, count: 1 });
-
-//           await coupon.save();
-//         }
-//       }
-//     }
-
-//     // clear cart only after everything succeeded
-//     cart.items = [];
-//     await cart.save();
-
-// //    SAFE WALLET DEDUCTION
-
-// if (paymentMethod === "wallet") {
-
-//     const wallet = await Wallet.findOne({ user: userId });
-
-//     // extra safety check
-//     if (!wallet || wallet.balance < totalAmount) {
-//         return res.json({
-//             success: false,
-//             message: "Wallet balance changed, try again "
-//         });
-//     }
-
-//     // Deduct amount
-//     wallet.balance -= totalAmount;
-
-//     wallet.transactions.push({
-//         type: "debit",
-//         amount: totalAmount,
-//         description: `Order Payment ${order.orderId}`,
-//         status: "success",
-//         date: new Date()
-//     });
-
-//     await wallet.save();
-
-//     // Mark order as paid
-//     order.paymentStatus = "paid";
-//     order.orderStatus = "confirmed";
-//     await order.save();
-
-//     // Return success response
-//     return res.json({
-//         success: true,
-//         orderId: order._id,
-//         customOrderId: order.orderId,
-//         totalAmount: order.totalAmount,
-//         message: "Order placed successfully using wallet 🎉"
-//     });
-// }
-//     return res.json({
-//       success: true,
-//       orderId: order._id,
-//       customOrderId: order.orderId,
-//        totalAmount: order.totalAmount,   
-//     razorpayAmount: order.totalAmount * 100, 
-//       message: "Order placed successfully",
-//     });
-//   } catch (err) {
-//     console.error("ORDER ERROR:", err);
-//     return res.json({
-//       success: false,
-//       message: "Order failed",
-//       error: err.message,
-//     });
-//   }
-// });
 
 router.post("/orders", async (req, res) => {
   try {

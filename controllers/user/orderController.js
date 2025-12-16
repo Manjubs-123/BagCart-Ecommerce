@@ -55,7 +55,7 @@ export const createOrder = async (req, res) => {
     if (!address) {
       return res.json({ success: false, message: "Address not found" });
     }
-
+//apply offer to each item
     for (let item of cart.items) {
       const variant = item.product.variants[item.variantIndex];
 
@@ -64,12 +64,12 @@ export const createOrder = async (req, res) => {
         variants: [variant]
       });
 
-      const offerVariant = offerData.variants[0];
+      const offerVariant = offerData.variants[0];//extract calculated varient price
 
       item._finalPrice = offerVariant.finalPrice;
       item._regularPrice = offerVariant.regularPrice;
     }
-
+//build order items 
     const orderItems = cart.items.map(item => {
       const variant = item.product.variants[item.variantIndex];
 
@@ -85,7 +85,7 @@ export const createOrder = async (req, res) => {
         image: variant.images?.[0]?.url || ""
       };
     });
-
+//price calculation
     const subtotal = orderItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
     const tax = subtotal * 0.1;
     const shippingFee = subtotal > 500 ? 0 : 50;
@@ -110,7 +110,7 @@ export const createOrder = async (req, res) => {
             ? "paid"
             : "pending"
     });
-
+//update stock
     for (let item of cart.items) {
       const product = await Product.findById(item.product._id);
       if (!product) continue;
@@ -147,9 +147,7 @@ export const getOrderConfirmation = async (req, res) => {
       .lean();
 
     if (!order) return res.redirect("/order/orders");
-    //     if (order.paymentStatus === "paid") {
-    //   return res.redirect(`/order/success/${orderId}`);
-    // }
+  
 
     const items = order.items.map(item => {
 
@@ -171,7 +169,7 @@ export const getOrderConfirmation = async (req, res) => {
         itemSavings
       };
     });
-
+//calculate order level totals
     const totalRegularPrice = items.reduce((s, it) => s + (it.totalRegularPrice || 0), 0);
     const subtotal = Number(order.subtotal || items.reduce((s, it) => s + (it.totalPrice || 0), 0));
     const totalSavings = Math.max(0, totalRegularPrice - subtotal);
@@ -366,14 +364,14 @@ export const cancelItem = async (req, res) => {
       (order.paymentMethod === "razorpay" &&
         ["paid", "partial_refunded"].includes(order.paymentStatus));
 
-    /* ---------------- REFUND BLOCK (CORRECTED) ---------------- */
+    /* ---------------- REFUND BLOCK ---------------- */
     if (isPrepaid && !item.refundAmount) {
 
       const itemPrice = Number(item.price);
       const itemQty = Number(item.quantity);
       const itemTotal = itemPrice * itemQty;
 
-      /* --------- COUPON SHARE (CORRECTED FORMULA) -------- */
+      // COUPON SHARE 
       let itemCouponShare = 0;
 
       if (order.coupon && order.coupon.discountAmount > 0) {
@@ -387,17 +385,17 @@ export const cancelItem = async (req, res) => {
 
       const itemAfterCoupon = Math.max(0, itemTotal - itemCouponShare);
 
-      /* --------- TAX SHARE (CORRECTED) -------- */
+      /* --------- TAX SHARE  -------- */
       let itemTaxShare = 0;
 
-      // Tax is calculated on (subtotal - coupon), so we need item's share of that
+      // Tax is calculated on (subtotal - coupon)
       const totalAfterCoupon = order.subtotal - (order.coupon?.discountAmount || 0);
 
       if (totalAfterCoupon > 0 && order.tax > 0) {
         itemTaxShare = (itemAfterCoupon / totalAfterCoupon) * order.tax;
       }
 
-      /* --------- SHIPPING REFUND (ONLY ON LAST CANCEL) -------- */
+      /* --------- SHIPPING REFUND  -------- */
       let itemShippingShare = 0;
 
       const otherItems = order.items.filter(i => i._id.toString() !== itemId);
@@ -405,15 +403,15 @@ export const cancelItem = async (req, res) => {
         ["cancelled", "returned"].includes(i.status)
       );
 
-      // Refund full shipping if this is the only item OR all others are cancelled/returned
+      // Refund full shipping
       if (order.items.length === 1 || allOthersDone) {
         itemShippingShare = order.shippingFee;
       }
 
-      /* --------- FINAL REFUND AMOUNT (WHAT USER ACTUALLY PAID) -------- */
+      /* --------- FINAL REFUND AMOUNT -WHAT USER ACTUALLY PAID -------- */
       let refundAmount = itemAfterCoupon + itemTaxShare + itemShippingShare;
 
-      /* --------- SAFETY CAP: Cannot exceed remaining refundable amount -------- */
+      //  Cannot exceed remaining refundable amount 
       const previousRefunds = order.items.reduce(
         (sum, i) => sum + (i.refundAmount || 0),
         0
@@ -424,7 +422,7 @@ export const cancelItem = async (req, res) => {
       refundAmount = Math.max(0, refundAmount); // Cannot be negative
       refundAmount = +refundAmount.toFixed(2);
 
-      /* --------- WALLET UPDATE -------- */
+      // WALLET UPDATE 
       let wallet = await Wallet.findOne({ user: userId }).session(session);
       if (!wallet) {
         wallet = (await Wallet.create([{
@@ -452,14 +450,14 @@ export const cancelItem = async (req, res) => {
 
       await wallet.save({ session });
 
-      /* --------- SAVE REFUND INFO IN ITEM -------- */
+      //  SAVE REFUND INFO IN ITEM 
       item.refundAmount = refundAmount;
       item.refundMethod = "wallet";
       item.refundStatus = "credited";
       item.refundDate = new Date();
     }
 
-    /* ---------------- ORDER STATUS UPDATE ---------------- */
+   //  ORDER STATUS UPDATE 
     const allCancelled = order.items.every(i =>
       ["cancelled", "returned"].includes(i.status)
     );
@@ -497,8 +495,6 @@ export const cancelItem = async (req, res) => {
     });
   }
 };
-
-
 
 
 export const returnItem = async (req, res) => {

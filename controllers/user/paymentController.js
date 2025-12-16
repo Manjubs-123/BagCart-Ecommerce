@@ -117,7 +117,7 @@ export const verifyRazorpayPayment = async (req, res) => {
 
     await order.save();
 
-    // ✅ Reduce stock ONLY AFTER payment success
+    // Reduce stock ONLY AFTER payment success
     await decrementStockForOrder(order);
 
     return res.json({
