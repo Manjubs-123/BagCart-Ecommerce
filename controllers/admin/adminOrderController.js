@@ -367,42 +367,67 @@ export const approveReturn = async (req, res) => {
       taxAmount = parseFloat(refundTax);
       actualCouponDeduction = couponDeduction ? parseFloat(couponDeduction) : 0;
 
-    } else {
-      
-      const price = Number(item.price);
-      const qty = Number(item.quantity);
-      const itemTotal = price * qty;
+ } else {
 
-      
-      const baseSubtotal =
-        order.coupon?.subtotalBeforeCoupon > 0
-          ? order.coupon.subtotalBeforeCoupon 
-          : order.subtotal;
+  const price = Number(item.price);
+  const qty = Number(item.quantity);
+  const itemTotal = price * qty;
 
-      let couponShare = 0;
-      if (order.coupon && order.coupon.discountAmount > 0) {
-        const itemShare = baseSubtotal > 0 ? itemTotal / baseSubtotal : 0;
-        couponShare = order.coupon.discountAmount * itemShare;
-      }
+  // ✅ TRUE base used for coupon + tax originally
+  const itemsBaseTotal = order.items.reduce(
+    (sum, i) => sum + (Number(i.price) * Number(i.quantity)),
+    0
+  );
 
-      const computedRefundBase = Math.max(0, itemTotal - couponShare);
-      taxAmount = computedRefundBase * 0.10;
+  // ✅ Final paid amount excluding shipping
+  const paidWithoutShipping =
+    order.totalAmount - (order.shippingFee || 0);
 
-     
-      let shippingRefund = 0;
+  // ✅ Correct proportional ratio
+  const itemRatio =
+    itemsBaseTotal > 0 ? itemTotal / itemsBaseTotal : 0;
 
-      
-      const otherItems = order.items.filter(i => i._id.toString() !== itemId);
-      const allOtherReturned = otherItems.every(i => i.status === "returned");
+  let finalRefundAmount =
+    paidWithoutShipping * itemRatio;
 
-    
-      if (allOtherReturned) {
-        shippingRefund = order.shippingFee || 50;
-      }
+  // -------- SHIPPING REFUND --------
+  let shippingRefund = 0;
 
-      finalRefundAmount = computedRefundBase + taxAmount + shippingRefund;
-      actualCouponDeduction = couponShare;
-    }
+  const otherItems = order.items.filter(
+    i => i._id.toString() !== itemId
+  );
+
+  const allOthersReturned = otherItems.every(i =>
+    ["cancelled", "returned"].includes(i.status)
+  );
+
+  if (order.items.length === 1 || allOthersReturned) {
+    shippingRefund = order.shippingFee || 0;
+  }
+
+  finalRefundAmount += shippingRefund;
+
+  // -------- SAFETY CAP --------
+  const previousRefunds = order.items.reduce(
+    (sum, i) => sum + (i.refundAmount || 0),
+    0
+  );
+
+  const refundableRemaining =
+    order.totalAmount - previousRefunds;
+
+  finalRefundAmount = Math.min(
+    finalRefundAmount,
+    refundableRemaining
+  );
+
+  finalRefundAmount = Math.max(0, +finalRefundAmount.toFixed(2));
+
+  // DISPLAY ONLY
+  actualCouponDeduction = 0;
+  taxAmount = 0;
+}
+
 
     
     const product = await Product.findById(item.product);
