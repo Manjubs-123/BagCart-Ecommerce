@@ -204,67 +204,49 @@ const allowedFlow = {
    
     // CANCEL BLOCK 
    
-    if (next === "cancelled" && prev !== "cancelled" && prev !== "delivered") {
+  if (next === "cancelled" && prev !== "cancelled" && prev !== "delivered") {
+  // Restore stock
+  const product = await Product.findById(item.product).session(session);
+  if (product && product.variants && item.variantIndex != null) {
+    product.variants[item.variantIndex].stock = round2(
+      Number(product.variants[item.variantIndex].stock || 0) + 
+      Number(item.quantity || 0)
+    );
+    product.markModified(`variants.${item.variantIndex}.stock`);
+    await product.save({ session });
+  }
 
-     
-      const product = await Product.findById(item.product).session(session);
+  // Calculate refund using centralized function
+  const refundAmount = calculateItemRefund(order, item, itemId);
 
-      if (product && product.variants && item.variantIndex != null) {
-        product.variants[item.variantIndex].stock += item.quantity;
-        await product.save({ session });
-      }
+  if (refundAmount > 0 && !item.refundAmount) {
+    if (
+      (order.paymentMethod === "razorpay" && order.paymentStatus === "paid") ||
+      order.paymentMethod === "wallet"
+    ) {
+      await Wallet.findOneAndUpdate(
+        { user: order.user },
+        {
+          $inc: { balance: refundAmount },
+          $push: {
+            transactions: {
+              type: "credit",
+              amount: refundAmount,
+              description: `Refund for cancelled item ${item._id}`,
+              date: new Date()
+            }
+          }
+        },
+        { session, upsert: true }
+      );
 
-    
-      let refundAmount = 0;
-
-if (item.itemFinalPayable !== undefined && item.itemFinalPayable > 0) {
-  refundAmount = item.itemFinalPayable;
-} else {
-  refundAmount = calculateRefundOldWay(order, item, itemId);
-}
-
-// ✅ SAFETY CAP — DO NOT REMOVE
-const previousRefunds = order.items.reduce(
-  (sum, i) => sum + (i.refundAmount || 0),
-  0
-);
-
-const refundableRemaining = order.totalAmount - previousRefunds;
-
-refundAmount = Math.min(refundAmount, refundableRemaining);
-refundAmount = Math.max(0, +refundAmount.toFixed(2));
-
-
-
-      if (
-        (order.paymentMethod === "razorpay" && order.paymentStatus === "paid") ||
-        order.paymentMethod === "wallet"
-      ) {
-        if (!item.refundAmount) {
-          
-          await Wallet.findOneAndUpdate(
-            { user: order.user },
-            {
-              $inc: { balance: refundAmount },
-              $push: {
-                transactions: {
-                  type: "credit",
-                  amount: refundAmount,
-                  description: `Refund for cancelled item ${item._id}`,
-                  date: new Date()
-                }
-              }
-            },
-            { session, upsert: true }
-          );
-
-          item.refundAmount = refundAmount;
-          item.refundStatus = "credited";
-          item.refundMethod = "wallet";
-          item.refundDate = new Date();
-        }
-      }
+      item.refundAmount = refundAmount;
+      item.refundStatus = "credited";
+      item.refundMethod = "wallet";
+      item.refundDate = new Date();
     }
+  }
+}
 
     if (next === "delivered") {
       item.deliveredDate = new Date();
@@ -527,189 +509,7 @@ export const approveReturn = async (req, res) => {
   }
 };
 
-/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-   🔥 HELPER FUNCTION FOR OLD ORDERS - ADD THIS AT THE BOTTOM
-   (Same as in cancelItem)
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
-// function calculateRefundForReturn(order, item, itemId) {
-//   const itemPrice = Number(item.price);
-//   const itemQty = Number(item.quantity);
-//   const itemTotal = itemPrice * itemQty;
 
-//   // COUPON SHARE
-//   let itemCouponShare = 0;
-//   if (order.coupon && order.coupon.discountAmount > 0) {
-//     const baseSubtotal = order.coupon.subtotalBeforeCoupon || order.subtotal;
-//     if (baseSubtotal > 0) {
-//       itemCouponShare = (itemTotal / baseSubtotal) * order.coupon.discountAmount;
-//     }
-//   }
-
-//   const itemAfterCoupon = Math.max(0, itemTotal - itemCouponShare);
-
-//   // TAX SHARE
-//   let itemTaxShare = 0;
-//   const totalAfterCoupon = order.subtotal - (order.coupon?.discountAmount || 0);
-//   if (totalAfterCoupon > 0 && order.tax > 0) {
-//     itemTaxShare = (itemAfterCoupon / totalAfterCoupon) * order.tax;
-//   }
-
-//   // SHIPPING REFUND
-//   let itemShippingShare = 0;
-//   const otherItems = order.items.filter(i => i._id.toString() !== itemId);
-//   const allOthersDone = otherItems.every(i =>
-//     ["cancelled", "returned"].includes(i.status)
-//   );
-
-//   if (order.items.length === 1 || allOthersDone) {
-//     itemShippingShare = order.shippingFee;
-//   }
-
-//   // FINAL REFUND
-//   return itemAfterCoupon + itemTaxShare + itemShippingShare;
-// }
-
-// export const approveReturn = async (req, res) => {
-//   try {
-//     const { orderId, itemId } = req.params;
-//     const { refundAmount, refundBase, refundTax, couponDeduction } = req.body;
-//     const now = new Date();
-
-//     const order = await Order.findById(orderId).populate("user");
-//     if (!order) {
-//       return res.status(404).json({ success: false, message: "Order not found" });
-//     }
-
-//     const item = order.items.id(itemId);
-//     if (!item) {
-//       return res.status(404).json({ success: false, message: "Return item not found in order" });
-//     }
-
-//     if (item.status !== "return-requested") {
-//       return res.status(400).json({ success: false, message: "Item is not in return-requested state" });
-//     }
-
-//     let finalRefundAmount, taxAmount, actualCouponDeduction;
-
-//     if (refundAmount && refundBase && refundTax !== undefined) {
-//       finalRefundAmount = parseFloat(refundAmount);
-//       taxAmount = parseFloat(refundTax);
-//       actualCouponDeduction = couponDeduction ? parseFloat(couponDeduction) : 0;
-
-//  } else {
-
-//   const price = Number(item.price);
-//   const qty = Number(item.quantity);
-//   const itemTotal = price * qty;
-
-//   // ✅ TRUE base used for coupon + tax originally
-//   const itemsBaseTotal = order.items.reduce(
-//     (sum, i) => sum + (Number(i.price) * Number(i.quantity)),
-//     0
-//   );
-
-//   // ✅ Final paid amount excluding shipping
-//   const paidWithoutShipping =
-//     order.totalAmount - (order.shippingFee || 0);
-
-//   // ✅ Correct proportional ratio
-//   const itemRatio =
-//     itemsBaseTotal > 0 ? itemTotal / itemsBaseTotal : 0;
-
-//   let finalRefundAmount =
-//     paidWithoutShipping * itemRatio;
-
-//   // -------- SHIPPING REFUND --------
-//   let shippingRefund = 0;
-
-//   const otherItems = order.items.filter(
-//     i => i._id.toString() !== itemId
-//   );
-
-//   const allOthersReturned = otherItems.every(i =>
-//     ["cancelled", "returned"].includes(i.status)
-//   );
-
-//   if (order.items.length === 1 || allOthersReturned) {
-//     shippingRefund = order.shippingFee || 0;
-//   }
-
-//   finalRefundAmount += shippingRefund;
-
-//   // -------- SAFETY CAP --------
-//   const previousRefunds = order.items.reduce(
-//     (sum, i) => sum + (i.refundAmount || 0),
-//     0
-//   );
-
-//   const refundableRemaining =
-//     order.totalAmount - previousRefunds;
-
-//   finalRefundAmount = Math.min(
-//     finalRefundAmount,
-//     refundableRemaining
-//   );
-
-//   finalRefundAmount = Math.max(0, +finalRefundAmount.toFixed(2));
-
-//   // DISPLAY ONLY
-//   actualCouponDeduction = 0;
-//   taxAmount = 0;
-// }
-
-
-    
-//     const product = await Product.findById(item.product);
-//     if (product && product.variants[item.variantIndex]) {
-//       product.variants[item.variantIndex].stock += item.quantity;
-//       await product.save();
-//     }
-
-    
-//     const userId = order.user._id;
-//     let wallet = await Wallet.findOne({ user: userId });
-
-//     if (!wallet) {
-//       wallet = await Wallet.create({
-//         user: userId,
-//         balance: 0,
-//         transactions: []
-//       });
-//     }
-
-//     wallet.balance += finalRefundAmount;
-//     wallet.transactions.push({
-//       type: "credit",
-//       amount: finalRefundAmount,
-//       description: `Return refund for item ${item.itemOrderId || itemId} (incl. tax & shipping if applicable)`,
-//       details: {
-//         couponDeduction: actualCouponDeduction.toFixed(2),
-//         taxAmount: taxAmount.toFixed(2)
-//       },
-//       date: now
-//     });
-
-//     item.status = "returned";
-//     item.returnApprovedDate = now;
-//     item.refundAmount = finalRefundAmount;
-//     item.refundedTax = taxAmount;
-
-//     await wallet.save();
-//     await order.save();
-
-//     return res.json({
-//       success: true,
-//       message: "Return approved and refund processed successfully",
-//       refund: finalRefundAmount,
-//       refundedTax: taxAmount,
-//       couponDeduction: actualCouponDeduction
-//     });
-
-//   } catch (err) {
-//     console.error("Approve Return Error:", err);
-//     return res.status(500).json({ success: false, message: "Server error while approving return" });
-//   }
-// };
 
 
 export const rejectReturn = async (req, res) => {

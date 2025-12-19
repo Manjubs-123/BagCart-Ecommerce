@@ -6,6 +6,7 @@ import Order from "../../models/orderModel.js";
 import Coupon from "../../models/couponModel.js";
 import Wallet from "../../models/walletModel.js"; 
 import { applyOfferToProduct } from "../../utils/applyOffer.js";
+import { getCart } from "../../controllers/user/cartController.js";
 
 const router = express.Router();
 
@@ -13,47 +14,7 @@ const router = express.Router();
    GET CART 
 ----------------------------------------------------------- */
 
-router.get("/cart", async (req, res) => {
-    try {
-        const userId = req.session.user?.id;
-        if (!userId) return res.json({ success: false });
-
-        let cart = await Cart.findOne({ user: userId })
-            .populate("items.product")
-            .lean();
-
-        if (!cart || !cart.items.length) {
-            return res.json({ success: true, cart: { items: [] } });
-        }
-
-        
-        for (let item of cart.items) {
-            const product = item.product;
-            const variant = product.variants[item.variantIndex];
-
-            const offerData = await applyOfferToProduct({
-                ...product,
-                variants: [variant] 
-            });
-
-            const offerVariant = offerData.variants[0];
-
-            item.finalPrice = offerVariant.finalPrice;     
-            item.regularPrice = offerVariant.regularPrice; 
-            item.totalFinal = offerVariant.finalPrice * item.quantity;
-            item.appliedOffer = offerVariant.appliedOffer;
-        }
-
-        return res.json({
-            success: true,
-            cart
-        });
-
-    } catch (err) {
-        console.error("CHECKOUT CART ERROR:", err);
-        return res.json({ success: false, message: "Cart fetch failed" });
-    }
-});
+router.get("/cart", getCart);
 
 
 /* -----------------------------------------------------------

@@ -2,7 +2,55 @@ import Cart from "../../models/cartModel.js";
 import Product from "../../models/productModel.js";
 import { applyOfferToProduct } from "../../utils/applyOffer.js"; 
 
+export const getCart = async (req, res) => {
+  try {
+    const userId = req.session.user?.id;
+    if (!userId) {
+      return res.json({ success: false });
+    }
 
+    let cart = await Cart.findOne({ user: userId })
+      .populate("items.product")
+      .lean();
+
+    if (!cart || !cart.items.length) {
+      return res.json({
+        success: true,
+        cart: { items: [] }
+      });
+    }
+
+    // Apply offer logic per item
+    for (let item of cart.items) {
+      const product = item.product;
+      const variant = product.variants[item.variantIndex];
+
+      const offerData = await applyOfferToProduct({
+        ...product,
+        variants: [variant], // only selected variant
+      });
+
+      const offerVariant = offerData.variants[0];
+
+      item.finalPrice = offerVariant.finalPrice;
+      item.regularPrice = offerVariant.regularPrice;
+      item.totalFinal = offerVariant.finalPrice * item.quantity;
+      item.appliedOffer = offerVariant.appliedOffer;
+    }
+
+    return res.json({
+      success: true,
+      cart,
+    });
+
+  } catch (err) {
+    console.error("CHECKOUT CART ERROR:", err);
+    return res.json({
+      success: false,
+      message: "Cart fetch failed",
+    });
+  }
+};
 
 
 export const getCartPage = async (req, res) => {

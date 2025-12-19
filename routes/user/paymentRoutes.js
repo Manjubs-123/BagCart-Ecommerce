@@ -1,5 +1,5 @@
 import express from "express";
-import { createRazorpayOrder, verifyRazorpayPayment, razorpayWebhook ,retryPayment, razorpayInstance  } from "../../controllers/user/paymentController.js";
+import { createRazorpayOrder, verifyRazorpayPayment, razorpayWebhook ,retryPayment, razorpayInstance, paymentFailedPage  } from "../../controllers/user/paymentController.js";
 import { cancelItem,returnItem } from "../../controllers/user/orderController.js";  
 import Order from "../../models/orderModel.js";
 const router = express.Router();
@@ -14,33 +14,7 @@ router.post(
 );
 
 
-router.get("/order/payment-failed/:orderId", async (req, res) => {
-    const orderId = req.params.orderId;
-
-    const order = await Order.findById({_id:orderId})
-  
-    if(order.paymentStatus === 'paid'){
-        console.log('iam the cuprit')
-         return res.redirect(`/order/confirmation/${order._id}`);
-    }
-
-    const newOrder = await Order.findByIdAndUpdate(
-        orderId,
-        {
-            paymentStatus: "failed",
-            orderStatus: "created"
-        },
-        { new: true }
-    );
-
-    if (!newOrder) return res.status(404).send("Order not found");
-
-    
-    res.render("user/orderFailure", {
-        orderMongoId: newOrder._id,       
-        orderDisplayId: newOrder.orderId  
-    });
-});
+router.get("/order/payment-failed/:orderId",paymentFailedPage);
 
 
 router.get("/order/retry/:orderId", retryPayment);

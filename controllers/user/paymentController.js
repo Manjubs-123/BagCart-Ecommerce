@@ -13,6 +13,36 @@ export const razorpayInstance = new Razorpay({
 });
 
 
+export const paymentFailedPage = async (req, res) => {
+  try {
+    const { orderId } = req.params;
+
+    const order = await Order.findById(orderId);
+    if (!order) {
+      return res.status(404).send("Order not found");
+    }
+
+    // If payment already marked as paid, redirect to confirmation
+    if (order.paymentStatus === "paid") {
+      console.log("Payment already successful, redirecting...");
+      return res.redirect(`/order/confirmation/${order._id}`);
+    }
+
+    // Update payment as failed
+    order.paymentStatus = "failed";
+    order.orderStatus = "created";
+    await order.save();
+
+    return res.render("user/orderFailure", {
+      orderMongoId: order._id,
+      orderDisplayId: order.orderId,
+    });
+  } catch (error) {
+    console.error("Payment failed page error:", error);
+    res.status(500).send("Internal Server Error");
+  }
+};
+
 
 
 
