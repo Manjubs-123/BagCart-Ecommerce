@@ -5,6 +5,12 @@ import { sendOtpMail } from "../../utils/sendMail.js";
 import User from "../../models/userModel.js";
 import bcrypt from "bcryptjs";
 import cloudinary from "../../config/cloudinary.js";
+import {
+  isValidName,
+  isValidPhone,
+  isValidCityOrState,
+  isValidPincode,
+} from "../../utils/addressValidators.js";
 import fs from "fs";
 import mongoose from "mongoose";
 import {loadHomeProducts,renderLandingPage} from "./productController.js"; 
@@ -525,6 +531,29 @@ export const verifyChangedEmailOtp = async (req, res) => {
 };
 
 
+export const getAddresses = async (req, res) => {
+  try {
+    const userId = req.session.user?.id;
+    if (!userId) {
+      return res.json({ success: false });
+    }
+
+    const user = await User.findById(userId).lean();
+    if (!user) {
+      return res.json({ success: false });
+    }
+
+    return res.json({
+      success: true,
+      addresses: user.addresses || [],
+    });
+
+  } catch (err) {
+    console.error("ADDRESS ERROR:", err);
+    return res.json({ success: false });
+  }
+};
+
 
 export const getAddressPage = async (req, res) => {
     try {
@@ -555,6 +584,60 @@ export const getAddressPage = async (req, res) => {
         console.log(err);
         res.status(500).send("Server Error");
     }
+};
+
+export const addAddresses = async (req, res) => {
+  try {
+    const userId = req.session.user?.id;
+    if (!userId) {
+      return res.json({ success: false, message: "Not logged in" });
+    }
+
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.json({ success: false, message: "User not found" });
+    }
+
+    const newAddress = req.body;
+
+    // Validations
+    if (!isValidName(newAddress.fullName)) {
+      return res.json({ success: false, message: "Invalid full name" });
+    }
+
+    if (!isValidPhone(newAddress.phone)) {
+      return res.json({ success: false, message: "Invalid phone number" });
+    }
+
+    if (!isValidCityOrState(newAddress.city)) {
+      return res.json({ success: false, message: "Invalid city name" });
+    }
+
+    if (!isValidCityOrState(newAddress.state)) {
+      return res.json({ success: false, message: "Invalid state name" });
+    }
+
+    if (!isValidPincode(newAddress.pincode)) {
+      return res.json({ success: false, message: "Invalid pincode" });
+    }
+
+    // Handle default address
+    if (newAddress.isDefault) {
+      user.addresses.forEach((a) => (a.isDefault = false));
+    }
+
+    user.addresses.push(newAddress);
+    await user.save();
+
+    return res.json({
+      success: true,
+      address: user.addresses[user.addresses.length - 1],
+    });
+
+  } catch (err) {
+    console.error("ADD ADDRESS ERROR:", err);
+    return res.json({ success: false });
+  }
 };
 
 export const addAddress = async (req, res) => {
@@ -595,6 +678,77 @@ export const addAddress = async (req, res) => {
         console.error("Add Address Error:", err);
         res.json({ success: false, message: "Server error while adding address" });
     }
+};
+
+export const updateAddresses = async (req, res) => {
+  try {
+    const userId = req.session.user?.id;
+    const addressId = req.params.id;
+
+    if (!userId) {
+      return res.json({ success: false, message: "Not logged in" });
+    }
+
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.json({ success: false, message: "User not found" });
+    }
+
+    const updatedData = req.body;
+
+    // Validations
+    if (!isValidName(updatedData.fullName)) {
+      return res.json({ success: false, message: "Invalid full name" });
+    }
+
+    if (!isValidPhone(updatedData.phone)) {
+      return res.json({ success: false, message: "Invalid phone number" });
+    }
+
+    if (!isValidCityOrState(updatedData.city)) {
+      return res.json({ success: false, message: "Invalid city name" });
+    }
+
+    if (!isValidCityOrState(updatedData.state)) {
+      return res.json({ success: false, message: "Invalid state name" });
+    }
+
+    if (!isValidPincode(updatedData.pincode)) {
+      return res.json({ success: false, message: "Invalid pincode" });
+    }
+
+    // If setting default address, unset others
+    if (updatedData.isDefault) {
+      user.addresses.forEach((a) => (a.isDefault = false));
+    }
+
+    const address = user.addresses.id(addressId);
+    if (!address) {
+      return res.json({ success: false, message: "Address not found" });
+    }
+
+    // Update fields
+    address.fullName = updatedData.fullName;
+    address.phone = updatedData.phone;
+    address.addressLine1 = updatedData.addressLine1;
+    address.addressLine2 = updatedData.addressLine2;
+    address.city = updatedData.city;
+    address.state = updatedData.state;
+    address.pincode = updatedData.pincode;
+    address.country = updatedData.country;
+    address.addressType = updatedData.addressType;
+    address.isDefault = updatedData.isDefault;
+
+    await user.save();
+
+    return res.json({
+      success: true,
+      address,
+    });
+  } catch (err) {
+    console.error("UPDATE ADDRESS ERROR:", err);
+    return res.json({ success: false });
+  }
 };
 
 export const updateAddress = async (req, res) => {
