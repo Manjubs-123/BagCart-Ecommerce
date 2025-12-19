@@ -21,10 +21,20 @@ const orderItemSchema = new mongoose.Schema({
 
   
   price: { type: Number, required: true, min: 0 },
+    regularPrice: { type: Number },
 
   color: String,
   size: String,
   image: String,
+
+  // These store HOW MUCH of each cost belongs to THIS item
+  itemSubtotal: { type: Number, default: 0 }, // price × quantity
+  itemCouponShare: { type: Number, default: 0 }, // This item's coupon discount
+  itemAfterCoupon: { type: Number, default: 0 }, // itemSubtotal - itemCouponShare
+  itemTaxShare: { type: Number, default: 0 }, // This item's tax
+  itemShippingShare: { type: Number, default: 0 }, // This item's shipping
+  itemFinalPayable: { type: Number, default: 0 }, // What user ACTUALLY paid for this item
+
 
   status: {
     type: String,
@@ -43,6 +53,10 @@ const orderItemSchema = new mongoose.Schema({
     default: "pending"
   },
 
+  refundAmount: { type: Number, default: 0 },
+  refundMethod: { type: String, enum: ["wallet", "razorpay", "none"], default: "none" },
+  refundStatus: { type: String, enum: ["none", "pending", "credited"], default: "none" },
+  refundDate: Date,
 
   cancelReason: String,
   cancelDetails: String,
