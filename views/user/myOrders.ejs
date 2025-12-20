@@ -479,87 +479,106 @@ else { %>
                         </div>
                         
                         <!-- Price Summary -->
-                        <div class="lg:w-1/3">
-                          <div class="bg-white rounded-lg border border-gray-200 p-4">
-                            <h4 class="text-sm font-semibold text-gray-900 mb-3">Order Summary</h4>
-                            <div class="space-y-2 text-xs">
-                              <!-- Calculate totals -->
-                              <% 
-                                let orderOriginalSubtotal = 0;
-                                let orderDiscountedSubtotal = 0;
-                                order.items.forEach(item => {
-                                  const itemRegular = item.regularPrice || item.price;
-                                  orderOriginalSubtotal += itemRegular * item.quantity;
-                                  orderDiscountedSubtotal += item.price * item.quantity;
-                                });
-                                
-                                const productSavings = orderOriginalSubtotal - orderDiscountedSubtotal;
-                                const couponDiscount = order.coupon?.discountAmount || 0;
-                                const totalSavings = productSavings + couponDiscount;
-                              %>
-                              
-                              <!-- Original Subtotal -->
-                              <% if (orderOriginalSubtotal > orderDiscountedSubtotal) { %>
-                                <div class="flex justify-between">
-                                  <span class="text-gray-500 line-through">Original Total</span>
-                                  <span class="text-gray-500 line-through">₹<%= orderOriginalSubtotal.toFixed(2) %></span>
-                                </div>
-                                
-                                <!-- Product Savings -->
-                                <div class="flex justify-between">
-                                  <span class="text-green-600">Product Discounts</span>
-                                  <span class="text-green-600 font-medium">-₹<%= productSavings.toFixed(2) %></span>
-                                </div>
-                              <% } %>
-                              
-                              <!-- Subtotal -->
-                              <div class="flex justify-between">
-                                <span class="text-gray-600">Subtotal (<%= order.items.length %> items)</span>
-                                <span class="font-medium">₹<%= order.subtotal.toFixed(2) %></span>
-                              </div>
-                              
-                              <!-- Tax -->
-                              <div class="flex justify-between">
-                                <span class="text-gray-600">Tax (10%)</span>
-                                <span class="font-medium">₹<%= order.tax.toFixed(2) %></span>
-                              </div>
-                              
-                              <!-- Shipping -->
-                              <div class="flex justify-between">
-                                <span class="text-gray-600">Shipping</span>
-                                <span class="<%= order.shippingFee === 0 ? 'text-green-600' : 'font-medium' %>">
-                                  <%= order.shippingFee === 0 ? 'FREE' : `₹${order.shippingFee.toFixed(2)}` %>
-                                </span>
-                              </div>
-                              
-                              <!-- Coupon Discount -->
-                              <% if (couponDiscount > 0) { %>
-                                <div class="flex justify-between">
-                                  <span class="text-green-600">Coupon Discount</span>
-                                  <span class="text-green-600 font-medium">-₹<%= couponDiscount.toFixed(2) %></span>
-                                </div>
-                              <% } %>
-                              
-                              <!-- Grand Total -->
-                              <div class="border-t border-gray-200 pt-2 mt-2">
-                                <div class="flex justify-between text-sm font-bold">
-                                  <span>Grand Total</span>
-                                  <span class="text-blue-600">₹<%= order.totalAmount.toFixed(2) %></span>
-                                </div>
-                              </div>
-                              
-                              <!-- Total Savings -->
-                              <% if (totalSavings > 0) { %>
-                                <div class="border-t border-green-100 pt-2 mt-2">
-                                  <div class="flex justify-between text-green-700 text-xs">
-                                    <span><i class="fas fa-piggy-bank mr-1"></i>Total Savings</span>
-                                    <span class="font-bold">₹<%= totalSavings.toFixed(2) %></span>
-                                  </div>
-                                </div>
-                              <% } %>
-                            </div>
-                          </div>
-                        </div>
+                      <!-- Price Summary -->
+<div class="lg:w-1/3">
+  <div class="bg-white rounded-lg border border-gray-200 p-4">
+    <h4 class="text-sm font-semibold text-gray-900 mb-3">Order Summary</h4>
+    <div class="space-y-2 text-xs">
+      
+      <!-- Active Items Count -->
+      <div class="flex justify-between items-center pb-2 border-b border-gray-200">
+        <span class="text-gray-600 font-medium">Active Items</span>
+        <span class="font-medium text-blue-600"><%= order.summary.activeItemsCount %> items</span>
+      </div>
+      
+      <!-- Original Price (if there are discounts) -->
+      <% if (order.summary.activeOriginalPrice > order.summary.activeItemsSubtotal) { %>
+        <div class="flex justify-between">
+          <span class="text-gray-500 line-through">Original Price</span>
+          <span class="text-gray-500 line-through">₹<%= order.summary.activeOriginalPrice.toFixed(2) %></span>
+        </div>
+        
+        <!-- Product Discounts -->
+        <% if (order.summary.productDiscounts > 0) { %>
+          <div class="flex justify-between">
+            <span class="text-green-600">Product Discounts</span>
+            <span class="text-green-600 font-medium">-₹<%= order.summary.productDiscounts.toFixed(2) %></span>
+          </div>
+        <% } %>
+      <% } %>
+      
+      <!-- Subtotal (After Product Discounts) -->
+      <div class="flex justify-between">
+        <span class="text-gray-600">Subtotal</span>
+        <span class="font-medium">₹<%= order.summary.activeItemsSubtotal.toFixed(2) %></span>
+      </div>
+      
+      <!-- Coupon Discount (only for active items) -->
+      <% if (order.summary.activeCouponDiscount > 0) { %>
+        <div class="flex justify-between">
+          <span class="text-green-600">
+            <i class="fas fa-tag mr-1"></i>Coupon Discount
+          </span>
+          <span class="text-green-600 font-medium">-₹<%= order.summary.activeCouponDiscount.toFixed(2) %></span>
+        </div>
+      <% } %>
+      
+      <!-- Tax -->
+      <div class="flex justify-between">
+        <span class="text-gray-600">Tax (10%)</span>
+        <span class="font-medium">₹<%= order.summary.activeItemsTax.toFixed(2) %></span>
+      </div>
+      
+      <!-- Shipping -->
+      <div class="flex justify-between">
+        <span class="text-gray-600">Shipping</span>
+        <span class="<%= order.summary.activeItemsShipping === 0 ? 'text-green-600' : 'font-medium' %>">
+          <%= order.summary.activeItemsShipping === 0 ? 'FREE' : `₹${order.summary.activeItemsShipping.toFixed(2)}` %>
+        </span>
+      </div>
+      
+      <!-- Grand Total (Active Items Only) -->
+      <div class="border-t border-gray-200 pt-2 mt-2">
+        <div class="flex justify-between text-sm font-bold">
+          <span>Grand Total</span>
+          <span class="text-blue-600">₹<%= order.summary.grandTotal.toFixed(2) %></span>
+        </div>
+      </div>
+      
+      <!-- Cancelled Amount (if any) -->
+      <% if (order.summary.cancelledTotal > 0) { %>
+        <div class="border-t border-red-100 pt-2 mt-2">
+          <div class="flex justify-between text-red-600 text-xs">
+            <span><i class="fas fa-times-circle mr-1"></i>Cancelled Items</span>
+            <span class="font-bold">-₹<%= order.summary.cancelledTotal.toFixed(2) %></span>
+          </div>
+          <p class="text-gray-500 text-xs mt-1">Refunded to wallet</p>
+        </div>
+      <% } %>
+      
+      <!-- Returned Amount (if any) -->
+      <% if (order.summary.returnedTotal > 0) { %>
+        <div class="border-t border-yellow-100 pt-2 mt-2">
+          <div class="flex justify-between text-yellow-700 text-xs">
+            <span><i class="fas fa-undo mr-1"></i>Returned Items</span>
+            <span class="font-bold">-₹<%= order.summary.returnedTotal.toFixed(2) %></span>
+          </div>
+          <p class="text-gray-500 text-xs mt-1">Refunded to wallet</p>
+        </div>
+      <% } %>
+      
+      <!-- Total Savings -->
+      <% if (order.summary.totalSavings > 0) { %>
+        <div class="border-t border-green-100 pt-2 mt-2 bg-green-50 -mx-4 -mb-4 px-4 pb-4 mt-3 rounded-b-lg">
+          <div class="flex justify-between text-green-700 text-xs">
+            <span><i class="fas fa-piggy-bank mr-1"></i>Total Savings (Active Items)</span>
+            <span class="font-bold">₹<%= order.summary.totalSavings.toFixed(2) %></span>
+          </div>
+        </div>
+      <% } %>
+    </div>
+  </div>
+</div>
                       </div>
                     </div>
                   </div>

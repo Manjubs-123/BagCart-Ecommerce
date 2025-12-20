@@ -6,9 +6,11 @@ import Cart from "../../models/cartModel.js";
 import Coupon from "../../models/couponModel.js";
 import Wallet from "../../models/walletModel.js";
 import { applyOfferToProduct } from "../../utils/applyOffer.js";
+import { buildOrderSummary } from "../../utils/orderSummaryUtils.js";
 import {
   distributeOrderCostsToItems,calculateRefundOldWay
 } from "../../utils/orderPricingUtils.js"
+
 import PDFDocument from 'pdfkit';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -19,129 +21,6 @@ const __dirname = path.dirname(__filename);
 const generateOrderId = () => {
   return "BH-" + Math.floor(100000 + Math.random() * 900000).toString();
 };
-// export const createOrder = async (req, res) => {
-//   try {
-//     const userId = req.session.user.id;
-//     const { addressId, paymentMethod } = req.body;
-
-//     if (!addressId && !paymentMethod) {
-//       return res.json({
-//         success: false,
-//         message: "Please select a delivery address and payment method"
-//       });
-//     }
-
-//     if (!addressId) {
-//       return res.json({
-//         success: false,
-//         message: "Delivery address is not selected"
-//       });
-//     }
-
-//     if (!paymentMethod) {
-//       return res.json({
-//         success: false,
-//         message: "Payment method is not selected"
-//       });
-//     }
-
-
-//     const cart = await Cart.findOne({ user: userId })
-//       .populate("items.product");
-
-//     if (!cart || cart.items.length === 0) {
-//       return res.json({ success: false, message: "Cart empty" });
-//     }
-
-//     const user = await User.findById(userId);
-//     const address = user.addresses.id(addressId);
-
-//     if (!address) {
-//       return res.json({ success: false, message: "Address not found" });
-//     }
-// //apply offer to each item
-//     for (let item of cart.items) {
-//       const variant = item.product.variants[item.variantIndex];
-
-//       const offerData = await applyOfferToProduct({
-//         ...item.product.toObject(),
-//         variants: [variant]
-//       });
-
-//       const offerVariant = offerData.variants[0];//extract calculated varient price
-
-//       item._finalPrice = offerVariant.finalPrice;
-//       item._regularPrice = offerVariant.regularPrice;
-//     }
-// //build order items 
-//     const orderItems = cart.items.map(item => {
-//       const variant = item.product.variants[item.variantIndex];
-
-//       return {
-//         product: item.product._id,
-//         variantIndex: item.variantIndex,
-//         quantity: item.quantity,
-
-//         price: item._finalPrice,
-//         regularPrice: item._regularPrice,
-
-//         color: variant.color,
-//         image: variant.images?.[0]?.url || ""
-//       };
-//     });
-
-
-
-// //price calculation
-//     const subtotal = orderItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
- 
-//     const tax = subtotal * 0.1;
-//     const shippingFee = subtotal > 500 ? 0 : 50;
-//     const totalAmount = subtotal + tax + shippingFee;
-
-//     const customOrderId = generateOrderId();
-
-//     const order = await Order.create({
-//       orderId: customOrderId,
-//       user: userId,
-//       items: orderItems,
-//       shippingAddress: address,
-//       paymentMethod,
-//       subtotal,
-//       tax,
-//       shippingFee,
-//       totalAmount,
-//       paymentStatus:
-//         paymentMethod === "cod"
-//           ? "pending"
-//           : paymentMethod === "wallet"
-//             ? "paid"
-//             : "pending"
-//     });
-// //update stock
-//     for (let item of cart.items) {
-//       const product = await Product.findById(item.product._id);
-//       if (!product) continue;
-
-//       product.variants[item.variantIndex].stock -= item.quantity;
-//       product.markModified(`variants.${item.variantIndex}.stock`);
-//       await product.save();
-//     }
-
-//     cart.items = [];
-//     await cart.save();
-
-//     return res.json({
-//       success: true,
-//       orderId: order._id,
-//       customOrderId: order.orderId
-//     });
-
-//   } catch (err) {
-//     console.error("ORDER ERROR:", err);
-//     return res.json({ success: false, message: "Order failed" });
-//   }
-// };
 
 
 export const createOrder = async (req, res) => {
@@ -383,17 +262,38 @@ console.log({
     // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
     // STEP 8: STOCK DEDUCTION
     // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-    for (const cartItem of cart.items) {
-      const product = await Product.findById(cartItem.product._id).session(session);
-      if (!product) continue;
+    // for (const cartItem of cart.items) {
+    //   const product = await Product.findById(cartItem.product._id).session(session);
+    //   if (!product) continue;
 
-      const variant = product.variants[cartItem.variantIndex];
-      if (!variant) continue;
+    //   const variant = product.variants[cartItem.variantIndex];
+    //   if (!variant) continue;
 
-      variant.stock = Math.max(0, variant.stock - cartItem.quantity);
-      product.markModified(`variants.${cartItem.variantIndex}.stock`);
-      await product.save({ session });
+    //   variant.stock = Math.max(0, variant.stock - cartItem.quantity);
+    //   product.markModified(`variants.${cartItem.variantIndex}.stock`);
+    //   await product.save({ session });
+    // }
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// STEP 8: STOCK DEDUCTION (ONLY FOR COD & WALLET)
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+if (paymentMethod === "cod" || paymentMethod === "wallet") {
+  for (const cartItem of cart.items) {
+    const product = await Product.findById(cartItem.product._id).session(session);
+    if (!product) continue;
+
+    const variant = product.variants[cartItem.variantIndex];
+    if (!variant) continue;
+
+    if (variant.stock < cartItem.quantity) {
+      throw new Error("Insufficient stock");
     }
+
+    variant.stock -= cartItem.quantity;
+    product.markModified(`variants.${cartItem.variantIndex}.stock`);
+    await product.save({ session });
+  }
+}
+
 
     // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
     // STEP 9: WALLET DEDUCTION (IF WALLET PAYMENT)
@@ -442,71 +342,6 @@ console.log({
     });
   }
 };
-
-/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-   🔥 HELPER FUNCTION - ADD THIS AT THE BOTTOM OF YOUR FILE
-   
-   This function splits the coupon, tax, and shipping across all items
-   So each item knows EXACTLY how much the user paid for it
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
-// function distributeOrderCostsToItems(
-//   items,
-//   subtotalBeforeCoupon,
-//   couponDiscount,
-//   totalTax,
-//   shippingFee
-// ) {
-//   const numItems = items.length;
-  
-//   // STEP 1: Split coupon across items proportionally
-//   let remainingCoupon = couponDiscount;
-  
-//   for (let i = 0; i < numItems; i++) {
-//     const item = items[i];
-    
-//     if (i === numItems - 1) {
-//       // Last item gets whatever is left (handles rounding)
-//       item.itemCouponShare = +remainingCoupon.toFixed(2);
-//     } else {
-//       // Calculate this item's share based on its price
-//       const ratio = item.itemSubtotal / subtotalBeforeCoupon;
-//       item.itemCouponShare = +(couponDiscount * ratio).toFixed(2);
-//       remainingCoupon -= item.itemCouponShare;
-//     }
-    
-//     item.itemAfterCoupon = +(item.itemSubtotal - item.itemCouponShare).toFixed(2);
-//   }
-  
-//   // STEP 2: Split tax across items proportionally
-//   const subtotalAfterCoupon = items.reduce((sum, item) => sum + item.itemAfterCoupon, 0);
-//   let remainingTax = totalTax;
-  
-//   for (let i = 0; i < numItems; i++) {
-//     const item = items[i];
-    
-//     if (i === numItems - 1) {
-//       item.itemTaxShare = +remainingTax.toFixed(2);
-//     } else {
-//       const ratio = subtotalAfterCoupon > 0 ? item.itemAfterCoupon / subtotalAfterCoupon : 0;
-//       item.itemTaxShare = +(totalTax * ratio).toFixed(2);
-//       remainingTax -= item.itemTaxShare;
-//     }
-//   }
-  
-//   // STEP 3: Shipping goes ONLY to the last item
-//   for (let i = 0; i < numItems; i++) {
-//     items[i].itemShippingShare = (i === numItems - 1) ? shippingFee : 0;
-//   }
-  
-//   // STEP 4: Calculate final amount user paid for each item
-//   for (const item of items) {
-//     item.itemFinalPayable = +(
-//       item.itemAfterCoupon + 
-//       item.itemTaxShare + 
-//       item.itemShippingShare
-//     ).toFixed(2);
-//   }
-// }
 
 
 export const getOrderConfirmation = async (req, res) => {
@@ -581,14 +416,22 @@ export const getMyOrders = async (req, res) => {
       .lean();
 
     orders = orders.map(order => {
+      // Fix missing itemOrderId
       const fixedItems = order.items.map((item, index) => ({
         ...item,
         itemOrderId: item.itemOrderId || `${order.orderId}-${index + 1}`
       }));
 
-      return {
+      // ✅ ADD THIS: Attach dynamic summary
+      const summary = buildOrderSummary({
         ...order,
         items: fixedItems
+      });
+
+      return {
+        ...order,
+        items: fixedItems,
+        summary // ← NEW: Attach calculated summary
       };
     });
 
@@ -612,88 +455,48 @@ export const getMyOrders = async (req, res) => {
   }
 };
 
-
-// export const downloadInvoice = async (req, res) => {
+// export const getMyOrders = async (req, res) => {
 //   try {
-//     const { orderId } = req.params;
 //     const userId = req.session.user?.id;
+//     if (!userId) return res.redirect("/user/login");
 
-//     const order = await Order.findOne({ _id: orderId, user: userId })
+//     let orders = await Order.find({ user: userId })
 //       .populate("items.product")
+//       .sort({ createdAt: -1 })
 //       .lean();
 
-//     if (!order) return res.status(404).send("Order not found");
+//     orders = orders.map(order => {
+//       const fixedItems = order.items.map((item, index) => ({
+//         ...item,
+//         itemOrderId: item.itemOrderId || `${order.orderId}-${index + 1}`
+//       }));
 
-//     const displayOrderId = order.orderId || order._id;
-//     const fileName = `Invoice-${displayOrderId}.pdf`;
-
-//     res.setHeader("Content-Type", "application/pdf");
-//     res.setHeader("Content-Disposition", `attachment; filename="${fileName}"`);
-
-//     const doc = new PDFDocument({ margin: 40 });
-//     const fontPath = path.join(__dirname, "../../public/fonts/DejaVuSans.ttf");
-
-//     doc.registerFont("Unicode", fontPath);
-//     doc.font("Unicode");
-//     doc.pipe(res);
-
-//     // HEADER
-//     doc.fontSize(22).text("BagHub", { align: "center" });
-//     doc.moveDown();
-//     doc.fontSize(16).text("INVOICE", { align: "center" });
-//     doc.moveDown(2);
-
-//     // ORDER INFO
-//     doc.fontSize(12).text(`Order ID: ${displayOrderId}`);
-//     doc.text(`Date: ${new Date(order.createdAt).toLocaleString()}`);
-//     doc.moveDown(1);
-
-//     // SHIPPING ADDRESS
-//     const sa = order.shippingAddress;
-//     doc.text("Shipping Address:", { underline: true });
-//     doc.text(sa.fullName);
-//     doc.text(sa.addressLine1);
-//     if (sa.addressLine2) doc.text(sa.addressLine2);
-//     doc.text(`${sa.city}, ${sa.state} - ${sa.pincode}`);
-//     doc.text(`Phone: ${sa.phone}`);
-//     doc.moveDown(1);
-
-//     // ITEMS TABLE
-//     doc.fontSize(12).text("Order Items:", { underline: true });
-//     doc.moveDown(0.5);
-
-//     order.items.forEach((item, index) => {
-//       const itemOrderId = item.itemOrderId || `${displayOrderId}-${index + 1}`;
-
-//       doc.text(`Item ${index + 1}:`);
-//       doc.text(`Item Order ID: ${itemOrderId}`);
-//       doc.text(`Product: ${item.product?.name}`);
-//       doc.text(`Color: ${item.color}`);
-//       doc.text(`Quantity: ${item.quantity}`);
-//       doc.text(`Unit Price: ₹${item.price}`);
-//       doc.text(`Item Total: ₹${(item.price * item.quantity).toFixed(2)}`);
-//       doc.moveDown(1);
+//       return {
+//         ...order,
+//         items: fixedItems
+//       };
 //     });
 
-//     // ORDER TOTALS
-//     doc.text(`Subtotal: ₹${order.subtotal.toFixed(2)}`);
-//     if (order.coupon?.discountAmount > 0) {
-//       doc.text(`Coupon Discount: -₹${order.coupon.discountAmount.toFixed(2)}`);
-//     }
-//     doc.text(`Tax: ₹${order.tax.toFixed(2)}`);
-//     doc.text(`Shipping: ₹${order.shippingFee.toFixed(2)}`);
-//     doc.moveDown();
+//     const ordersCount = orders.length;
 
-//     doc.fontSize(14).text(`Grand Total: ₹${order.totalAmount.toFixed(2)}`);
-//     doc.moveDown();
-
-//     doc.end();
+//     res.render("user/myOrders", {
+//       orders,
+//       user: req.session.user,
+//       ordersCount,
+//       currentPage: "orders"
+//     });
 
 //   } catch (err) {
-//     console.error("downloadInvoice Error:", err);
-//     res.status(500).send("Could not generate invoice");
+//     console.error("getMyOrders Error:", err);
+//     res.status(500).render("user/myOrders", {
+//       orders: [],
+//       user: req.session.user,
+//       ordersCount: 0,
+//       currentPage: "orders"
+//     });
 //   }
 // };
+
 
 
 export const downloadInvoice = async (req, res) => {
@@ -816,181 +619,6 @@ export const downloadInvoice = async (req, res) => {
     res.status(500).send("Could not generate invoice");
   }
 };
-
-
-// export const cancelItem = async (req, res) => {
-//   const session = await mongoose.startSession();
-//   session.startTransaction();
-
-//   try {
-//     const { orderId, itemId } = req.params;
-//     const { reason, details } = req.body;
-//     const userId = req.session?.user?.id;
-
-//     if (!userId) {
-//       return res.status(401).json({ success: false, message: "Not logged in" });
-//     }
-
-//     const order = await Order.findOne({ _id: orderId, user: userId }).session(session);
-//     if (!order) throw new Error("Order not found");
-
-//     const item = order.items.id(itemId);
-//     if (!item) throw new Error("Item not found");
-
-//     if (["cancelled", "returned", "delivered"].includes(item.status)) {
-//       return res.json({ success: false, message: "Cannot cancel this item" });
-//     }
-
-//     /* ---------------- STOCK RESTORE ---------------- */
-//     const product = await Product.findById(item.product).session(session);
-//     if (product?.variants?.[item.variantIndex]) {
-//       product.variants[item.variantIndex].stock += item.quantity;
-//       await product.save({ session });
-//     }
-
-//     /* ---------------- MARK CANCELLED ---------------- */
-//     item.status = "cancelled";
-//     item.cancelReason = reason || "Cancelled by user";
-//     item.cancelDetails = details || "";
-//     item.cancelledDate = new Date();
-
-//     /* ---------------- PREPAID CHECK ---------------- */
-//     const isPrepaid =
-//       order.paymentMethod === "wallet" ||
-//       (order.paymentMethod === "razorpay" &&
-//         ["paid", "partial_refunded"].includes(order.paymentStatus));
-
-//     /* ---------------- REFUND BLOCK ---------------- */
-//     if (isPrepaid && !item.refundAmount) {
-
-//       const itemPrice = Number(item.price);
-//       const itemQty = Number(item.quantity);
-//       const itemTotal = itemPrice * itemQty;
-
-//       // COUPON SHARE 
-//       let itemCouponShare = 0;
-
-//       if (order.coupon && order.coupon.discountAmount > 0) {
-//         const baseSubtotal = order.coupon.subtotalBeforeCoupon || order.subtotal;
-
-//         if (baseSubtotal > 0) {
-
-//           itemCouponShare = (itemTotal / baseSubtotal) * order.coupon.discountAmount;
-//         }
-//       }
-
-//       const itemAfterCoupon = Math.max(0, itemTotal - itemCouponShare);
-
-//       /* --------- TAX SHARE  -------- */
-//       let itemTaxShare = 0;
-
-//       // Tax is calculated on (subtotal - coupon)
-//       const totalAfterCoupon = order.subtotal - (order.coupon?.discountAmount || 0);
-
-//       if (totalAfterCoupon > 0 && order.tax > 0) {
-//         itemTaxShare = (itemAfterCoupon / totalAfterCoupon) * order.tax;
-//       }
-
-//       /* --------- SHIPPING REFUND  -------- */
-//       let itemShippingShare = 0;
-
-//       const otherItems = order.items.filter(i => i._id.toString() !== itemId);
-//       const allOthersDone = otherItems.every(i =>
-//         ["cancelled", "returned"].includes(i.status)
-//       );
-
-//       // Refund full shipping
-//       if (order.items.length === 1 || allOthersDone) {
-//         itemShippingShare = order.shippingFee;
-//       }
-
-//       /* --------- FINAL REFUND AMOUNT -WHAT USER ACTUALLY PAID -------- */
-//       let refundAmount = itemAfterCoupon + itemTaxShare + itemShippingShare;
-
-//       //  Cannot exceed remaining refundable amount 
-//       const previousRefunds = order.items.reduce(
-//         (sum, i) => sum + (i.refundAmount || 0),
-//         0
-//       );
-//       const refundableRemaining = order.totalAmount - previousRefunds;
-
-//       refundAmount = Math.min(refundAmount, refundableRemaining);
-//       refundAmount = Math.max(0, refundAmount); // Cannot be negative
-//       refundAmount = +refundAmount.toFixed(2);
-
-//       // WALLET UPDATE 
-//       let wallet = await Wallet.findOne({ user: userId }).session(session);
-//       if (!wallet) {
-//         wallet = (await Wallet.create([{
-//           user: userId,
-//           balance: 0,
-//           transactions: []
-//         }], { session }))[0];
-//       }
-
-//       wallet.balance += refundAmount;
-//       wallet.transactions.push({
-//         type: "credit",
-//         amount: refundAmount,
-//         description: `Refund for cancelled item ${item.itemOrderId || itemId}`,
-//         date: new Date(),
-//         meta: {
-//           itemTotal: itemTotal.toFixed(2),
-//           couponShare: itemCouponShare.toFixed(2),
-//           itemAfterCoupon: itemAfterCoupon.toFixed(2),
-//           taxShare: itemTaxShare.toFixed(2),
-//           shippingShare: itemShippingShare.toFixed(2),
-//           refundAmount: refundAmount.toFixed(2)
-//         }
-//       });
-
-//       await wallet.save({ session });
-
-//       //  SAVE REFUND INFO IN ITEM 
-//       item.refundAmount = refundAmount;
-//       item.refundMethod = "wallet";
-//       item.refundStatus = "credited";
-//       item.refundDate = new Date();
-//     }
-
-//    //  ORDER STATUS UPDATE 
-//     const allCancelled = order.items.every(i =>
-//       ["cancelled", "returned"].includes(i.status)
-//     );
-
-//     if (allCancelled) {
-//       order.orderStatus = "cancelled";
-//       order.paymentStatus = "refunded";
-//     } else {
-//       // At least one item cancelled/returned but not all
-//       const anyRefunded = order.items.some(i => i.refundAmount > 0);
-//       if (anyRefunded) {
-//         order.paymentStatus = "partial_refunded";
-//       }
-//     }
-
-//     await order.save({ session });
-
-//     await session.commitTransaction();
-//     session.endSession();
-
-//     return res.json({
-//       success: true,
-//       message: "Item cancelled successfully",
-//       refundAmount: item.refundAmount || 0
-//     });
-
-//   } catch (err) {
-//     await session.abortTransaction();
-//     session.endSession();
-//     console.error("Cancel Error:", err);
-//     return res.status(500).json({
-//       success: false,
-//       message: "Something went wrong",
-//       error: err.message
-//     });
-//   }
-// };
 
 
 export const cancelItem = async (req, res) => {
@@ -1180,49 +808,7 @@ export const cancelItem = async (req, res) => {
   }
 };
 
-/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-   🔥 HELPER FUNCTION FOR OLD ORDERS - ADD THIS AT THE BOTTOM
-   
-   This is used for orders created BEFORE you added the breakdown
-   It recalculates the refund the old way (less accurate but better than nothing)
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
-// function calculateRefundOldWay(order, item, itemId) {
-//   const itemPrice = Number(item.price);
-//   const itemQty = Number(item.quantity);
-//   const itemTotal = itemPrice * itemQty;
 
-//   // COUPON SHARE
-//   let itemCouponShare = 0;
-//   if (order.coupon && order.coupon.discountAmount > 0) {
-//     const baseSubtotal = order.coupon.subtotalBeforeCoupon || order.subtotal;
-//     if (baseSubtotal > 0) {
-//       itemCouponShare = (itemTotal / baseSubtotal) * order.coupon.discountAmount;
-//     }
-//   }
-
-//   const itemAfterCoupon = Math.max(0, itemTotal - itemCouponShare);
-
-//   // TAX SHARE
-//   let itemTaxShare = 0;
-//   const totalAfterCoupon = order.subtotal - (order.coupon?.discountAmount || 0);
-//   if (totalAfterCoupon > 0 && order.tax > 0) {
-//     itemTaxShare = (itemAfterCoupon / totalAfterCoupon) * order.tax;
-//   }
-
-//   // SHIPPING REFUND
-//   let itemShippingShare = 0;
-//   const otherItems = order.items.filter(i => i._id.toString() !== itemId);
-//   const allOthersDone = otherItems.every(i =>
-//     ["cancelled", "returned"].includes(i.status)
-//   );
-
-//   if (order.items.length === 1 || allOthersDone) {
-//     itemShippingShare = order.shippingFee;
-//   }
-
-//   // FINAL REFUND
-//   return itemAfterCoupon + itemTaxShare + itemShippingShare;
-// }
 
 export const returnItem = async (req, res) => {
   try {
