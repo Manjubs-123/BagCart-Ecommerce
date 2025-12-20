@@ -21,32 +21,80 @@ export const renderAdminLogin = (req, res) => {
   res.render("admin/login", { error });
 };
 
+// export const postAdminLogin = async (req, res) => {
+//   try {
+//     const { email, password } = req.body;
+
+    
+//     if (!email || !password) {
+//       return res.redirect("/admin?error=missing");
+//     }
+
+    
+//     if (
+//       email === process.env.ADMIN_EMAIL &&
+//       password === process.env.ADMIN_PASSWORD
+//     ) {
+//       req.session.regenerate(err => {
+//         if (err) {
+//           console.error("Session regenerate error:", err);
+//           return res.redirect("/admin?error=server");
+//         }
+
+//         req.session.isAdmin = true;
+//         return res.redirect("/admin/dashboard");
+//       });
+
+//     } else {
+      
+//       return res.redirect("/admin?error=invalid");
+//     }
+
+//   } catch (err) {
+//     console.error("Admin login error:", err);
+//     return res.redirect("/admin?error=server");
+//   }
+// };
+
 export const postAdminLogin = async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    
     if (!email || !password) {
       return res.redirect("/admin?error=missing");
     }
 
-    
     if (
       email === process.env.ADMIN_EMAIL &&
       password === process.env.ADMIN_PASSWORD
     ) {
-      req.session.regenerate(err => {
+      // CRITICAL FIX: Preserve existing user session if it exists
+      const wasUserLoggedIn = req.session.isLoggedIn;
+      const existingUser = req.session.user;
+
+      // Don't regenerate - just update the session
+      req.session.isAdmin = true;
+
+      // RESTORE user session if it existed
+      if (wasUserLoggedIn && existingUser) {
+        req.session.isLoggedIn = true;
+        req.session.user = existingUser;
+      }
+
+      // Save session explicitly
+      req.session.save((err) => {
         if (err) {
-          console.error("Session regenerate error:", err);
+          console.error("Session save error:", err);
           return res.redirect("/admin?error=server");
         }
-
-        req.session.isAdmin = true;
+        console.log("Admin logged in, session preserved:", {
+          isAdmin: req.session.isAdmin,
+          userStillLoggedIn: req.session.isLoggedIn
+        });
         return res.redirect("/admin/dashboard");
       });
 
     } else {
-      
       return res.redirect("/admin?error=invalid");
     }
 
@@ -56,6 +104,25 @@ export const postAdminLogin = async (req, res) => {
   }
 };
 
+export const adminLogout = (req, res) => {
+  // Preserve user session if exists
+  const wasUserLoggedIn = req.session.isLoggedIn;
+  const existingUser = req.session.user;
+  
+  // Clear admin session
+  req.session.isAdmin = false;
+  
+  // Restore user session
+  if (wasUserLoggedIn && existingUser) {
+    req.session.isLoggedIn = true;
+    req.session.user = existingUser;
+  }
+  
+  req.session.save((err) => {
+    if (err) console.error("Session save error:", err);
+    res.redirect("/admin");
+  });
+};
 
 
 export const renderAdminDashboard = async (req, res) => {
@@ -390,12 +457,12 @@ const yearlyRevenue = async (req, res) => {
   res.json({ labels, values });
 };
 
-export const adminLogout = (req, res) => {
-  req.session.destroy((err) => {
-    if (err) console.error("Session destroy error:", err);
-    res.clearCookie("connect.sid");
-    res.redirect("/admin"); 
-  });
-};
+// export const adminLogout = (req, res) => {
+//   req.session.destroy((err) => {
+//     if (err) console.error("Session destroy error:", err);
+//     res.clearCookie("connect.sid");
+//     res.redirect("/admin"); 
+//   });
+// };
 
 

@@ -1,0 +1,6 @@
+import passport from "../config/passport.js";
+
+export const initializePassportForRoute = [
+  passport.initialize(),
+  passport.session()
+];
