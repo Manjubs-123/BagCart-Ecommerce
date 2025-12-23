@@ -18,6 +18,9 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+
+
+
 const generateOrderId = () => {
   return "BH-" + Math.floor(100000 + Math.random() * 900000).toString();
 };
@@ -499,6 +502,128 @@ export const getMyOrders = async (req, res) => {
 
 
 
+// export const downloadInvoice = async (req, res) => {
+//   try {
+//     const { orderId } = req.params;
+//     const userId = req.session.user?.id;
+
+//     const order = await Order.findOne({ _id: orderId, user: userId })
+//       .populate("items.product")
+//       .lean();
+
+//     if (!order) return res.status(404).send("Order not found");
+
+//     const displayOrderId = order.orderId || order._id;
+//     const fileName = `Invoice-${displayOrderId}.pdf`;
+
+//     res.setHeader("Content-Type", "application/pdf");
+//     res.setHeader("Content-Disposition", `attachment; filename="${fileName}"`);
+
+//     const doc = new PDFDocument({ margin: 40 });
+//     const fontPath = path.join(__dirname, "../../public/fonts/DejaVuSans.ttf");
+
+//     doc.registerFont("Unicode", fontPath);
+//     doc.font("Unicode");
+//     doc.pipe(res);
+
+//     /* ---------------- HEADER ---------------- */
+//     doc.fontSize(20).text("BagHub", { align: "center" });
+//     doc.moveDown(0.5);
+//     doc.fontSize(14).text("INVOICE", { align: "center" });
+//     doc.moveDown(2);
+
+//     /* ---------------- ORDER INFO (2 COLUMN) ---------------- */
+//     const leftX = 40;
+//     const rightX = 330;
+//     let y = doc.y;
+
+//     doc.fontSize(11);
+//     doc.text(`Order ID: ${displayOrderId}`, leftX, y);
+//     doc.text(`Date: ${new Date(order.createdAt).toLocaleString()}`, rightX, y);
+
+//     y += 14;
+//     doc.text(`Customer: ${order.shippingAddress.fullName}`, leftX, y);
+//     doc.text(`Payment: ${order.paymentMethod}`, rightX, y);
+
+//     doc.moveDown(2);
+
+//     /* ---------------- SHIPPING ADDRESS ---------------- */
+//     const sa = order.shippingAddress;
+//     doc.fontSize(11).text("Shipping Address", { underline: true });
+//     doc.moveDown(0.5);
+//     doc.text(sa.fullName);
+//     doc.text(sa.addressLine1);
+//     if (sa.addressLine2) doc.text(sa.addressLine2);
+//     doc.text(`${sa.city}, ${sa.state} - ${sa.pincode}`);
+//     doc.text(`Phone: ${sa.phone}`);
+
+//     doc.moveDown(2);
+
+//     /* ---------------- ITEMS (CLEAN LIST STRUCTURE) ---------------- */
+//     doc.fontSize(11).text("Order Items", { underline: true });
+//     doc.moveDown(0.5);
+
+//     // Header line
+//     doc.text("Product", leftX);
+//     doc.text("Qty", 300, doc.y - 12);
+//     doc.text("Price", 350, doc.y - 12);
+//     doc.text("Total", 420, doc.y - 12);
+
+//     doc.moveTo(leftX, doc.y).lineTo(550, doc.y).stroke();
+//     doc.moveDown(0.5);
+
+//     order.items.forEach((item) => {
+//       const lineY = doc.y;
+
+//       doc.text(item.product?.name, leftX, lineY, { width: 240 });
+//       doc.text(item.quantity.toString(), 300, lineY);
+//       doc.text(`₹${item.price}`, 350, lineY);
+//       doc.text(
+//         `₹${(item.price * item.quantity).toFixed(2)}`,
+//         420,
+//         lineY
+//       );
+
+//       doc.moveDown(0.5);
+//     });
+
+//     doc.moveDown(2);
+
+//     /* ---------------- TOTALS (RIGHT ALIGNED, CLEAN) ---------------- */
+//     y = doc.y;
+//     const totalX = 350;
+
+//     doc.text(`Subtotal: ₹${order.subtotal.toFixed(2)}`, totalX, y);
+//     y += 14;
+
+//     if (order.coupon?.discountAmount > 0) {
+//       doc.text(
+//         `Coupon Discount: -₹${order.coupon.discountAmount.toFixed(2)}`,
+//         totalX,
+//         y
+//       );
+//       y += 14;
+//     }
+
+//     doc.text(`Tax: ₹${order.tax.toFixed(2)}`, totalX, y);
+//     y += 14;
+//     doc.text(`Shipping: ₹${order.shippingFee.toFixed(2)}`, totalX, y);
+//     y += 18;
+
+//     doc.fontSize(13).text(
+//       `Grand Total: ₹${order.totalAmount.toFixed(2)}`,
+//       totalX,
+//       y
+//     );
+
+//     doc.end();
+//   } catch (err) {
+//     console.error("downloadInvoice Error:", err);
+//     res.status(500).send("Could not generate invoice");
+//   }
+// };
+
+
 export const downloadInvoice = async (req, res) => {
   try {
     const { orderId } = req.params;
@@ -509,6 +634,9 @@ export const downloadInvoice = async (req, res) => {
       .lean();
 
     if (!order) return res.status(404).send("Order not found");
+
+    // ✅ Calculate dynamic summary (accounts for cancellations/returns)
+    const summary = buildOrderSummary(order);
 
     const displayOrderId = order.orderId || order._id;
     const fileName = `Invoice-${displayOrderId}.pdf`;
@@ -562,56 +690,122 @@ export const downloadInvoice = async (req, res) => {
 
     // Header line
     doc.text("Product", leftX);
-    doc.text("Qty", 300, doc.y - 12);
-    doc.text("Price", 350, doc.y - 12);
-    doc.text("Total", 420, doc.y - 12);
+    doc.text("Qty", 280, doc.y - 12);
+    doc.text("Price", 330, doc.y - 12);
+    doc.text("Status", 400, doc.y - 12);
+    doc.text("Total", 480, doc.y - 12);
 
     doc.moveTo(leftX, doc.y).lineTo(550, doc.y).stroke();
     doc.moveDown(0.5);
 
+    // ✅ Display all items with their status
     order.items.forEach((item) => {
       const lineY = doc.y;
-
-      doc.text(item.product?.name, leftX, lineY, { width: 240 });
-      doc.text(item.quantity.toString(), 300, lineY);
-      doc.text(`₹${item.price}`, 350, lineY);
-      doc.text(
-        `₹${(item.price * item.quantity).toFixed(2)}`,
-        420,
-        lineY
-      );
+      const status = item.status || 'pending';
+      
+      // Display item details
+      doc.text(item.product?.name || 'Unknown Product', leftX, lineY, { width: 220 });
+      doc.text(item.quantity.toString(), 280, lineY);
+      doc.text(`₹${item.price}`, 330, lineY);
+      
+      // ✅ Show status with color coding
+      const statusText = status.charAt(0).toUpperCase() + status.slice(1);
+      if (['cancelled', 'returned'].includes(status)) {
+        doc.fillColor('red').text(statusText, 400, lineY);
+        doc.fillColor('black');
+        
+        // Show refund amount if available
+        if (item.refundAmount && item.refundAmount > 0) {
+          doc.fillColor('green').text(`-₹${item.refundAmount.toFixed(2)}`, 480, lineY);
+          doc.fillColor('black');
+        } else {
+          doc.text('₹0.00', 480, lineY);
+        }
+      } else {
+        doc.text(statusText, 400, lineY);
+        doc.text(`₹${(item.price * item.quantity).toFixed(2)}`, 480, lineY);
+      }
 
       doc.moveDown(0.5);
     });
 
     doc.moveDown(2);
 
-    /* ---------------- TOTALS (RIGHT ALIGNED, CLEAN) ---------------- */
+    /* ---------------- TOTALS (DYNAMIC - REFLECTS CANCELLATIONS/RETURNS) ---------------- */
     y = doc.y;
     const totalX = 350;
 
-    doc.text(`Subtotal: ₹${order.subtotal.toFixed(2)}`, totalX, y);
+    // ✅ Show active items subtotal (excludes cancelled/returned)
+    doc.text(`Subtotal (Active Items): ₹${summary.activeItemsSubtotal.toFixed(2)}`, totalX, y);
     y += 14;
 
-    if (order.coupon?.discountAmount > 0) {
-      doc.text(
-        `Coupon Discount: -₹${order.coupon.discountAmount.toFixed(2)}`,
-        totalX,
-        y
-      );
+    // Show product discounts if any
+    if (summary.productDiscounts > 0) {
+      doc.fillColor('green')
+        .text(`Product Discounts: -₹${summary.productDiscounts.toFixed(2)}`, totalX, y);
+      doc.fillColor('black');
       y += 14;
     }
 
-    doc.text(`Tax: ₹${order.tax.toFixed(2)}`, totalX, y);
+    // Show coupon discount for active items
+    if (summary.activeCouponDiscount > 0) {
+      doc.fillColor('green')
+        .text(`Coupon Discount: -₹${summary.activeCouponDiscount.toFixed(2)}`, totalX, y);
+      doc.fillColor('black');
+      y += 14;
+    }
+
+    // Tax and shipping for active items
+    doc.text(`Tax: ₹${summary.activeItemsTax.toFixed(2)}`, totalX, y);
     y += 14;
-    doc.text(`Shipping: ₹${order.shippingFee.toFixed(2)}`, totalX, y);
+    doc.text(`Shipping: ₹${summary.activeItemsShipping.toFixed(2)}`, totalX, y);
     y += 18;
 
-    doc.fontSize(13).text(
-      `Grand Total: ₹${order.totalAmount.toFixed(2)}`,
-      totalX,
-      y
-    );
+    // ✅ Show cancelled/returned amounts if any
+    if (summary.cancelledTotal > 0) {
+      doc.fillColor('red')
+        .text(`Cancelled Items Refund: -₹${summary.cancelledTotal.toFixed(2)}`, totalX, y);
+      doc.fillColor('black');
+      y += 14;
+    }
+
+    if (summary.returnedTotal > 0) {
+      doc.fillColor('red')
+        .text(`Returned Items Refund: -₹${summary.returnedTotal.toFixed(2)}`, totalX, y);
+      doc.fillColor('black');
+      y += 14;
+    }
+
+    // Add spacing before grand total
+    if (summary.cancelledTotal > 0 || summary.returnedTotal > 0) {
+      y += 6;
+    }
+
+    // ✅ Show current payable amount (excludes refunded items)
+    doc.fontSize(13)
+      .text(`Current Amount Due: ₹${summary.grandTotal.toFixed(2)}`, totalX, y);
+    
+    y += 18;
+
+    // ✅ Show original total if different from current
+    if (Math.abs(summary.originalTotal - summary.grandTotal) > 0.01) {
+      doc.fontSize(10)
+        .fillColor('gray')
+        .text(`(Original Total: ₹${summary.originalTotal.toFixed(2)})`, totalX, y);
+      doc.fillColor('black');
+    }
+
+    /* ---------------- FOOTER NOTES ---------------- */
+    if (summary.cancelledTotal > 0 || summary.returnedTotal > 0) {
+      doc.moveDown(3);
+      doc.fontSize(9)
+        .fillColor('gray')
+        .text('Note: Refunds have been processed to your wallet.', leftX, doc.y, { 
+          width: 500, 
+          align: 'left' 
+        });
+      doc.fillColor('black');
+    }
 
     doc.end();
   } catch (err) {
