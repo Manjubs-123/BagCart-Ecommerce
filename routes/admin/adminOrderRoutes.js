@@ -18,7 +18,7 @@ router.get("/returns", isAdminAuthenticated, getReturnRequests);
 router.get("/cancelled/:id", adminGetCancelledItems);
 
 router.get("/:id", isAdminAuthenticated, adminGetOrder); 
-       // detail view
+       
 router.patch("/:orderId/item/:itemId/status", isAdminAuthenticated, adminUpdateOrderStatus);
 
 router.post("/returns/:orderId/item/:itemId/approve", isAdminAuthenticated, approveReturn);

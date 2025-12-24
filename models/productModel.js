@@ -74,7 +74,7 @@ const productSchema = new mongoose.Schema({
   timestamps: true 
 });
 
-// Indexes for better query performance
+
 productSchema.index({ isDeleted: 1, createdAt: -1 });
 productSchema.index({ category: 1 });
 productSchema.index({ name: 'text', brand: 'text' });

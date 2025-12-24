@@ -52,11 +52,11 @@ app.use(
     saveUninitialized: false,
     store: MongoStore.create({
       mongoUrl: process.env.MONGO_URI,
-      ttl: 24 * 60 * 60, // 1 day
+      ttl: 24 * 60 * 60, 
     }),
     cookie: {
       httpOnly: true,
-      secure: false, //  false for localhost (true only in HTTPS)
+      secure: false, 
       sameSite: "lax",
       maxAge: 24 * 60 * 60 * 1000,
     },
@@ -85,7 +85,7 @@ app.use(async (req, res, next) => {
     }
     next();
   } catch (err) {
-    console.log("User Load Error:", err);
+    // console.log("User Load Error:", err);
     res.locals.user = null;
     next();
   }
@@ -97,7 +97,7 @@ app.use(async (req, res, next) => {
   if (req.session.user && req.session.user.id) {
     let user = await User.findById(req.session.user.id).lean();
 
-    // if profileImage missing → assign default
+    
     if (!user.profileImage || !user.profileImage.url) {
       user.profileImage = {
         url: "https://res.cloudinary.com/db5uwjwdv/image/upload/v1763442856/AdobeStock_1185421594_Preview_cvfm1v.jpg",
@@ -116,18 +116,6 @@ app.use(async (req, res, next) => {
 
   next();
 });
-
-
-app.use(passport.initialize());
-app.use(passport.session());
-
-
-// app.use((req, res, next) => {
-//   res.locals.user = req.user || null;
-//   res.locals.currentPage = "";
-//   res.locals.currentPath = req.path;
-//   next();
-// });
 
 
 app.use('/user/cart',cartRoutes);
@@ -149,8 +137,6 @@ app.use('/user', couponRoutes);
 app.use('/admin/offers', offerRoutes);
 app.use("/api/payment", paymentRoutes);
 app.use("/", paymentRoutes);
-
-
 
 
 

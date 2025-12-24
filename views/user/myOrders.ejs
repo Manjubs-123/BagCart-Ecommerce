@@ -348,24 +348,24 @@
                                     <i class="fas <%= getStatusIcon(item.status || order.orderStatus) %>"></i>
                                     <%= (item.status || order.orderStatus).charAt(0).toUpperCase() + (item.status || order.orderStatus).slice(1) %>
                                   </span>
+
+                                  <% if (item.status === 'return-rejected' && item.returnDetails) { %>
+  <div class="mt-3 bg-red-50 border border-red-200 rounded-lg p-3">
+    <p class="text-sm text-red-700 font-semibold">
+      <i class="fas fa-circle-xmark mr-1"></i>
+      Return Rejected
+    </p>
+    <p class="text-sm text-gray-700 mt-1">
+      <strong>Reason:</strong> <%= item.returnDetails %>
+    </p>
+  </div>
+<% } %>
+
                                 </div>
                               </div>
 
-                              <!-- Progress Bar -->
-                              <div class="mt-4">
-                                <div class="flex justify-between text-xs sm:text-sm text-gray-600 mb-2">
-                                  <span class="hidden xs:inline">Order Placed</span>
-                                  <span class="text-xs">Processing</span>
-                                  <span class="hidden sm:inline">Shipped</span>
-                                  <span class="hidden md:inline">Out for Delivery</span>
-                                  <span class="hidden xs:inline">Delivered</span>
-                                </div>
-                                <div class="w-full bg-gray-200 rounded-full h-2 sm:h-2.5">
-                                  <div class="<%= getProgressBarClass(item.status || order.orderStatus) %> h-2 sm:h-2.5 rounded-full transition-all duration-500"></div>
-                                </div>
-                              </div>
+                             
 
-                              <!-- Action Buttons -->
                               <!-- Action Buttons -->
 <div class="mt-4 sm:mt-6 pt-4 border-t border-gray-200">
 
@@ -450,12 +450,12 @@ else { %>
                                 <strong>Method:</strong> 
                                 <%= order.paymentMethod === 'cod' ? 'Cash on Delivery' : order.paymentMethod %>
                               </p>
-                              <p class="text-xs text-gray-600">
+                              <!-- <p class="text-xs text-gray-600">
                                 <strong>Status:</strong> 
                                 <span class="font-medium <%= order.paymentStatus === 'paid' ? 'text-green-600' : 'text-yellow-600' %>">
                                   <%= order.paymentStatus.charAt(0).toUpperCase() + order.paymentStatus.slice(1) %>
                                 </span>
-                              </p>
+                              </p> -->
                               <% if (order.coupon && order.coupon.code) { %>
                                 <p class="text-xs text-green-600 mt-2">
                                   <i class="fas fa-tag mr-1"></i>
@@ -466,88 +466,106 @@ else { %>
                           </div>
                         </div>
                         
-                        <!-- Price Summary -->
-                        <div class="lg:w-1/3">
-                          <div class="bg-white rounded-lg border border-gray-200 p-4">
-                            <h4 class="text-sm font-semibold text-gray-900 mb-3">Order Summary</h4>
-                            <div class="space-y-2 text-xs">
-                              <!-- Calculate totals -->
-                              <% 
-                                let orderOriginalSubtotal = 0;
-                                let orderDiscountedSubtotal = 0;
-                                order.items.forEach(item => {
-                                  const itemRegular = item.regularPrice || item.price;
-                                  orderOriginalSubtotal += itemRegular * item.quantity;
-                                  orderDiscountedSubtotal += item.price * item.quantity;
-                                });
-                                
-                                const productSavings = orderOriginalSubtotal - orderDiscountedSubtotal;
-                                const couponDiscount = order.coupon?.discountAmount || 0;
-                                const totalSavings = productSavings + couponDiscount;
-                              %>
-                              
-                              <!-- Original Subtotal -->
-                              <% if (orderOriginalSubtotal > orderDiscountedSubtotal) { %>
-                                <div class="flex justify-between">
-                                  <span class="text-gray-500 line-through">Original Total</span>
-                                  <span class="text-gray-500 line-through">₹<%= orderOriginalSubtotal.toFixed(2) %></span>
-                                </div>
-                                
-                                <!-- Product Savings -->
-                                <div class="flex justify-between">
-                                  <span class="text-green-600">Product Discounts</span>
-                                  <span class="text-green-600 font-medium">-₹<%= productSavings.toFixed(2) %></span>
-                                </div>
-                              <% } %>
-                              
-                              <!-- Subtotal -->
-                              <div class="flex justify-between">
-                                <span class="text-gray-600">Subtotal (<%= order.items.length %> items)</span>
-                                <span class="font-medium">₹<%= order.subtotal.toFixed(2) %></span>
-                              </div>
-                              
-                              <!-- Tax -->
-                              <div class="flex justify-between">
-                                <span class="text-gray-600">Tax (10%)</span>
-                                <span class="font-medium">₹<%= order.tax.toFixed(2) %></span>
-                              </div>
-                              
-                              <!-- Shipping -->
-                              <div class="flex justify-between">
-                                <span class="text-gray-600">Shipping</span>
-                                <span class="<%= order.shippingFee === 0 ? 'text-green-600' : 'font-medium' %>">
-                                  <%= order.shippingFee === 0 ? 'FREE' : `₹${order.shippingFee.toFixed(2)}` %>
-                                </span>
-                              </div>
-                              
-                              <!-- Coupon Discount -->
-                              <% if (couponDiscount > 0) { %>
-                                <div class="flex justify-between">
-                                  <span class="text-green-600">Coupon Discount</span>
-                                  <span class="text-green-600 font-medium">-₹<%= couponDiscount.toFixed(2) %></span>
-                                </div>
-                              <% } %>
-                              
-                              <!-- Grand Total -->
-                              <div class="border-t border-gray-200 pt-2 mt-2">
-                                <div class="flex justify-between text-sm font-bold">
-                                  <span>Grand Total</span>
-                                  <span class="text-blue-600">₹<%= order.totalAmount.toFixed(2) %></span>
-                                </div>
-                              </div>
-                              
-                              <!-- Total Savings -->
-                              <% if (totalSavings > 0) { %>
-                                <div class="border-t border-green-100 pt-2 mt-2">
-                                  <div class="flex justify-between text-green-700 text-xs">
-                                    <span><i class="fas fa-piggy-bank mr-1"></i>Total Savings</span>
-                                    <span class="font-bold">₹<%= totalSavings.toFixed(2) %></span>
-                                  </div>
-                                </div>
-                              <% } %>
-                            </div>
-                          </div>
-                        </div>
+                      <!-- Price Summary -->
+<div class="lg:w-1/3">
+  <div class="bg-white rounded-lg border border-gray-200 p-4">
+    <h4 class="text-sm font-semibold text-gray-900 mb-3">Order Summary</h4>
+    <div class="space-y-2 text-xs">
+      
+      <!-- Active Items Count -->
+      <div class="flex justify-between items-center pb-2 border-b border-gray-200">
+        <span class="text-gray-600 font-medium">Active Items</span>
+        <span class="font-medium text-blue-600"><%= order.summary.activeItemsCount %> items</span>
+      </div>
+      
+      <!-- Original Price (if there are discounts) -->
+      <% if (order.summary.activeOriginalPrice > order.summary.activeItemsSubtotal) { %>
+        <div class="flex justify-between">
+          <span class="text-gray-500 line-through">Original Price</span>
+          <span class="text-gray-500 line-through">₹<%= order.summary.activeOriginalPrice.toFixed(2) %></span>
+        </div>
+        
+        <!-- Product Discounts -->
+        <% if (order.summary.productDiscounts > 0) { %>
+          <div class="flex justify-between">
+            <span class="text-green-600">Product Discounts</span>
+            <span class="text-green-600 font-medium">-₹<%= order.summary.productDiscounts.toFixed(2) %></span>
+          </div>
+        <% } %>
+      <% } %>
+      
+      <!-- Subtotal (After Product Discounts) -->
+      <div class="flex justify-between">
+        <span class="text-gray-600">Subtotal</span>
+        <span class="font-medium">₹<%= order.summary.activeItemsSubtotal.toFixed(2) %></span>
+      </div>
+      
+      <!-- Coupon Discount (only for active items) -->
+      <% if (order.summary.activeCouponDiscount > 0) { %>
+        <div class="flex justify-between">
+          <span class="text-green-600">
+            <i class="fas fa-tag mr-1"></i>Coupon Discount
+          </span>
+          <span class="text-green-600 font-medium">-₹<%= order.summary.activeCouponDiscount.toFixed(2) %></span>
+        </div>
+      <% } %>
+      
+      <!-- Tax -->
+      <div class="flex justify-between">
+        <span class="text-gray-600">Tax (10%)</span>
+        <span class="font-medium">₹<%= order.summary.activeItemsTax.toFixed(2) %></span>
+      </div>
+      
+      <!-- Shipping -->
+      <div class="flex justify-between">
+        <span class="text-gray-600">Shipping</span>
+        <span class="<%= order.summary.activeItemsShipping === 0 ? 'text-green-600' : 'font-medium' %>">
+          <%= order.summary.activeItemsShipping === 0 ? 'FREE' : `₹${order.summary.activeItemsShipping.toFixed(2)}` %>
+        </span>
+      </div>
+      
+      <!-- Grand Total (Active Items Only) -->
+      <div class="border-t border-gray-200 pt-2 mt-2">
+        <div class="flex justify-between text-sm font-bold">
+          <span>Grand Total</span>
+          <span class="text-blue-600">₹<%= order.summary.grandTotal.toFixed(2) %></span>
+        </div>
+      </div>
+      
+      <!-- Cancelled Amount (if any) -->
+      <% if (order.summary.cancelledTotal > 0) { %>
+        <div class="border-t border-red-100 pt-2 mt-2">
+          <div class="flex justify-between text-red-600 text-xs">
+            <span><i class="fas fa-times-circle mr-1"></i>Cancelled Items</span>
+            <span class="font-bold">-₹<%= order.summary.cancelledTotal.toFixed(2) %></span>
+          </div>
+          <p class="text-gray-500 text-xs mt-1">Refunded to wallet</p>
+        </div>
+      <% } %>
+      
+      <!-- Returned Amount (if any) -->
+      <% if (order.summary.returnedTotal > 0) { %>
+        <div class="border-t border-yellow-100 pt-2 mt-2">
+          <div class="flex justify-between text-yellow-700 text-xs">
+            <span><i class="fas fa-undo mr-1"></i>Returned Items</span>
+            <span class="font-bold">-₹<%= order.summary.returnedTotal.toFixed(2) %></span>
+          </div>
+          <p class="text-gray-500 text-xs mt-1">Refunded to wallet</p>
+        </div>
+      <% } %>
+      
+      <!-- Total Savings -->
+      <% if (order.summary.totalSavings > 0) { %>
+        <div class="border-t border-green-100 pt-2 mt-2 bg-green-50 -mx-4 -mb-4 px-4 pb-4 mt-3 rounded-b-lg">
+          <div class="flex justify-between text-green-700 text-xs">
+            <span><i class="fas fa-piggy-bank mr-1"></i>Total Savings (Active Items)</span>
+            <span class="font-bold">₹<%= order.summary.totalSavings.toFixed(2) %></span>
+          </div>
+        </div>
+      <% } %>
+    </div>
+  </div>
+</div>
                       </div>
                     </div>
                   </div>
@@ -639,6 +657,12 @@ else { %>
         <textarea id="otherReasonText" name="details" class="w-full p-2 border rounded" rows="3"></textarea>
       </div>
 
+      <div id="returnError" class="hidden text-red-600 text-sm mt-2">
+  <i class="fas fa-exclamation-circle mr-1"></i>
+  <span id="returnErrorText"></span>
+</div>
+
+
       <!-- BUTTONS -->
       <div class="flex justify-end gap-2">
         <button type="button" onclick="hideReturnModal()" class="px-4 py-2 border rounded">Close</button>
@@ -653,10 +677,7 @@ else { %>
   <%- include('../partials/footer') %>
 
   <script>
-   // Unified accordion toggle. Works on mobile and desktop.
-// - On mobile: toggles accordion and closes others.
-// - On desktop: toggles accordion too (so click works on all sizes).
-// - Keeps icons in sync and sets aria-expanded for accessibility.
+
 function toggleOrderDetails(orderId) {
   const details = document.getElementById('details-' + orderId);
   const icon = document.getElementById('icon-' + orderId);
@@ -705,51 +726,19 @@ function toggleOrderDetails(orderId) {
 
       const invoiceUrl = `/order/${orderId}/item/${itemId}/invoice`;
 
-      const link = document.createElement("a");
-      link.href = invoiceUrl;
-      link.target = "_blank";
-      link.click();
+            const link = document.createElement("a");
+        link.href = invoiceUrl;
+        link.download = "";   // FORCE DOWNLOAD
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+
 
       setTimeout(() => {
         button.innerHTML = originalHtml;
         button.disabled = false;
       }, 1500);
     }
-function validateCancelInputs() {
-  const reason = document.getElementById("cancelReasonSelect").value || "";
-  const details = document.getElementById("cancelOtherText")?.value.trim() || "";
-
-  // Block obvious malicious patterns but allow normal text (including numbers)
-  const forbidden = /(\)\))|(&&&)|(<\s*script)/i;
-
-  if (forbidden.test(reason) || forbidden.test(details)) {
-    alert("Invalid characters detected in the reason/details.");
-    return false;
-  }
-
-  // optional: require details when reason === 'Other'
-  if (reason === "Other" && (!details || details.length < 3)) {
-    alert("Please provide more details for 'Other'.");
-    return false;
-  }
-
-  return true;
-}
-
-
-  // toggle other box
-  document.getElementById("cancelReasonSelect")?.addEventListener("change", function() {
-    const box = document.getElementById("cancelOtherBox");
-    if (!box) return;
-    if (this.value === "Other") box.classList.remove("hidden"); else {
-      box.classList.add("hidden");
-      document.getElementById("cancelOtherText").value = "";
-    }
-  });
-
- 
-
-
 
     // Cancel modal functions
     function showCancelModal(orderId, itemId, productName) {
@@ -779,10 +768,13 @@ function validateCancelInputs() {
    document.getElementById('cancelForm')?.addEventListener('submit', async function(e) {
   e.preventDefault();
 
-  if (!validateCancelReasonRealtime()) {
-    showNotification("Please enter a valid cancellation reason", "error");
-    return;
-  }
+ const reason = document.getElementById("cancelReasonSelect").value;
+const details = document.getElementById("cancelOtherText").value;
+const errorBox = document.getElementById("cancelError");
+const errorText = document.getElementById("cancelErrorText");
+
+if (!validateReason(reason, details, errorBox, errorText)) return;
+
 
   await submitAction(
     this,
@@ -791,10 +783,23 @@ function validateCancelInputs() {
   );
 });
 
-    document.getElementById('returnForm')?.addEventListener('submit', async function(e) {
-      e.preventDefault();
-      await submitAction(this, '/order/' + this.orderId.value + '/item/' + this.itemId.value + '/return', 'return');
-    });
+ document.getElementById('returnForm')?.addEventListener('submit', async function(e) {
+  e.preventDefault();
+
+  const reason = document.getElementById("returnReasonSelect").value;
+  const details = document.getElementById("otherReasonText").value;
+  const errorBox = document.getElementById("returnError");
+  const errorText = document.getElementById("returnErrorText");
+
+  if (!validateReason(reason, details, errorBox, errorText)) return;
+
+  await submitAction(
+    this,
+    `/order/${this.orderId.value}/item/${this.itemId.value}/return`,
+    'return'
+  );
+});
+
 
     // Show textarea only if reason = Other
     document.getElementById("returnReasonSelect")?.addEventListener("change", function () {
@@ -843,7 +848,7 @@ function validateCancelInputs() {
     throw new Error(errMsg);
   }
 } catch (error) {
-  console.error("❌ Error:", error);
+  console.error(" Error:", error);
   showNotification('Error: ' + (error.message || 'Something went wrong'), 'error');
   submitBtn.innerHTML = originalText;
   submitBtn.disabled = false;
@@ -884,29 +889,6 @@ function validateCancelInputs() {
         });
       }
     });
-function validateCancelReasonRealtime() {
-  const reason = document.getElementById("cancelReasonSelect")?.value || "";
-  const detailsEl = document.getElementById("cancelOtherText");
-  const details = detailsEl?.value.trim() || "";
-
-  // Allow letters, numbers, spaces, basic punctuation
-  const validTextRegex = /^[a-zA-Z0-9\s.,\-()]*$/;
-
-  // If reason is "Other", details are mandatory
-  if (reason === "Other") {
-    if (details.length < 5) {
-      detailsEl.classList.add("border-red-500");
-      return false;
-    }
-    if (!validTextRegex.test(details)) {
-      detailsEl.classList.add("border-red-500");
-      return false;
-    }
-  }
-
-  detailsEl?.classList.remove("border-red-500");
-  return true;
-}
 
 document.getElementById("cancelReasonSelect")?.addEventListener("change", function () {
   const box = document.getElementById("cancelOtherBox");
@@ -920,12 +902,47 @@ document.getElementById("cancelReasonSelect")?.addEventListener("change", functi
     textarea.classList.remove("border-red-500");
   }
 });
+function validateReason(reason, details, errorBox, errorTextEl) {
+  details = (details || "").trim();
 
-document.getElementById("cancelOtherText")?.addEventListener("input", function () {
-  validateCancelReasonRealtime();
-});
+  const mustHaveLetter = /[a-zA-Z]/;
+  const allowedRegex = /^[a-zA-Z0-9\s.,\-()]+$/;
+
+  if (reason === "Other") {
+    if (!details) {
+      showFieldError("Please enter additional details.", errorBox, errorTextEl);
+      return false;
+    }
+
+    if (details.length < 10) {
+      showFieldError("Details must be at least 10 characters.", errorBox, errorTextEl);
+      return false;
+    }
+
+    if (!allowedRegex.test(details) || !mustHaveLetter.test(details)) {
+      showFieldError("Invalid input. Meaningful text only.", errorBox, errorTextEl);
+      return false;
+    }
+  }
+
+  hideFieldError(errorBox);
+  return true;
+}
+
+function showFieldError(msg, box, textEl) {
+  textEl.textContent = msg;
+  box.classList.remove("hidden");
+}
+
+function hideFieldError(box) {
+  box.classList.add("hidden");
+}
+
+
 
   </script>
+
+  
 </body>
 </html>
 
@@ -939,7 +956,9 @@ document.getElementById("cancelOtherText")?.addEventListener("input", function (
       'shipped': 'status-shipped',
       'delivered': 'status-delivered',
       'cancelled': 'status-cancelled',
-      'returned': 'status-returned'
+      'returned': 'status-returned',
+      'return-rejected': 'status-cancelled',  
+    'return-requested': 'status-pending'
     };
     return statusClasses[status] || 'status-pending';
   }
@@ -952,7 +971,9 @@ document.getElementById("cancelOtherText")?.addEventListener("input", function (
       'shipped': 'fa-truck',
       'delivered': 'fa-check',
       'cancelled': 'fa-times',
-      'returned': 'fa-undo'
+      'returned': 'fa-undo',
+        'return-rejected': 'fa-ban',               
+    'return-requested': 'fa-rotate-left'
     };
     return statusIcons[status] || 'fa-info-circle';
   }

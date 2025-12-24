@@ -11,6 +11,6 @@ router.get("/edit/:id",isAdminAuthenticated,getEditCouponPage);
 router.patch("/update/:id",isAdminAuthenticated,updateCoupon);
 router.post("/create",isAdminAuthenticated,createCoupon);
 router.post("/toggle/:id",isAdminAuthenticated,toggleCouponStatus);
-// router.post("/coupons/create", createCoupon);
+
 
 export default router;

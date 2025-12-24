@@ -43,54 +43,39 @@
           <button class="text-gray-700 hover:text-blue-600 transition-colors">
             <i class="fas fa-search"></i>
           </button>
-          <!-- <button class="text-gray-700 hover:text-blue-600 transition-colors relative">
-            <i class="fas fa-shopping-cart"></i>
-            <span class="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">0</span>
-          </button> -->
-
-          <!-- <a href="/cart" class="text-gray-700 hover:text-blue-600 transition-colors relative">
-  <i class="fas fa-shopping-cart"></i>
-  <span id="cartCount" class="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">0</span>
-</a> -->
-
-<!-- Cart -->
-<!-- Cart -->
-<a href="/user/cart" class="relative text-gray-600 hover:text-blue-600 transition-colors duration-200 p-2 rounded-lg hover:bg-gray-100">
-  <i class="fas fa-shopping-cart text-lg"></i>
-  <span class="absolute -top-1 -right-1 bg-blue-600 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-semibold shadow-sm">
-    <%= (user && user.cartCount) ? user.cartCount : 0 %>
-  </span>
-</a>
+    
+        <!-- Cart -->
+        <a href="/user/cart" class="relative text-gray-600 hover:text-blue-600 transition-colors duration-200 p-2 rounded-lg hover:bg-gray-100">
+          <i class="fas fa-shopping-cart text-lg"></i>
+          <span class="absolute -top-1 -right-1 bg-blue-600 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-semibold shadow-sm">
+            <%= (user && user.cartCount) ? user.cartCount : 0 %>
+          </span>
+        </a>
 
 
 
-<!-- Wishlist -->
-<a href="/user/profile/wishlist" class="relative text-gray-600 hover:text-blue-600 transition-colors duration-200 p-2 rounded-lg hover:bg-gray-100">
-  <i class="fas fa-heart text-lg"></i>
-  <span class="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-semibold shadow-sm">
-    <%= (user && user.wishlistCount) ? user.wishlistCount : 0 %>
-  </span>
-</a>
+        <!-- Wishlist -->
+        <a href="/user/profile/wishlist" class="relative text-gray-600 hover:text-blue-600 transition-colors duration-200 p-2 rounded-lg hover:bg-gray-100">
+          <i class="fas fa-heart text-lg"></i>
+          <span class="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-semibold shadow-sm">
+            <%= (user && user.wishlistCount) ? user.wishlistCount : 0 %>
+          </span>
+        </a>
 
 
-          <!-- <div class="relative group">
-            <button class="text-gray-700 hover:text-blue-600 transition-colors">
-              <i class="fas fa-user"></i>
-            </button>
-          </div> -->
-        <div class="relative group">
-  <button class="flex items-center space-x-2 text-gray-700 hover:text-blue-600 transition-colors duration-200 p-2 rounded-lg hover:bg-gray-100">
+            <div class="relative group">
+      <button class="flex items-center space-x-2 text-gray-700 hover:text-blue-600 transition-colors duration-200 p-2 rounded-lg hover:bg-gray-100">
 
-    <!-- Avatar -->
-    <div class="w-8 h-8 rounded-full overflow-hidden shadow-sm">
-      <% if (user && user.profileImage && user.profileImage.url) { %>
-        <img src="<%= user.profileImage.url %>" alt="avatar" class="w-full h-full object-cover">
-      <% } else { %>
-        <div class="w-full h-full bg-gradient-to-r from-blue-500 to-emerald-500 flex items-center justify-center text-white text-sm font-semibold">
-          <%= user && user.name ? user.name.charAt(0).toUpperCase() : "U" %>
+        <!-- Avatar -->
+        <div class="w-8 h-8 rounded-full overflow-hidden shadow-sm">
+          <% if (user && user.profileImage && user.profileImage.url) { %>
+            <img src="<%= user.profileImage.url %>" alt="avatar" class="w-full h-full object-cover">
+          <% } else { %>
+            <div class="w-full h-full bg-gradient-to-r from-blue-500 to-emerald-500 flex items-center justify-center text-white text-sm font-semibold">
+              <%= user && user.name ? user.name.charAt(0).toUpperCase() : "U" %>
+            </div>
+          <% } %>
         </div>
-      <% } %>
-    </div>
 
     <span class="hidden md:block text-sm font-medium">
       <% if (user) { %>

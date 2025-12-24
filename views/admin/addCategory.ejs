@@ -45,53 +45,88 @@
       border-color: #10b981;
       box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
     }
+    
+    /* Mobile overlay */
+    @media (max-width: 1023px) {
+      .mobile-overlay {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: rgba(0, 0, 0, 0.5);
+        z-index: 40;
+      }
+      
+      .mobile-overlay.active {
+        display: block;
+      }
+      
+      body.sidebar-open {
+        overflow: hidden;
+      }
+    }
   </style>
 </head>
 
 <body class="bg-gray-50 text-gray-900 flex min-h-screen">
 
+  <!-- Mobile Overlay -->
+  <div class="mobile-overlay lg:hidden" id="mobile-overlay"></div>
+
   <!-- Sidebar -->
-    <%- include('../partials/sidebar', { currentPage: 'category' }) %>
+  <%- include('../partials/sidebar', { currentPage: 'category' }) %>
 
   <!-- Main Content -->
-  <main class="ml-64 flex-1 p-8">
+  <main class="flex-1 w-full p-4 sm:p-6 lg:p-8 lg:ml-64 min-h-screen transition-all duration-300">
     <!-- Header Section -->
-    <div class="mb-8">
-      <div class="flex items-center gap-3 mb-2">
-        <a href="/admin/category" class="text-blue-600 hover:text-blue-800 transition">
-          <i class="fas fa-arrow-left"></i>
-        </a>
-        <h1 class="text-3xl font-bold text-gray-900">Add New Category</h1>
+    <div class="mb-6 lg:mb-8">
+      <div class="flex items-center justify-between mb-2">
+        <div class="flex items-center gap-3">
+          <a href="/admin/category" class="text-blue-600 hover:text-blue-800 transition flex items-center">
+            <i class="fas fa-arrow-left text-lg sm:text-xl"></i>
+          </a>
+          <h1 class="text-2xl sm:text-3xl font-bold text-gray-900">Add New Category</h1>
+        </div>
+        <!-- Mobile menu button -->
+        <button
+          id="mobile-menu-button"
+          class="lg:hidden p-2 rounded-lg bg-gray-100 text-gray-700 hover:bg-gray-200 transition-colors"
+          aria-label="Toggle menu"
+        >
+          <i class="fas fa-bars text-lg"></i>
+        </button>
       </div>
-      <p class="text-gray-600">Create a new product category for your store</p>
+      <p class="text-gray-600 text-sm sm:text-base">Create a new product category for your store</p>
     </div>
 
     <!-- Form Section -->
-    <div class="max-w-2xl">
+    <div class="max-w-2xl mx-auto">
       <!-- Add Category Card -->
-      <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-8 card-hover">
-        <div class="flex items-center gap-3 mb-6">
-          <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
-            <i class="fas fa-plus-circle text-blue-600 text-xl"></i>
+      <div class="bg-white rounded-xl lg:rounded-2xl shadow-sm border border-gray-200 p-4 sm:p-6 lg:p-8 card-hover">
+        <div class="flex items-center gap-3 mb-4 sm:mb-6">
+          <div class="w-10 h-10 sm:w-12 sm:h-12 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
+            <i class="fas fa-plus-circle text-blue-600 text-lg sm:text-xl"></i>
           </div>
           <div>
-            <h2 class="text-xl font-semibold text-gray-900">Category Information</h2>
-            <p class="text-gray-600 text-sm">Both fields are mandatory</p>
+            <h2 class="text-lg sm:text-xl font-semibold text-gray-900">Category Information</h2>
+            <p class="text-gray-600 text-xs sm:text-sm">Both fields are mandatory</p>
           </div>
         </div>
 
         <!-- Global Error Message -->
-        <div id="globalError" class="bg-red-50 border border-red-200 rounded-lg p-4 mb-6 hidden">
-          <div class="flex items-center gap-2 text-red-700">
-            <i class="fas fa-exclamation-circle"></i>
-            <span id="globalErrorText"></span>
+        <div id="globalError" class="bg-red-50 border border-red-200 rounded-lg p-3 sm:p-4 mb-4 sm:mb-6 hidden">
+          <div class="flex items-start sm:items-center gap-2 text-red-700">
+            <i class="fas fa-exclamation-circle mt-0.5 sm:mt-0"></i>
+            <span id="globalErrorText" class="text-sm sm:text-base"></span>
           </div>
         </div>
 
-        <form id="categoryForm" action="/admin/category/addCategory" method="POST" class="space-y-6">
+        <form id="categoryForm" action="/admin/category/addCategory" method="POST" class="space-y-4 sm:space-y-6">
           <!-- Category Name Field -->
           <div>
-            <label for="name" class="block text-sm font-medium text-gray-700 mb-2">
+            <label for="name" class="block text-sm font-medium text-gray-700 mb-1 sm:mb-2">
               Category Name <span class="text-red-500">*</span>
             </label>
             <div class="relative">
@@ -100,18 +135,18 @@
                 id="name"
                 name="name"
                 placeholder="Enter category name"
-                class="w-full px-4 py-3 border border-gray-300 rounded-lg input-focus focus:outline-none transition duration-200 pl-11"
+                class="w-full px-4 py-2.5 sm:py-3 border border-gray-300 rounded-lg input-focus focus:outline-none transition duration-200 pl-10 sm:pl-11 text-sm sm:text-base"
                 required
                 autocomplete="off"
               >
               <div class="absolute inset-y-0 left-0 flex items-center pl-3">
-                <i class="fas fa-tag text-gray-400"></i>
+                <i class="fas fa-tag text-gray-400 text-sm sm:text-base"></i>
               </div>
             </div>
-            <div class="flex justify-between items-center mt-1">
+            <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center mt-1 gap-1">
               <p id="nameError" class="text-red-600 text-xs hidden flex items-center gap-1">
-                <i class="fas fa-exclamation-circle"></i>
-                <span></span>
+                <i class="fas fa-exclamation-circle text-xs"></i>
+                <span class="text-xs"></span>
               </p>
               <p class="text-gray-500 text-xs">Minimum 2 characters, maximum 50 characters</p>
             </div>
@@ -119,7 +154,7 @@
 
           <!-- Description Field -->
           <div>
-            <label for="description" class="block text-sm font-medium text-gray-700 mb-2">
+            <label for="description" class="block text-sm font-medium text-gray-700 mb-1 sm:mb-2">
               Description <span class="text-red-500">*</span>
             </label>
             <div class="relative">
@@ -127,37 +162,37 @@
                 id="description"
                 name="description"
                 placeholder="Enter category description (max 10 words)"
-                class="w-full px-4 py-3 border border-gray-300 rounded-lg input-focus focus:outline-none transition duration-200 pl-11 resize-none h-32"
+                class="w-full px-4 py-2.5 sm:py-3 border border-gray-300 rounded-lg input-focus focus:outline-none transition duration-200 pl-10 sm:pl-11 resize-none h-28 sm:h-32 text-sm sm:text-base"
                 required
               ></textarea>
               <div class="absolute top-3 left-3">
-                <i class="fas fa-align-left text-gray-400"></i>
+                <i class="fas fa-align-left text-gray-400 text-sm sm:text-base"></i>
               </div>
             </div>
-            <div class="flex justify-between items-center mt-1">
+            <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center mt-1 gap-1">
               <p id="descriptionError" class="text-red-600 text-xs hidden flex items-center gap-1">
-                <i class="fas fa-exclamation-circle"></i>
-                <span></span>
+                <i class="fas fa-exclamation-circle text-xs"></i>
+                <span class="text-xs"></span>
               </p>
               <p id="wordCounter" class="text-gray-500 text-xs">0/10 words</p>
             </div>
           </div>
 
           <!-- Action Buttons -->
-          <div class="flex items-center gap-4 pt-4 border-t border-gray-200">
+          <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-4 pt-3 sm:pt-4 border-t border-gray-200">
             <button
               type="submit"
               id="submitBtn"
-              class="btn-primary text-white px-8 py-3 rounded-lg font-semibold flex items-center gap-2 shadow-lg"
+              class="btn-primary text-white px-4 sm:px-6 lg:px-8 py-2.5 sm:py-3 rounded-lg font-semibold flex items-center justify-center gap-2 shadow-lg text-sm sm:text-base order-2 sm:order-1"
             >
-              <i class="fas fa-plus-circle"></i>
+              <i class="fas fa-plus-circle text-sm sm:text-base"></i>
               Create Category
             </button>
             <a 
               href="/admin/category" 
-              class="bg-gray-500 text-white px-8 py-3 rounded-lg font-semibold hover:bg-gray-600 transition flex items-center gap-2"
+              class="bg-gray-500 text-white px-4 sm:px-6 lg:px-8 py-2.5 sm:py-3 rounded-lg font-semibold hover:bg-gray-600 transition flex items-center justify-center gap-2 text-sm sm:text-base order-1 sm:order-2"
             >
-              <i class="fas fa-times"></i>
+              <i class="fas fa-times text-sm sm:text-base"></i>
               Cancel
             </a>
           </div>
@@ -165,15 +200,15 @@
       </div>
 
       <!-- Validation Rules -->
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-8">
-        <div class="bg-white rounded-xl p-6 card-hover border-l-4 border-blue-500">
-          <div class="flex items-center gap-3">
-            <div class="bg-blue-100 p-3 rounded-full">
-              <i class="fas fa-info-circle text-blue-600"></i>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 mt-6 lg:mt-8">
+        <div class="bg-white rounded-xl p-4 sm:p-6 card-hover border-l-4 border-blue-500">
+          <div class="flex items-start sm:items-center gap-3">
+            <div class="bg-blue-100 p-2 sm:p-3 rounded-full flex-shrink-0">
+              <i class="fas fa-info-circle text-blue-600 text-sm sm:text-base"></i>
             </div>
             <div>
               <p class="text-sm font-medium text-gray-900">Category Name Rules</p>
-              <ul class="text-sm text-gray-600 mt-1 space-y-1">
+              <ul class="text-xs sm:text-sm text-gray-600 mt-1 sm:mt-1 space-y-1">
                 <li>• Required field</li>
                 <li>• Minimum 2 characters</li>
                 <li>• Maximum 50 characters</li>
@@ -183,14 +218,14 @@
           </div>
         </div>
 
-        <div class="bg-white rounded-xl p-6 card-hover border-l-4 border-green-500">
-          <div class="flex items-center gap-3">
-            <div class="bg-green-100 p-3 rounded-full">
-              <i class="fas fa-info-circle text-green-600"></i>
+        <div class="bg-white rounded-xl p-4 sm:p-6 card-hover border-l-4 border-green-500">
+          <div class="flex items-start sm:items-center gap-3">
+            <div class="bg-green-100 p-2 sm:p-3 rounded-full flex-shrink-0">
+              <i class="fas fa-info-circle text-green-600 text-sm sm:text-base"></i>
             </div>
             <div>
               <p class="text-sm font-medium text-gray-900">Description Rules</p>
-              <ul class="text-sm text-gray-600 mt-1 space-y-1">
+              <ul class="text-xs sm:text-sm text-gray-600 mt-1 sm:mt-1 space-y-1">
                 <li>• Required field</li>
                 <li>• Maximum 10 words</li>
                 <li>• Clear and concise</li>
@@ -201,6 +236,49 @@
       </div>
     </div>
   </main>
+
+  <!-- Sidebar Toggle Script -->
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      const mobileMenuButton = document.getElementById('mobile-menu-button');
+      const sidebar = document.getElementById('admin-sidebar');
+      const overlay = document.getElementById('mobile-overlay');
+      const body = document.body;
+
+      function toggleSidebar() {
+        sidebar.classList.toggle('-translate-x-full');
+        overlay.classList.toggle('active');
+        body.classList.toggle('sidebar-open');
+      }
+
+      function closeSidebar() {
+        sidebar.classList.add('-translate-x-full');
+        overlay.classList.remove('active');
+        body.classList.remove('sidebar-open');
+      }
+
+      if (mobileMenuButton && sidebar && overlay) {
+        mobileMenuButton.addEventListener('click', toggleSidebar);
+        overlay.addEventListener('click', closeSidebar);
+      }
+
+      // Close sidebar when clicking on any link
+      document.querySelectorAll('#admin-sidebar a').forEach(link => {
+        link.addEventListener('click', () => {
+          if (window.innerWidth < 1024) {
+            closeSidebar();
+          }
+        });
+      });
+
+      // Close sidebar on escape key
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && window.innerWidth < 1024) {
+          closeSidebar();
+        }
+      });
+    });
+  </script>
 
   <script>
     // DOM Elements
@@ -219,51 +297,64 @@
       return text.trim() ? text.trim().split(/\s+/).filter(word => word.length > 0).length : 0;
     }
 
-function validateName(value) {
-  const trimmedValue = value.trim();
+    function validateName(value) {
+      const trimmedValue = value.trim();
 
-  // 1. Required
-  if (!trimmedValue) {
-    return { valid: false, message: 'Category name is required' };
-  }
+      // 1. Required
+      if (!trimmedValue) {
+        return { valid: false, message: 'Category name is required' };
+      }
 
-  // 2. Length check
-  if (trimmedValue.length < 2) {
-    return { valid: false, message: 'Category name must be at least 2 characters' };
-  }
+      // 2. Length check
+      if (trimmedValue.length < 2) {
+        return { valid: false, message: 'Category name must be at least 2 characters' };
+      }
 
-  if (trimmedValue.length > 50) {
-    return { valid: false, message: 'Category name must be less than 50 characters' };
-  }
+      if (trimmedValue.length > 50) {
+        return { valid: false, message: 'Category name must be less than 50 characters' };
+      }
 
-  // 3. Allow only A–Z and space (no numbers or symbols)
-  const regex = /^[A-Za-z ]+$/;
-  if (!regex.test(trimmedValue)) {
-    return { valid: false, message: 'Only alphabets (A–Z) and spaces are allowed' };
-  }
+      // Allow only A–Z and space (no numbers or symbols)
+      const regex = /^[A-Za-z ]+$/;
+      if (!regex.test(trimmedValue)) {
+        return { valid: false, message: 'Only alphabets (A–Z) and spaces are allowed' };
+      }
 
-  // 4. Prevent double/multiple spaces
-  if (/\s{2,}/.test(trimmedValue)) {
-    return { valid: false, message: 'Multiple spaces are not allowed' };
-  }
+      //  Prevent double/multiple spaces
+      if (/\s{2,}/.test(trimmedValue)) {
+        return { valid: false, message: 'Multiple spaces are not allowed' };
+      }
 
-  return { valid: true, message: '' };
-}
-
+      return { valid: true, message: '' };
+    }
 
     function validateDescription(value) {
       const trimmedValue = value.trim();
-      const wordCount = countWords(trimmedValue);
-      
+
+      // Required check
       if (!trimmedValue) {
-        return { valid: false, message: 'Description is required' };
+        return { valid: false, message: "Description is required" };
       }
-      
+
+      // Must contain at least one alphabet (A–Z)
+      if (!/[A-Za-z]/.test(trimmedValue)) {
+        return { valid: false, message: "Description must contain meaningful text" };
+      }
+
+      //  Reject descriptions with only symbols
+      const onlySymbolsRegex = /^[^A-Za-z0-9\s]+$/;
+      if (onlySymbolsRegex.test(trimmedValue)) {
+        return { valid: false, message: "Description cannot contain only symbols" };
+      }
+
+      //  Word count (max 10 words)
+      const wordCount = trimmedValue.split(/\s+/).length;
       if (wordCount > 10) {
-        return { valid: false, message: 'Description must be maximum 10 words' };
+        return { valid: false, message: "Description must be maximum 10 words" };
       }
-      
-      return { valid: true, message: '' };
+
+      // Valid description
+      return { valid: true, message: "" };
     }
 
     // Show/hide error functions

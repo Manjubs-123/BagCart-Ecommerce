@@ -1,15 +1,19 @@
 import Coupon from "../../models/couponModel.js";
 
+ const escapeRegex = (text = "") =>
+  text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
 export const getCouponListPage = async (req, res) => {
   try {
-    const { q="", status="", type="", sort="", page=1, limit=10 } = req.query;
+    const { q = "", status = "", type = "", sort = "", page = 1, limit = 10 } = req.query;
     const now = new Date();
+
+    const safeQ = escapeRegex(q.trim());
 
     let query = {};
 
     if (q.trim()) {
-      query.code = { $regex: q.trim(), $options: "i" };
+      query.code = { $regex: safeQ, $options: "i" };
     }
 
     if (type === "percentage") query.discountType = "PERCENTAGE";
@@ -24,47 +28,46 @@ export const getCouponListPage = async (req, res) => {
     if (sort === "newest") sortQuery.createdAt = -1;
     if (sort === "discountHigh") sortQuery.discountValue = -1;
     if (sort === "expiryNear") sortQuery.expiryDate = 1;
+
     const totalCoupons = await Coupon.countDocuments(query);
 
     const coupons = await Coupon.find(query)
       .sort(sortQuery)
       .skip((page - 1) * Number(limit))
-
-      .limit(limit)
+      .limit(Number(limit))
       .lean();
 
-   const totalUsageAgg = await Coupon.aggregate([
-  { $group: { _id: null, total: { $sum: "$usedCount" } } }
-]);
+    const totalUsageAgg = await Coupon.aggregate([
+      { $group: { _id: null, total: { $sum: "$usedCount" } } }
+    ]);
 
-res.render("admin/couponList", {
-  coupons,
- totalCoupons, 
-  activeCoupons: await Coupon.countDocuments({ isActive: true }), //overall active count
-  expiredCoupons: await Coupon.countDocuments({ expiryDate: { $lt: now } }), //overall expired count
-  totalUsage: totalUsageAgg[0]?.total || 0, //  correct total usage
-  q,
-  statusFilter: status,
-  typeFilter: type,
-  sort,
-  page: Number(page),
-  limit: Number(limit),
-  pages: Math.ceil(totalCoupons / Number(limit))
-});
-
+    res.render("admin/couponList", {
+      coupons,
+      totalCoupons,
+      activeCoupons: await Coupon.countDocuments({ isActive: true }),
+      expiredCoupons: await Coupon.countDocuments({ expiryDate: { $lt: now } }),
+      totalUsage: totalUsageAgg[0]?.total || 0,
+      q,
+      statusFilter: status,
+      typeFilter: type,
+      sort,
+      page: Number(page),
+      limit: Number(limit),
+      pages: Math.ceil(totalCoupons / Number(limit))
+    });
 
   } catch (err) {
-    console.error(" LIST PAGE ERROR:", err.message);
+    console.error("LIST PAGE ERROR:", err.message);
     res.status(500).send("Failed loading coupons");
   }
 };
 
+
 export const getCreateCouponPage = async (req, res) => {
   try {
-    // Generate default dates for the form
     const now = new Date();
-    const defaultFrom = new Date(now.getTime() + 5 * 60 * 1000); // 5 minutes from now
-    const defaultTo = new Date(now.getTime() + 24 * 60 * 60 * 1000); // 24 hours from now
+    const defaultFrom = new Date(now.getTime() + 5 * 60 * 1000); 
+    const defaultTo = new Date(now.getTime() + 24 * 60 * 60 * 1000); 
 
     res.render("admin/couponCreate", {
       error: null,
@@ -108,7 +111,6 @@ export const createCoupon = async (req, res) => {
     const now = new Date();
     const errors = [];
 
-    // Normalize and convert
     code = code?.trim().toUpperCase();
     discountValue = Number(discountValue);
     maxDiscountAmount = Number(maxDiscountAmount || 0);
@@ -126,22 +128,18 @@ export const createCoupon = async (req, res) => {
     if (!validFromDate) errors.push("Valid From is required!");
     if (!validToDate) errors.push("Valid To is required!");
 
-    // Discount range 5–90
     if (discountValue < 5 || discountValue > 90) {
       errors.push("Discount must be between 5–90%");
     }
 
-    // maxDiscountAmount < minOrderAmount
     if (maxDiscountAmount >= minOrderAmount) {
       errors.push("Max Discount Amount must be LESS than Min Order Amount");
     }
 
-    // maxUsagePerUser ≤ maxUsage
     if (maxUsage && maxUsagePerUser && maxUsagePerUser > maxUsage) {
       errors.push("Max usage per user cannot exceed total max usage");
     }
 
-    // Date validations
     const GRACE_MINUTES = 1;
     const safeNow = new Date(now.getTime() - GRACE_MINUTES * 60 * 1000);
     
@@ -149,13 +147,11 @@ export const createCoupon = async (req, res) => {
     if (validToDate <= validFromDate) errors.push("Valid To must be later than Valid From!");
     if (validToDate <= safeNow) errors.push("Valid To must be in the future!");
 
-    // Unique code check
     if (!errors.length) {
       const existing = await Coupon.findOne({ code });
       if (existing) errors.push(`Coupon "${code}" already exists!`);
     }
 
-    // If errors exist
     if (errors.length > 0) {
       return res.render("admin/couponCreate", {
         error: errors,
@@ -169,7 +165,6 @@ export const createCoupon = async (req, res) => {
       });
     }
 
-    // Save to DB
     await Coupon.create({
       code,
       discountType: "PERCENTAGE",
@@ -233,7 +228,7 @@ export const updateCoupon = async (req, res) => {
       isActive
     } = req.body;
 
-    console.log(" UPDATE PAYLOAD:", req.body); 
+    // console.log(" UPDATE PAYLOAD:", req.body); 
 
     const errors = [];
 
@@ -258,7 +253,6 @@ export const updateCoupon = async (req, res) => {
     if (!validFrom) errors.push("Valid From is required!");
     if (!validTo) errors.push("Valid To is required!");
 
-    // Discount range 5–90
     if (discountValue < 5 || discountValue > 90) {
       errors.push("Discount must be between 5–90%");
     }
@@ -287,13 +281,11 @@ export const updateCoupon = async (req, res) => {
       if (existing) errors.push(`Coupon "${code}" already exists!`);
     }
 
-    //  If any error  block save
     if (errors.length > 0) {
       console.error(" VALIDATION FAILED:", errors);
       return res.status(400).json({ success: false, message: errors });
     }
 
-    //  UPDATE to DB
     const updateData = {
       code,
       discountValue,
@@ -307,7 +299,7 @@ export const updateCoupon = async (req, res) => {
       isActive
     };
 
-    console.log(" SAVING TO DB:", updateData); 
+    // console.log(" SAVING TO DB:", updateData); 
 
     const updatedCoupon = await Coupon.findByIdAndUpdate(
       id, 
@@ -319,7 +311,7 @@ export const updateCoupon = async (req, res) => {
       return res.status(404).json({ success: false, message: ["Coupon not found!"] });
     }
 
-    console.log(" COUPON UPDATED IN DB:", updatedCoupon);
+    // console.log(" COUPON UPDATED IN DB:", updatedCoupon);
     return res.json({ success: true, message: ["Coupon updated successfully!"] });
 
   } catch (err) {
@@ -337,7 +329,6 @@ export const toggleCouponStatus = async (req, res) => {
       return res.status(404).json({ success: false, message: "Coupon not found!" });
     }
 
-    //  Toggle active / inactive
     coupon.isActive = !coupon.isActive;
     await coupon.save();
 

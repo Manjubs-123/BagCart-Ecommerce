@@ -13,10 +13,9 @@ router.get("/sales", isAdminAuthenticated, (req, res) => {
   });
 });
 
-// Sales report data API
+
 router.post("/sales", isAdminAuthenticated ,getSalesReport);
 
-// Download sales report
 router.post("/sales/download",isAdminAuthenticated, downloadSalesReport);
 
 export default router;

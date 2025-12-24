@@ -4,38 +4,98 @@ import Order from "../../models/orderModel.js";
 import User from "../../models/userModel.js";
 import moment from "moment";
 
-
 export const renderAdminLogin = (req, res) => {
-
-  // Prevent caching of login page
   res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, private");
   res.setHeader("Pragma", "no-cache");
   res.setHeader("Expires", "0");
 
-  // If already logged in redirect to dashboard
   if (req.session.isAdmin) {
     return res.redirect("/admin/dashboard");
   }
 
-  res.render("admin/login", { error: null });
+  const error =
+    req.query.error === "invalid" ? "Invalid email or password" :
+    req.query.error === "missing" ? "Email and password are required" :
+    null;
+
+  res.render("admin/login", { error });
 };
 
 
+
 export const postAdminLogin = async (req, res) => {
-  const { email, password } = req.body;
-  if (email === process.env.ADMIN_EMAIL && password === process.env.ADMIN_PASSWORD) {
-    req.session.isAdmin = true;
-    res.redirect("/admin/dashboard");
-  } else {
-    res.render("admin/login", { error: "Invalid credentials" });
+  try {
+    const { email, password } = req.body;
+
+    if (!email || !password) {
+      return res.redirect("/admin?error=missing");
+    }
+
+    if (
+      email === process.env.ADMIN_EMAIL &&
+      password === process.env.ADMIN_PASSWORD
+    ) {
+      // CRITICAL FIX: Preserve existing user session if it exists
+      const wasUserLoggedIn = req.session.isLoggedIn;
+      const existingUser = req.session.user;
+
+      // Don't regenerate - just update the session
+      req.session.isAdmin = true;
+
+      // RESTORE user session if it existed
+      if (wasUserLoggedIn && existingUser) {
+        req.session.isLoggedIn = true;
+        req.session.user = existingUser;
+      }
+
+      // Save session explicitly
+      req.session.save((err) => {
+        if (err) {
+          console.error("Session save error:", err);
+          return res.redirect("/admin?error=server");
+        }
+        // console.log("Admin logged in, session preserved:", {
+        //   isAdmin: req.session.isAdmin,
+        //   userStillLoggedIn: req.session.isLoggedIn
+        // });
+        return res.redirect("/admin/dashboard");
+      });
+
+    } else {
+      return res.redirect("/admin?error=invalid");
+    }
+
+  } catch (err) {
+    console.error("Admin login error:", err);
+    return res.redirect("/admin?error=server");
   }
+};
+
+export const adminLogout = (req, res) => {
+  // Preserve user session if exists
+  const wasUserLoggedIn = req.session.isLoggedIn;
+  const existingUser = req.session.user;
+  
+  // Clear admin session
+  req.session.isAdmin = false;
+  
+  // Restore user session
+  if (wasUserLoggedIn && existingUser) {
+    req.session.isLoggedIn = true;
+    req.session.user = existingUser;
+  }
+  
+  req.session.save((err) => {
+    if (err) console.error("Session save error:", err);
+    res.redirect("/admin");
+  });
 };
 
 
 export const renderAdminDashboard = async (req, res) => {
   try {
 
-    // BEST SELLING PRODUCTS //
+    
     const bestProducts = await Order.aggregate([
       { $unwind: "$items" },
       {
@@ -75,9 +135,7 @@ export const renderAdminDashboard = async (req, res) => {
       { $limit: 10 }
     ]);
 
-    // TOP 10 CATEGORIES //
-// BEST SELLING CATEGORIES
-// BEST CATEGORIES
+    
 const bestCategories = await Order.aggregate([
   { $unwind: "$items" },
   {
@@ -113,20 +171,19 @@ const bestCategories = await Order.aggregate([
        DASHBOARD SUMMARY STATS
     ---------------------*/
 
-    // Total revenue
+    
     const totalRevenueResult = await Order.aggregate([
       { $group: { _id: null, total: { $sum: "$totalAmount" } } }
     ]);
     const totalRevenueRaw = (totalRevenueResult.length ? totalRevenueResult[0].total : 0) || 0;
     const totalRevenue = Number(totalRevenueRaw);
-    const totalRevenueDisplay = totalRevenue.toLocaleString("en-IN", { maximumFractionDigits: 2 }); // "72,405.90"
+    const totalRevenueDisplay = totalRevenue.toLocaleString("en-IN", { maximumFractionDigits: 2 }); 
 
-    // Unique buyers (distinct user ids from orders)
+ 
     const uniqueUserIds = await Order.distinct("user");
     const totalCustomersBuyers = Array.isArray(uniqueUserIds) ? uniqueUserIds.length : 0;
 
-    // (Optional) Registered users count - uncomment if you want this stat instead
-    // const totalCustomersRegistered = await User.countDocuments({ isDeleted: { $ne: true } });
+    
 
     // Total orders
     const totalOrders = await Order.countDocuments();
@@ -140,7 +197,7 @@ const bestCategories = await Order.aggregate([
     const ordersThisMonth = await Order.countDocuments({ createdAt: { $gte: startOfThisMonth } });
     const ordersPrevMonth = await Order.countDocuments({ createdAt: { $gte: startOfPrevMonth, $lte: endOfPrevMonth } });
 
-    // customers this/prev month (unique)
+  
     const customersThisMonthIds = await Order.aggregate([
       { $match: { createdAt: { $gte: startOfThisMonth } } },
       { $group: { _id: "$user" } }
@@ -188,7 +245,7 @@ const bestCategories = await Order.aggregate([
     // monthly goal
     const monthlyGoal = 1000;
     const monthlyProgress = Math.min((ordersThisMonth / monthlyGoal) * 100, 100);
-    const monthlyProgressDisplay = Math.round(monthlyProgress * 10) / 10; // one decimal
+    const monthlyProgressDisplay = Math.round(monthlyProgress * 10) / 10; // 
     const ordersLeft = Math.max(monthlyGoal - ordersThisMonth, 0);
 
     // Recent 5 orders
@@ -198,25 +255,20 @@ const recentOrders = await Order.find()
   .sort({ createdAt: -1 })
   .limit(5);
 
-
-    // ---- pass variables to ejs (use names your template expects) ----
-    // Your EJS uses: totalRevenue, totalCustomers, totalOrders, monthlyProgress, ordersLeft
-    // So we map totalCustomers -> totalCustomersBuyers (unique buyers). If you prefer registered users,
-    // replace totalCustomersBuyers by totalCustomersRegistered (and compute above).
     res.render("admin/dashboard", {
       title: "Admin Dashboard",
 
       bestProducts,
       bestCategories,
 
-      // numeric metrics (strings suitable for display)
-      totalRevenue: totalRevenueDisplay,      // "72,405.90"
-      totalRevenueRaw: totalRevenue,          // numeric raw total
-      totalCustomers: totalCustomersBuyers,   // number shown in card (unique buyers)
-      // totalCustomersRegistered,            // optional alternate stat if used
+   
+      totalRevenue: totalRevenueDisplay,      
+      totalRevenueRaw: totalRevenue,          
+      totalCustomers: totalCustomersBuyers,   
+                
       totalOrders,
 
-      // growth & subtitle numbers
+ 
       revenueGrowth,
       customersGrowth,
       ordersGrowth,
@@ -250,7 +302,7 @@ export const getRevenueData = async (req, res) => {
     res.json({ labels: [], values: [] });
 
   } catch (err) {
-    console.log(err);
+    // console.log(err);
     res.json({ labels: [], values: [] });
   }
 };
@@ -277,7 +329,7 @@ const dailyRevenue = async (req, res) => {
       { $group: { _id: null, total: { $sum: "$totalAmount" } } }
     ]);
 
-    labels.push(day.format("ddd")); // Mon Tue Wed
+    labels.push(day.format("ddd")); 
     values.push(revenue.length ? revenue[0].total : 0);
   }
 
@@ -336,7 +388,7 @@ const monthlyRevenue = async (req, res) => {
       { $group: { _id: null, total: { $sum: "$totalAmount" } } }
     ]);
 
-    labels.push(month.format("MMM")); // Jan Feb Mar
+    labels.push(month.format("MMM"));
     values.push(revenue.length ? revenue[0].total : 0);
   }
 
@@ -372,12 +424,5 @@ const yearlyRevenue = async (req, res) => {
   res.json({ labels, values });
 };
 
-export const adminLogout = (req, res) => {
-  req.session.destroy((err) => {
-    if (err) console.error("Session destroy error:", err);
-    res.clearCookie("connect.sid");
-    res.redirect("/admin"); // redirects to login page
-  });
-};
 
 

@@ -1,11 +1,10 @@
 
 import mongoose from "mongoose";
 
-// Individual item schema
 const orderItemSchema = new mongoose.Schema({
   itemOrderId: {
     type: String,
-    required: false, // generated later
+    required: false, 
   },
 
   product: {
@@ -14,18 +13,28 @@ const orderItemSchema = new mongoose.Schema({
     required: true,
   },
 
-  // ensure variantIndex can't be negative
+
   variantIndex: { type: Number, required: true, min: 0 },
 
-  // quantity must be >= 1
+ 
   quantity: { type: Number, required: true, min: 1 },
 
-  // price snapshot at time of order
+  
   price: { type: Number, required: true, min: 0 },
+    regularPrice: { type: Number },
 
   color: String,
   size: String,
   image: String,
+
+  // These store HOW MUCH of each cost belongs to THIS item
+  itemSubtotal: { type: Number, default: 0 }, // price × quantity
+  itemCouponShare: { type: Number, default: 0 }, // This item's coupon discount
+  itemAfterCoupon: { type: Number, default: 0 }, // itemSubtotal - itemCouponShare
+  itemTaxShare: { type: Number, default: 0 }, // This item's tax
+  itemShippingShare: { type: Number, default: 0 }, // This item's shipping
+  itemFinalPayable: { type: Number, default: 0 }, // What user ACTUALLY paid for this item
+
 
   status: {
     type: String,
@@ -44,22 +53,26 @@ const orderItemSchema = new mongoose.Schema({
     default: "pending"
   },
 
-  // Return & Cancel
+  refundAmount: { type: Number, default: 0 },
+  refundMethod: { type: String, enum: ["wallet", "razorpay", "none"], default: "none" },
+  refundStatus: { type: String, enum: ["none", "pending", "credited"], default: "none" },
+  refundDate: Date,
+
   cancelReason: String,
   cancelDetails: String,
-  // track how many were cancelled for partial cancels
+  
   cancelledQty: { type: Number, default: 0, min: 0 },
 
   returnReason: String,
   returnDetails: String,
-  // track how many were returned for partial returns
+  
   returnedQty: { type: Number, default: 0, min: 0 },
 
   returnRequestedDate: Date,
   returnApprovedDate: Date,
   returnRejectedDate: Date,
 
-  // Timeline tracking
+
   shippedDetails: {
     courier: String,
     trackingId: String,
@@ -73,11 +86,11 @@ const orderItemSchema = new mongoose.Schema({
 });
 
 
-// Main order schema
+
 const orderSchema = new mongoose.Schema({
   orderId: {
     type: String,
-    required: false // Generated in controller; keep false so old docs don't break
+    required: false 
   },
 
   user: {
@@ -105,35 +118,35 @@ const orderSchema = new mongoose.Schema({
     default: "pending"
   },
 
-  // make paymentMethod an enum so only known values are used
+
   paymentMethod: { type: String, enum: ["cod", "razorpay", "wallet"], default: "cod" },
 
-  // better to enforce a set of statuses for payment
+  
   paymentStatus: { type: String, enum: ["pending", "paid", "failed", "partial_refunded","refunded"], default: "pending" },
 
-  // Razorpay fields (REQUIRED)
+ 
   razorpayOrderId: String,
   razorpayPaymentId: String,
   razorpaySignature: String,
 
-  // optionally store a short failure reason for debugging
+  
   paymentFailureReason: String,
 
-  // small helper: refund status for the order (none/requested/processed)
+
   refundStatus: { type: String, enum: ["none", "requested", "processed"], default: "none" },
 
-  // numeric fields with defaults to prevent undefined in calculations
+ 
   subtotal: { type: Number, default: 0, min: 0 },
   offerDiscount: { type: Number, default: 0 },
   tax: { type: Number, default: 0, min: 0 },
   shippingFee: { type: Number, default: 0, min: 0 },
   totalAmount: { type: Number, default: 0, min: 0 },
 
-  // coupon info (unchanged, kept for compatibility)
+  
   coupon: {
     code: String,
-    discountValue: Number,  // percentage like 10, 20, etc
-    discountAmount: Number, // actual discount applied in rupees
+    discountValue: Number, 
+    discountAmount: Number, 
       
 
     maxDiscountAmount: Number,
@@ -147,9 +160,9 @@ const orderSchema = new mongoose.Schema({
   { timestamps: true }
 );
 
-// Indexes for common queries - non-breaking and improves performance
+
 orderSchema.index({ user: 1 });
-orderSchema.index({ orderId: 1 }); // if you later make orderId unique, change here
+orderSchema.index({ orderId: 1 }); 
 orderSchema.index({ orderStatus: 1 });
 orderSchema.index({ createdAt: -1 });
 

@@ -59,7 +59,7 @@ export const renderLandingPage = async (req, res) => {
 
     let userWishlistIds = [];
 
-    // If user is logged in, load their wishlist
+   
     if (req.session.user && req.session.user.id) {
       const user = await User.findById(req.session.user.id).select("wishlist");
       if (user) {

@@ -692,6 +692,41 @@
                     }
                 });
 
+                function validateFullName() {
+  const nameInput = document.getElementById("fullName");
+  const name = nameInput.value.trim();
+
+  // Empty
+  if (!name) {
+    Swal.fire("Invalid Name", "Name cannot be empty", "warning");
+    nameInput.focus();
+    return false;
+  }
+
+  // Minimum length
+  if (name.length < 2) {
+    Swal.fire("Invalid Name", "Name must be at least 2 characters", "warning");
+    nameInput.focus();
+    return false;
+  }
+
+  // Allow letters, space, dot, hyphen
+  const nameRegex = /^[A-Za-z]+([ .-][A-Za-z]+)*$/;
+
+  if (!nameRegex.test(name)) {
+    Swal.fire(
+      "Invalid Name",
+      "Name can contain only letters, spaces, dot (.) or hyphen (-)",
+      "warning"
+    );
+    nameInput.focus();
+    return false;
+  }
+
+  return true;
+}
+
+
                 async function saveProfile() {
                     const formData = new FormData();
                     formData.append("name", document.getElementById("fullName").value);
@@ -706,18 +741,30 @@
                             headers: { "Content-Type": "multipart/form-data" }
                         });
 
-                        if (res.data.success) {
-                            Swal.fire({
-                                icon: "success",
-                                title: "Profile Updated!",
-                                text: "Your details & image are saved.",
-                                confirmButtonColor: "#2563eb"
-                            }).then(() => {
-                                window.location.reload();
-                            });
-                        } else {
-                            Swal.fire("Error", "Failed to update profile", "error");
-                        }
+                     if (res.data.success) {
+  Swal.fire({
+    icon: "success",
+    title: "Profile Updated!",
+    text: "Your details & image are saved.",
+    confirmButtonColor: "#2563eb"
+  }).then(() => window.location.reload());
+
+} else if (res.data.message === "No changes detected") {
+  Swal.fire({
+    icon: "info",
+    title: "No Changes",
+    text: "You didn’t change anything.",
+    confirmButtonColor: "#2563eb"
+  });
+
+} else {
+  Swal.fire({
+    icon: "error",
+    title: "Update Failed",
+    text: res.data.message || "Failed to update profile"
+  });
+}
+  
 
                     } catch (err) {
                         Swal.fire("Error", "Something went wrong", "error");
@@ -755,13 +802,7 @@
                     }, 3000);
                 }
 
-                // Initialize the page
-                // document.addEventListener('DOMContentLoaded', function() {
-                //     // Set the first tab as active
-                //     switchTab('profile');
-                // });
-
-
+               
                 document.addEventListener('DOMContentLoaded', function () {
                     const currentUrl = window.location.pathname;
 

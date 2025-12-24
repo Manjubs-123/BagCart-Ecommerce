@@ -1,11 +1,10 @@
-// config/passport.js
 import passport from "passport";
 import { Strategy as GoogleStrategy } from "passport-google-oauth20";
 import dotenv from "dotenv";
 import User from "../models/userModel.js";
 dotenv.config();
 
-//Google OAuth Strategy
+// Google OAuth Strategy
 passport.use(
   new GoogleStrategy(
     {
@@ -17,10 +16,8 @@ passport.use(
       try {
         const email = profile.emails[0].value;
 
-        // Check if user exists
         let user = await User.findOne({ email });
         if (!user) {
-          // Create new Google user
           user = await User.create({
             googleId: profile.id,
             name: profile.displayName,
@@ -39,16 +36,14 @@ passport.use(
   )
 );
 
-// Serialize & Deserialize
+// KEEP these but they won't interfere since Passport is route-scoped
 passport.serializeUser((user, done) => {
-  console.log("Serialize user:", user.email);
   done(null, user.id);
 });
 
 passport.deserializeUser(async (id, done) => {
   try {
     const user = await User.findById(id);
-    console.log(" Deserialize user:", user?.email);
     done(null, user);
   } catch (err) {
     done(err, null);
@@ -56,5 +51,3 @@ passport.deserializeUser(async (id, done) => {
 });
 
 export default passport;
-
-

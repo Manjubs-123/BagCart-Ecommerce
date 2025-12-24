@@ -1,15 +1,23 @@
 <!-- Admin Sidebar -->
 <aside
-class="hidden md:flex w-64 bg-gradient-to-b from-blue-900 to-emerald-900 text-white h-screen flex-col fixed left-0 top-0 z-50 overflow-y-auto shadow-2xl border-r border-blue-700/30 sidebar"
+  id="admin-sidebar"
+  class="
+    fixed top-0 left-0 z-50
+    w-64 h-screen
+    bg-gradient-to-b from-blue-900 to-emerald-900
+    text-white
+    flex flex-col
+    transform -translate-x-full lg:translate-x-0
+    transition-transform duration-300 ease-in-out
+    shadow-2xl border-r border-blue-700/30
+    sidebar
+  "
 >
+
   <!-- Logo Header -->
-  <div
-    class="flex items-center justify-center h-20 border-b border-blue-700/30 px-4 shrink-0"
-  >
+  <div class="flex items-center justify-center h-20 border-b border-blue-700/30 px-4 shrink-0">
     <a href="/admin/dashboard" class="flex items-center gap-3">
-      <div
-        class="w-10 h-10 rounded-xl bg-white/10 backdrop-blur-sm flex items-center justify-center border border-white/20"
-      >
+      <div class="w-10 h-10 rounded-xl bg-white/10 backdrop-blur-sm flex items-center justify-center border border-white/20">
         <i class="fas fa-shield-alt text-white text-lg"></i>
       </div>
       <div class="flex flex-col">
@@ -19,177 +27,71 @@ class="hidden md:flex w-64 bg-gradient-to-b from-blue-900 to-emerald-900 text-wh
     </a>
   </div>
 
-  <!-- Navigation Menu -->
+  <!-- Navigation -->
   <nav class="flex-1 px-4 py-6 space-y-1 overflow-y-auto">
-    <a
-      href="/admin/dashboard"
-      class="flex items-center gap-3 p-3 rounded-xl transition-all duration-200 group hover:bg-white/10 hover:border-l-4 hover:border-blue-400 border-l-4 border-transparent"
-    >
-      <div
-        class="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center group-hover:bg-blue-500/20 transition-colors duration-200"
-      >
+
+    <a href="/admin/dashboard" class="flex items-center gap-3 p-3 rounded-xl transition group hover:bg-white/10 border-l-4 border-transparent hover:border-blue-400">
+      <div class="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center">
         <i class="fa-solid fa-chart-line text-blue-300 text-sm"></i>
       </div>
-      <span
-        class="font-medium text-blue-100 group-hover:text-white transition-colors duration-200"
-        >Dashboard</span
-      >
-      <i
-        class="fas fa-chevron-right text-xs text-blue-300/50 ml-auto opacity-0 group-hover:opacity-100 transition-opacity duration-200"
-      ></i>
+      <span class="font-medium text-blue-100">Dashboard</span>
     </a>
 
-    <a
-      href="/admin/products"
-      class="flex items-center gap-3 p-3 rounded-xl transition-all duration-200 group hover:bg-white/10 hover:border-l-4 hover:border-blue-400 border-l-4 border-transparent"
-    >
-      <div
-        class="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center group-hover:bg-blue-500/20 transition-colors duration-200"
-      >
+    <a href="/admin/products" class="flex items-center gap-3 p-3 rounded-xl transition group hover:bg-white/10 border-l-4 border-transparent hover:border-blue-400">
+      <div class="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center">
         <i class="fa-solid fa-boxes text-blue-300 text-sm"></i>
       </div>
-      <span
-        class="font-medium text-blue-100 group-hover:text-white transition-colors duration-200"
-        >Products</span
-      >
-      <i
-        class="fas fa-chevron-right text-xs text-blue-300/50 ml-auto opacity-0 group-hover:opacity-100 transition-opacity duration-200"
-      ></i>
+      <span class="font-medium text-blue-100">Products</span>
     </a>
 
-    <a
-      href="/admin/users"
-      class="flex items-center gap-3 p-3 rounded-xl transition-all duration-200 group hover:bg-white/10 hover:border-l-4 hover:border-blue-400 border-l-4 border-transparent"
-    >
-      <div
-        class="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center group-hover:bg-blue-500/20 transition-colors duration-200"
-      >
+    <a href="/admin/users" class="flex items-center gap-3 p-3 rounded-xl transition group hover:bg-white/10 border-l-4 border-transparent hover:border-blue-400">
+      <div class="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center">
         <i class="fa-solid fa-users text-blue-300 text-sm"></i>
       </div>
-      <span
-        class="font-medium text-blue-100 group-hover:text-white transition-colors duration-200"
-        >Customers</span
-      >
-      <i
-        class="fas fa-chevron-right text-xs text-blue-300/50 ml-auto opacity-0 group-hover:opacity-100 transition-opacity duration-200"
-      ></i>
+      <span class="font-medium text-blue-100">Customers</span>
     </a>
 
-    <a
-      href="/admin/category"
-      class="flex items-center gap-3 p-3 rounded-xl transition-all duration-200 group hover:bg-white/10 hover:border-l-4 hover:border-blue-400 border-l-4 border-transparent"
-    >
-      <div
-        class="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center group-hover:bg-blue-500/20 transition-colors duration-200"
-      >
+    <a href="/admin/category" class="flex items-center gap-3 p-3 rounded-xl transition group hover:bg-white/10 border-l-4 border-transparent hover:border-blue-400">
+      <div class="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center">
         <i class="fa-solid fa-layer-group text-blue-300 text-sm"></i>
       </div>
-      <span
-        class="font-medium text-blue-100 group-hover:text-white transition-colors duration-200"
-        >Category</span
-      >
-      <i
-        class="fas fa-chevron-right text-xs text-blue-300/50 ml-auto opacity-0 group-hover:opacity-100 transition-opacity duration-200"
-      ></i>
+      <span class="font-medium text-blue-100">Category</span>
     </a>
 
-    <a
-      href="/admin/orders"
-      class="flex items-center gap-3 p-3 rounded-xl transition-all duration-200 group hover:bg-white/10 hover:border-l-4 hover:border-blue-400 border-l-4 border-transparent"
-    >
-      <div
-        class="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center group-hover:bg-blue-500/20 transition-colors duration-200"
-      >
+    <a href="/admin/orders" class="flex items-center gap-3 p-3 rounded-xl transition group hover:bg-white/10 border-l-4 border-transparent hover:border-blue-400">
+      <div class="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center">
         <i class="fa-solid fa-cart-shopping text-blue-300 text-sm"></i>
       </div>
-      <span
-        class="font-medium text-blue-100 group-hover:text-white transition-colors duration-200"
-        >Orders</span
-      >
-      <i
-        class="fas fa-chevron-right text-xs text-blue-300/50 ml-auto opacity-0 group-hover:opacity-100 transition-opacity duration-200"
-      ></i>
+      <span class="font-medium text-blue-100">Orders</span>
     </a>
 
-    <a
-      href="/admin/coupon"
-      class="flex items-center gap-3 p-3 rounded-xl transition-all duration-200 group hover:bg-white/10 hover:border-l-4 hover:border-blue-400 border-l-4 border-transparent"
-    >
-      <div
-        class="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center group-hover:bg-blue-500/20 transition-colors duration-200"
-      >
+    <a href="/admin/coupon" class="flex items-center gap-3 p-3 rounded-xl transition group hover:bg-white/10 border-l-4 border-transparent hover:border-blue-400">
+      <div class="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center">
         <i class="fa-solid fa-ticket text-blue-300 text-sm"></i>
       </div>
-      <span
-        class="font-medium text-blue-100 group-hover:text-white transition-colors duration-200"
-        >Coupons</span
-      >
-      <i
-        class="fas fa-chevron-right text-xs text-blue-300/50 ml-auto opacity-0 group-hover:opacity-100 transition-opacity duration-200"
-      ></i>
+      <span class="font-medium text-blue-100">Coupons</span>
     </a>
 
-    <a
-      href="/admin/offers"
-      class="flex items-center gap-3 p-3 rounded-xl transition-all duration-200 group hover:bg-white/10 hover:border-l-4 hover:border-blue-400 border-l-4 border-transparent"
-    >
-      <div
-        class="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center group-hover:bg-blue-500/20 transition-colors duration-200"
-      >
+    <a href="/admin/offers" class="flex items-center gap-3 p-3 rounded-xl transition group hover:bg-white/10 border-l-4 border-transparent hover:border-blue-400">
+      <div class="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center">
         <i class="fa-solid fa-gift text-blue-300 text-sm"></i>
       </div>
-      <span
-        class="font-medium text-blue-100 group-hover:text-white transition-colors duration-200"
-        >Offers</span
-      >
-      <i
-        class="fas fa-chevron-right text-xs text-blue-300/50 ml-auto opacity-0 group-hover:opacity-100 transition-opacity duration-200"
-      ></i>
+      <span class="font-medium text-blue-100">Offers</span>
     </a>
-<!-- 
-    <a
-      href="/admin/banner"
-      class="flex items-center gap-3 p-3 rounded-xl transition-all duration-200 group hover:bg-white/10 hover:border-l-4 hover:border-blue-400 border-l-4 border-transparent"
-    >
-      <div
-        class="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center group-hover:bg-blue-500/20 transition-colors duration-200"
-      >
-        <i class="fa-solid fa-image text-blue-300 text-sm"></i>
-      </div>
-      <span
-        class="font-medium text-blue-100 group-hover:text-white transition-colors duration-200"
-        >Banner</span
-      >
-      <i
-        class="fas fa-chevron-right text-xs text-blue-300/50 ml-auto opacity-0 group-hover:opacity-100 transition-opacity duration-200"
-      ></i>
-    </a> -->
 
-    <a
-      href="/admin/sales"
-      class="flex items-center gap-3 p-3 rounded-xl transition-all duration-200 group hover:bg-white/10 hover:border-l-4 hover:border-blue-400 border-l-4 border-transparent"
-    >
-      <div
-        class="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center group-hover:bg-blue-500/20 transition-colors duration-200"
-      >
+    <a href="/admin/sales" class="flex items-center gap-3 p-3 rounded-xl transition group hover:bg-white/10 border-l-4 border-transparent hover:border-blue-400">
+      <div class="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center">
         <i class="fa-solid fa-chart-column text-blue-300 text-sm"></i>
       </div>
-      <span
-        class="font-medium text-blue-100 group-hover:text-white transition-colors duration-200"
-        >Sales Report</span
-      >
-      <i
-        class="fas fa-chevron-right text-xs text-blue-300/50 ml-auto opacity-0 group-hover:opacity-100 transition-opacity duration-200"
-      ></i>
+      <span class="font-medium text-blue-100">Sales Report</span>
     </a>
+
   </nav>
 
-  <!-- User Info & Logout -->
+  <!-- Footer -->
   <div class="p-4 border-t border-blue-700/30 shrink-0">
     <div class="flex items-center gap-3 p-3 rounded-xl bg-white/5 mb-3">
-      <div
-        class="w-10 h-10 rounded-full bg-gradient-to-r from-blue-500 to-emerald-500 flex items-center justify-center shadow-md"
-      >
+      <div class="w-10 h-10 rounded-full bg-gradient-to-r from-blue-500 to-emerald-500 flex items-center justify-center">
         <span class="text-white font-semibold text-sm">A</span>
       </div>
       <div class="flex-1 min-w-0">
@@ -198,24 +100,15 @@ class="hidden md:flex w-64 bg-gradient-to-b from-blue-900 to-emerald-900 text-wh
       </div>
     </div>
 
-    <!-- Logout Button -->
-    <form action="/admin/logout" method="GET" class="w-full">
-      <button
-        type="submit"
-        class="flex items-center gap-3 p-3 rounded-xl transition-all duration-200 group hover:bg-red-500/20 hover:border-l-4 hover:border-red-400 border-l-4 border-transparent w-full text-left"
-      >
-        <div
-          class="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center group-hover:bg-red-500/20 transition-colors duration-200"
-        >
+    <form action="/admin/logout" method="GET">
+      <button type="submit"
+        class="w-full flex items-center gap-3 p-3 rounded-xl transition group hover:bg-red-500/20 border-l-4 border-transparent hover:border-red-400">
+        <div class="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center">
           <i class="fa-solid fa-right-from-bracket text-red-300 text-sm"></i>
         </div>
-        <span
-          class="font-medium text-red-100 group-hover:text-white transition-colors duration-200"
-          >Logout</span
-        >
+        <span class="font-medium text-red-100">Logout</span>
       </button>
     </form>
   </div>
 
-  
 </aside>

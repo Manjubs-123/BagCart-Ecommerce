@@ -5,6 +5,5 @@ const router = express.Router();
 
 router.get("/shop", isUserLoggedIn, getShopPage);
 router.get("/product/:id", isUserLoggedIn, getProductDetails);
-// router.post("/shop/filter", isUserLoggedIn, filterProducts);
 router.get("/api/variant/:productId", isUserLoggedIn, getVariantByColor);
 export default router;
