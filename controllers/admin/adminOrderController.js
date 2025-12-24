@@ -387,15 +387,15 @@ export const approveReturn = async (req, res) => {
     }
 
     // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-    // ✅✅✅ STEP 3: CALCULATE REFUND (SAME AS CANCEL) ✅✅✅
+    //  STEP 3: CALCULATE REFUND (SAME AS CANCEL)
     // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
     let refundAmount = 0;
 
-    // 🎯 OPTION 1: If breakdown was saved (NEW ORDERS)
+    //  OPTION 1: If breakdown was saved (NEW ORDERS)
     if (item.itemFinalPayable !== undefined && item.itemFinalPayable > 0) {
       refundAmount = item.itemFinalPayable;
       
-      console.log("✅ Using saved breakdown for return refund:", {
+      console.log("Using saved breakdown for return refund:", {
         itemSubtotal: item.itemSubtotal,
         couponShare: item.itemCouponShare,
         afterCoupon: item.itemAfterCoupon,
@@ -404,13 +404,13 @@ export const approveReturn = async (req, res) => {
         finalPayable: item.itemFinalPayable
       });
     } 
-    // 🎯 OPTION 2: OLD ORDERS without breakdown (FALLBACK)
+    //  OPTION 2: OLD ORDERS without breakdown (FALLBACK)
     else {
-      console.log("⚠️ No breakdown found, using old calculation method");
+      console.log(" No breakdown found, using old calculation method");
       refundAmount = calculateRefundOldWay(order, item, itemId);
     }
 
-    // ✅ Safety cap: Cannot exceed remaining refundable amount
+    //  Safety cap: Cannot exceed remaining refundable amount
     const previousRefunds = order.items.reduce(
       (sum, i) => sum + (i.refundAmount || 0),
       0
