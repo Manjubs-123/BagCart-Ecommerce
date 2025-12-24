@@ -462,12 +462,12 @@ else { %>
                                 <strong>Method:</strong> 
                                 <%= order.paymentMethod === 'cod' ? 'Cash on Delivery' : order.paymentMethod %>
                               </p>
-                              <p class="text-xs text-gray-600">
+                              <!-- <p class="text-xs text-gray-600">
                                 <strong>Status:</strong> 
                                 <span class="font-medium <%= order.paymentStatus === 'paid' ? 'text-green-600' : 'text-yellow-600' %>">
                                   <%= order.paymentStatus.charAt(0).toUpperCase() + order.paymentStatus.slice(1) %>
                                 </span>
-                              </p>
+                              </p> -->
                               <% if (order.coupon && order.coupon.code) { %>
                                 <p class="text-xs text-green-600 mt-2">
                                   <i class="fas fa-tag mr-1"></i>
@@ -739,10 +739,13 @@ function toggleOrderDetails(orderId) {
 
       const invoiceUrl = `/order/${orderId}/item/${itemId}/invoice`;
 
-      const link = document.createElement("a");
-      link.href = invoiceUrl;
-      link.target = "_blank";
-      link.click();
+     const link = document.createElement("a");
+link.href = invoiceUrl;
+link.download = "";   // 🔥 FORCE DOWNLOAD
+document.body.appendChild(link);
+link.click();
+document.body.removeChild(link);
+
 
       setTimeout(() => {
         button.innerHTML = originalHtml;

@@ -75,6 +75,7 @@ export const createOrder = async (req, res) => {
     // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
     let orderItems = [];
     let subtotalBeforeCoupon = 0;
+const generatedOrderId = generateOrderId();
 
     for (const cartItem of cart.items) {
       const product = cartItem.product;
@@ -107,6 +108,7 @@ export const createOrder = async (req, res) => {
         price: +finalPrice.toFixed(2), // Unit price
         regularPrice: +regularPrice.toFixed(2),
         itemSubtotal: +itemSubtotal.toFixed(2), // NEW: Total for this item
+          itemOrderId: `${generatedOrderId}-${orderItems.length + 1}`,
         color: variant.color,
         image: variant.images?.[0]?.url || ""
       });
@@ -248,7 +250,7 @@ console.log({
     // STEP 7: CREATE ORDER
     // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
     const order = await Order.create([{
-      orderId: "BH-" + Math.floor(100000 + Math.random() * 900000),
+orderId: generatedOrderId,
       user: userId,
       items: orderItems, // Now has breakdown for each item!
       shippingAddress: address,
@@ -808,6 +810,7 @@ export const downloadInvoice = async (req, res) => {
     }
 
     doc.end();
+    return;
   } catch (err) {
     console.error("downloadInvoice Error:", err);
     res.status(500).send("Could not generate invoice");
@@ -931,7 +934,7 @@ export const cancelItem = async (req, res) => {
       wallet.transactions.push({
         type: "credit",
         amount: refundAmount,
-        description: `Refund for cancelled item ${item.itemOrderId || itemId}`,
+        description: `Refund for cancelled item ${item.itemOrderId || order.orderId}`,
         date: new Date(),
         meta: {
           itemSubtotal: item.itemSubtotal?.toFixed(2),

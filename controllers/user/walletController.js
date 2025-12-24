@@ -1,19 +1,46 @@
 import Wallet from "../../models/walletModel.js";
 
 
+// export const getWalletPage = async (req, res) => {
+//   try {
+//     const userId = req.session.user.id;
+
+//     let wallet = await Wallet.findOne({ user: userId });
+
+//     if (!wallet) {
+//       wallet = await Wallet.create({
+//         user: userId,
+//         balance: 0,
+//         transactions: []
+//       });
+//     }
+
+//     res.render("user/wallet", { wallet });
+
+//   } catch (err) {
+//     console.error("Wallet Page Error:", err);
+//     res.render("user/wallet", { wallet: { balance: 0, transactions: [] } });
+//   }
+// };
+
 export const getWalletPage = async (req, res) => {
   try {
     const userId = req.session.user.id;
 
-    let wallet = await Wallet.findOne({ user: userId });
+    let wallet = await Wallet.findOne({ user: userId }).lean();
 
     if (!wallet) {
-      wallet = await Wallet.create({
+      wallet = {
         user: userId,
         balance: 0,
         transactions: []
-      });
+      };
     }
+
+    // ✅ SORT transactions by date (latest FIRST)
+    wallet.transactions = wallet.transactions
+      .slice()
+      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
     res.render("user/wallet", { wallet });
 

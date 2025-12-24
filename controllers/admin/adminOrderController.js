@@ -437,7 +437,7 @@ export const approveReturn = async (req, res) => {
     wallet.transactions.push({
       type: "credit",
       amount: refundAmount,
-      description: `Return refund for item ${item.itemOrderId || itemId}`,
+      description: `Return refund for item ${item.itemOrderId ||order.orderId}`,
       date: new Date(),
       meta: {
         itemSubtotal: item.itemSubtotal?.toFixed(2),
