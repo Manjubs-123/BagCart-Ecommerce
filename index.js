@@ -25,6 +25,10 @@ import orderRoutes from './routes/user/orderRoutes.js'
 import adminOrderRoutes from "./routes/admin/adminOrderRoutes.js"
 import walletRoutes from "./routes/user/walletRoutes.js";
 import adminCouponRoutes from "./routes/admin/adminCouponRoutes.js"
+import couponRoutes from "./routes/user/couponRoutes.js";
+import offerRoutes from "./routes/admin/offerRoutes.js";  
+import paymentRoutes from "./routes/user/paymentRoutes.js";
+import adminSalesReportRoutes from "./routes/admin/adminSalesReportRoutes.js";
 const app = express();
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -48,11 +52,11 @@ app.use(
     saveUninitialized: false,
     store: MongoStore.create({
       mongoUrl: process.env.MONGO_URI,
-      ttl: 24 * 60 * 60, // 1 day
+      ttl: 24 * 60 * 60, 
     }),
     cookie: {
       httpOnly: true,
-      secure: false, //  false for localhost (true only in HTTPS)
+      secure: false, 
       sameSite: "lax",
       maxAge: 24 * 60 * 60 * 1000,
     },
@@ -66,7 +70,7 @@ app.use(async (req, res, next) => {
 
       res.locals.user = dbUser;
 
-      // Also update session user (so it always stays fresh)
+     
       req.session.user = {
         id: dbUser._id,
         name: dbUser.name,
@@ -81,7 +85,7 @@ app.use(async (req, res, next) => {
     }
     next();
   } catch (err) {
-    console.log("User Load Error:", err);
+    // console.log("User Load Error:", err);
     res.locals.user = null;
     next();
   }
@@ -93,7 +97,7 @@ app.use(async (req, res, next) => {
   if (req.session.user && req.session.user.id) {
     let user = await User.findById(req.session.user.id).lean();
 
-    // FIX: if profileImage missing → assign default
+    
     if (!user.profileImage || !user.profileImage.url) {
       user.profileImage = {
         url: "https://res.cloudinary.com/db5uwjwdv/image/upload/v1763442856/AdobeStock_1185421594_Preview_cvfm1v.jpg",
@@ -114,19 +118,8 @@ app.use(async (req, res, next) => {
 });
 
 
-app.use(passport.initialize());
-app.use(passport.session());
-
-
-// app.use((req, res, next) => {
-//   res.locals.user = req.user || null;
-//   res.locals.currentPage = "";
-//   res.locals.currentPath = req.path;
-//   next();
-// });
-
-
 app.use('/user/cart',cartRoutes);
+app.use('/admin', adminSalesReportRoutes);
 app.use("/admin", adminRoutes);
 app.use("/user", userRoutes);
 app.use("/user", shopRoutes);
@@ -140,6 +133,10 @@ app.use('/order',orderRoutes);
 app.use('/admin/orders',adminOrderRoutes)
 app.use('/user',walletRoutes)
 app.use('/admin/coupon', adminCouponRoutes);
+app.use('/user', couponRoutes);
+app.use('/admin/offers', offerRoutes);
+app.use("/api/payment", paymentRoutes);
+app.use("/", paymentRoutes);
 
 
 

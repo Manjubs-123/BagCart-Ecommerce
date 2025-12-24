@@ -1,0 +1,1129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Create Offer | Admin</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <style>
+        .type-card {
+            border: 2px solid #e5e7eb;
+            border-radius: 10px;
+            padding: 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+        .type-card:hover {
+            border-color: #3b82f6;
+            background-color: #f8fafc;
+        }
+        .type-card.selected {
+            border-color: #3b82f6;
+            background-color: #eff6ff;
+            box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
+        }
+        .type-card.selected::after {
+            content: '✓';
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            width: 24px;
+            height: 24px;
+            background: #3b82f6;
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            font-weight: bold;
+        }
+        
+        .selected-items {
+            max-height: 200px;
+            overflow-y: auto;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 8px;
+            background: #f9fafb;
+            margin-top: 8px;
+        }
+
+        .selected-items:empty {
+            display: none;
+        }
+
+        .selected-item {
+            background: white;
+            border: 1px solid #e5e7eb;
+            border-radius: 6px;
+            padding: 8px 12px;
+            margin-bottom: 5px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+        }
+
+        .selected-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .dropdown-container {
+            position: relative;
+            width: 100%;
+        }
+
+        .dropdown-options {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: white;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            max-height: 300px;
+            overflow-y: auto;
+            z-index: 100;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            display: none;
+            margin-top: 2px;
+        }
+
+        .dropdown-option {
+            padding: 12px 16px;
+            cursor: pointer;
+            border-bottom: 1px solid #f3f4f6;
+            transition: all 0.2s ease;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .dropdown-option:hover {
+            background-color: #f3f4f6;
+        }
+        .dropdown-option.selected {
+            background-color: #eff6ff;
+            color: #1e40af;
+            font-weight: 500;
+        }
+        .dropdown-option:last-child {
+            border-bottom: none;
+        }
+        
+        .dropdown-option .product-price {
+            font-size: 12px;
+            color: #6b7280;
+        }
+        
+        .error-message {
+            color: #dc2626;
+            font-size: 12px;
+            margin-top: 4px;
+            display: none;
+        }
+        
+        .input-error {
+            border-color: #dc2626 !important;
+        }
+        
+        .input-success {
+            border-color: #10b981 !important;
+        }
+        
+        .validation-icon {
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            display: none;
+        }
+        
+        .clear-selection {
+            position: absolute;
+            right: 40px;
+            top: 50%;
+            transform: translateY(-50%);
+            cursor: pointer;
+            color: #6b7280;
+            display: none;
+        }
+        
+        .clear-selection:hover {
+            color: #dc2626;
+        }
+        
+        /* Mobile overlay */
+        @media (max-width: 1023px) {
+            .mobile-overlay {
+                display: none;
+                position: fixed;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background-color: rgba(0, 0, 0, 0.5);
+                z-index: 40;
+            }
+            
+            .mobile-overlay.active {
+                display: block;
+            }
+            
+            body.sidebar-open {
+                overflow: hidden;
+            }
+        }
+    </style>
+</head>
+
+<body class="bg-gray-50 min-h-screen">
+    
+    <!-- Mobile Overlay -->
+    <div class="mobile-overlay lg:hidden" id="mobile-overlay"></div>
+
+    <!-- Sidebar -->
+    <%- include('../partials/sidebar', { currentPage: 'offers' }) %>
+
+    <main class="w-full lg:ml-64 flex-1 p-4 sm:p-6 transition-all duration-300">
+
+        <!-- HEADER -->
+        <div class="mb-6 lg:mb-8">
+            <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-2">
+                <div class="flex-1">
+                    <div class="flex items-center justify-between mb-2">
+                        <h1 class="text-2xl sm:text-3xl font-bold text-gray-900">Create New Offer</h1>
+                        <!-- Mobile menu button -->
+                        <button
+                            id="mobile-menu-button"
+                            class="lg:hidden p-2 rounded-lg bg-gray-100 text-gray-700 hover:bg-gray-200 transition-colors"
+                            aria-label="Toggle menu"
+                        >
+                            <i class="fas fa-bars text-lg"></i>
+                        </button>
+                    </div>
+                    <p class="text-gray-600 text-sm sm:text-base">Create discounts for products or categories</p>
+                </div>
+                <a href="/admin/offers" class="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 inline-flex items-center justify-center w-full sm:w-auto text-sm sm:text-base">
+                    <i class="fas fa-arrow-left mr-2"></i> Back to Offers
+                </a>
+            </div>
+        </div>
+
+        <!-- FORM CONTAINER -->
+        <div class="max-w-2xl mx-auto">
+            <form id="offerForm" action="/admin/offers/create" method="POST">
+
+                <!-- OFFER TYPE -->
+                <div class="bg-white rounded-xl p-4 sm:p-6 mb-6 shadow-sm">
+                    <h2 class="text-lg font-semibold text-gray-900 mb-4">Select Offer Type</h2>
+
+                    <div class="grid grid-cols-1 gap-4">
+                        
+                        <!-- PRODUCT OFFER -->
+                        <div class="type-card selected" onclick="selectType('product')" id="productType">
+                            <div class="flex items-center">
+                                <div class="w-10 h-10 sm:w-12 sm:h-12 bg-blue-100 rounded-lg flex items-center justify-center mr-3 sm:mr-4">
+                                    <i class="fas fa-box text-blue-600 text-lg sm:text-xl"></i>
+                                </div>
+                                <div>
+                                    <h3 class="font-medium text-gray-900 text-sm sm:text-base">Product Offer</h3>
+                                    <p class="text-xs sm:text-sm text-gray-500">Apply to specific products</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- CATEGORY OFFER -->
+                        <div class="type-card" onclick="selectType('category')" id="categoryType">
+                            <div class="flex items-center">
+                                <div class="w-10 h-10 sm:w-12 sm:h-12 bg-green-100 rounded-lg flex items-center justify-center mr-3 sm:mr-4">
+                                    <i class="fas fa-layer-group text-green-600 text-lg sm:text-xl"></i>
+                                </div>
+                                <div>
+                                    <h3 class="font-medium text-gray-900 text-sm sm:text-base">Category Offer</h3>
+                                    <p class="text-xs sm:text-sm text-gray-500">Apply to entire categories</p>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+
+                    <input type="hidden" name="type" id="offerType" value="product">
+                </div>
+
+                <!-- OFFER DETAILS -->
+                <div class="bg-white rounded-xl p-4 sm:p-6 shadow-sm">
+
+                    <!-- NAME -->
+                    <div class="mb-6">
+                        <label class="text-sm font-medium text-gray-700 mb-2 block">Offer Name *</label>
+                        <div class="relative">
+                            <input type="text" name="name" required placeholder="e.g., Summer Sale" 
+                                   class="w-full px-4 py-2.5 sm:py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm sm:text-base"
+                                   oninput="validateName(this)">
+                            <i class="fas fa-check-circle text-green-500 validation-icon" id="nameSuccess"></i>
+                            <i class="fas fa-exclamation-circle text-red-500 validation-icon" id="nameError"></i>
+                        </div>
+                        <div class="error-message" id="nameErrorMessage">Offer name must be at least 3 characters</div>
+                    </div>
+
+                    <!-- DISCOUNT -->
+                    <div class="mb-6">
+                        <label class="text-sm font-medium text-gray-700 mb-2 block">Discount Percentage *</label>
+                        <div class="relative">
+                            <input type="number" name="discountValue" min="5" max="90" required
+                                   placeholder="Enter percentage (5-90)"
+                                   class="w-full px-4 py-2.5 sm:py-3 border border-gray-300 rounded-lg pl-10 sm:pl-12 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm sm:text-base"
+                                   oninput="validateDiscount(this)"
+                                   onblur="validateDiscount(this)">
+                            <span class="absolute left-3 sm:left-4 top-2.5 sm:top-3.5 text-gray-500 font-medium text-sm sm:text-base">%</span>
+                            <i class="fas fa-check-circle text-green-500 validation-icon" id="discountSuccess"></i>
+                            <i class="fas fa-exclamation-circle text-red-500 validation-icon" id="discountError"></i>
+                        </div>
+                        <div class="error-message" id="discountErrorMessage">Discount must be between 5% and 90%</div>
+                    </div>
+
+                    <!-- VALIDITY -->
+                    <div class="mb-6">
+                        <label class="text-sm font-medium text-gray-700 mb-2 block">Validity Period *</label>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div class="relative">
+                                <label class="text-xs text-gray-600 mb-1 block">Start Date & Time</label>
+                                <input type="datetime-local" name="validFrom" required
+                                       class="w-full px-4 py-2.5 sm:py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm sm:text-base"
+                                       onchange="validateDates()">
+                                <i class="fas fa-check-circle text-green-500 validation-icon" id="fromSuccess"></i>
+                                <i class="fas fa-exclamation-circle text-red-500 validation-icon" id="fromError"></i>
+                            </div>
+
+                            <div class="relative">
+                                <label class="text-xs text-gray-600 mb-1 block">End Date & Time</label>
+                                <input type="datetime-local" name="validTo" required
+                                       class="w-full px-4 py-2.5 sm:py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm sm:text-base"
+                                       onchange="validateDates()">
+                                <i class="fas fa-check-circle text-green-500 validation-icon" id="toSuccess"></i>
+                                <i class="fas fa-exclamation-circle text-red-500 validation-icon" id="toError"></i>
+                            </div>
+                        </div>
+                        <div class="error-message" id="dateErrorMessage">End date must be after start date</div>
+                    </div>
+
+                    <!-- PRODUCT SELECTION -->
+                    <div id="productSelection">
+
+                        <label class="text-sm font-medium text-gray-700 mb-2 block">Select Products *</label>
+
+                        <!-- INPUT SEARCH -->
+                        <div class="dropdown-container mb-4">
+                            <div class="relative">
+                                <input type="text" id="productSearch" placeholder="Search products..."
+                                       class="w-full px-4 py-2.5 sm:py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm sm:text-base"
+                                       onfocus="showProductDropdown()"
+                                       oninput="searchProducts()">
+                                <i class="fas fa-times clear-selection" onclick="clearProductSearch()"></i>
+                                <i class="fas fa-chevron-down absolute right-10 sm:right-12 top-2.5 sm:top-3.5 text-gray-400 pointer-events-none text-sm sm:text-base"></i>
+                                
+                                <div id="productDropdown" class="dropdown-options">
+                                    <div id="productLoading" class="p-4 sm:p-6 text-center">
+                                        <i class="fas fa-spinner fa-spin text-blue-500 text-base sm:text-lg mb-2"></i>
+                                        <p class="text-xs sm:text-sm text-gray-500">Loading products...</p>
+                                    </div>
+                                    <div id="productList"></div>
+                                    <div id="noProducts" class="p-3 sm:p-4 text-center text-gray-500 hidden text-sm">
+                                        No products found
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- SELECTED PRODUCTS -->
+                        <div>
+                            <div class="flex justify-between items-center mb-2">
+                                <span class="text-xs sm:text-sm text-gray-600">Selected Products (<span id="productCount">0</span>)</span>
+                                <button type="button" onclick="clearAllProducts()" 
+                                        class="text-xs text-red-600 hover:text-red-800 font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                                        id="clearProductsBtn" disabled>
+                                    <i class="fas fa-trash-alt mr-1"></i> Clear All
+                                </button>
+                            </div>
+                            <div id="selectedProducts" class="selected-items"></div>
+                            <div class="error-message" id="productErrorMessage">Please select at least one product</div>
+                        </div>
+
+                        <input type="hidden" name="products" id="productsInput">
+                    </div>
+
+                    <!-- CATEGORY SELECTION -->
+                    <div id="categorySelection" class="hidden">
+
+                        <label class="text-sm font-medium text-gray-700 mb-2 block">Select Categories *</label>
+
+                        <!-- INPUT SEARCH -->
+                        <div class="dropdown-container mb-4">
+                            <div class="relative">
+                                <input type="text" id="categorySearch" placeholder="Search categories..."
+                                       class="w-full px-4 py-2.5 sm:py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm sm:text-base"
+                                       onfocus="showCategoryDropdown()"
+                                       oninput="searchCategories()">
+                                <i class="fas fa-times clear-selection" onclick="clearCategorySearch()"></i>
+                                <i class="fas fa-chevron-down absolute right-10 sm:right-12 top-2.5 sm:top-3.5 text-gray-400 pointer-events-none text-sm sm:text-base"></i>
+
+                                <div id="categoryDropdown" class="dropdown-options">
+                                    <div id="categoryLoading" class="p-4 sm:p-6 text-center">
+                                        <i class="fas fa-spinner fa-spin text-blue-500 text-base sm:text-lg mb-2"></i>
+                                        <p class="text-xs sm:text-sm text-gray-500">Loading categories...</p>
+                                    </div>
+                                    <div id="categoryList"></div>
+                                    <div id="noCategories" class="p-3 sm:p-4 text-center text-gray-500 hidden text-sm">
+                                        No categories found
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- SELECTED CATEGORIES -->
+                        <div>
+                            <div class="flex justify-between items-center mb-2">
+                                <span class="text-xs sm:text-sm text-gray-600">Selected Categories (<span id="categoryCount">0</span>)</span>
+                                <button type="button" onclick="clearAllCategories()" 
+                                        class="text-xs text-red-600 hover:text-red-800 font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                                        id="clearCategoriesBtn" disabled>
+                                    <i class="fas fa-trash-alt mr-1"></i> Clear All
+                                </button>
+                            </div>
+                            <div id="selectedCategories" class="selected-items"></div>
+                            <div class="error-message" id="categoryErrorMessage">Please select at least one category</div>
+                        </div>
+
+                        <input type="hidden" name="categories" id="categoriesInput">
+                    </div>
+
+                    <!-- ACTIVE -->
+                    <div class="mt-6 sm:mt-8 pt-4 sm:pt-6 border-t border-gray-200">
+                        <label class="flex items-center cursor-pointer">
+                            <div class="relative">
+                                <input type="checkbox" name="isActive" checked class="sr-only" id="activeCheckbox">
+                                <div class="block bg-gray-300 w-10 h-5 sm:h-6 rounded-full"></div>
+                                <div class="dot absolute left-0.5 sm:left-1 top-0.5 sm:top-1 bg-white w-4 h-4 rounded-full transition"></div>
+                            </div>
+                            <span class="ml-3 text-sm font-medium text-gray-700">Activate offer immediately</span>
+                        </label>
+                    </div>
+
+                    <!-- SUBMIT -->
+                    <div class="mt-6 sm:mt-8 pt-4 sm:pt-6 border-t border-gray-200">
+                        <button type="submit" id="submitBtn"
+                            class="w-full px-6 sm:px-8 py-2.5 sm:py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed font-medium transition-colors flex items-center justify-center gap-2 text-sm sm:text-base">
+                            <i class="fas fa-save"></i>
+                            Create Offer
+                        </button>
+                    </div>
+
+                </div>
+            </form>
+        </div>
+    </main>
+
+    <!-- Sidebar Toggle Script -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const mobileMenuButton = document.getElementById('mobile-menu-button');
+            const sidebar = document.getElementById('admin-sidebar');
+            const overlay = document.getElementById('mobile-overlay');
+            const body = document.body;
+
+            function toggleSidebar() {
+                sidebar.classList.toggle('-translate-x-full');
+                overlay.classList.toggle('active');
+                body.classList.toggle('sidebar-open');
+            }
+
+            function closeSidebar() {
+                sidebar.classList.add('-translate-x-full');
+                overlay.classList.remove('active');
+                body.classList.remove('sidebar-open');
+            }
+
+            if (mobileMenuButton && sidebar && overlay) {
+                mobileMenuButton.addEventListener('click', toggleSidebar);
+                overlay.addEventListener('click', closeSidebar);
+            }
+
+            // Close sidebar when clicking on any link
+            document.querySelectorAll('#admin-sidebar a').forEach(link => {
+                link.addEventListener('click', () => {
+                    if (window.innerWidth < 1024) {
+                        closeSidebar();
+                    }
+                });
+            });
+
+            // Close sidebar on escape key
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape' && window.innerWidth < 1024) {
+                    closeSidebar();
+                }
+            });
+        });
+    </script>
+
+<script>
+// ===========================================
+// GLOBAL VARIABLES
+// ===========================================
+let selectedProducts = new Set();
+let selectedCategories = new Set();
+let currentOfferType = 'product';
+let productsLoaded = false;
+let categoriesLoaded = false;
+
+// ===========================================
+// UTILITY FUNCTIONS
+// ===========================================
+function showError(elementId, message) {
+    const element = document.getElementById(elementId);
+    if (element) {
+        element.textContent = message;
+        element.style.display = 'block';
+    }
+}
+
+function hideError(elementId) {
+    const element = document.getElementById(elementId);
+    if (element) {
+        element.style.display = 'none';
+    }
+}
+
+function showValidation(input, isValid, successIcon, errorIcon) {
+    const success = document.getElementById(successIcon);
+    const error = document.getElementById(errorIcon);
+    
+    if (isValid) {
+        input.classList.remove('input-error');
+        input.classList.add('input-success');
+        if (success) success.style.display = 'block';
+        if (error) error.style.display = 'none';
+    } else {
+        input.classList.remove('input-success');
+        input.classList.add('input-error');
+        if (success) success.style.display = 'none';
+        if (error) error.style.display = 'block';
+    }
+}
+
+function validateForm() {
+    const nameValid = validateName(document.querySelector('input[name="name"]'));
+    const discountValid = validateDiscount(document.querySelector('input[name="discountValue"]'));
+    const dateValid = validateDates();
+
+    const selectionValid = currentOfferType === 'product'
+        ? selectedProducts.size > 0
+        : selectedCategories.size > 0;
+
+    const submitBtn = document.getElementById('submitBtn');
+    submitBtn.disabled = !(nameValid && discountValid && dateValid && selectionValid);
+
+    return submitBtn.disabled === false;
+}
+
+// ===========================================
+// OFFER TYPE SWITCH
+// ===========================================
+function selectType(type) {
+    currentOfferType = type;
+    document.getElementById("offerType").value = type;
+
+    document.getElementById("productType").classList.remove("selected");
+    document.getElementById("categoryType").classList.remove("selected");
+
+    if (type === "product") {
+        document.getElementById("productSelection").classList.remove("hidden");
+        document.getElementById("categorySelection").classList.add("hidden");
+        document.getElementById("productType").classList.add("selected");
+        hideError('categoryErrorMessage');
+        showError('productErrorMessage', selectedProducts.size === 0 ? 'Please select at least one product' : '');
+    } else {
+        document.getElementById("categorySelection").classList.remove("hidden");
+        document.getElementById("productSelection").classList.add("hidden");
+        document.getElementById("categoryType").classList.add("selected");
+        hideError('productErrorMessage');
+        showError('categoryErrorMessage', selectedCategories.size === 0 ? 'Please select at least one category' : '');
+    }
+    
+    validateForm();
+}
+
+// ===========================================
+// FIELD VALIDATIONS
+// ===========================================
+function validateName(input) {
+    const value = input.value.trim();
+    const isValid = value.length >= 3 && value.length <= 100;
+
+    showValidation(input, isValid, 'nameSuccess', 'nameError');
+
+    if (!isValid && value.length > 0) {
+        showError('nameErrorMessage',
+            value.length < 3 ? 'Offer name must be at least 3 characters' :
+            'Offer name cannot exceed 100 characters'
+        );
+    } else {
+        hideError('nameErrorMessage');
+    }
+
+    return isValid; 
+}
+
+
+function validateDiscount(input) {
+    const value = parseInt(input.value) || 0;
+    const isValid = value >= 5 && value <= 90;
+
+    showValidation(input, isValid, 'discountSuccess', 'discountError');
+
+    if (!isValid && input.value) {
+        showError('discountErrorMessage',
+            value < 5 ? 'Discount must be at least 5%' : 'Discount cannot exceed 90%'
+        );
+    } else {
+        hideError('discountErrorMessage');
+    }
+
+    return isValid; 
+}
+
+function validateDates() {
+    const fromInput = document.querySelector('input[name="validFrom"]');
+    const toInput = document.querySelector('input[name="validTo"]');
+    const from = new Date(fromInput.value);
+    const to = new Date(toInput.value);
+    const now = new Date();
+
+    let fromValid = fromInput.value !== '' && from > now;
+    let toValid = toInput.value !== '' && to > from;
+
+    showValidation(fromInput, fromValid, 'fromSuccess', 'fromError');
+    showValidation(toInput, toValid, 'toSuccess', 'toError');
+
+    if (!fromValid && fromInput.value) {
+        showError('dateErrorMessage', 'Start date must be in the future');
+    } else if (!toValid && toInput.value) {
+        showError('dateErrorMessage', 'End date must be after start date');
+    } else {
+        hideError('dateErrorMessage');
+    }
+
+    return fromValid && toValid;
+}
+
+// ===========================================
+// PRODUCT SELECTION
+// ===========================================
+function showProductDropdown() {
+    const dropdown = document.getElementById("productDropdown");
+    dropdown.style.display = "block";
+    
+    if (!productsLoaded) {
+        loadProducts();
+        productsLoaded = true;
+    }
+    
+    document.addEventListener('click', closeProductDropdownOnOutsideClick);
+}
+
+function closeProductDropdownOnOutsideClick(event) {
+    const dropdown = document.getElementById("productDropdown");
+    const searchInput = document.getElementById("productSearch");
+    
+    if (!dropdown.contains(event.target) && !searchInput.contains(event.target)) {
+        dropdown.style.display = "none";
+        document.removeEventListener('click', closeProductDropdownOnOutsideClick);
+    }
+}
+
+function loadProducts(search = "") {
+    const loading = document.getElementById("productLoading");
+    const noProducts = document.getElementById("noProducts");
+    const list = document.getElementById("productList");
+    
+    loading.style.display = "block";
+    noProducts.classList.add("hidden");
+    list.innerHTML = "";
+    
+    axios.get(`/admin/offers/products?search=${encodeURIComponent(search)}`)
+        .then(res => {
+            loading.style.display = "none";
+            
+            if (res.data.products && res.data.products.length > 0) {
+                res.data.products.forEach(p => {
+                    const isSelected = selectedProducts.has(p._id);
+                    
+                    const div = document.createElement("div");
+                    div.className = `dropdown-option ${isSelected ? "selected" : ""}`;
+                    div.innerHTML = `
+                        <div class="flex items-center justify-between w-full">
+                            <div class="flex items-center gap-2 sm:gap-3">
+                                ${p.image ? `<img src="${p.image}" alt="${p.name}" class="w-6 h-6 sm:w-8 sm:h-8 object-cover rounded">` : ''}
+                                <div class="min-w-0">
+                                    <div class="font-medium text-gray-900 text-xs sm:text-sm truncate">${p.name}</div>
+                                    <div class="text-xs text-gray-500">₹${p.price}</div>
+                                </div>
+                            </div>
+                            ${isSelected ? '<i class="fas fa-check text-blue-500 text-xs sm:text-sm"></i>' : ''}
+                        </div>
+                    `;
+                    
+                    div.onclick = (e) => {
+                        e.stopPropagation();
+                        toggleProduct(p._id, p.name);
+                    };
+                    
+                    list.appendChild(div);
+                });
+            } else {
+                noProducts.classList.remove("hidden");
+            }
+        })
+        .catch(err => {
+            console.error("Error loading products:", err);
+            loading.style.display = "none";
+            noProducts.classList.remove("hidden");
+            noProducts.textContent = "Error loading products";
+        });
+}
+
+function searchProducts() {
+    const search = document.getElementById("productSearch").value;
+    const clearBtn = document.querySelector('#productSearch ~ .clear-selection');
+    
+    if (search) {
+        clearBtn.style.display = 'block';
+    } else {
+        clearBtn.style.display = 'none';
+    }
+    
+    loadProducts(search);
+}
+
+function clearProductSearch() {
+    document.getElementById("productSearch").value = "";
+    document.querySelector('#productSearch ~ .clear-selection').style.display = 'none';
+    loadProducts();
+}
+
+function toggleProduct(id, name) {
+    if (selectedProducts.has(id)) {
+        selectedProducts.delete(id);
+        removeProduct(id);
+    } else {
+        selectedProducts.add(id);
+        addProduct(id, name);
+    }
+    
+    updateProductUI(id);
+    updateProductsInput();
+}
+
+function addProduct(id, name) {
+    const container = document.getElementById("selectedProducts");
+    
+    const div = document.createElement("div");
+    div.className = "selected-item";
+    div.setAttribute("data-id", id);
+    div.innerHTML = `
+        <span class="truncate text-xs sm:text-sm">${name}</span>
+        <button type="button" onclick="removeProduct('${id}')" 
+                class="text-red-500 hover:text-red-700 ml-2 flex-shrink-0">
+            <i class="fas fa-times text-xs"></i>
+        </button>
+    `;
+    
+    container.appendChild(div);
+    updateProductSelectionState();
+}
+
+function removeProduct(id) {
+    selectedProducts.delete(id);
+    
+    const item = document.querySelector(`#selectedProducts [data-id="${id}"]`);
+    if (item) item.remove();
+    
+    updateProductUI(id);
+    updateProductsInput();
+}
+
+function updateProductUI(id) {
+    const option = document.querySelector(`#productList .dropdown-option[data-id="${id}"]`);
+    if (option) {
+        const isSelected = selectedProducts.has(id);
+        option.classList.toggle("selected", isSelected);
+        
+        const checkIcon = option.querySelector('.fa-check');
+        if (isSelected && !checkIcon) {
+            option.querySelector('div').innerHTML += '<i class="fas fa-check text-blue-500 text-xs sm:text-sm"></i>';
+        } else if (!isSelected && checkIcon) {
+            checkIcon.remove();
+        }
+    }
+    
+    updateProductSelectionState();
+}
+
+function updateProductSelectionState() {
+    const count = selectedProducts.size;
+    document.getElementById("productCount").textContent = count;
+    document.getElementById("clearProductsBtn").disabled = count === 0;
+    
+    if (currentOfferType === 'product') {
+        if (count === 0) {
+            showError('productErrorMessage', 'Please select at least one product');
+        } else {
+            hideError('productErrorMessage');
+        }
+    }
+    
+    validateForm();
+}
+
+function clearAllProducts() {
+    if (selectedProducts.size === 0) return;
+    
+    Swal.fire({
+        title: 'Clear all selected products?',
+        text: 'This will remove all selected products',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#dc2626',
+        cancelButtonColor: '#6b7280',
+        confirmButtonText: 'Yes, clear all',
+        cancelButtonText: 'Cancel'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            selectedProducts.clear();
+            document.getElementById("selectedProducts").innerHTML = "";
+            
+            document.querySelectorAll('#productList .dropdown-option').forEach(option => {
+                option.classList.remove("selected");
+                const checkIcon = option.querySelector('.fa-check');
+                if (checkIcon) checkIcon.remove();
+            });
+            
+            updateProductSelectionState();
+        }
+    });
+}
+
+function updateProductsInput() {
+    document.getElementById("productsInput").value = [...selectedProducts].join(",");
+}
+
+// ===========================================
+// CATEGORY SELECTION
+// ===========================================
+function showCategoryDropdown() {
+    const dropdown = document.getElementById("categoryDropdown");
+    dropdown.style.display = "block";
+    
+    if (!categoriesLoaded) {
+        loadCategories();
+        categoriesLoaded = true;
+    }
+    
+    document.addEventListener('click', closeCategoryDropdownOnOutsideClick);
+}
+
+function closeCategoryDropdownOnOutsideClick(event) {
+    const dropdown = document.getElementById("categoryDropdown");
+    const searchInput = document.getElementById("categorySearch");
+    
+    if (!dropdown.contains(event.target) && !searchInput.contains(event.target)) {
+        dropdown.style.display = "none";
+        document.removeEventListener('click', closeCategoryDropdownOnOutsideClick);
+    }
+}
+
+function loadCategories(search = "") {
+    const loading = document.getElementById("categoryLoading");
+    const noCategories = document.getElementById("noCategories");
+    const list = document.getElementById("categoryList");
+    
+    loading.style.display = "block";
+    noCategories.classList.add("hidden");
+    list.innerHTML = "";
+    
+    axios.get(`/admin/offers/categories?search=${encodeURIComponent(search)}`)
+        .then(res => {
+            loading.style.display = "none";
+            
+            if (res.data.categories && res.data.categories.length > 0) {
+                res.data.categories.forEach(c => {
+                    const isSelected = selectedCategories.has(c._id);
+                    
+                    const div = document.createElement("div");
+                    div.className = `dropdown-option ${isSelected ? "selected" : ""}`;
+                    div.innerHTML = `
+                        <div class="flex items-center justify-between w-full">
+                            <div class="font-medium text-gray-900 text-xs sm:text-sm truncate">${c.name}</div>
+                            ${isSelected ? '<i class="fas fa-check text-blue-500 text-xs sm:text-sm"></i>' : ''}
+                        </div>
+                    `;
+                    
+                    div.onclick = (e) => {
+                        e.stopPropagation();
+                        toggleCategory(c._id, c.name);
+                    };
+                    
+                    list.appendChild(div);
+                });
+            } else {
+                noCategories.classList.remove("hidden");
+            }
+        })
+        .catch(err => {
+            console.error("Error loading categories:", err);
+            loading.style.display = "none";
+            noCategories.classList.remove("hidden");
+            noCategories.textContent = "Error loading categories";
+        });
+}
+
+function searchCategories() {
+    const search = document.getElementById("categorySearch").value;
+    const clearBtn = document.querySelector('#categorySearch ~ .clear-selection');
+    
+    if (search) {
+        clearBtn.style.display = 'block';
+    } else {
+        clearBtn.style.display = 'none';
+    }
+    
+    loadCategories(search);
+}
+
+function clearCategorySearch() {
+    document.getElementById("categorySearch").value = "";
+    document.querySelector('#categorySearch ~ .clear-selection').style.display = 'none';
+    loadCategories();
+}
+
+function toggleCategory(id, name) {
+    if (selectedCategories.has(id)) {
+        selectedCategories.delete(id);
+        removeCategory(id);
+    } else {
+        selectedCategories.add(id);
+        addCategory(id, name);
+    }
+    
+    updateCategoryUI(id);
+    updateCategoriesInput();
+}
+
+function addCategory(id, name) {
+    const container = document.getElementById("selectedCategories");
+    
+    const div = document.createElement("div");
+    div.className = "selected-item";
+    div.setAttribute("data-id", id);
+    div.innerHTML = `
+        <span class="text-xs sm:text-sm">${name}</span>
+        <button type="button" onclick="removeCategory('${id}')" 
+                class="text-red-500 hover:text-red-700 ml-2 flex-shrink-0">
+            <i class="fas fa-times text-xs"></i>
+        </button>
+    `;
+    
+    container.appendChild(div);
+    updateCategorySelectionState();
+}
+
+function removeCategory(id) {
+    selectedCategories.delete(id);
+    
+    const item = document.querySelector(`#selectedCategories [data-id="${id}"]`);
+    if (item) item.remove();
+    
+    updateCategoryUI(id);
+    updateCategoriesInput();
+}
+
+function updateCategoryUI(id) {
+    const option = document.querySelector(`#categoryList .dropdown-option[data-id="${id}"]`);
+    if (option) {
+        const isSelected = selectedCategories.has(id);
+        option.classList.toggle("selected", isSelected);
+        
+        const checkIcon = option.querySelector('.fa-check');
+        if (isSelected && !checkIcon) {
+            option.querySelector('div').innerHTML += '<i class="fas fa-check text-blue-500 text-xs sm:text-sm"></i>';
+        } else if (!isSelected && checkIcon) {
+            checkIcon.remove();
+        }
+    }
+    
+    updateCategorySelectionState();
+}
+
+function updateCategorySelectionState() {
+    const count = selectedCategories.size;
+    document.getElementById("categoryCount").textContent = count;
+    document.getElementById("clearCategoriesBtn").disabled = count === 0;
+    
+    if (currentOfferType === 'category') {
+        if (count === 0) {
+            showError('categoryErrorMessage', 'Please select at least one category');
+        } else {
+            hideError('categoryErrorMessage');
+        }
+    }
+    
+    validateForm();
+}
+
+function clearAllCategories() {
+    if (selectedCategories.size === 0) return;
+    
+    Swal.fire({
+        title: 'Clear all selected categories?',
+        text: 'This will remove all selected categories',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#dc2626',
+        cancelButtonColor: '#6b7280',
+        confirmButtonText: 'Yes, clear all',
+        cancelButtonText: 'Cancel'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            selectedCategories.clear();
+            document.getElementById("selectedCategories").innerHTML = "";
+            
+            document.querySelectorAll('#categoryList .dropdown-option').forEach(option => {
+                option.classList.remove("selected");
+                const checkIcon = option.querySelector('.fa-check');
+                if (checkIcon) checkIcon.remove();
+            });
+            
+            updateCategorySelectionState();
+        }
+    });
+}
+
+function updateCategoriesInput() {
+    document.getElementById("categoriesInput").value = [...selectedCategories].join(",");
+}
+
+// ===========================================
+// FORM SUBMISSION
+// ===========================================
+document.getElementById("offerForm").addEventListener("submit", function(e) {
+    e.preventDefault();
+    
+    // Final validation
+    const nameValid = validateName(document.querySelector('input[name="name"]'));
+    const discountValid = validateDiscount(document.querySelector('input[name="discountValue"]'));
+    const dateValid = validateDates();
+    
+    if (!nameValid || !discountValid || !dateValid) {
+        Swal.fire("Error", "Please fix all validation errors before submitting", "error");
+        return;
+    }
+    
+    if (currentOfferType === "product" && selectedProducts.size === 0) {
+        Swal.fire("Error", "Please select at least one product", "error");
+        return;
+    }
+    
+    if (currentOfferType === "category" && selectedCategories.size === 0) {
+        Swal.fire("Error", "Please select at least one category", "error");
+        return;
+    }
+    
+    // Show loading
+    Swal.fire({
+        title: "Creating Offer...",
+        text: "Please wait while we create your offer",
+        allowOutsideClick: false,
+        showConfirmButton: false,
+        willOpen: () => {
+            Swal.showLoading();
+        }
+    });
+    
+    // Prepare form data as JSON 
+const formData = new FormData(this);
+const payload = Object.fromEntries(formData.entries());
+
+// Ensure checkbox boolean coerced
+// If checkbox not present, payload.isActive will be undefined — convert to boolean
+payload.isActive = payload.isActive === "on" || payload.isActive === "true" || payload.isActive === "1";
+
+// Submit as JSON
+axios.post("/admin/offers/create", payload)
+
+        .then(response => {
+            Swal.fire({
+                title: "Success!",
+                text: "Offer created successfully",
+                icon: "success",
+                confirmButtonColor: "#10b981",
+                confirmButtonText: "View Offers"
+            }).then(() => {
+                window.location.href = "/admin/offers";
+            });
+        })
+        .catch(err => {
+            console.error("Submission error:", err);
+            Swal.fire({
+                title: "Error!",
+                text: err.response?.data?.message || "Failed to create offer. Please try again.",
+                icon: "error",
+                confirmButtonColor: "#dc2626"
+            });
+        });
+});
+
+// ===========================================
+// INITIALIZATION
+// ===========================================
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize toggle switch
+    const checkbox = document.getElementById('activeCheckbox');
+    const toggle = checkbox.parentElement;
+    
+    checkbox.addEventListener('change', function() {
+        if (this.checked) {
+            toggle.querySelector('.dot').classList.remove('left-0.5', 'sm:left-1');
+            toggle.querySelector('.dot').classList.add('left-5', 'sm:left-5');
+            toggle.querySelector('.block').classList.remove('bg-gray-300');
+            toggle.querySelector('.block').classList.add('bg-blue-500');
+        } else {
+            toggle.querySelector('.dot').classList.remove('left-5', 'sm:left-5');
+            toggle.querySelector('.dot').classList.add('left-0.5', 'sm:left-1');
+            toggle.querySelector('.block').classList.remove('bg-blue-500');
+            toggle.querySelector('.block').classList.add('bg-gray-300');
+        }
+    });
+    
+    // Trigger initial validation
+    validateForm();
+    
+    // Set minimum date to today
+    const now = new Date();
+    const today = new Date(now.getTime() - now.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+    document.querySelector('input[name="validFrom"]').min = today;
+    document.querySelector('input[name="validTo"]').min = today;
+    
+    // Trigger toggle switch initial state
+    checkbox.dispatchEvent(new Event('change'));
+});
+</script>
+
+</body>
+</html>

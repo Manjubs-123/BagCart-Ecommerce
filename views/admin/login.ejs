@@ -81,12 +81,15 @@
       </div>
 
       <!-- General Error Message -->
-      <div id="generalError" class="bg-red-50 border-l-4 border-red-500 p-4 rounded-lg mb-6 hidden" role="alert">
-        <div class="flex items-center">
-          <i class="fas fa-exclamation-circle text-red-500 mr-3"></i>
-          <span id="generalErrorText" class="text-red-700 text-sm"></span>
-        </div>
-      </div>
+      <% if (error) { %>
+  <div class="bg-red-50 border-l-4 border-red-500 p-4 rounded-lg mb-6" role="alert">
+    <div class="flex items-center">
+      <i class="fas fa-exclamation-circle text-red-500 mr-3"></i>
+      <span class="text-red-700 text-sm"><%= error %></span>
+    </div>
+  </div>
+<% } %>
+
 
       <!-- Login Form -->
       <form id="loginForm" action="/admin/login" method="POST" class="space-y-6" novalidate>
@@ -304,5 +307,11 @@
       }, 500);
     });
   </script>
+  <script>
+  if (window.history.replaceState) {
+    window.history.replaceState(null, null, window.location.href);
+  }
+</script>
+
 </body>
 </html>

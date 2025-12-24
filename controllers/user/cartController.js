@@ -1,5 +1,56 @@
 import Cart from "../../models/cartModel.js";
 import Product from "../../models/productModel.js";
+import { applyOfferToProduct } from "../../utils/applyOffer.js"; 
+
+export const getCart = async (req, res) => {
+  try {
+    const userId = req.session.user?.id;
+    if (!userId) {
+      return res.json({ success: false });
+    }
+
+    let cart = await Cart.findOne({ user: userId })
+      .populate("items.product")
+      .lean();
+
+    if (!cart || !cart.items.length) {
+      return res.json({
+        success: true,
+        cart: { items: [] }
+      });
+    }
+
+    // Apply offer logic per item
+    for (let item of cart.items) {
+      const product = item.product;
+      const variant = product.variants[item.variantIndex];
+
+      const offerData = await applyOfferToProduct({
+        ...product,
+        variants: [variant], // only selected variant
+      });
+
+      const offerVariant = offerData.variants[0];
+
+      item.finalPrice = offerVariant.finalPrice;
+      item.regularPrice = offerVariant.regularPrice;
+      item.totalFinal = offerVariant.finalPrice * item.quantity;
+      item.appliedOffer = offerVariant.appliedOffer;
+    }
+
+    return res.json({
+      success: true,
+      cart,
+    });
+
+  } catch (err) {
+    console.error("CHECKOUT CART ERROR:", err);
+    return res.json({
+      success: false,
+      message: "Cart fetch failed",
+    });
+  }
+};
 
 
 export const getCartPage = async (req, res) => {
@@ -10,22 +61,54 @@ export const getCartPage = async (req, res) => {
 
     const userId = req.session.user.id;
 
-    //  Fetch cart
-    const cart = await Cart.findOne({ user: userId })
-      .populate("items.product");   
+    let cart = await Cart.findOne({ user: userId })
+      .populate("items.product")
+      .lean();
 
     const ordersCount = 0;
     const wishlistCount = req.session.user.wishlistCount || 0;
     const unreadNotifications = 0;
 
-    res.render("user/cart", {
+    if (!cart) {
+      return res.render("user/cart", {
+        title: "Shopping Cart",
+        currentPage: "cart",
+        user: req.session.user,
+        ordersCount,
+        wishlistCount,
+        unreadNotifications,
+        cart: { items: [] }
+      });
+    }
+
+    
+    //  APPLY OFFER PRICING TO EACH CART ITEM
+    
+    for (let item of cart.items) {
+      const product = item.product;
+      const variant = product.variants[item.variantIndex];
+
+      const offerData = await applyOfferToProduct({
+        ...product,
+        variants: [variant] 
+      });
+
+      const offerVariant = offerData.variants[0];
+
+      item.finalPrice = offerVariant.finalPrice;           
+      item.regularPrice = offerVariant.regularPrice;       
+      item.appliedOffer = offerVariant.appliedOffer;       
+      item.totalPrice = offerVariant.finalPrice * item.quantity;
+    }
+
+    return res.render("user/cart", {
       title: "Shopping Cart",
       currentPage: "cart",
       user: req.session.user,
       ordersCount,
       wishlistCount,
       unreadNotifications,
-      cart: cart || { items: [] }
+      cart
     });
 
   } catch (error) {
@@ -34,57 +117,43 @@ export const getCartPage = async (req, res) => {
   }
 };
 
+
+
 export const addToCart = async (req, res) => {
   try {
     const { productId, quantity, variantIndex } = req.body;
     const userId = req.session.user.id;
 
-    console.log("SESSION USER:", req.session.user);
-    console.log("UserID:", req.session.user?.id);
+    const MAX_LIMIT = 5;
 
-    // V.... product exists
     const product = await Product.findById(productId);
-    if (!product) {
-      return res.json({ success: false, message: "Product not found" });
+    if (!product) return res.json({ success: false, message: "Product not found" });
+
+    if (variantIndex < 0 || variantIndex >= product.variants.length) {
+      return res.json({ success: false, message: "Invalid variant" });
     }
 
-    // V.. variant index
-    if (variantIndex === undefined || variantIndex < 0 || variantIndex >= product.variants.length) {
-      return res.json({ success: false, message: "Invalid variant selection" });
-    }
-    // Check stock
     const variant = product.variants[variantIndex];
     if (variant.stock < quantity) {
       return res.json({ success: false, message: "Not enough stock" });
     }
 
-    // Find user cart
     let cart = await Cart.findOne({ user: userId });
+    if (!cart) cart = new Cart({ user: userId, items: [] });
 
-    if (!cart) {
-      cart = new Cart({
-        user: userId,
-        items: []
-      });
-    }
-
-    //fix old cart
-    cart.items = cart.items.map(i => {
-      if (i.variantIndex === undefined) {
-        i.variantIndex = 0;   
-      }
-      return i;
-    });
-
-    //  Check  same product and variant already exists
     const existingItem = cart.items.find(
-      item =>
-        item.product.toString() === productId &&
-        item.variantIndex === variantIndex
+      i => i.product.toString() === productId && i.variantIndex === variantIndex
     );
 
     if (existingItem) {
       const newQuantity = existingItem.quantity + quantity;
+
+      if (newQuantity > MAX_LIMIT) {
+        return res.json({
+          success: false,
+          message: `You can only buy maximum ${MAX_LIMIT} units`
+        });
+      }
 
       if (newQuantity > variant.stock) {
         return res.json({
@@ -94,30 +163,43 @@ export const addToCart = async (req, res) => {
       }
 
       existingItem.quantity = newQuantity;
-    } else {
-      cart.items.push({
-        product: productId,
-        quantity,
-        variantIndex
-      });
-    }
- 
-    await cart.save();
 
-    return res.json({ success: true, message: "Item added to cart" });
+    } else {
+
+      if (quantity > MAX_LIMIT) {
+        return res.json({
+          success: false,
+          message: `Maximum allowed quantity is ${MAX_LIMIT}`
+        });
+      }
+
+      cart.items.push({ product: productId, quantity, variantIndex });
+    }
+
+    await cart.save();
+    res.json({ success: true, message: "Item added to cart" });
 
   } catch (err) {
     console.error("Add to Cart Error:", err);
-    return res.json({ success: false, message: "Something went wrong" });
+    res.json({ success: false, message: "Something went wrong" });
   }
 };
 
 
 export const updateCartQuantity = async (req, res) => {
   try {
-    const itemId = req.params.id;              
+    const itemId = req.params.id;
     const { quantity } = req.body;
     const userId = req.session.user.id;
+
+    const MAX_LIMIT = 5;
+
+    if (quantity > MAX_LIMIT) {
+      return res.json({
+        success: false,
+        message: `You can only buy up to ${MAX_LIMIT} units of this product`
+      });
+    }
 
     const cart = await Cart.findOne({ user: userId }).populate("items.product");
     if (!cart) return res.json({ success: false, message: "Cart not found" });
@@ -125,11 +207,7 @@ export const updateCartQuantity = async (req, res) => {
     const item = cart.items.id(itemId);
     if (!item) return res.json({ success: false, message: "Item not found" });
 
-    // Validate stock
-    const product = item.product;
-    const variant = product.variants[item.variantIndex];
-
-    if (!variant) return res.json({ success: false, message: "Variant missing" });
+    const variant = item.product.variants[item.variantIndex];
 
     if (quantity > variant.stock) {
       return res.json({
@@ -138,10 +216,9 @@ export const updateCartQuantity = async (req, res) => {
       });
     }
 
-  
     item.quantity = quantity;
     await cart.save();
-
+    
     return res.json({ success: true });
 
   } catch (err) {
@@ -149,7 +226,6 @@ export const updateCartQuantity = async (req, res) => {
     return res.json({ success: false, message: "Error updating quantity" });
   }
 };
-
 
 export const removeCartItem = async (req, res) => {
   try {

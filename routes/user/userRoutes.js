@@ -15,6 +15,8 @@ import {
   updateAddress,deleteAddress,setDefaultAddress,getSecuritySettings,checkCurrentPassword,changePassword,getWishlistPage,addToWishlist,removeFromWishlist,toggleWishlist,getCheckoutPage
 } from "../../controllers/user/userController.js";
 
+import { getAvailableCoupons, applyCoupon } from "../../controllers/user/couponController.js";
+
 import { renderForgotPassword, postForgotPassword, renderForgotVerifyOtp, postForgotVerifyOtp, resendForgotOtp, renderResetPassword, postResetPassword } from "../../controllers/user/authForgotController.js";
 import { isUserLoggedIn, isUserLoggedOut } from "../../middlewares/userAuth.js";
 import { noCache } from "../../middlewares/cacheMiddleware.js";
@@ -29,7 +31,7 @@ const router = express.Router();
 router.use(noCache);
 
 
-router.get("/landing", isUserLoggedIn, isAuthenticated, renderLandingPage); // landing Page
+router.get("/landing", isUserLoggedIn, isAuthenticated, renderLandingPage); 
 
 // Signup
 router.get("/signup", isUserLoggedOut, getSignup);
@@ -39,8 +41,6 @@ router.post("/signup", signupUser);
 router.get("/verifyOtp", getVerifyOtp);
 router.post("/verifyOtp", postVerifyOtp);
 router.get("/resendOtp", resendOtp);
-
-
 
 // Login
 router.get("/login", isUserLoggedOut, getLogin);
@@ -63,7 +63,7 @@ router.post("/resetPassword", postResetPassword);
 
 router.get("/product/:id", isUserLoggedIn, getProductDetails);
 
-// // Home
+//  Home
 router.get("/home", isUserLoggedIn, showHomePage);
 
 
@@ -79,7 +79,6 @@ router.post(
 router.get("/change-email",isUserLoggedIn,getChangeEmailPage);
 router.post("/change-email/send-otp",isUserLoggedIn,sendChangeEmailOtp);
 router.post("/change-email/verify",isUserLoggedIn,verifyChangedEmailOtp);
-
 router.get('/profile/addresses',isAuthenticated,getAddressPage)
 
 
@@ -99,8 +98,6 @@ router.patch("/addresses/:id/default", isUserLoggedIn, setDefaultAddress);
 router.get('/profile/changepassword',isUserLoggedIn,getSecuritySettings)
 router.post("/change-password", isUserLoggedIn, changePassword);
 router.post("/change-email/resend-otp",isUserLoggedIn, resendChangeEmailOtp);
-
-
 router.post("/check-current-password", isUserLoggedIn, checkCurrentPassword);
 
 //wishlist
@@ -111,8 +108,6 @@ router.post("/wishlist/toggle/:productId", toggleWishlist);
 
 //checkout
 router.get("/checkout",isUserLoggedIn,getCheckoutPage);
-
-
 
 // Logout
 router.get("/logout", isUserLoggedIn, logoutUser);

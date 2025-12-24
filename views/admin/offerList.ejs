@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Offer Management | Admin</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <style>
+        .offer-card {
+            transition: all 0.3s ease;
+            border-left: 4px solid;
+        }
+        .offer-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+        }
+        .product-offer { border-left-color: #3b82f6; }
+        .category-offer { border-left-color: #10b981; }
+        .referral-offer { border-left-color: #8b5cf6; }
+        
+        .offer-badge {
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+        .badge-product { background-color: #dbeafe; color: #1e40af; }
+        .badge-category { background-color: #d1fae5; color: #065f46; }
+        .badge-referral { background-color: #ede9fe; color: #5b21b6; }
+        
+        .status-active { background-color: #d1fae5; color: #065f46; }
+        .status-inactive { background-color: #fef3c7; color: #92400e; }
+        .status-expired { background-color: #fee2e2; color: #991b1b; }
+        
+        .filter-btn {
+            transition: all 0.2s ease;
+        }
+        .filter-btn.active {
+            background-color: #3b82f6;
+            color: white;
+        }
+        
+        /* Responsive sidebar handling */
+        @media (max-width: 1024px) {
+            .sidebar-collapsed main {
+                margin-left: 0 !important;
+                width: 100% !important;
+            }
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    
+    <!-- Sidebar -->
+    <%- include('../partials/sidebar', { currentPage: 'offers' }) %>
+    
+    <!-- Main Content -->
+    <main class="ml-0 lg:ml-64 flex-1 p-3 sm:p-4 md:p-6">
+        <!-- Header -->
+        <div class="mb-4 sm:mb-6 md:mb-8">
+            <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 sm:gap-4 mb-3 sm:mb-4">
+                <div>
+                    <h1 class="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900">Offer Management</h1>
+                    <p class="text-gray-600 text-xs sm:text-sm md:text-base mt-1">Create and manage product, category, and referral offers</p>
+                </div>
+                <div class="flex gap-2 sm:gap-3">
+                    <a href="/admin/offers/create" 
+                       class="bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-3 sm:px-4 md:px-6 py-2 md:py-3 rounded-lg font-semibold hover:from-blue-700 hover:to-indigo-700 transition-all flex items-center gap-1 sm:gap-2 text-xs sm:text-sm md:text-base">
+                        <i class="fas fa-plus text-xs sm:text-sm"></i>
+                        <span>Create New Offer</span>
+                    </a>
+                </div>
+            </div>
+            
+            <!-- Stats Cards -->
+            <div class="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 md:gap-6 mb-4 sm:mb-6 md:mb-8">
+                <div class="bg-white rounded-xl p-3 sm:p-4 md:p-6 shadow-sm border-l-4 border-blue-500">
+                    <div class="flex justify-between items-center">
+                        <div>
+                            <p class="text-xs sm:text-sm text-gray-500">Total Offers</p>
+                            <p class="text-lg sm:text-xl md:text-2xl font-bold text-gray-900"><%= stats.totalOffers %></p>
+                        </div>
+                        <div class="bg-blue-100 p-2 sm:p-3 rounded-full">
+                            <i class="fas fa-tag text-blue-600 text-sm sm:text-base md:text-xl"></i>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="bg-white rounded-xl p-3 sm:p-4 md:p-6 shadow-sm border-l-4 border-green-500">
+                    <div class="flex justify-between items-center">
+                        <div>
+                            <p class="text-xs sm:text-sm text-gray-500">Active Offers</p>
+                            <p class="text-lg sm:text-xl md:text-2xl font-bold text-gray-900"><%= stats.activeOffers %></p>
+                        </div>
+                        <div class="bg-green-100 p-2 sm:p-3 rounded-full">
+                            <i class="fas fa-bolt text-green-600 text-sm sm:text-base md:text-xl"></i>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="bg-white rounded-xl p-3 sm:p-4 md:p-6 shadow-sm border-l-4 border-purple-500">
+                    <div class="flex justify-between items-center">
+                        <div>
+                            <p class="text-xs sm:text-sm text-gray-500">Product Offers</p>
+                            <p class="text-lg sm:text-xl md:text-2xl font-bold text-gray-900"><%= stats.productOffers %></p>
+                        </div>
+                        <div class="bg-purple-100 p-2 sm:p-3 rounded-full">
+                            <i class="fas fa-box text-purple-600 text-sm sm:text-base md:text-xl"></i>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="bg-white rounded-xl p-3 sm:p-4 md:p-6 shadow-sm border-l-4 border-teal-500">
+                    <div class="flex justify-between items-center">
+                        <div>
+                            <p class="text-xs sm:text-sm text-gray-500">Category Offers</p>
+                            <p class="text-lg sm:text-xl md:text-2xl font-bold text-gray-900"><%= stats.categoryOffers %></p>
+                        </div>
+                        <div class="bg-teal-100 p-2 sm:p-3 rounded-full">
+                            <i class="fas fa-layer-group text-teal-600 text-sm sm:text-base md:text-xl"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Filters & Search -->
+        <div class="bg-white rounded-xl p-3 sm:p-4 md:p-6 mb-3 sm:mb-4 md:mb-6 shadow-sm">
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-4">
+                <div class="flex-1 w-full">
+                    <div class="relative">
+                        <i class="fas fa-search absolute left-3 top-2.5 sm:top-3 text-gray-400 text-sm"></i>
+                        <input type="text" 
+                               id="searchInput"
+                               placeholder="Search offers by name or code..." 
+                               class="w-full pl-9 sm:pl-10 pr-3 sm:pr-4 py-1.5 sm:py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-xs sm:text-sm md:text-base">
+                    </div>
+                </div>
+                
+                <div class="flex gap-1 sm:gap-2 flex-wrap w-full sm:w-auto mt-2 sm:mt-0">
+                    <button onclick="filterOffers('all')" 
+                            class="filter-btn active px-2 sm:px-3 md:px-4 py-1 sm:py-1.5 md:py-2 border border-gray-300 rounded-lg hover:bg-gray-50 text-xs sm:text-sm">
+                        All Offers
+                    </button>
+                    <button onclick="filterOffers('product')" 
+                            class="filter-btn px-2 sm:px-3 md:px-4 py-1 sm:py-1.5 md:py-2 border border-gray-300 rounded-lg hover:bg-gray-50 text-xs sm:text-sm">
+                        Product Offers
+                    </button>
+                    <button onclick="filterOffers('category')" 
+                            class="filter-btn px-2 sm:px-3 md:px-4 py-1 sm:py-1.5 md:py-2 border border-gray-300 rounded-lg hover:bg-gray-50 text-xs sm:text-sm">
+                        Category Offers
+                    </button>
+                    <button onclick="filterOffers('active')" 
+                            class="filter-btn px-2 sm:px-3 md:px-4 py-1 sm:py-1.5 md:py-2 border border-gray-300 rounded-lg hover:bg-gray-50 text-xs sm:text-sm">
+                        Active
+                    </button>
+                    <button onclick="filterOffers('expired')" 
+                            class="filter-btn px-2 sm:px-3 md:px-4 py-1 sm:py-1.5 md:py-2 border border-gray-300 rounded-lg hover:bg-gray-50 text-xs sm:text-sm">
+                        Expired
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Offers List -->
+        <div class="bg-white rounded-xl shadow-sm p-3 sm:p-4 md:p-6 mb-4 sm:mb-6 md:mb-8">
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse min-w-[600px] sm:min-w-[700px] md:min-w-[768px]">
+                    <thead>
+                        <tr class="bg-gray-100 text-gray-700 text-xs sm:text-sm">
+                            <th class="py-2 sm:py-3 px-2 sm:px-3 md:px-4 border-b">Offer Name</th>
+                            <th class="py-2 sm:py-3 px-2 sm:px-3 md:px-4 border-b">Type</th>
+                            <th class="py-2 sm:py-3 px-2 sm:px-3 md:px-4 border-b">Discount</th>
+                            <th class="py-2 sm:py-3 px-2 sm:px-3 md:px-4 border-b">Valid</th>
+                            <th class="py-2 sm:py-3 px-2 sm:px-3 md:px-4 border-b">Applied To</th>
+                            <th class="py-2 sm:py-3 px-2 sm:px-3 md:px-4 border-b">Status</th>
+                            <th class="py-2 sm:py-3 px-2 sm:px-3 md:px-4 border-b text-center">Actions</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+                        <% if (offers.length === 0) { %>
+                            <tr>
+                                <td colspan="7" class="text-center py-6 sm:py-8 md:py-10 text-gray-500">
+                                    <i class="fas fa-tag text-2xl sm:text-3xl md:text-4xl mb-2 sm:mb-3"></i>
+                                    <p class="text-xs sm:text-sm md:text-base">No offers found</p>
+                                </td>
+                            </tr>
+                        <% } else { %>
+                            <% offers.forEach(offer => { 
+                                const isExpired = new Date(offer.validTo) < new Date();
+                                const isActive = offer.isActive && !isExpired;
+
+                                const statusClass = isExpired 
+                                    ? 'bg-red-100 text-red-700' 
+                                    : isActive 
+                                        ? 'bg-green-100 text-green-700' 
+                                        : 'bg-yellow-100 text-yellow-700';
+
+                                const typeClass = offer.type === 'product' 
+                                    ? 'bg-blue-100 text-blue-700' 
+                                    : 'bg-teal-100 text-teal-700';
+                            %>
+
+                            <tr class="hover:bg-gray-50 transition">
+                                <!-- Name -->
+                                <td class="py-3 sm:py-4 px-2 sm:px-3 md:px-4 font-medium text-gray-900 whitespace-nowrap text-xs sm:text-sm md:text-base">
+                                    <%= offer.name %>
+                                </td>
+
+                                <!-- Type -->
+                                <td class="py-3 sm:py-4 px-2 sm:px-3 md:px-4">
+                                    <span class="px-2 sm:px-3 py-1 rounded-full text-xs font-semibold <%= typeClass %>">
+                                        <%= offer.type === 'product' ? 'Product' : 'Category' %>
+                                    </span>
+                                </td>
+
+                                <!-- Discount -->
+                                <td class="py-3 sm:py-4 px-2 sm:px-3 md:px-4 whitespace-nowrap font-semibold text-gray-900 text-xs sm:text-sm md:text-base">
+                                    <%= offer.discountValue %>% 
+                                </td>
+
+                                <!-- Date -->
+                                <td class="py-3 sm:py-4 px-2 sm:px-3 md:px-4 text-xs">
+                                    <%= new Date(offer.validFrom).toLocaleDateString() %> —
+                                    <%= new Date(offer.validTo).toLocaleDateString() %>
+                                </td>
+
+                                <!-- Applied To -->
+                                <td class="py-3 sm:py-4 px-2 sm:px-3 md:px-4 text-xs">
+                                    <% if (offer.type === 'product') { %>
+                                        <%= offer.products.length %> products
+                                    <% } else { %>
+                                        <%= offer.categories.length %> categories
+                                    <% } %>
+                                </td>
+
+                                <!-- Status -->
+                                <td class="py-3 sm:py-4 px-2 sm:px-3 md:px-4">
+                                    <span class="px-2 sm:px-3 py-1 rounded-full text-xs font-semibold <%= statusClass %>">
+                                        <%= isExpired ? "Expired" : isActive ? "Active" : "Inactive" %>
+                                    </span>
+                                </td>
+
+                                <!-- Actions -->
+                               <td class="py-3 sm:py-4 px-2 sm:px-3 md:px-4 text-center">
+                                    <div class="inline-flex gap-1 sm:gap-2">
+                                        <!-- Edit -->
+                                        <a href="/admin/offers/edit/<%= offer._id %>" 
+                                           class="px-2 sm:px-3 md:px-4 py-1 sm:py-1.5 md:py-2 bg-blue-600 text-white rounded-md text-xs font-medium hover:bg-blue-700 transition flex items-center gap-1">
+                                            <i class="fas fa-edit text-xs"></i>
+                                            <span class="hidden xs:inline">Edit</span>
+                                        </a>
+
+                                        <% if (isActive) { %>
+                                            <!-- Deactivate -->
+                                            <button onclick="toggleOfferStatus('<%= offer._id %>', false)"
+                                                    class="px-2 sm:px-3 md:px-4 py-1 sm:py-1.5 md:py-2 bg-yellow-500 text-white rounded-md text-xs font-medium hover:bg-yellow-600 transition flex items-center gap-1">
+                                                <i class="fas fa-pause text-xs"></i>
+                                                <span class="hidden xs:inline">Pause</span>
+                                            </button>
+                                        <% } else if (!isExpired) { %>
+                                            <!-- Activate -->
+                                            <button onclick="toggleOfferStatus('<%= offer._id %>', true)"
+                                                    class="px-2 sm:px-3 md:px-4 py-1 sm:py-1.5 md:py-2 bg-green-600 text-white rounded-md text-xs font-medium hover:bg-green-700 transition flex items-center gap-1">
+                                                <i class="fas fa-play text-xs"></i>
+                                                <span class="hidden xs:inline">Activate</span>
+                                            </button>
+                                        <% } %>
+
+                                        <!-- Delete -->
+                                        <button onclick="deleteOffer('<%= offer._id %>', '<%= offer.name %>')"
+                                                class="px-2 sm:px-3 md:px-4 py-1 sm:py-1.5 md:py-2 bg-red-600 text-white rounded-md text-xs font-medium hover:bg-red-700 transition flex items-center gap-1">
+                                            <i class="fas fa-trash text-xs"></i>
+                                            <span class="hidden xs:inline">Delete</span>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                            <% }) %>
+                        <% } %>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Pagination -->
+        <% if (totalPages > 1) { %>
+            <div class="flex justify-center mt-4 sm:mt-6 md:mt-8">
+                <nav class="flex items-center gap-1 sm:gap-2">
+                    <% if (page > 1) { %>
+                        <a href="?page=<%= page - 1 %>&type=<%= currentType %>&status=<%= currentStatus %>" 
+                           class="px-2 sm:px-3 md:px-4 py-1.5 sm:py-2 border border-gray-300 rounded-lg hover:bg-gray-50 text-xs sm:text-sm">
+                            <i class="fas fa-chevron-left text-xs"></i>
+                        </a>
+                    <% } %>
+                    
+                    <% for (let i = 1; i <= totalPages; i++) { %>
+                        <% if (i === page) { %>
+                            <span class="px-2 sm:px-3 md:px-4 py-1.5 sm:py-2 bg-blue-600 text-white rounded-lg text-xs sm:text-sm">
+                                <%= i %>
+                            </span>
+                        <% } else if (i >= page - 2 && i <= page + 2) { %>
+                            <a href="?page=<%= i %>&type=<%= currentType %>&status=<%= currentStatus %>" 
+                               class="px-2 sm:px-3 md:px-4 py-1.5 sm:py-2 border border-gray-300 rounded-lg hover:bg-gray-50 text-xs sm:text-sm">
+                                <%= i %>
+                            </a>
+                        <% } %>
+                    <% } %>
+                    
+                    <% if (page < totalPages) { %>
+                        <a href="?page=<%= page + 1 %>&type=<%= currentType %>&status=<%= currentStatus %>" 
+                           class="px-2 sm:px-3 md:px-4 py-1.5 sm:py-2 border border-gray-300 rounded-lg hover:bg-gray-50 text-xs sm:text-sm">
+                            <i class="fas fa-chevron-right text-xs"></i>
+                        </a>
+                    <% } %>
+                </nav>
+            </div>
+        <% } %>
+    </main>
+
+    <script>
+        // Filter buttons active state
+        document.querySelectorAll('.filter-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+                this.classList.add('active');
+            });
+        });
+
+        // Toggle dropdown
+        function toggleDropdown(offerId) {
+            const dropdown = document.getElementById(`dropdown-${offerId}`);
+            dropdown.classList.toggle('hidden');
+            
+            // Close other dropdowns
+            document.querySelectorAll('[id^="dropdown-"]').forEach(d => {
+                if (d.id !== `dropdown-${offerId}`) {
+                    d.classList.add('hidden');
+                }
+            });
+        }
+
+        // Close dropdowns when clicking outside
+        document.addEventListener('click', function(event) {
+            if (!event.target.closest('.relative')) {
+                document.querySelectorAll('[id^="dropdown-"]').forEach(d => {
+                    d.classList.add('hidden');
+                });
+            }
+        });
+
+        // Filter offers
+        function filterOffers(filter) {
+            let url = '/admin/offers?';
+            if (filter !== 'all') {
+                if (['product', 'category'].includes(filter)) {
+                    url += `type=${filter}`;
+                } else {
+                    url += `status=${filter}`;
+                }
+            }
+            window.location.href = url;
+        }
+
+        // Toggle offer active/inactive
+        function toggleOfferStatus(offerId, activate) {
+            const action = activate ? 'activate' : 'deactivate';
+
+            Swal.fire({
+                title: `${activate ? "Activate" : "Deactivate"} Offer?`,
+                text: `Are you sure you want to ${action} this offer?`,
+                icon: "warning",
+                showCancelButton: true,
+                confirmButtonColor: activate ? "#16a34a" : "#f59e0b",
+                cancelButtonColor: "#6b7280",
+                confirmButtonText: `Yes, ${action}`,
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    axios.post(`/admin/offers/${offerId}/toggle-status`, { isActive: activate })
+                        .then((res) => {
+                            Swal.fire({
+                                icon: "success",
+                                title: "Updated!",
+                                text: `Offer has been ${action}d successfully.`,
+                                timer: 1500,
+                                showConfirmButton: false
+                            }).then(() => location.reload());
+                        })
+                        .catch((err) => {
+                            Swal.fire("Error", err.response?.data?.message || "Something went wrong!", "error");
+                        });
+                }
+            });
+        }
+
+        // DELETE OFFER
+        function deleteOffer(offerId, offerName) {
+            Swal.fire({
+                title: "Delete Offer?",
+                html: `Are you sure you want to delete <b>${offerName}</b>?`,
+                icon: "warning",
+                showCancelButton: true,
+                confirmButtonColor: "#dc2626",
+                cancelButtonColor: "#6b7280",
+                confirmButtonText: "Yes, delete it"
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    axios.delete(`/admin/offers/${offerId}`)
+                        .then(() => {
+                            Swal.fire({
+                                icon: "success",
+                                title: "Deleted!",
+                                text: "Offer removed successfully",
+                                timer: 1500,
+                                showConfirmButton: false
+                            }).then(() => location.reload());
+                    })
+                    .catch((err) => {
+                        Swal.fire("Error", err.response?.data?.message || "Delete failed!", "error");
+                    });
+                }
+            });
+        }
+        
+        // Search functionality
+        let searchTimeout;
+        document.getElementById('searchInput').addEventListener('input', function(e) {
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(() => {
+                const searchTerm = e.target.value;
+                if (searchTerm.length >= 2 || searchTerm.length === 0) {
+                    window.location.href = `/admin/offers?search=${encodeURIComponent(searchTerm)}`;
+                }
+            }, 500);
+        });
+
+        // Responsive sidebar toggle
+        document.addEventListener('DOMContentLoaded', function() {
+            const sidebarToggle = document.createElement('button');
+            sidebarToggle.innerHTML = '<i class="fas fa-bars"></i>';
+            sidebarToggle.className = 'lg:hidden fixed top-4 left-4 z-50 bg-blue-600 text-white p-2 rounded-md shadow-lg';
+            sidebarToggle.onclick = function() {
+                document.body.classList.toggle('sidebar-collapsed');
+            };
+            document.body.appendChild(sidebarToggle);
+        });
+    </script>
+</body>
+</html>

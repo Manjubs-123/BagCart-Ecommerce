@@ -20,25 +20,22 @@ import { upload } from "../../config/cloudinary.js";
 
 const router = express.Router();
 
-/* -------------------- PRODUCT LIST -------------------- */
+
 router.get('/', isAdminAuthenticated, listProducts);
 
 /* -------------------- ADD PRODUCT -------------------- */
 router.get('/add', isAdminAuthenticated, renderAddProduct);
 router.post('/add', isAdminAuthenticated, upload.array('images', 20), addProduct);
 
-/* -------------------- EDIT PRODUCT -------------------- */
 router.get('/edit/:id', isAdminAuthenticated, renderEditProduct);
 router.put('/edit/:id', isAdminAuthenticated, upload.array('images', 20), updateProduct);
 
-/* -------------------- DELETE PRODUCT -------------------- */
-// KEEP ONLY ONE (POST soft-delete)
 router.post('/delete/:id', isAdminAuthenticated, deleteProduct);
 
-/* -------------------- TOGGLE ACTIVE/INACTIVE -------------------- */
+
 router.post('/toggle-status/:id', isAdminAuthenticated, toggleProductStatus);
 
-/* -------------------- CATEGORY ROUTES -------------------- */
+
 router.get('/categories/active', getActiveCategories);
 
 /* -------------------- IMAGE ROUTES -------------------- */

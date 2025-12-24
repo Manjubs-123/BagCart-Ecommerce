@@ -11,8 +11,7 @@ export const addVariants = async (req, res) => {
 
     const variantsData = [];
 
-    for (let i = 0; i < req.body.variants.length; i++) {//curr vari img
-      const v = req.body.variants[i];
+    for (let i = 0; i < req.body.variants.length; i++) {
       const files = req.files[`variants[${i}][images]`];
 
       let uploadedImages = [];
@@ -22,7 +21,7 @@ export const addVariants = async (req, res) => {
             folder: "BagCart/Products",
           });
           uploadedImages.push(result.secure_url);
-          fs.unlinkSync(file.path); // remove local file after upload
+          fs.unlinkSync(file.path); 
         }
       }
 

@@ -23,41 +23,76 @@
     .success-border {
       border-color: #10b981 !important;
     }
+    
+    /* Mobile overlay */
+    @media (max-width: 1023px) {
+      .mobile-overlay {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: rgba(0, 0, 0, 0.5);
+        z-index: 40;
+      }
+      
+      .mobile-overlay.active {
+        display: block;
+      }
+      
+      body.sidebar-open {
+        overflow: hidden;
+      }
+    }
   </style>
 </head>
 
 <body class="bg-gray-50 text-gray-900 flex min-h-screen">
+  <!-- Mobile Overlay -->
+  <div class="mobile-overlay lg:hidden" id="mobile-overlay"></div>
+
   <!-- Sidebar -->
   <%- include('../partials/sidebar') %>
 
   <!-- Main Content -->
-  <main class="ml-64 flex-1 p-8">
+  <main class="w-full lg:ml-64 flex-1 p-4 sm:p-6 lg:p-8 transition-all duration-300">
 
-    <div class="mb-8 flex justify-between items-center">
-      <div>
-        <h1 class="text-3xl font-bold">Create Coupon</h1>
-        <p class="text-gray-600">Add a new percentage discount coupon</p>
+    <div class="mb-6 lg:mb-8 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
+      <div class="flex-1">
+        <div class="flex items-center justify-between mb-2">
+          <h1 class="text-2xl sm:text-3xl font-bold">Create Coupon</h1>
+          <!-- Mobile menu button -->
+          <button
+            id="mobile-menu-button"
+            class="lg:hidden p-2 rounded-lg bg-gray-100 text-gray-700 hover:bg-gray-200 transition-colors"
+            aria-label="Toggle menu"
+          >
+            <i class="fas fa-bars text-lg"></i>
+          </button>
+        </div>
+        <p class="text-gray-600 text-sm sm:text-base">Add a new percentage discount coupon</p>
       </div>
-      <button onclick="window.location.href='/admin/coupon'" class="bg-gray-500 text-white px-6 py-3 rounded-lg font-semibold hover:bg-gray-600">
-        <i class="fas fa-arrow-left"></i> Back to Coupons
+      <button onclick="window.location.href='/admin/coupon'" class="bg-gray-500 text-white px-4 sm:px-6 py-2.5 sm:py-3 rounded-lg font-semibold hover:bg-gray-600 text-sm sm:text-base w-full sm:w-auto">
+        <i class="fas fa-arrow-left mr-2"></i>Back to Coupons
       </button>
     </div>
 
     <!-- Display Server-side Errors -->
     <% if (error && error.length > 0) { %>
-      <div class="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
+      <div class="mb-4 sm:mb-6 p-3 sm:p-4 bg-red-50 border border-red-200 rounded-lg">
         <% error.forEach(err => { %>
-          <p class="text-red-700 text-sm">⚠️ <%= err %></p>
+          <p class="text-red-700 text-xs sm:text-sm"> <%= err %></p>
         <% }); %>
       </div>
     <% } %>
 
-    <div class="bg-white rounded-lg border border-gray-200 p-6 shadow-sm">
+    <div class="bg-white rounded-lg border border-gray-200 p-4 sm:p-5 lg:p-6 shadow-sm">
       <form id="couponForm" action="/admin/coupon/create" method="POST">
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-5 lg:gap-6">
 
           <!-- LEFT COLUMN -->
-          <div class="space-y-6">
+          <div class="space-y-4 sm:space-y-5 lg:space-y-6">
             
             <!-- Coupon Code -->
             <div>
@@ -66,7 +101,7 @@
               </label>
               <input type="text" id="code" name="code" maxlength="20"
                 value="<%= oldInput.code || '' %>"
-                class="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:border-blue-500 focus:ring-1 coupon-input"
+                class="w-full border border-gray-300 rounded-lg px-3 sm:px-4 py-2 sm:py-2.5 focus:border-blue-500 focus:ring-1 coupon-input text-sm sm:text-base"
                 placeholder="e.g., SUMMER25" required />
               <div id="codeError" class="error-message"></div>
             </div>
@@ -78,7 +113,7 @@
               </label>
               <input type="number" id="discountValue" name="discountValue" min="5" max="90" step="0.01"
                 value="<%= oldInput.discountValue || '' %>"
-                class="w-full border border-gray-300 rounded-lg px-4 py-2.5 pr-10 focus:border-blue-500 focus:ring-1 coupon-input"
+                class="w-full border border-gray-300 rounded-lg px-3 sm:px-4 py-2 sm:py-2.5 pr-10 focus:border-blue-500 focus:ring-1 coupon-input text-sm sm:text-base"
                 placeholder="e.g., 25" required />
               <div id="discountValueError" class="error-message"></div>
             </div>
@@ -86,23 +121,23 @@
             <!-- Max Discount -->
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-1">
-                Maximum Discount Amount (¥) <span class="text-red-500">*</span>
+                Maximum Discount Amount (₹) <span class="text-red-500">*</span>
               </label>
               <input type="number" id="maxDiscountAmount" name="maxDiscountAmount" min="1" step="0.01"
                 value="<%= oldInput.maxDiscountAmount || '' %>"
-                class="w-full border border-gray-300 rounded-lg px-4 py-2.5 pr-10 focus:border-blue-500 focus:ring-1 coupon-input"
-                placeholder="e.g., 1000.00" required />
+                class="w-full border border-gray-300 rounded-lg px-3 sm:px-4 py-2 sm:py-2.5 pr-10 focus:border-blue-500 focus:ring-1 coupon-input text-sm sm:text-base"
+                placeholder="e.g., 100.00" required />
               <div id="maxDiscountAmountError" class="error-message"></div>
             </div>
 
             <!-- Min Order -->
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-1">
-                Minimum Order Value (¥) <span class="text-red-500">*</span>
+                Minimum Order Value (₹) <span class="text-red-500">*</span>
               </label>
               <input type="number" id="minOrderAmount" name="minOrderAmount" min="1" step="0.01"
                 value="<%= oldInput.minOrderAmount || '' %>"
-                class="w-full border border-gray-300 rounded-lg px-4 py-2.5 pr-10 focus:border-blue-500 focus:ring-1 coupon-input"
+                class="w-full border border-gray-300 rounded-lg px-3 sm:px-4 py-2 sm:py-2.5 pr-10 focus:border-blue-500 focus:ring-1 coupon-input text-sm sm:text-base"
                 placeholder="e.g., 500.00" required />
               <div id="minOrderAmountError" class="error-message"></div>
             </div>
@@ -110,7 +145,7 @@
           </div>
 
           <!-- RIGHT COLUMN -->
-          <div class="space-y-6">
+          <div class="space-y-4 sm:space-y-5 lg:space-y-6">
 
             <!-- Valid From -->
             <div>
@@ -119,7 +154,7 @@
               </label>
               <input type="datetime-local" id="validFrom" name="validFrom"
                 value="<%= oldInput.validFrom || defaultFrom %>"
-                class="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:border-blue-500 focus:ring-1 coupon-input"
+                class="w-full border border-gray-300 rounded-lg px-3 sm:px-4 py-2 sm:py-2.5 focus:border-blue-500 focus:ring-1 coupon-input text-sm sm:text-base"
                 required />
               <div id="validFromError" class="error-message"></div>
             </div>
@@ -131,7 +166,7 @@
               </label>
               <input type="datetime-local" id="validTo" name="validTo"
                 value="<%= oldInput.validTo || defaultTo %>"
-                class="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:border-blue-500 focus:ring-1 coupon-input"
+                class="w-full border border-gray-300 rounded-lg px-3 sm:px-4 py-2 sm:py-2.5 focus:border-blue-500 focus:ring-1 coupon-input text-sm sm:text-base"
                 required />
               <div id="validToError" class="error-message"></div>
             </div>
@@ -141,7 +176,7 @@
               <label class="block text-sm font-medium text-gray-700 mb-1">Maximum Usage</label>
               <input type="number" id="maxUsage" name="maxUsage" min="1"
                 value="<%= oldInput.maxUsage || '' %>"
-                class="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:border-blue-500 focus:ring-1 coupon-input"
+                class="w-full border border-gray-300 rounded-lg px-3 sm:px-4 py-2 sm:py-2.5 focus:border-blue-500 focus:ring-1 coupon-input text-sm sm:text-base"
                 placeholder="Leave empty for unlimited" />
               <div id="maxUsageError" class="error-message"></div>
             </div>
@@ -151,13 +186,13 @@
               <label class="block text-sm font-medium text-gray-700 mb-1">Maximum Usage Per User</label>
               <input type="number" id="maxUsagePerUser" name="maxUsagePerUser" min="1"
                 value="<%= oldInput.maxUsagePerUser || '' %>"
-                class="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:border-blue-500 focus:ring-1 coupon-input"
+                class="w-full border border-gray-300 rounded-lg px-3 sm:px-4 py-2 sm:py-2.5 focus:border-blue-500 focus:ring-1 coupon-input text-sm sm:text-base"
                 placeholder="Leave empty for unlimited" />
               <div id="maxUsagePerUserError" class="error-message"></div>
             </div>
 
             <!-- Active -->
-            <div class="flex items-center">
+            <div class="flex items-center pt-2">
               <input type="checkbox" id="isActive" name="isActive"
                 <%= oldInput.isActive ? 'checked' : 'checked' %>
                 class="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500" />
@@ -169,19 +204,62 @@
         </div>
 
         <!-- Buttons -->
-        <div class="mt-8 pt-6 border-t border-gray-200 flex justify-end gap-3">
+        <div class="mt-6 lg:mt-8 pt-4 sm:pt-6 border-t border-gray-200 flex flex-col sm:flex-row justify-end gap-3">
           <button type="button" onclick="window.location.href='/admin/coupon'"
-            class="bg-gray-500 text-white px-6 py-3 rounded-lg font-semibold hover:bg-gray-600">
+            class="bg-gray-500 text-white px-4 sm:px-6 py-2.5 sm:py-3 rounded-lg font-semibold hover:bg-gray-600 text-sm sm:text-base order-2 sm:order-1">
             Cancel
           </button>
           <button type="submit" id="submitBtn"
-            class="bg-blue-600 text-white px-6 py-3 rounded-lg font-semibold flex items-center gap-2 hover:shadow-lg">
+            class="bg-blue-600 text-white px-4 sm:px-6 py-2.5 sm:py-3 rounded-lg font-semibold flex items-center justify-center gap-2 hover:shadow-lg text-sm sm:text-base order-1 sm:order-2">
             <i class="fas fa-save"></i> Save Coupon
           </button>
         </div>
       </form>
     </div>
   </main>
+
+  <!-- Sidebar Toggle Script -->
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      const mobileMenuButton = document.getElementById('mobile-menu-button');
+      const sidebar = document.getElementById('admin-sidebar');
+      const overlay = document.getElementById('mobile-overlay');
+      const body = document.body;
+
+      function toggleSidebar() {
+        sidebar.classList.toggle('-translate-x-full');
+        overlay.classList.toggle('active');
+        body.classList.toggle('sidebar-open');
+      }
+
+      function closeSidebar() {
+        sidebar.classList.add('-translate-x-full');
+        overlay.classList.remove('active');
+        body.classList.remove('sidebar-open');
+      }
+
+      if (mobileMenuButton && sidebar && overlay) {
+        mobileMenuButton.addEventListener('click', toggleSidebar);
+        overlay.addEventListener('click', closeSidebar);
+      }
+
+      // Close sidebar when clicking on any link
+      document.querySelectorAll('#admin-sidebar a').forEach(link => {
+        link.addEventListener('click', () => {
+          if (window.innerWidth < 1024) {
+            closeSidebar();
+          }
+        });
+      });
+
+      // Close sidebar on escape key
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && window.innerWidth < 1024) {
+          closeSidebar();
+        }
+      });
+    });
+  </script>
 
   <script>
 document.addEventListener('DOMContentLoaded', function () {
@@ -198,18 +276,39 @@ document.addEventListener('DOMContentLoaded', function () {
   document.getElementById('validTo').min = minDateTimeString;
 
   // Real-time validation functions
-  function validateCode() {
-    const code = document.getElementById("code").value.trim().toUpperCase();
-    const errorElement = document.getElementById("codeError");
-    
-    if (code.length < 3) {
-      showError(errorElement, "Coupon code must be at least 3 characters");
-      return false;
-    } else {
-      clearError(errorElement);
-      return true;
-    }
+function validateCode() {
+  const input = document.getElementById("code");
+  const errorElement = document.getElementById("codeError");
+
+  const code = input.value.trim().toUpperCase();
+
+  // Required
+  if (!code) {
+    showError(errorElement, "Coupon code is required");
+    return false;
   }
+
+  // Minimum length
+  if (code.length < 3) {
+    showError(errorElement, "Coupon code must be at least 3 characters");
+    return false;
+  }
+
+
+  const couponRegex = /^[A-Z0-9]+$/;
+
+  if (!couponRegex.test(code)) {
+    showError(
+      errorElement,
+      "Coupon code can contain only letters (A–Z) and numbers (0–9) without spaces"
+    );
+    return false;
+  }
+
+  input.value = code; // normalize input
+  clearError(errorElement);
+  return true;
+}
 
   function validateDiscount() {
     const discountValue = Number(document.getElementById("discountValue").value);

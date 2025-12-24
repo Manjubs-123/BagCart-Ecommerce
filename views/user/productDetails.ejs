@@ -239,18 +239,26 @@
 
     <!-- Breadcrumb -->
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-        <div class="breadcrumb">
-            <a href="/">Home</a>
+    <div class="breadcrumb">
+        <a href="/">Home</a>
+        <span class="separator">/</span>
+
+        <a href="/user/shop">Shop</a>
+        <span class="separator">/</span>
+
+        <% if (product.category?.name) { %>
+            <a href="/user/shop?category=<%= product.category._id %>">
+                <%= product.category.name %>
+            </a>
             <span class="separator">/</span>
-            <a href="/shop">Shop</a>
-            <span class="separator">/</span>
-            <% if (product.category?.name) { %>
-                <a href="/shop?category=<%= product.category._id %>"><%= product.category.name %></a>
-                <span class="separator">/</span>
-            <% } %>
-            <span class="text-gray-900 font-medium"><%= product.productName %></span>
-        </div>
+        <% } %>
+
+        <span class="text-gray-900 font-medium">
+            <%= product.productName %>
+        </span>
     </div>
+</div>
+
 
     <!-- Product Details Section -->
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 md:py-8 lg:py-12">
@@ -293,39 +301,54 @@
                     
                     <!-- Rating, Reviews and Stock Information -->
                     <div class="flex flex-col sm:flex-row sm:items-center gap-3 mb-4">
-                        <!-- Rating -->
-                        <div class="rating-badge flex items-center gap-2">
-                            <div class="flex items-center">
-                                <% for (let i = 0; i < 5; i++) { %>
-                                    <i class="fas fa-star text-amber-400 text-xs sm:text-sm <%= i < Math.floor(product.rating || 0) ? 'fas' : 'far' %>"></i>
-                                <% } %>
-                            </div>
-                            <span class="font-semibold"><%= (product.rating || 0).toFixed(1) %></span>
-                        </div>
-                        
-                        <!-- Reviews -->
-                        <span class="text-sm text-gray-600">
-                            <%= product.reviews || 0 %> Reviews
-                        </span>
+                       
                         
                         <!-- Stock Information -->
                         <div id="stockInfo" class="stock-info in-stock">
                             <i class="fas fa-check-circle"></i>
-                            <span id="stockText"><%= product.stock || 100 %> available in stock</span>
+                            <span id="stockText"><%= product.stock %> available in stock</span>
                         </div>
                     </div>
 
-                    <!-- Price Section -->
-                    <div id="priceSection" class="flex flex-wrap items-center gap-3 md:gap-4 mb-2">
-                        <span id="productPrice" class="text-2xl sm:text-3xl font-bold text-gray-900">₹<%= product.salePrice %></span>
-                        <% if (product.regularPrice) { %>
-                            <span id="productMrp" class="text-lg sm:text-xl text-gray-500 line-through">₹<%= product.regularPrice %></span>
-                            <% let discount = Math.round(((product.regularPrice - product.salePrice) / product.regularPrice) * 100); %>
-                            <span id="productDiscount" class="text-base sm:text-lg font-semibold text-green-600">
-                                Save <%= discount %>%
-                            </span>
-                        <% } %>
-                    </div>
+                 
+<!-- Price Section in Product Details -->
+<div class="mb-6">
+  <div class="text-sm text-gray-500 mb-1">Special price</div>
+
+  <div class="flex items-baseline flex-wrap gap-3 mb-2">
+
+    <!-- FINAL PRICE -->
+    <span id="productPrice" class="text-3xl font-bold text-gray-900">
+      ₹<%= product.salePrice %>
+    </span>
+
+    <!-- ORIGINAL PRICE -->
+    <% if (product.regularPrice && product.regularPrice > product.salePrice) { %>
+      <span id="productMrp" class="text-gray-500 text-xl line-through">
+        ₹<%= product.regularPrice %>
+      </span>
+
+      <!-- DISCOUNT BADGE -->
+      <span id="productDiscount" class="bg-red-100 text-red-800 text-sm font-semibold px-2 py-1 rounded">
+        <%= Math.round(((product.regularPrice - product.salePrice) / product.regularPrice) * 100) %>% off
+      </span>
+    <% } %>
+  </div>
+
+  <% if (product.regularPrice && product.regularPrice > product.salePrice) { %>
+    <div id="saveAmount" class="text-green-600 font-medium">
+  Save ₹<%= (product.regularPrice - product.salePrice).toFixed(0) %>
+</div>
+
+  <% } %>
+
+  <% if (product.appliedOffer) { %>
+    <div class="mt-2 text-sm text-blue-600 flex items-center gap-1">
+      <i class="fas fa-tag"></i>
+      <span><%= product.appliedOffer.offerName || 'Special Offer' %> Applied</span>
+    </div>
+  <% } %>
+</div>
                 </div>
 
                 <!-- Color Selection -->
@@ -374,18 +397,16 @@
                         <i class="fas fa-shopping-cart"></i>
                         Add to Cart
                     </button>
-                    <!-- <button onclick="buyNow()"
-                            class="flex-1 bg-gray-900 text-white py-3 md:py-4 rounded-xl font-semibold hover:bg-gray-800 transition flex items-center justify-center gap-2 md:gap-3 text-base md:text-lg">
-                        <i class="fas fa-bolt"></i>
-                        Buy Now
-                    </button> -->
-      <button onclick="toggleWishlist('<%= product._id %>', this)"
-    class="flex-1 bg-red-500 text-white py-3 md:py-4 rounded-xl font-semibold 
-           hover:bg-red-600 transition flex items-center justify-center gap-2 
-           md:gap-3 text-base md:text-lg">
-    <i class="fas fa-heart"></i>
+                    
+    <button onclick="toggleWishlist('<%= product._id %>', this)"
+        id="wishlistBtn"
+        class="flex-1 bg-red-500 text-white py-3 md:py-4 rounded-xl font-semibold 
+               hover:bg-red-600 transition flex items-center justify-center gap-2 
+               md:gap-3 text-base md:text-lg">
+    <i id="wishlistIcon" class="<%= userWishlist.includes(product._id.toString()) ? 'fas fa-heart text-red-500' : 'far fa-heart text-white' %>"></i>
     Add to Wishlist
 </button>
+
 
 
                 </div>
@@ -523,7 +544,7 @@
       let variantIndex = 0;
 
         let selectedVariantId = "<%= product._id %>";
-        let currentStock = <%= product.stock || 100 %>;
+        let currentStock = <%= product.stock  %>;
         let userWishlist = <%- JSON.stringify(userWishlist || []) %>;
 
         document.addEventListener("DOMContentLoaded", () => {
@@ -553,6 +574,7 @@
             if (button) button.classList.add("active", "border-blue-500");
         }
 
+        
 async function selectColor(color) {
   try {
     const res = await fetch(`/user/api/variant/${"<%= product._id %>"}?color=${color}`);
@@ -563,47 +585,52 @@ async function selectColor(color) {
       return;
     }
 
-    //  SET CORRECT VARIANT INDEX
     variantIndex = data.variantIndex;
 
     const variant = data.variant;
+    // Update color selection UI
+document.querySelectorAll(".color-option").forEach(btn => {
+    btn.classList.remove("selected");
+    if (btn.dataset.color.toLowerCase() === color.toLowerCase()) {
+        btn.classList.add("selected");
+    }
+});
 
-    //  Update main image
+    const offer = data.offerData;
+
     if (variant.images && variant.images.length > 0) {
       changeMainImage(variant.images[0]);
     }
 
-    // Update thumbnails
     document.getElementById("thumbnailContainer").innerHTML =
       variant.images.map((img, i) => `
         <button onclick="changeMainImage('${img}', this)"
-                class="thumbnail-btn ${i === 0 ? 'active border-blue-500' : ''}">
+                class="thumbnail-btn ${i === 0 ? "active border-blue-500" : ""}">
             <img src="${img}" class="w-full h-full object-contain p-2">
         </button>
       `).join("");
 
-    //  Update prices
-    document.getElementById("productPrice").textContent = `₹${variant.price}`;
-    if (variant.mrp) {
-      const discount = Math.round(((variant.mrp - variant.price) / variant.mrp) * 100);
-      document.getElementById("productMrp").textContent = `₹${variant.mrp}`;
-      document.getElementById("productDiscount").textContent = `Save ${discount}%`;
-    }
+    //  APPLY OFFER PRICES
+    document.getElementById("productPrice").textContent = `₹${offer.finalPrice}`;
+    document.getElementById("productMrp").textContent = `₹${offer.regularPrice}`;
+
+    const discount = Math.round(
+      ((offer.regularPrice - offer.finalPrice) / offer.regularPrice) * 100
+    );
+    document.getElementById("productDiscount").textContent = `${discount}% off`;
+
+    // ADD THIS (UPDATE SAVE AMOUNT)
+    document.getElementById("saveAmount").textContent =
+      `Save ₹${(offer.regularPrice - offer.finalPrice).toFixed(0)}`;
 
     // Update stock
     document.getElementById("stockText").textContent = `${variant.stock} available in stock`;
     document.getElementById("quantity").max = variant.stock;
 
-    //  UPDATE WISHLIST HEART (ALWAYS BASED ON PRODUCT ID)
-    const heart = document.querySelector(".wishlist-btn i");
+ 
 
-    if (userWishlist.includes("<%= product._id.toString() %>")) {
-      heart.classList.remove("far", "text-gray-400");
-      heart.classList.add("fas", "text-red-500");
-    } else {
-      heart.classList.remove("fas", "text-red-500");
-      heart.classList.add("far", "text-gray-400");
-    }
+    updateStockStatus(variant.stock)
+
 
   } catch (err) {
     console.error(err);
@@ -724,7 +751,7 @@ async function addToCart() {
   const payload = {
     productId: "<%= product._id %>",
     quantity,
-    variantIndex   // 🔥 correct now
+    variantIndex   
   };
 
   const res = await fetch("/user/cart/add", {

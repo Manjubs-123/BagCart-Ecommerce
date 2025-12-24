@@ -5,10 +5,17 @@ import { sendOtpMail } from "../../utils/sendMail.js";
 import User from "../../models/userModel.js";
 import bcrypt from "bcryptjs";
 import cloudinary from "../../config/cloudinary.js";
+import {
+  isValidName,
+  isValidPhone,
+  isValidCityOrState,
+  isValidPincode,
+} from "../../utils/addressValidators.js";
 import fs from "fs";
 import mongoose from "mongoose";
 import {loadHomeProducts,renderLandingPage} from "./productController.js"; 
 import Order from "../../models/orderModel.js";
+import { applyOfferToProduct } from "../../utils/applyOffer.js"; 
 
 
 
@@ -16,7 +23,7 @@ export const getSignup = (req, res) => {
   res.render("user/signup", { error: null });
 };
 
-// Handle Signup Submission 
+
 export const signupUser = async (req, res) => {
   try {
     if (mongoose.connection.readyState !== 1) {
@@ -28,7 +35,7 @@ export const signupUser = async (req, res) => {
 
     const { name, email, password, confirmPassword } = req.body;
 
-    //  Validation 
+ 
     if (!name?.trim()) return res.render("user/signup", { error: "Name is required." });
     if (name.trim().length < 6) return res.render("user/signup", { error: "Name must be at least 6 characters." });
     if (!/^[a-zA-Z\s]+$/.test(name)) return res.render("user/signup", { error: "Name can contain only alphabets." });
@@ -72,11 +79,11 @@ if (!emailRegex.test(email)) {
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
     req.session.otp = otp;
     req.session.email = email;
-    req.session.otpExpires = Date.now() + 1 * 60 * 1000; // 5 minutes
+    req.session.otpExpires = Date.now() + 1 * 60 * 1000; 
     req.session.pendingEmail = email;
 
     //  Send OTP via email 
-    await sendOtpMail(email, otp); // Directly use the imported function
+    await sendOtpMail(email, otp); 
 
     console.log(`OTP sent to ${email}: ${otp}`);
     
@@ -112,7 +119,7 @@ export const postVerifyOtp = async (req, res) => {
     const { otp: storedOtp, otpExpires, pendingEmail } = req.session;
     const email = pendingEmail;
 
-    // EXPIRED OTP
+    
     if (!storedOtp || Date.now() > otpExpires) {
       return res.render("user/verifyOtp", { 
         email, 
@@ -123,7 +130,7 @@ export const postVerifyOtp = async (req, res) => {
       });
     }
 
-    // WRONG OTP
+    
     if (otp !== storedOtp) {
       return res.render("user/verifyOtp", { 
         email, 
@@ -134,7 +141,7 @@ export const postVerifyOtp = async (req, res) => {
       });
     }
 
-    // SUCCESS
+   
     const user = await User.findOne({ email });
     if (!user)
       return res.render("user/signup", { error: "User not found. Please sign up again." });
@@ -152,7 +159,7 @@ export const postVerifyOtp = async (req, res) => {
     }
 
     await user.save();
-
+//Intialize user session
     req.session.isLoggedIn = true;
     req.session.user = {
       id: user._id,
@@ -163,7 +170,7 @@ export const postVerifyOtp = async (req, res) => {
       cartCount: user.cart?.items?.length || 0
     };
 
-    // Clean session
+//clear otp session data 
     delete req.session.otp;
     delete req.session.otpExpires;
     delete req.session.pendingEmail;
@@ -182,57 +189,6 @@ export const postVerifyOtp = async (req, res) => {
     });
   }
 };
-
-// export const resendOtp = async (req, res) => {
-//   try {
-//     const email = req.session.pendingEmail;
-//     if (!email) return res.redirect("/user/signup");
-
-//     const now = Date.now();
-//     const cooldown = req.session.cooldown || 0;
-
-//     // Prevent resend spam
-//     if (now < cooldown) {
-//       const remaining = Math.ceil((cooldown - now) / 1000);
-//       return res.render("user/verifyOtp", {
-//         email,
-//         error: `Please wait ${remaining}s before resending OTP.`,
-//         cooldown: remaining,
-//         RESEND_COOLDOWN: 60,
-//         OTP_EXPIRY_MINUTES: 1,
-//       });
-//     }
-
-//     // New OTP
-//     const newOtp = Math.floor(100000 + Math.random() * 900000).toString();
-//     req.session.otp = newOtp;
-//     req.session.otpExpires = now + 1 * 60 * 1000;
-//     req.session.cooldown = now + 60 * 1000;
-
-//     // FIXED: Use the imported sendOtpMail function directly
-//     await sendOtpMail(email, newOtp);
-
-//     console.log(`Resent OTP to ${email}: ${newOtp}`);
-
-//     res.render("user/verifyOtp", {
-//       email,
-//       error: null,
-//       cooldown: 60,
-//       RESEND_COOLDOWN: 60,
-//       OTP_EXPIRY_MINUTES: 1,
-//     });
-//   } catch (err) {
-//     console.error("Resend OTP Error:", err);
-//     res.render("user/verifyOtp", {
-//       email: req.session.pendingEmail || "",
-//       error: "Failed to resend OTP. Please try again.",
-//       cooldown: 0,
-//       RESEND_COOLDOWN: 60,
-//       OTP_EXPIRY_MINUTES: 1,
-//     });
-//   }
-// };
-
 
 export const resendOtp = async (req, res) => {
   try {
@@ -261,7 +217,7 @@ export const resendOtp = async (req, res) => {
     await sendOtpMail(email, newOtp);
     console.log(`Resent Signup OTP to ${email}: ${newOtp}`);
 
-    // IMPORTANT FIX
+
     req.session.save((err) => {
       if (err) {
         console.error("Session save error:", err);
@@ -309,7 +265,7 @@ export const getLogin = (req, res) => {
 };
 
 
-//  Handle Login (with block check)
+
 export const loginUser = async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -321,7 +277,7 @@ export const loginUser = async (req, res) => {
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) return res.render("user/login", { error: "Invalid email or password." });
 
-    req.session.isLoggedIn = true;
+    req.session.isLoggedIn = true;//mark user as logged in 
     req.session.user = { id: user._id, name: user.name, email: user.email,profileImage:user.profileImage,wishlistCount:user.wishlist?.length||0, cartCount: user.cart?.items?.length || 0 };
 
     res.redirect("/user/landing");
@@ -331,7 +287,7 @@ export const loginUser = async (req, res) => {
   }
 };
 
-//  Show Landing Page (Home)
+
 export const showHomePage = async (req, res) => {
   return renderLandingPage(req, res);
 };
@@ -368,15 +324,28 @@ export const updateUserProfile = async (req, res) => {
     const { name, phone } = req.body;
     const DEFAULT_AVATAR_ID = "AdobeStock_1185421594_Preview_cvfm1v";
 
-    // If user uploaded new image
-    if (req.file) {
 
-      // DELETE OLD IMAGE
+    let isUpdated = false; 
+
+   
+    if (name && name !== user.name) {
+      user.name = name;
+      isUpdated = true;
+    }
+
+   
+    if (phone !== user.phone) {
+      user.phone = phone;
+      isUpdated = true;
+    }
+
+
+   
+    if (req.file) {
       if (user.profileImage?.public_id&& user.profileImage.public_id!==DEFAULT_AVATAR_ID) {
         await cloudinary.uploader.destroy(user.profileImage.public_id);
       }
-
-      // UPLOAD NEW ONE
+//upload new img 
       const result = await cloudinary.uploader.upload(req.file.path, {
         folder: "profiles",
       });
@@ -387,10 +356,17 @@ export const updateUserProfile = async (req, res) => {
       };
 
       fs.unlinkSync(req.file.path);
+      isUpdated = true;
     }
 
-    user.name = name;
-    user.phone = phone;
+     
+    if (!isUpdated) {
+      return res.json({
+        success: false,
+        message: "No changes detected"
+      });
+    }
+
 
     await user.save();
     req.session.user.name = user.name;
@@ -415,52 +391,9 @@ export const getChangeEmailPage = (req, res) => {
   res.render("user/profileEmailChange", { user });
 };
 
-// Send OTP to new email
 
-// export const sendChangeEmailOtp = async (req, res) => {
-//   try {
-//     const userId = req.session.user.id;
-//     const { newEmail } = req.body;
 
-//     if (!newEmail) {
-//       return res.json({ success: false, message: "Email is required" });
-//     }
 
-//     const user = await User.findById(userId);
-
-//     if (user.email === newEmail) {
-//       return res.json({
-//         success: false,
-//         message: "New email cannot be the same as current email"
-//       });
-//     }
-
-//     const existing = await User.findOne({ email: newEmail });
-//     if (existing) {
-//       return res.json({
-//         success: false,
-//         message: "Email already exists. Choose another."
-//       });
-//     }
-
-//     const otp = Math.floor(100000 + Math.random() * 900000).toString();
-
-//     req.session.changeEmailOtp = otp;
-//     req.session.changeEmailNewEmail = newEmail;
-//     req.session.changeEmailOtpExpires = Date.now() + (1* 60 * 1000);
-
-//     await sendOtpMail(newEmail, otp);
-
-//     return res.json({ success: true });
-
-//   } catch (err) {
-//     console.log(err);
-//     return res.json({ success: false, message: "Server error" });
-//   }
-// };
-// Send OTP to new email
-
-// Send OTP for Email Change
 export const sendChangeEmailOtp = async (req, res) => {
   try {
     const userId = req.session.user.id;
@@ -487,20 +420,20 @@ export const sendChangeEmailOtp = async (req, res) => {
       });
     }
 
-    // Generate OTP
+  
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
 
-    // Store in session
+   
     req.session.changeEmailOtp = otp;
     req.session.changeEmailNewEmail = newEmail;
-    req.session.changeEmailOtpExpires = Date.now() + (1 * 60 * 1000); // 1 MINUTE
-    req.session.changeEmailCooldown = Date.now() + (60 * 1000); // RESEND COOLDOWN 1 MINUTE
+    req.session.changeEmailOtpExpires = Date.now() + (1 * 60 * 1000); 
+    req.session.changeEmailCooldown = Date.now() + (60 * 1000); 
 
-    // Send email
+    
     await sendOtpMail(newEmail, otp);
 
-    // LOGGGG ❗This prints OTP in VS CODE TERMINAL
-    console.log("▶ Email Change OTP Sent");
+   
+    console.log("Email Change OTP Sent");
     console.log("New Email:", newEmail);
     console.log("OTP:", otp);
     console.log("Expires At:", new Date(req.session.changeEmailOtpExpires));
@@ -518,7 +451,7 @@ export const resendChangeEmailOtp = async (req, res) => {
   try {
     const now = Date.now();
 
-    // Cooldown not completed
+    
     if (now < req.session.changeEmailCooldown) {
       const remaining = Math.ceil((req.session.changeEmailCooldown - now) / 1000);
       return res.json({
@@ -541,7 +474,7 @@ export const resendChangeEmailOtp = async (req, res) => {
 
     await sendOtpMail(newEmail, otp);
 
-    console.log("▶ RESEND Email Change OTP");
+    console.log("RESEND Email Change OTP");
     console.log("Email:", newEmail);
     console.log("New OTP:", otp);
 
@@ -563,31 +496,31 @@ export const verifyChangedEmailOtp = async (req, res) => {
       return res.json({ success: false, message: "OTP is required" });
     }
 
-    // Expired?
+   
     if (Date.now() > req.session.changeEmailOtpExpires) {
       return res.json({ success: false, message: "OTP expired" });
     }
 
-    // Incorrect?
+    
     if (otp !== req.session.changeEmailOtp) {
       return res.json({ success: false, message: "Invalid OTP" });
     }
 
     const newEmail = req.session.changeEmailNewEmail;
 
-    // Update DB
+   
     await User.findByIdAndUpdate(userId, { email: newEmail });
 
-    // Update session user
+   
     req.session.user.email = newEmail;
 
-    // Clear OTP sessions
+  
     delete req.session.changeEmailOtp;
     delete req.session.changeEmailNewEmail;
     delete req.session.changeEmailOtpExpires;
     delete req.session.changeEmailCooldown;
 
-    console.log("✔ Email Updated Successfully to:", newEmail);
+    console.log("Email Updated Successfully to:", newEmail);
 
     return res.json({ success: true, newEmail });
 
@@ -598,91 +531,28 @@ export const verifyChangedEmailOtp = async (req, res) => {
 };
 
 
+export const getAddresses = async (req, res) => {
+  try {
+    const userId = req.session.user?.id;
+    if (!userId) {
+      return res.json({ success: false });
+    }
 
-// Verify OTP
+    const user = await User.findById(userId).lean();
+    if (!user) {
+      return res.json({ success: false });
+    }
 
+    return res.json({
+      success: true,
+      addresses: user.addresses || [],
+    });
 
-// export const verifyChangedEmailOtp = async (req, res) => {
-//   try {
-//     const userId = req.session.user.id;
-//     const { otp } = req.body;
-
-//     if (!otp) {
-//       return res.json({ success: false, message: "OTP is required" });
-//     }
-
-//     if (Date.now() > req.session.changeEmailOtpExpires) {
-//       return res.json({ success: false, message: "OTP expired" });
-//     }
-
-//     if (otp !== req.session.changeEmailOtp) {
-//       return res.json({ success: false, message: "Invalid OTP" });
-//     }
-
-//     const newEmail = req.session.changeEmailNewEmail;
-
-//     await User.findByIdAndUpdate(userId, { email: newEmail });
-
-//     // update session
-//     req.session.user.email = newEmail;
-
-//     // clear session
-//     delete req.session.changeEmailOtp;
-//     delete req.session.changeEmailNewEmail;
-//     delete req.session.changeEmailOtpExpires;
-
-//     return res.json({ success: true, newEmail });
-
-//   } catch (err) {
-//     console.log(err);
-//     return res.json({ success: false, message: "Something went wrong" });
-//   }
-// };
-// Verify OTP & Update Email
-// export const verifyChangedEmailOtp = async (req, res) => {
-//   try {
-//     const userId = req.session.user.id;
-//     const { otp } = req.body;
-
-//     if (!otp) {
-//       return res.json({ success: false, message: "OTP is required" });
-//     }
-
-//     // Debug Logging
-//     console.log("Entered OTP:", otp);
-//     console.log("Stored OTP:", req.session.changeEmailOtp);
-
-//     // Expired?
-//     if (Date.now() > req.session.changeEmailOtpExpires) {
-//       return res.json({ success: false, message: "OTP expired" });
-//     }
-
-//     // Wrong?
-//     if (otp !== req.session.changeEmailOtp) {
-//       return res.json({ success: false, message: "Invalid OTP" });
-//     }
-
-//     const newEmail = req.session.changeEmailNewEmail;
-
-//     // Update in DB
-//     await User.findByIdAndUpdate(userId, { email: newEmail });
-
-//     // Update user session
-//     req.session.user.email = newEmail;
-
-//     // Cleanup
-//     delete req.session.changeEmailOtp;
-//     delete req.session.changeEmailNewEmail;
-//     delete req.session.changeEmailOtpExpires;
-//     delete req.session.changeEmailCooldown;
-
-//     return res.json({ success: true, newEmail });
-
-//   } catch (err) {
-//     console.log("Error in verifyChangedEmailOtp:", err);
-//     return res.json({ success: false, message: "Something went wrong" });
-//   }
-// };
+  } catch (err) {
+    console.error("ADDRESS ERROR:", err);
+    return res.json({ success: false });
+  }
+};
 
 
 export const getAddressPage = async (req, res) => {
@@ -716,6 +586,60 @@ export const getAddressPage = async (req, res) => {
     }
 };
 
+export const addAddresses = async (req, res) => {
+  try {
+    const userId = req.session.user?.id;
+    if (!userId) {
+      return res.json({ success: false, message: "Not logged in" });
+    }
+
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.json({ success: false, message: "User not found" });
+    }
+
+    const newAddress = req.body;
+
+    // Validations
+    if (!isValidName(newAddress.fullName)) {
+      return res.json({ success: false, message: "Invalid full name" });
+    }
+
+    if (!isValidPhone(newAddress.phone)) {
+      return res.json({ success: false, message: "Invalid phone number" });
+    }
+
+    if (!isValidCityOrState(newAddress.city)) {
+      return res.json({ success: false, message: "Invalid city name" });
+    }
+
+    if (!isValidCityOrState(newAddress.state)) {
+      return res.json({ success: false, message: "Invalid state name" });
+    }
+
+    if (!isValidPincode(newAddress.pincode)) {
+      return res.json({ success: false, message: "Invalid pincode" });
+    }
+
+    // Handle default address
+    if (newAddress.isDefault) {
+      user.addresses.forEach((a) => (a.isDefault = false));
+    }
+
+    user.addresses.push(newAddress);
+    await user.save();
+
+    return res.json({
+      success: true,
+      address: user.addresses[user.addresses.length - 1],
+    });
+
+  } catch (err) {
+    console.error("ADD ADDRESS ERROR:", err);
+    return res.json({ success: false });
+  }
+};
+
 export const addAddress = async (req, res) => {
     try {
         const userId = req.session.user.id;
@@ -735,12 +659,12 @@ export const addAddress = async (req, res) => {
 
         const user = await User.findById(userId);
 
-        // If first address set default
+      
         if (user.addresses.length === 0) {
             newAddress.isDefault = true;
         }
 
-        // If setting new default  remove default from others
+      
         if (newAddress.isDefault) {
             user.addresses.forEach(addr => addr.isDefault = false);
         }
@@ -756,6 +680,77 @@ export const addAddress = async (req, res) => {
     }
 };
 
+export const updateAddresses = async (req, res) => {
+  try {
+    const userId = req.session.user?.id;
+    const addressId = req.params.id;
+
+    if (!userId) {
+      return res.json({ success: false, message: "Not logged in" });
+    }
+
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.json({ success: false, message: "User not found" });
+    }
+
+    const updatedData = req.body;
+
+    // Validations
+    if (!isValidName(updatedData.fullName)) {
+      return res.json({ success: false, message: "Invalid full name" });
+    }
+
+    if (!isValidPhone(updatedData.phone)) {
+      return res.json({ success: false, message: "Invalid phone number" });
+    }
+
+    if (!isValidCityOrState(updatedData.city)) {
+      return res.json({ success: false, message: "Invalid city name" });
+    }
+
+    if (!isValidCityOrState(updatedData.state)) {
+      return res.json({ success: false, message: "Invalid state name" });
+    }
+
+    if (!isValidPincode(updatedData.pincode)) {
+      return res.json({ success: false, message: "Invalid pincode" });
+    }
+
+    // If setting default address, unset others
+    if (updatedData.isDefault) {
+      user.addresses.forEach((a) => (a.isDefault = false));
+    }
+
+    const address = user.addresses.id(addressId);
+    if (!address) {
+      return res.json({ success: false, message: "Address not found" });
+    }
+
+    // Update fields
+    address.fullName = updatedData.fullName;
+    address.phone = updatedData.phone;
+    address.addressLine1 = updatedData.addressLine1;
+    address.addressLine2 = updatedData.addressLine2;
+    address.city = updatedData.city;
+    address.state = updatedData.state;
+    address.pincode = updatedData.pincode;
+    address.country = updatedData.country;
+    address.addressType = updatedData.addressType;
+    address.isDefault = updatedData.isDefault;
+
+    await user.save();
+
+    return res.json({
+      success: true,
+      address,
+    });
+  } catch (err) {
+    console.error("UPDATE ADDRESS ERROR:", err);
+    return res.json({ success: false });
+  }
+};
+
 export const updateAddress = async (req, res) => {
     try {
         const userId = req.session.user.id;
@@ -766,10 +761,10 @@ export const updateAddress = async (req, res) => {
         const address = user.addresses.id(addressId);
         if (!address) return res.json({ success: false, message: "Address not found" });
 
-        // update fields
+       
         Object.assign(address, req.body);
 
-        // if default  update all
+      
         if (req.body.isDefault) {
             user.addresses.forEach(a => a.isDefault = false);
             address.isDefault = true;
@@ -789,9 +784,6 @@ export const deleteAddress = async (req, res) => {
         const userId = req.session.user.id;   
         const addressId = req.params.id;
 
-
-//         console.log("SESSION USER =", req.session.user);
-// console.log("ADDRESS ID =", req.params.id);
 
         const user = await User.findById(userId);
         if (!user) {
@@ -841,13 +833,10 @@ export const setDefaultAddress = async (req, res) => {
       return res.status(404).json({ success: false, message: "User not found" });
     }
 
-    // Ensure addresses is an array
     if (!Array.isArray(user.addresses)) user.addresses = [];
 
-    // Clear default flags
     user.addresses.forEach(a => { a.isDefault = false; });
 
-    // Mongoose subdoc lookup works for arrays of subdocs
     const target = user.addresses.id ? user.addresses.id(addressId) : user.addresses.find(a => a._id && a._id.toString() === addressId);
 
     if (!target) {
@@ -870,15 +859,15 @@ export const setDefaultAddress = async (req, res) => {
 
 export const getSecuritySettings = async (req, res) => {
   try {
-    // console.log("REACHED SECURITY PAGE");
+   
 
     if (!req.session.user) return res.redirect('/user/login');
 
     const userId = req.session.user.id || req.session.user._id;
-    console.log("USER ID:", userId);
+    // console.log("USER ID:", userId);
 
     const user = await User.findById(userId);
-    console.log("USER:", user);
+    // console.log("USER:", user);
 
     res.render("user/changepassword", { 
       user,
@@ -889,7 +878,7 @@ export const getSecuritySettings = async (req, res) => {
     });
 
   } catch (err) {
-    console.log("ERROR:", err);
+    // console.log("ERROR:", err);
     res.status(500).send("Server error");
   }
 };
@@ -900,7 +889,6 @@ export const checkCurrentPassword = async (req, res) => {
 
         if (!user) return res.json({ valid: false });
 
-        // BLOCK CURRENT PASSWORD CHECK FOR GOOGLE USERS
         if (user.googleId) {
             return res.json({ valid: false });
         }
@@ -924,7 +912,6 @@ export const changePassword = async (req, res) => {
             return res.json({ success: false, message: "User not found" });
         }
 
-        // BLOCK PASSWORD CHANGE FOR GOOGLE USERS
         if (user.googleId) {
             return res.json({
                 success: false,
@@ -933,13 +920,11 @@ export const changePassword = async (req, res) => {
 
         }
 
-        // Compare old password
         const isMatch = await bcrypt.compare(currentPassword, user.password);
         if (!isMatch) {
             return res.json({ success: false, message: "Incorrect current password" });
         }
 
-        // Hash new password
         const hashed = await bcrypt.hash(newPassword, 10);
         user.password = hashed;
         await user.save();
@@ -952,6 +937,8 @@ export const changePassword = async (req, res) => {
     }
 };
 
+
+
 export const getWishlistPage = async (req, res) => {
     try {
         if (!req.session.user || !req.session.user.id) {
@@ -961,10 +948,36 @@ export const getWishlistPage = async (req, res) => {
         const user = await User.findById(req.session.user.id)
             .populate({
                 path: "wishlist",
-                populate: { path: "category", select: "name" }
+                populate: { 
+                    path: "category",
+                    select: "name"
+                }
             });
 
-        const wishlistItems = user.wishlist;
+        let wishlistItems = [];
+
+        for (let product of user.wishlist) {
+            let productObj = product.toObject();
+
+
+            const offerData = await applyOfferToProduct(productObj);
+
+            
+            if (offerData && offerData.variants) {
+                productObj.variants = productObj.variants.map((v, index) => ({
+                    ...v,
+                    regularPrice: offerData.variants[index].regularPrice,
+                    finalPrice: offerData.variants[index].finalPrice,
+                    discountPercent: Math.round(
+                        ((offerData.variants[index].regularPrice - offerData.variants[index].finalPrice) /
+                        offerData.variants[index].regularPrice) * 100
+                    ),
+                    appliedOffer: offerData.variants[index].appliedOffer
+                }));
+            }
+
+            wishlistItems.push(productObj);
+        }
 
         res.render("user/wishlist", {
             activePage: "wishlist",
@@ -980,7 +993,6 @@ export const getWishlistPage = async (req, res) => {
         return res.status(500).send("Error loading wishlist");
     }
 };
-
 
 export const addToWishlist = async (req, res) => {
   try {

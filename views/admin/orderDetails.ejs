@@ -28,67 +28,100 @@
       transition: all 0.3s ease;
       box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
     }
+    
+    /* Mobile overlay */
+    @media (max-width: 1023px) {
+      .mobile-overlay {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: rgba(0, 0, 0, 0.5);
+        z-index: 40;
+      }
+      
+      .mobile-overlay.active {
+        display: block;
+      }
+      
+      body.sidebar-open {
+        overflow: hidden;
+      }
+    }
   </style>
 </head>
 
 <body class="bg-gray-50 text-gray-900 flex min-h-screen">
+  <!-- Mobile Overlay -->
+  <div class="mobile-overlay lg:hidden" id="mobile-overlay"></div>
+
   <!-- Sidebar -->
   <%- include('../partials/sidebar', { currentPage: 'orders' }) %>
 
   <!-- Main Content -->
-  <main class="ml-64 flex-1 p-8">
+  <main class="w-full lg:ml-64 flex-1 p-4 sm:p-6 lg:p-8 transition-all duration-300">
     <!-- Header Section -->
-    <div class="mb-8">
-      <div class="flex justify-between items-center mb-2">
-        <div>
-          <h1 class="text-3xl font-bold text-gray-900">Order Details</h1>
-          <p class="text-gray-600 mt-1">Order ID: <span class="font-mono font-bold"><%= order.orderId || order._id %></span></p>
+    <div class="mb-6 lg:mb-8">
+      <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-4 lg:mb-6">
+        <div class="flex-1">
+          <div class="flex items-center justify-between mb-2">
+            <h1 class="text-2xl sm:text-3xl font-bold text-gray-900">Order Details</h1>
+            <!-- Mobile menu button -->
+            <button
+              id="mobile-menu-button"
+              class="lg:hidden p-2 rounded-lg bg-gray-100 text-gray-700 hover:bg-gray-200 transition-colors"
+              aria-label="Toggle menu"
+            >
+              <i class="fas fa-bars text-lg"></i>
+            </button>
+          </div>
+          <p class="text-gray-600 text-sm sm:text-base">Order ID: <span class="font-mono font-bold"><%= order.orderId || order._id %></span></p>
         </div>
-        <a href="/admin/orders" class="bg-gray-600 text-white px-6 py-3 rounded-lg hover:bg-gray-700 transition flex items-center gap-2">
+        <a href="/admin/orders" class="bg-gray-600 text-white px-4 sm:px-6 py-2.5 sm:py-3 rounded-lg hover:bg-gray-700 transition flex items-center justify-center gap-2 text-sm sm:text-base w-full sm:w-auto order-first sm:order-last">
           <i class="fas fa-arrow-left"></i>
-          Back to Orders
+          <span>Back to Orders</span>
         </a>
       </div>
     </div>
 
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-8">
       <!-- Left Column - Order Items & Status Management -->
-      <div class="lg:col-span-2 space-y-6">
+      <div class="lg:col-span-2 space-y-4 sm:space-y-6">
         <!-- Order Items -->
-        <div class="bg-white rounded-xl p-6 card-hover">
-          <h2 class="text-xl font-bold text-gray-900 mb-6">Order Items</h2>
-          <div class="space-y-4">
+        <div class="bg-white rounded-xl p-4 sm:p-6 card-hover">
+          <h2 class="text-lg sm:text-xl font-bold text-gray-900 mb-4 sm:mb-6">Order Items</h2>
+          <div class="space-y-3 sm:space-y-4">
             <% order.items.forEach((item, index) => { %>
-              <div class="border border-gray-200 rounded-lg p-4">
-                <div class="flex gap-4">
+              <div class="border border-gray-200 rounded-lg p-3 sm:p-4">
+                <div class="flex flex-col sm:flex-row gap-3 sm:gap-4">
                   <!-- Product Image -->
                   <div class="flex-shrink-0">
                     <img src="<%= item.image || '/images/no-image.jpg' %>" 
                          alt="<%= item.product?.name || 'Product' %>"
-                         class="w-20 h-20 object-cover rounded-lg border border-gray-200">
+                         class="w-16 h-16 sm:w-20 sm:h-20 object-cover rounded-lg border border-gray-200">
                   </div>
                   
                   <!-- Product Details -->
-                  <div class="flex-grow">
-                    <div class="flex justify-between items-start mb-2">
-                      <div>
-                        <h3 class="font-semibold text-gray-900">
+                  <div class="flex-grow min-w-0">
+                    <div class="flex flex-col sm:flex-row sm:justify-between sm:items-start mb-2 gap-2">
+                      <div class="min-w-0">
+                        <h3 class="font-semibold text-gray-900 text-sm sm:text-base truncate">
                           <%= item.product?.name || 'Product Name' %>
                         </h3>
-                        <p class="text-sm text-gray-600">Item ID: <span class="font-mono"><%= `${order.orderId}-${index+1}` %></span></p>
+                        <p class="text-xs sm:text-sm text-gray-600">Item ID: <span class="font-mono"><%= `${order.orderId}-${index+1}` %></span></p>
                       </div>
-                      <span class="status-badge <%= getStatusClass(item.status || order.orderStatus || 'pending') %>">
-  <i class="fas <%= getStatusIcon(item.status || order.orderStatus || 'pending') %>"></i>
-  <%= (item.status || order.orderStatus || "pending").charAt(0).toUpperCase() + (item.status || order.orderStatus || "pending").slice(1) %>
-</span>
-
-                     
+                      <span class="status-badge <%= getStatusClass(item.status || order.orderStatus || 'pending') %> text-xs sm:text-sm">
+                        <i class="fas <%= getStatusIcon(item.status || order.orderStatus || 'pending') %>"></i>
+                        <%= (item.status || order.orderStatus || "pending").charAt(0).toUpperCase() + (item.status || order.orderStatus || "pending").slice(1) %>
+                      </span>
                     </div>
                     
-                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm mb-4">
+                    <div class="grid grid-cols-2 gap-3 text-xs sm:text-sm mb-3 sm:mb-4">
                       <div>
                         <span class="text-gray-600">Color:</span>
-                        <span class="font-medium"><%= item.color || 'N/A' %></span>
+                        <span class="font-medium block truncate"><%= item.color || 'N/A' %></span>
                       </div>
                       <div>
                         <span class="text-gray-600">Quantity:</span>
@@ -105,74 +138,99 @@
                     </div>
 
                     <!-- Status Update Form -->
-                    <!-- Status Update Form -->
-<form class="item-status-form" data-item-id="<%= item._id %>">
-  <div class="flex items-center gap-3">
-    <label class="text-sm font-medium text-gray-700">Update Status:</label>
-    <select name="status" class="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
-      <% 
-        const currentStatus = item.status || 'pending';
-        const statusOptions = [
-          { value: 'pending', label: 'Pending', disabled: currentStatus !== 'pending' },
-          { value: 'processing', label: 'Processing', disabled: !['pending'].includes(currentStatus) },
-          { value: 'shipped', label: 'Shipped', disabled: !['processing'].includes(currentStatus) },
-          { value: 'out_for_delivery', label: 'Out for Delivery', disabled: !['shipped'].includes(currentStatus) },
-          { value: 'delivered', label: 'Delivered', disabled: !['out_for_delivery'].includes(currentStatus) },
-          { value: 'cancelled', label: 'Cancelled', disabled: !['pending', 'processing', 'shipped'].includes(currentStatus) },
-          { value: 'returned', label: 'Returned', disabled: currentStatus !== 'delivered' }
-        ];
-      %>
-      <% statusOptions.forEach(option => { %>
-        <option 
-          value="<%= option.value %>" 
-          <%= currentStatus === option.value ? 'selected' : '' %>
-          <%= option.disabled ? 'disabled' : '' %>
-        >
-          <%= option.label %>
-        </option>
-      <% }) %>
-    </select>
-    <button 
-      type="submit" 
-      class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition text-sm font-medium disabled:bg-gray-400 disabled:cursor-not-allowed"
-      <%= currentStatus === 'cancelled' || currentStatus === 'returned' ? 'disabled' : '' %>
-    >
-      Update
-    </button>
-  </div>
-</form>
+                    <form class="item-status-form" data-item-id="<%= item._id %>">
+                      <div class="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
+                        <label class="text-xs sm:text-sm font-medium text-gray-700">Update Status:</label>
+                        <div class="flex gap-2 w-full sm:w-auto">
+                          <select name="status" 
+                                  class="flex-1 sm:flex-none border border-gray-300 rounded-lg px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <%
+                              const currentStatus = item.status || "pending";
+                            %>
+
+                            <option value="pending"
+                              <%= currentStatus === "pending" ? "selected" : "" %>
+                              <%= currentStatus !== "pending" ? "disabled" : "" %>>
+                              Pending
+                            </option>
+
+                            <option value="processing"
+                              <%= currentStatus === "processing" ? "selected" : "" %>
+                              <%= !["pending"].includes(currentStatus) ? "disabled" : "" %>>
+                              Processing
+                            </option>
+
+                            <option value="shipped"
+                              <%= currentStatus === "shipped" ? "selected" : "" %>
+                              <%= !["processing"].includes(currentStatus) ? "disabled" : "" %>>
+                              Shipped
+                            </option>
+
+                            <option value="out_for_delivery"
+                              <%= currentStatus === "out_for_delivery" ? "selected" : "" %>
+                              <%= !["shipped"].includes(currentStatus) ? "disabled" : "" %>>
+                              Out for Delivery
+                            </option>
+
+                            <option value="delivered"
+                              <%= currentStatus === "delivered" ? "selected" : "" %>
+                              <%= !["out_for_delivery"].includes(currentStatus) ? "disabled" : "" %>>
+                              Delivered
+                            </option>
+
+                            <option value="returned"
+                              <%= currentStatus === "returned" ? "selected" : "" %>
+                              <%= !["delivered"].includes(currentStatus) ? "disabled" : "" %>>
+                              Returned
+                            </option>
+
+                            <option value="cancelled"
+                              <%= currentStatus === "cancelled" ? "selected" : "" %>
+                              <%= !["pending","processing","shipped"].includes(currentStatus) ? "disabled" : "" %>>
+                              Cancelled
+                            </option>
+                          </select>
+
+                          <button 
+                            type="submit" 
+                            class="bg-blue-600 text-white px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg hover:bg-blue-700 transition text-xs sm:text-sm font-medium disabled:bg-gray-400 disabled:cursor-not-allowed whitespace-nowrap"
+                            <%= currentStatus === 'cancelled' || currentStatus === 'returned' ? 'disabled' : '' %>
+                          >
+                            Update
+                          </button>
+                        </div>
+                      </div>
+                    </form>
                   </div>
                 </div>
               </div>
             <% }) %>
           </div>
         </div>
-
-       
       </div>
 
       <!-- Right Column - Order Summary & Customer Info -->
-      <div class="space-y-6">
+      <div class="space-y-4 sm:space-y-6">
         <!-- Order Summary -->
-        <div class="bg-white rounded-xl p-6 card-hover">
-          <h2 class="text-xl font-bold text-gray-900 mb-6">Order Summary</h2>
-          <div class="space-y-3">
-            <div class="flex justify-between">
+        <div class="bg-white rounded-xl p-4 sm:p-6 card-hover">
+          <h2 class="text-lg sm:text-xl font-bold text-gray-900 mb-4 sm:mb-6">Order Summary</h2>
+          <div class="space-y-2 sm:space-y-3">
+            <div class="flex justify-between text-sm sm:text-base">
               <span class="text-gray-600">Subtotal (<%= order.items.length %> items)</span>
               <span class="font-medium">₹<%= order.subtotal.toFixed(2) %></span>
             </div>
-            <div class="flex justify-between">
+            <div class="flex justify-between text-sm sm:text-base">
               <span class="text-gray-600">Tax (10%)</span>
               <span class="font-medium">₹<%= order.tax.toFixed(2) %></span>
             </div>
-            <div class="flex justify-between">
+            <div class="flex justify-between text-sm sm:text-base">
               <span class="text-gray-600">Shipping Fee</span>
               <span class="font-medium <%= order.shippingFee === 0 ? 'text-green-600' : '' %>">
                 <%= order.shippingFee === 0 ? 'FREE' : `₹${order.shippingFee.toFixed(2)}` %>
               </span>
             </div>
-            <div class="border-t pt-3">
-              <div class="flex justify-between text-lg font-bold">
+            <div class="border-t pt-2 sm:pt-3">
+              <div class="flex justify-between text-base sm:text-lg font-bold">
                 <span>Total Amount</span>
                 <span class="text-blue-600">₹<%= order.totalAmount.toFixed(2) %></span>
               </div>
@@ -181,28 +239,28 @@
         </div>
 
         <!-- Customer Information -->
-        <div class="bg-white rounded-xl p-6 card-hover">
-          <h2 class="text-xl font-bold text-gray-900 mb-6">Customer Information</h2>
-          <div class="space-y-3">
+        <div class="bg-white rounded-xl p-4 sm:p-6 card-hover">
+          <h2 class="text-lg sm:text-xl font-bold text-gray-900 mb-4 sm:mb-6">Customer Information</h2>
+          <div class="space-y-2 sm:space-y-3">
             <div>
-              <p class="text-sm text-gray-600">Customer Name</p>
-              <p class="font-medium"><%= order.user?.name || 'N/A' %></p>
+              <p class="text-xs sm:text-sm text-gray-600">Customer Name</p>
+              <p class="font-medium text-sm sm:text-base"><%= order.user?.name || 'N/A' %></p>
             </div>
             <div>
-              <p class="text-sm text-gray-600">Email</p>
-              <p class="font-medium"><%= order.user?.email || 'N/A' %></p>
+              <p class="text-xs sm:text-sm text-gray-600">Email</p>
+              <p class="font-medium text-sm sm:text-base truncate"><%= order.user?.email || 'N/A' %></p>
             </div>
             <div>
-              <p class="text-sm text-gray-600">Phone</p>
-              <p class="font-medium"><%= order.shippingAddress?.phone || 'N/A' %></p>
+              <p class="text-xs sm:text-sm text-gray-600">Phone</p>
+              <p class="font-medium text-sm sm:text-base"><%= order.shippingAddress?.phone || 'N/A' %></p>
             </div>
           </div>
         </div>
 
         <!-- Shipping Address -->
-        <div class="bg-white rounded-xl p-6 card-hover">
-          <h2 class="text-xl font-bold text-gray-900 mb-6">Shipping Address</h2>
-          <div class="space-y-2 text-gray-700">
+        <div class="bg-white rounded-xl p-4 sm:p-6 card-hover">
+          <h2 class="text-lg sm:text-xl font-bold text-gray-900 mb-4 sm:mb-6">Shipping Address</h2>
+          <div class="space-y-1 sm:space-y-2 text-gray-700 text-sm sm:text-base">
             <p class="font-medium"><%= order.shippingAddress.fullName %></p>
             <p><%= order.shippingAddress.addressLine1 %></p>
             <% if (order.shippingAddress.addressLine2) { %>
@@ -218,22 +276,22 @@
         </div>
 
         <!-- Payment Information -->
-        <div class="bg-white rounded-xl p-6 card-hover">
-          <h2 class="text-xl font-bold text-gray-900 mb-6">Payment Information</h2>
-          <div class="space-y-3">
-            <div class="flex justify-between">
+        <div class="bg-white rounded-xl p-4 sm:p-6 card-hover">
+          <h2 class="text-lg sm:text-xl font-bold text-gray-900 mb-4 sm:mb-6">Payment Information</h2>
+          <div class="space-y-2 sm:space-y-3">
+            <div class="flex justify-between text-sm sm:text-base">
               <span class="text-gray-600">Payment Method:</span>
               <span class="font-medium capitalize">
                 <%= order.paymentMethod === 'cod' ? 'Cash on Delivery' : order.paymentMethod %>
               </span>
             </div>
-            <div class="flex justify-between">
+            <div class="flex justify-between text-sm sm:text-base">
               <span class="text-gray-600">Payment Status:</span>
               <span class="font-medium text-green-600 capitalize">
                 <%= order.paymentStatus || 'Pending' %>
               </span>
             </div>
-            <div class="flex justify-between">
+            <div class="flex justify-between text-sm sm:text-base">
               <span class="text-gray-600">Order Date:</span>
               <span class="font-medium">
                 <%= new Date(order.createdAt).toLocaleDateString() %>
@@ -244,6 +302,49 @@
       </div>
     </div>
   </main>
+
+  <!-- Sidebar Toggle Script -->
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      const mobileMenuButton = document.getElementById('mobile-menu-button');
+      const sidebar = document.getElementById('admin-sidebar');
+      const overlay = document.getElementById('mobile-overlay');
+      const body = document.body;
+
+      function toggleSidebar() {
+        sidebar.classList.toggle('-translate-x-full');
+        overlay.classList.toggle('active');
+        body.classList.toggle('sidebar-open');
+      }
+
+      function closeSidebar() {
+        sidebar.classList.add('-translate-x-full');
+        overlay.classList.remove('active');
+        body.classList.remove('sidebar-open');
+      }
+
+      if (mobileMenuButton && sidebar && overlay) {
+        mobileMenuButton.addEventListener('click', toggleSidebar);
+        overlay.addEventListener('click', closeSidebar);
+      }
+
+      // Close sidebar when clicking on any link
+      document.querySelectorAll('#admin-sidebar a').forEach(link => {
+        link.addEventListener('click', () => {
+          if (window.innerWidth < 1024) {
+            closeSidebar();
+          }
+        });
+      });
+
+      // Close sidebar on escape key
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && window.innerWidth < 1024) {
+          closeSidebar();
+        }
+      });
+    });
+  </script>
 
   <script>
     // Handle item status updates
@@ -292,13 +393,13 @@
 
     function showNotification(message, type) {
       const notification = document.createElement('div');
-      notification.className = `fixed top-4 right-4 p-4 rounded-lg shadow-lg z-50 ${
+      notification.className = `fixed top-4 right-4 p-3 sm:p-4 rounded-lg shadow-lg z-50 max-w-xs sm:max-w-md ${
         type === 'success' ? 'bg-green-500 text-white' : 'bg-red-500 text-white'
       }`;
       notification.innerHTML = `
-        <div class="flex items-center gap-3">
-          <i class="fas fa-${type === 'success' ? 'check' : 'exclamation'}-circle"></i>
-          <span>${message}</span>
+        <div class="flex items-center gap-2 sm:gap-3">
+          <i class="fas fa-${type === 'success' ? 'check' : 'exclamation'}-circle text-sm sm:text-base"></i>
+          <span class="text-xs sm:text-sm">${message}</span>
         </div>
       `;
       
@@ -340,16 +441,15 @@
   }
 
   function getProgressBarClass(status) {
-  const progressClasses = {
-    'pending': 'bg-yellow-500 w-1/5',
-    'processing': 'bg-blue-500 w-2/5',
-    'shipped': 'bg-purple-500 w-3/5',
-    'out_for_delivery': 'bg-pink-500 w-4/5',
-    'delivered': 'bg-green-500 w-full',
-    'cancelled': 'bg-red-500 w-full',
-    'returned': 'bg-purple-500 w-full'
-  };
-  return progressClasses[status] || 'bg-gray-500 w-1/5';
-}
-
+    const progressClasses = {
+      'pending': 'bg-yellow-500 w-1/5',
+      'processing': 'bg-blue-500 w-2/5',
+      'shipped': 'bg-purple-500 w-3/5',
+      'out_for_delivery': 'bg-pink-500 w-4/5',
+      'delivered': 'bg-green-500 w-full',
+      'cancelled': 'bg-red-500 w-full',
+      'returned': 'bg-purple-500 w-full'
+    };
+    return progressClasses[status] || 'bg-gray-500 w-1/5';
+  }
 %>

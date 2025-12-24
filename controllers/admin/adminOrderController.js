@@ -1,33 +1,8 @@
 import Order from "../../models/orderModel.js";
 import Product from "../../models/productModel.js";
 import Wallet from "../../models/walletModel.js";
+import { calculateRefundOldWay } from "../../utils/orderPricingUtils.js";
 import mongoose from "mongoose";
-
-// Helper to build filter
-function buildFilter({ search, status, fromDate, toDate }) {
-  const filter = {};
-  if (status) filter.orderStatus = status;
-  if (fromDate || toDate) {
-    filter.createdAt = {};
-    if (fromDate) filter.createdAt.$gte = new Date(fromDate);
-    if (toDate) filter.createdAt.$lte = new Date(toDate);
-  }
-if (search) {
-  const regex = new RegExp(search, "i");
-
-  filter.$or = [
-    { orderId: regex },
-    { "items.itemOrderId": regex },
-
-    // Search inner item ObjectId safely
-    mongoose.isValidObjectId(search)
-      ? { "items._id": new mongoose.Types.ObjectId(search) }
-      : {}
-  ];
-}
-
-  return filter;
-}
 
 export const adminListOrders = async (req, res) => {
   try {
@@ -35,41 +10,88 @@ export const adminListOrders = async (req, res) => {
     const limit = 10;
     const skip = (page - 1) * limit;
 
-    const { search, status } = req.query;
+    const { search, status, fromDate, toDate } = req.query;
 
+    
     let filter = {};
 
-    if (search) {
-      filter.$or = [
-        { orderId: new RegExp(search, "i") },
-        { "items.itemOrderId": new RegExp(search, "i") }
+  
+    if (status && status !== "all") {
+      const orderLevelStatuses = [
+        "pending", "processing", "shipped",
+        "out_for_delivery", "delivered"
       ];
+
+      const itemLevelStatuses = [
+        "cancelled", "return-requested", "returned"
+      ];
+
+      if (orderLevelStatuses.includes(status)) {
+        filter.orderStatus = status;
+      }
+      else if (itemLevelStatuses.includes(status)) {
+        filter.items = { $elemMatch: { status: status } };  
+      }
     }
 
-    if (status) {
-      filter.orderStatus = status;
+    
+    if (fromDate || toDate) {
+      filter.createdAt = {};
+
+      if (fromDate) {
+        filter.createdAt.$gte = new Date(fromDate);
+      }
+
+      if (toDate) {
+        const end = new Date(toDate);
+        end.setHours(23, 59, 59, 999);
+        filter.createdAt.$lte = end;
+      }
     }
 
+    
+    if (search && search.trim() !== "") {
+      const regex = new RegExp(search, "i");
+
+      const orConditions = [
+        { orderId: regex },
+        { "items.itemOrderId": regex }
+      ];
+
+      
+      if (mongoose.isValidObjectId(search)) {
+        orConditions.push({
+          "items._id": new mongoose.Types.ObjectId(search)
+        });
+      }
+
+      if (!filter.$and) filter.$and = [];
+
+      filter.$and.push({ $or: orConditions });
+    }
+
+    
+   
+   
     const totalOrders = await Order.countDocuments(filter);
 
     const deliveredOrders = await Order.countDocuments({
       ...filter,
-      orderStatus: "delivered"
+      orderStatus: "delivered",
     });
 
     const cancelledOrders = await Order.countDocuments({
       ...filter,
-      orderStatus: "cancelled"
+      "items.status": "cancelled",
     });
 
     const inProgressOrders = await Order.countDocuments({
       ...filter,
-      orderStatus: { $in: ["pending", "processing", "shipped", "out_for_delivery"] }
+      orderStatus: { $in: ["pending", "processing", "shipped", "out_for_delivery"] },
     });
 
-    //  RETURN REQUEST COUNT
     const returnCount = await Order.countDocuments({
-      "items.status": "return-requested"
+      "items.status": "return-requested",
     });
 
     const orders = await Order.find(filter)
@@ -80,6 +102,7 @@ export const adminListOrders = async (req, res) => {
       .limit(limit)
       .lean();
 
+    
     res.render("admin/orderList", {
       orders,
       totalOrders,
@@ -89,7 +112,7 @@ export const adminListOrders = async (req, res) => {
       page,
       pages: Math.ceil(totalOrders / limit),
       query: req.query,
-      returnCount  
+      returnCount,
     });
 
   } catch (err) {
@@ -104,10 +127,11 @@ export const adminListOrders = async (req, res) => {
       page: 1,
       pages: 1,
       query: req.query,
-      returnCount: 0   
+      returnCount: 0,
     });
   }
 };
+
 
 export const adminGetOrder = async (req, res) => {
   try {
@@ -118,7 +142,7 @@ export const adminGetOrder = async (req, res) => {
 
     if (!order) return res.status(404).send("Order not found");
 
-    // ITEM ORDER ID FOR ADMIN VIEW
+   
     order.items = order.items.map((item, index) => ({
       ...item,
       itemOrderId: item.itemOrderId || `${order._id}-${index + 1}`
@@ -136,83 +160,121 @@ export const adminGetOrder = async (req, res) => {
 export const adminUpdateOrderStatus = async (req, res) => {
   const session = await mongoose.startSession();
   session.startTransaction();
+
   try {
     const { orderId, itemId } = req.params;
     const { status } = req.body;
 
     const order = await Order.findById(orderId).session(session);
-    if (!order) {
-      await session.abortTransaction();
-      session.endSession();
-      return res.status(404).json({ success: false, message: "Order not found" });
-    }
+    if (!order) throw new Error("Order not found");
 
     const item = order.items.id(itemId);
-    if (!item) {
-      await session.abortTransaction();
-      session.endSession();
-      return res.status(404).json({ success: false, message: "Item not found" });
-    }
+    if (!item) throw new Error("Item not found");
+
+    const prevStatus = item.status;
+
+    const normalize = (s) =>
+      s.toLowerCase().replace(/ /g, "_").replace(/-/g, "_").trim();
+
+    const prev = normalize(prevStatus);
+    const next = normalize(status);
+
+    
+   
+const allowedFlow = {
+  pending: ["processing", "cancelled"],
+  processing: ["shipped", "cancelled"],
+  shipped: ["out_for_delivery", "cancelled"],
+  out_for_delivery: ["delivered"],
+  delivered: [],        
+  cancelled: [],       
+  returned: []          
+};
+
 
 
     
-const prevStatus = item.status;
-// Normalize DB and incoming UI statuses
-const normalize = (s) =>
-  s.toLowerCase()
-   .replace(/ /g, "_")
-   .replace(/-/g, "_")
-   .trim();
-
-
-const prev = normalize(prevStatus);
-const next = normalize(status);
-
-
-const allowedFlow = {
-  pending: ["processing"],
-  processing: ["shipped"],
-  shipped: ["out_for_delivery"],
-  out_for_delivery: ["delivered"],
-  delivered: [],
-  cancelled: [],
-  returned: []
-};
-
-// Stop invalid transitions
-if (!allowedFlow[prev] || !allowedFlow[prev].includes(next)) {
-  await session.abortTransaction();
-  session.endSession();
-  return res.status(400).json({
-    success: false,
-    message: `Cannot change status from '${prevStatus}' to '${status}'`
-  });
-}
-
-// Save normalized status
-item.status = next;
-
-
-    // inventory restock if cancelled
-    if (status === "cancelled" && prevStatus !== "delivered" && prevStatus !== "cancelled") {
-      const product = await Product.findById(item.product).session(session);
-      if (product?.variants?.[item.variantIndex]) {
-        product.variants[item.variantIndex].stock += item.quantity;
-        await product.save({ session });
-      }
+    if (!allowedFlow[prev] || !allowedFlow[prev].includes(next)) {
+      throw new Error(`Cannot change status from '${prevStatus}' to '${status}'`);
     }
 
-    // delivered rule
-    if (status === "delivered") {
-      item.deliveredDate = new Date();
-    }
+    item.status = next;
 
-    item.status = status;
 
    
-    if (order.items.every(i => i.status === "delivered")) {
+    // CANCEL BLOCK 
+   
+  if (next === "cancelled" && prev !== "cancelled" && prev !== "delivered") {
+  // Restore stock
+  const product = await Product.findById(item.product).session(session);
+  if (product && product.variants && item.variantIndex != null) {
+    product.variants[item.variantIndex].stock = round2(
+      Number(product.variants[item.variantIndex].stock || 0) + 
+      Number(item.quantity || 0)
+    );
+    product.markModified(`variants.${item.variantIndex}.stock`);
+    await product.save({ session });
+  }
+
+  // Calculate refund using centralized function
+  const refundAmount = calculateItemRefund(order, item, itemId);
+
+  if (refundAmount > 0 && !item.refundAmount) {
+    if (
+      (order.paymentMethod === "razorpay" && order.paymentStatus === "paid") ||
+      order.paymentMethod === "wallet"
+    ) {
+      await Wallet.findOneAndUpdate(
+        { user: order.user },
+        {
+          $inc: { balance: refundAmount },
+          $push: {
+            transactions: {
+              type: "credit",
+              amount: refundAmount,
+              description: `Refund for cancelled item ${item._id}`,
+              date: new Date()
+            }
+          }
+        },
+        { session, upsert: true }
+      );
+
+      item.refundAmount = refundAmount;
+      item.refundStatus = "credited";
+      item.refundMethod = "wallet";
+      item.refundDate = new Date();
+    }
+  }
+}
+
+    if (next === "delivered") {
+      item.deliveredDate = new Date();
+        //  ADD THIS BLOCK (ONLY THIS)
+  if (order.paymentMethod === "cod") {
+    const product = await Product.findById(item.product).session(session);
+
+    if (product && product.variants && item.variantIndex != null) {
+      product.variants[item.variantIndex].stock -= item.quantity;
+
+      if (product.variants[item.variantIndex].stock < 0) {
+        product.variants[item.variantIndex].stock = 0;
+      }
+
+      product.markModified(`variants.${item.variantIndex}.stock`);
+      await product.save({ session });
+    }
+  }
+}
+    
+
+    if (order.items.every((i) => i.status === "delivered")) {
       order.orderStatus = "delivered";
     }
+
+if (order.orderStatus === "created") {
+  order.orderStatus = "pending"; 
+}
 
     await order.save({ session });
     await session.commitTransaction();
@@ -223,10 +285,12 @@ item.status = next;
   } catch (err) {
     await session.abortTransaction();
     session.endSession();
-    console.error("adminUpdateOrderStatus:", err);
-    return res.status(500).json({ success: false, message: "Error updating item status" });
+    console.error("ADMIN UPDATE STATUS ERROR >>>", err);
+    return res.status(500).json({ success: false, message: err.message });
   }
 };
+
+
 
 export const adminGetCancelledItems = async (req, res) => {
   try {
@@ -267,7 +331,7 @@ export const getReturnRequests = async (req, res) => {
     .populate("items.product")
     .sort({ createdAt: -1 })
     .lean();
-console.log("Return page loaded");
+// console.log("Return page loaded");
 
     return res.render("admin/returnRequests", { orders });
   } catch (err) {
@@ -276,74 +340,196 @@ console.log("Return page loaded");
   }
 };
 
-
 export const approveReturn = async (req, res) => {
+  const session = await mongoose.startSession();
+  session.startTransaction();
+
   try {
     const { orderId, itemId } = req.params;
 
-    const order = await Order.findById(orderId);
-    if (!order) return res.status(404).json({ success: false, message: "Order not found" });
+    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    // STEP 1: LOAD ORDER & ITEM
+    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    const order = await Order.findById(orderId)
+      .populate("user")
+      .session(session);
+
+    if (!order) {
+      await session.abortTransaction();
+      session.endSession();
+      return res.status(404).json({ success: false, message: "Order not found" });
+    }
 
     const item = order.items.id(itemId);
-    if (!item) return res.status(404).json({ success: false, message: "Item not found" });
+    if (!item) {
+      await session.abortTransaction();
+      session.endSession();
+      return res.status(404).json({ success: false, message: "Return item not found" });
+    }
 
     if (item.status !== "return-requested") {
-      return res.status(400).json({ success: false, message: "Invalid return status" });
-    }
-
-    // Update Status
-    item.status = "returned";
-    item.returnApprovedDate = new Date();
-
-    //  Restock Product
-    const product = await Product.findById(item.product);
-    if (product?.variants[item.variantIndex]) {
-      product.variants[item.variantIndex].stock += item.quantity;
-      await product.save();
-    }
-
-    // Refund Money
-    const userId = order.user._id;
-    const refundAmount = item.price * item.quantity;
-
-    let wallet = await Wallet.findOne({ user: userId });
-    if (!wallet) {
-      wallet = await Wallet.create({
-        user: userId,
-        balance: 0,
-        transactions: []
+      await session.abortTransaction();
+      session.endSession();
+      return res.status(400).json({
+        success: false,
+        message: "Item is not in return-requested state"
       });
     }
 
+    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    // STEP 2: RESTORE STOCK
+    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    const product = await Product.findById(item.product).session(session);
+    if (product && product.variants[item.variantIndex]) {
+      product.variants[item.variantIndex].stock += item.quantity;
+      product.markModified(`variants.${item.variantIndex}.stock`);
+      await product.save({ session });
+    }
+
+    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    //  STEP 3: CALCULATE REFUND (SAME AS CANCEL)
+    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    let refundAmount = 0;
+
+    //  OPTION 1: If breakdown was saved (NEW ORDERS)
+    if (item.itemFinalPayable !== undefined && item.itemFinalPayable > 0) {
+      refundAmount = item.itemFinalPayable;
+      
+      // console.log("Using saved breakdown for return refund:", {
+      //   itemSubtotal: item.itemSubtotal,
+      //   couponShare: item.itemCouponShare,
+      //   afterCoupon: item.itemAfterCoupon,
+      //   taxShare: item.itemTaxShare,
+      //   shippingShare: item.itemShippingShare,
+      //   finalPayable: item.itemFinalPayable
+      // });
+    } 
+    //  OPTION 2: OLD ORDERS without breakdown (FALLBACK)
+    else {
+      // console.log(" No breakdown found, using old calculation method");
+      refundAmount = calculateRefundOldWay(order, item, itemId);
+    }
+
+    //  Safety cap: Cannot exceed remaining refundable amount
+    const previousRefunds = order.items.reduce(
+      (sum, i) => sum + (i.refundAmount || 0),
+      0
+    );
+    const refundableRemaining = order.totalAmount - previousRefunds;
+    refundAmount = Math.min(refundAmount, refundableRemaining);
+    refundAmount = Math.max(0, +refundAmount.toFixed(2));
+
+    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    // STEP 4: CREDIT TO WALLET
+    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    const userIdForWallet = order.user._id || order.user;
+    let wallet = await Wallet.findOne({ user: userIdForWallet }).session(session);
+
+    if (!wallet) {
+      wallet = (await Wallet.create([{
+        user: userIdForWallet,
+        balance: 0,
+        transactions: []
+      }], { session }))[0];
+    }
+    // console.log(refundAmount)
     wallet.balance += refundAmount;
     wallet.transactions.push({
       type: "credit",
       amount: refundAmount,
-      description: `Refund for returned item (${item.itemOrderId})`,
-      date: new Date()
+      description: `Return refund for item ${item.itemOrderId ||order.orderId}`,
+      date: new Date(),
+      meta: {
+        itemSubtotal: item.itemSubtotal?.toFixed(2),
+        couponShare: item.itemCouponShare?.toFixed(2),
+        itemAfterCoupon: item.itemAfterCoupon?.toFixed(2),
+        taxShare: item.itemTaxShare?.toFixed(2),
+        shippingShare: item.itemShippingShare?.toFixed(2),
+        refundAmount: refundAmount.toFixed(2)
+      }
     });
 
-    await wallet.save();
-    await order.save();
+    await wallet.save({ session });
 
-    
-    return res.json({ 
+    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    // STEP 5: MARK AS RETURNED
+    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    item.status = "returned";
+    item.returnApprovedDate = new Date();
+    item.refundAmount = refundAmount;
+    item.refundMethod = "wallet";
+    item.refundStatus = "credited";
+    item.refundDate = new Date();
+
+    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    // STEP 6: UPDATE ORDER STATUS
+    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    const allReturned = order.items.every(i =>
+      ["cancelled", "returned"].includes(i.status)
+    );
+
+    if (allReturned) {
+      order.orderStatus = "cancelled";
+      order.paymentStatus = "refunded";
+    } else {
+      const anyRefunded = order.items.some(i => i.refundAmount > 0);
+      if (anyRefunded) {
+        order.paymentStatus = "partial_refunded";
+      }
+    }
+
+    await order.save({ session });
+
+    await session.commitTransaction();
+    session.endSession();
+
+    return res.json({
       success: true,
-      message: "Return approved & refunded",
-      refund: refundAmount
+      message: "Return approved and refund processed successfully",
+      refundAmount: refundAmount,
+      breakdown: {
+        itemSubtotal: item.itemSubtotal,
+        couponDiscount: item.itemCouponShare,
+        itemAfterCoupon: item.itemAfterCoupon,
+        tax: item.itemTaxShare,
+        shipping: item.itemShippingShare,
+        totalRefund: refundAmount
+      }
     });
 
   } catch (err) {
+    await session.abortTransaction();
+    session.endSession();
     console.error("Approve Return Error:", err);
-    return res.status(500).json({ success: false, message: "Server error" });
+    return res.status(500).json({
+      success: false,
+      message: "Server error while approving return",
+      error: err.message
+    });
   }
 };
+
+
 
 
 export const rejectReturn = async (req, res) => {
   try {
     const { orderId, itemId } = req.params;
     const { rejectionReason } = req.body;
+
+
+    if (
+      !rejectionReason ||
+      typeof rejectionReason !== "string" ||
+      rejectionReason.trim().length < 5 ||
+      !/[a-zA-Z]/.test(rejectionReason)
+    ) {
+      return res.status(400).json({
+        success: false,
+        message: "Please provide a valid rejection reason"
+      });
+    }
+   
 
     const order = await Order.findById(orderId);
     if (!order) return res.status(404).json({ success: false, message: "Order not found" });
@@ -352,8 +538,8 @@ export const rejectReturn = async (req, res) => {
     if (!item) return res.status(404).json({ success: false, message: "Item not found" });
 
     item.status = "return-rejected";
-    item.returnRejectReason = rejectionReason || "Return request rejected";
-
+item.returnDetails = rejectionReason;     
+item.returnRejectedDate = new Date(); 
     await order.save();
 
     return res.json({ success: true });

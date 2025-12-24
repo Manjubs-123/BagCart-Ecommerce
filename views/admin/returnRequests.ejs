@@ -7,166 +7,131 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
   <style>
-    .glass-effect {
-      background: rgba(255, 255, 255, 0.95);
-      backdrop-filter: blur(10px);
-      border: 1px solid rgba(255, 255, 255, 0.2);
-    }
-
-    .card-hover {
-      transition: all 0.3s ease;
-      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-    }
-
-    .card-hover:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-    }
-
-    .status-badge {
-      padding: 0.5rem 1rem;
-      border-radius: 9999px;
-      font-size: 0.875rem;
-      font-weight: 600;
-      display: inline-flex;
-      align-items: center;
-      gap: 0.5rem;
-    }
-
-    .status-requested { background-color: #fef3c7; color: #92400e; }
-    .status-approved { background-color: #dcfce7; color: #166534; }
-    .status-rejected { background-color: #fee2e2; color: #991b1b; }
-    .status-refunded { background-color: #dbeafe; color: #1e40af; }
-    .status-completed { background-color: #dcfce7; color: #166534; }
-
-    .btn-success {
-      background: linear-gradient(135deg, #10b981 0%, #047857 100%);
-      transition: all 0.3s ease;
-    }
-
-    .btn-success:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
-    }
-
-    .btn-danger {
-      background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
-      transition: all 0.3s ease;
-    }
-
-    .btn-danger:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
-    }
-
-    .gradient-bg {
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    .glass-effect { background: rgba(255,255,255,0.95); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.2); }
+    .card-hover { transition: all .3s ease; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
+    .card-hover:hover { transform: translateY(-2px); box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1); }
+    .status-badge { padding: .5rem 1rem; border-radius: 9999px; font-size: .875rem; font-weight: 600; display: inline-flex; gap: .5rem; align-items:center; }
+    .status-requested { background:#fef3c7; color:#92400e; }
+    .btn-success { background: linear-gradient(135deg,#10b981 0%,#047857 100%); }
+    .btn-danger { background: linear-gradient(135deg,#ef4444 0%,#dc2626 100%); }
+    
+    @media (max-width: 1023px) {
+      .mobile-overlay {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: rgba(0, 0, 0, 0.5);
+        z-index: 40;
+      }
+      
+      .mobile-overlay.active {
+        display: block;
+      }
+      
+      body.sidebar-open {
+        overflow: hidden;
+      }
     }
   </style>
 </head>
-
 <body class="bg-gradient-to-br from-blue-50 to-indigo-100 min-h-screen">
 
-  <!-- Sidebar -->
+  <!-- Mobile Overlay -->
+  <div class="mobile-overlay lg:hidden" id="mobile-overlay"></div>
+
   <%- include('../partials/sidebar', { currentPage: 'returns' }) %>
 
-  <!-- Main Content -->
-  <main class="ml-64 flex-1 p-8">
-    <!-- Header Section -->
-    <div class="mb-8">
-      <div class="flex justify-between items-center mb-2">
-        <div>
-          <h1 class="text-3xl font-bold text-gray-900">Return Requests Management</h1>
-          <p class="text-gray-600 mt-1">Review and process customer return requests</p>
+  <main class="w-full lg:ml-64 flex-1 p-4 sm:p-6 lg:p-8 transition-all duration-300">
+    <div class="mb-6 lg:mb-8">
+      <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-4 lg:mb-6">
+        <div class="flex-1">
+          <div class="flex items-center justify-between mb-2">
+            <h1 class="text-2xl sm:text-3xl font-bold text-gray-900">Return Requests Management</h1>
+            <button
+              id="mobile-menu-button"
+              class="lg:hidden p-2 rounded-lg bg-gray-100 text-gray-700 hover:bg-gray-200 transition-colors"
+              aria-label="Toggle menu"
+            >
+              <i class="fas fa-bars text-lg"></i>
+            </button>
+          </div>
+          <p class="text-gray-600 text-sm sm:text-base">Review and process customer return requests</p>
         </div>
       </div>
-      
+
       <!-- Stats Cards -->
-      <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-        <div class="bg-white rounded-xl p-6 card-hover border-l-4 border-blue-500">
+      <div class="grid grid-cols-2 xs:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-6 mb-6 lg:mb-8">
+        <div class="bg-white rounded-xl p-4 sm:p-5 lg:p-6 card-hover border-l-4 border-blue-500">
           <div class="flex justify-between items-center">
             <div>
-              <p class="text-sm text-gray-500">Total Returns</p>
-              <p class="text-2xl font-bold text-gray-900">
+              <p class="text-xs sm:text-sm text-gray-500">Total Returns</p>
+              <p class="text-xl sm:text-2xl font-bold text-gray-900">
                 <% 
                   let totalReturns = 0;
-                  orders.forEach(order => {
-                    order.items.forEach(item => {
-                      if (item.status === 'return-requested') totalReturns++;
-                    });
-                  });
+                  orders.forEach(o => o.items.forEach(it => { if (it.status === 'return-requested') totalReturns++; }));
                 %>
                 <%= totalReturns %>
               </p>
             </div>
-            <div class="bg-blue-100 p-3 rounded-full">
-              <i class="fas fa-undo text-blue-600 text-xl"></i>
+            <div class="bg-blue-100 p-2 sm:p-3 rounded-full">
+              <i class="fas fa-undo text-blue-600 text-base sm:text-lg lg:text-xl"></i>
             </div>
           </div>
         </div>
-        
-        <div class="bg-white rounded-xl p-6 card-hover border-l-4 border-yellow-500">
+
+        <div class="bg-white rounded-xl p-4 sm:p-5 lg:p-6 card-hover border-l-4 border-yellow-500">
           <div class="flex justify-between items-center">
             <div>
-              <p class="text-sm text-gray-500">Pending Review</p>
-              <p class="text-2xl font-bold text-gray-900">
+              <p class="text-xs sm:text-sm text-gray-500">Pending Review</p>
+              <p class="text-xl sm:text-2xl font-bold text-gray-900">
                 <% 
                   let pendingReturns = 0;
-                  orders.forEach(order => {
-                    order.items.forEach(item => {
-                      if (item.status === 'return-requested') pendingReturns++;
-                    });
-                  });
+                  orders.forEach(o => o.items.forEach(it => { if (it.status === 'return-requested') pendingReturns++; }));
                 %>
                 <%= pendingReturns %>
               </p>
             </div>
-            <div class="bg-yellow-100 p-3 rounded-full">
-              <i class="fas fa-clock text-yellow-600 text-xl"></i>
+            <div class="bg-yellow-100 p-2 sm:p-3 rounded-full">
+              <i class="fas fa-clock text-yellow-600 text-base sm:text-lg lg:text-xl"></i>
             </div>
           </div>
         </div>
-        
-        <div class="bg-white rounded-xl p-6 card-hover border-l-4 border-green-500">
+
+        <div class="bg-white rounded-xl p-4 sm:p-5 lg:p-6 card-hover border-l-4 border-green-500">
           <div class="flex justify-between items-center">
             <div>
-              <p class="text-sm text-gray-500">Approved</p>
-              <p class="text-2xl font-bold text-gray-900">
+              <p class="text-xs sm:text-sm text-gray-500">Approved</p>
+              <p class="text-xl sm:text-2xl font-bold text-gray-900">
                 <% 
                   let approvedReturns = 0;
-                  orders.forEach(order => {
-                    order.items.forEach(item => {
-                      if (item.status === 'returned') approvedReturns++;
-                    });
-                  });
+                  orders.forEach(o => o.items.forEach(it => { if (it.status === 'returned') approvedReturns++; }));
                 %>
                 <%= approvedReturns %>
               </p>
             </div>
-            <div class="bg-green-100 p-3 rounded-full">
-              <i class="fas fa-check-circle text-green-600 text-xl"></i>
+            <div class="bg-green-100 p-2 sm:p-3 rounded-full">
+              <i class="fas fa-check-circle text-green-600 text-base sm:text-lg lg:text-xl"></i>
             </div>
           </div>
         </div>
-        
-        <div class="bg-white rounded-xl p-6 card-hover border-l-4 border-red-500">
+
+        <div class="bg-white rounded-xl p-4 sm:p-5 lg:p-6 card-hover border-l-4 border-red-500">
           <div class="flex justify-between items-center">
             <div>
-              <p class="text-sm text-gray-500">Rejected</p>
-              <p class="text-2xl font-bold text-gray-900">
+              <p class="text-xs sm:text-sm text-gray-500">Rejected</p>
+              <p class="text-xl sm:text-2xl font-bold text-gray-900">
                 <% 
                   let rejectedReturns = 0;
-                  orders.forEach(order => {
-                    order.items.forEach(item => {
-                      if (item.returnStatus === 'rejected') rejectedReturns++;
-                    });
-                  });
+                  orders.forEach(o => o.items.forEach(it => { if (it.status === 'return-rejected') rejectedReturns++; }));
                 %>
                 <%= rejectedReturns %>
               </p>
             </div>
-            <div class="bg-red-100 p-3 rounded-full">
-              <i class="fas fa-times-circle text-red-600 text-xl"></i>
+            <div class="bg-red-100 p-2 sm:p-3 rounded-full">
+              <i class="fas fa-times-circle text-red-600 text-base sm:text-lg lg:text-xl"></i>
             </div>
           </div>
         </div>
@@ -174,160 +139,237 @@
     </div>
 
     <!-- Return Requests List -->
-    <div class="space-y-6">
-      <% if (orders.length === 0) { %>
-        <div class="bg-white rounded-2xl p-12 text-center card-hover">
+    <div class="space-y-4 sm:space-y-6">
+      <% if (!orders || orders.length === 0) { %>
+        <div class="bg-white rounded-xl lg:rounded-2xl p-8 sm:p-10 lg:p-12 text-center card-hover">
           <div class="flex flex-col items-center justify-center text-gray-500">
-            <i class="fas fa-undo text-6xl mb-4 text-gray-300"></i>
-            <h2 class="text-2xl font-bold text-gray-700 mb-2">No Return Requests</h2>
-            <p class="text-gray-600 mb-6">No pending return requests found at the moment.</p>
+            <i class="fas fa-undo text-4xl sm:text-5xl lg:text-6xl mb-3 sm:mb-4 text-gray-300"></i>
+            <h2 class="text-lg sm:text-xl lg:text-2xl font-bold text-gray-700 mb-2">No Return Requests</h2>
+            <p class="text-gray-600 text-sm sm:text-base mb-4 sm:mb-6">No pending return requests found at the moment.</p>
           </div>
         </div>
       <% } else { %>
 
         <% orders.forEach(order => { %>
           <% order.items.forEach(item => { 
-              if (item.status !== 'return-requested') return;
+               if (item.status !== 'return-requested') return;
           %>
 
-            <!-- Return Request Card -->
-            <div class="bg-white rounded-2xl card-hover overflow-hidden">
-              
-              <!-- Header -->
-              <button 
-                onclick="toggleReturn('<%= item._id %>')" 
-                class="w-full flex justify-between items-center p-6 text-left bg-gradient-to-r from-blue-50 to-indigo-50 hover:from-blue-100 hover:to-indigo-100 transition-all">
-                
-                <div class="flex items-center gap-4">
+<%
+  if (item.status !== 'return-requested') return;
+
+  const hasBreakdown = item.itemFinalPayable && item.itemFinalPayable > 0;
+
+  // Calculate for both new and old orders
+  let itemSubtotal, couponShare, afterCoupon, taxShare, shippingShare, totalRefund;
+
+  if (hasBreakdown) {
+    // NEW ORDERS: Use saved breakdown
+    itemSubtotal = item.itemSubtotal || item.price * item.quantity;
+    couponShare = item.itemCouponShare || 0;
+    afterCoupon = item.itemAfterCoupon || itemSubtotal;
+    taxShare = item.itemTaxShare || 0;
+    shippingShare = item.itemShippingShare || 0;
+    totalRefund = item.itemFinalPayable;
+  } else {
+    // OLD ORDERS: Calculate using the same logic as controller
+    itemSubtotal = item.price * item.quantity;
+    
+    // Calculate coupon share (same logic as controller)
+    couponShare = 0;
+    if (order.coupon && order.coupon.discountAmount > 0) {
+      const baseSubtotal = order.coupon.subtotalBeforeCoupon || order.subtotal;
+      if (baseSubtotal > 0) {
+        couponShare = (itemSubtotal / baseSubtotal) * order.coupon.discountAmount;
+      }
+    }
+    
+    afterCoupon = Math.max(0, itemSubtotal - couponShare);
+    
+    // Calculate tax share (same logic as controller)
+    taxShare = 0;
+    const totalAfterCoupon = order.subtotal - (order.coupon?.discountAmount || 0);
+    if (totalAfterCoupon > 0 && order.tax > 0) {
+      taxShare = (afterCoupon / totalAfterCoupon) * order.tax;
+    }
+    
+    // Calculate shipping share (same logic as controller)
+    shippingShare = 0;
+    const otherItems = order.items.filter(i => i._id.toString() !== item._id.toString());
+    const allOthersDone = otherItems.every(i =>
+      ["cancelled", "returned"].includes(i.status)
+    );
+    
+    if (order.items.length === 1 || allOthersDone) {
+      shippingShare = order.shippingFee;
+    }
+    
+    // Final refund amount (same logic as controller)
+    totalRefund = afterCoupon + taxShare + shippingShare;
+  }
+%>
+
+            <div class="bg-white rounded-xl lg:rounded-2xl card-hover overflow-hidden">
+              <button onclick="toggleReturn('<%= item._id %>')" class="w-full flex flex-col sm:flex-row justify-between items-start sm:items-center p-4 sm:p-6 text-left bg-gradient-to-r from-blue-50 to-indigo-50 hover:from-blue-100 hover:to-indigo-100 transition-all">
+                <div class="flex items-start sm:items-center gap-3 sm:gap-4 w-full sm:w-auto">
                   <div class="flex-shrink-0">
-                    <div class="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
-                      <i class="fas fa-undo text-purple-600"></i>
+                    <div class="w-10 h-10 sm:w-12 sm:h-12 bg-purple-100 rounded-lg flex items-center justify-center">
+                      <i class="fas fa-undo text-purple-600 text-sm sm:text-base"></i>
                     </div>
                   </div>
-                  <div>
-                    <h2 class="text-xl font-bold text-gray-900">
-                      Return Request - Order #<%= order.orderId || order._id %>
-                    </h2>
-                    <div class="flex items-center gap-4 mt-2">
-                      <span class="status-badge status-requested">
-                        <i class="fas fa-clock"></i>
-                        Pending Review
-                      </span>
-                      <p class="text-sm text-gray-600">
-                        <i class="far fa-calendar mr-1"></i>
-                        <%= new Date(item.returnRequestedDate).toLocaleString() %>
-                      </p>
+                  <div class="flex-1 min-w-0">
+                    <h2 class="text-base sm:text-lg lg:text-xl font-bold text-gray-900 truncate">Return Request - Order #<%= order.orderId || order._id %></h2>
+                    <div class="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 mt-1 sm:mt-2">
+                      <span class="status-badge status-requested text-xs sm:text-sm"><i class="fas fa-clock"></i> Pending Review</span>
+                      <p class="text-xs text-gray-600"><i class="far fa-calendar mr-1"></i> <%= item.returnRequestedDate ? new Date(item.returnRequestedDate).toLocaleDateString() : '—' %></p>
                     </div>
                   </div>
                 </div>
 
-                <div class="flex items-center gap-3">
-                  <span class="text-lg font-bold text-green-600">
-                    Refund: ₹<%= (item.price * item.quantity).toFixed(2) %>
-                  </span>
-                  <i id="icon-<%= item._id %>" class="fas fa-chevron-down text-gray-600 text-xl transition-transform"></i>
+                <div class="flex items-center justify-between sm:justify-end gap-3 w-full sm:w-auto mt-3 sm:mt-0">
+                  <div class="text-right">
+                    <p class="text-lg font-bold text-green-600">
+                      Wallet Credit: ₹<%= totalRefund.toFixed(2) %>
+                    </p>
+                    <% if (couponShare > 0) { %>
+                      <p class="text-xs text-red-500 hidden sm:block">Coupon Deduction: -₹<%= couponShare.toFixed(2) %></p>
+                    <% } %>
+                  </div>
+                  <i id="icon-<%= item._id %>" class="fas fa-chevron-down text-gray-600 text-lg sm:text-xl transition-transform"></i>
                 </div>
               </button>
 
-              <!-- Collapsible Details -->
               <div id="details-<%= item._id %>" class="hidden border-t border-gray-200">
-                <div class="p-6 bg-gray-50">
-                  <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
-                    
-                    <!-- Product Information -->
-                    <div class="bg-white rounded-xl p-6 card-hover">
-                      <h3 class="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
-                        <i class="fas fa-box text-blue-600"></i>
-                        Product Details
-                      </h3>
-                      <div class="flex items-start gap-4">
-                        <img src="<%= item.image || '/images/no-image.jpg' %>" 
-                             alt="<%= item.product.name %>"
-                             class="w-20 h-20 object-cover rounded-lg border border-gray-200">
-                        <div>
-                          <h4 class="font-semibold text-gray-900 mb-2"><%= item.product.name %></h4>
-                          <div class="space-y-1 text-sm text-gray-600">
-                            <p><strong>Color:</strong> <%= item.color %></p>
+                <div class="p-4 sm:p-6 bg-gray-50">
+                  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5 lg:gap-6 mb-4 sm:mb-6">
+                    <div class="bg-white rounded-xl p-4 sm:p-5 lg:p-6 card-hover">
+                      <h3 class="text-base sm:text-lg font-bold text-gray-900 mb-3 sm:mb-4 flex items-center gap-2"><i class="fas fa-box text-blue-600"></i> Product Details</h3>
+                      <div class="flex items-start gap-3 sm:gap-4">
+                        <img src="<%= item.image || '/images/no-image.jpg' %>" alt="<%= item.product?.name || 'Product' %>" class="w-16 h-16 sm:w-20 sm:h-20 object-cover rounded-lg border border-gray-200">
+                        <div class="flex-1 min-w-0">
+                          <h4 class="font-semibold text-gray-900 text-sm sm:text-base mb-1 sm:mb-2 truncate"><%= item.product?.name || 'Product' %></h4>
+                          <div class="space-y-1 text-xs sm:text-sm text-gray-600">
+                            <p><strong>Color:</strong> <%= item.color || '—' %></p>
                             <p><strong>Quantity:</strong> <%= item.quantity %></p>
                             <p><strong>Unit Price:</strong> ₹<%= item.price %></p>
-                            <p><strong>Item Total:</strong> ₹<%= (item.price * item.quantity).toFixed(2) %></p>
+                            <p><strong>Item Subtotal:</strong> ₹<%= itemSubtotal.toFixed(2) %></p>
                           </div>
                         </div>
                       </div>
                     </div>
 
-                    <!-- Return Reason -->
-                    <div class="bg-white rounded-xl p-6 card-hover">
-                      <h3 class="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
-                        <i class="fas fa-clipboard-list text-orange-600"></i>
-                        Return Reason
-                      </h3>
+                    <div class="bg-white rounded-xl p-4 sm:p-5 lg:p-6 card-hover">
+                      <h3 class="text-base sm:text-lg font-bold text-gray-900 mb-3 sm:mb-4 flex items-center gap-2"><i class="fas fa-clipboard-list text-orange-600"></i> Return Reason</h3>
                       <div class="space-y-3">
                         <div>
-                          <p class="font-semibold text-gray-800 mb-1">Reason</p>
-                          <p class="text-gray-700 bg-gray-50 p-3 rounded-lg"><%= item.returnReason %></p>
+                          <p class="font-semibold text-gray-800 text-sm sm:text-base mb-1">Reason</p>
+                          <p class="text-gray-700 bg-gray-50 p-3 rounded-lg text-sm"><%= item.returnReason || '—' %></p>
                         </div>
                         <% if (item.returnDetails) { %>
                           <div>
-                            <p class="font-semibold text-gray-800 mb-1">Additional Details</p>
-                            <p class="text-gray-600 text-sm bg-gray-50 p-3 rounded-lg"><%= item.returnDetails %></p>
+                            <p class="font-semibold text-gray-800 text-sm sm:text-base mb-1">Additional Details</p>
+                            <p class="text-gray-600 text-xs sm:text-sm bg-gray-50 p-3 rounded-lg"><%= item.returnDetails %></p>
                           </div>
                         <% } %>
                       </div>
                     </div>
 
-                    <!-- Customer & Payment -->
-                    <div class="bg-white rounded-xl p-6 card-hover">
-                      <h3 class="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
-                        <i class="fas fa-user text-green-600"></i>
-                        Customer & Payment
-                      </h3>
-                      <div class="space-y-4">
+                    <div class="bg-white rounded-xl p-4 sm:p-5 lg:p-6 card-hover">
+                      <h3 class="text-base sm:text-lg font-bold text-gray-900 mb-3 sm:mb-4 flex items-center gap-2"><i class="fas fa-wallet text-green-600"></i> Refund Calculation</h3>
+                      <div class="space-y-3 sm:space-y-4">
                         <div>
-                          <p class="font-semibold text-gray-800 mb-1">Customer Information</p>
-                          <p class="text-gray-700"><%= order.user.name %></p>
-                          <p class="text-gray-600 text-sm"><%= order.user.email %></p>
-                        </div>
-                        
-                        <div>
-                          <p class="font-semibold text-gray-800 mb-1">Shipping Address</p>
-                          <p class="text-gray-600 text-sm">
-                            <%= order.shippingAddress.fullName %><br>
-                            <%= order.shippingAddress.addressLine1 %><br>
-                            <% if (order.shippingAddress.addressLine2) { %>
-                              <%= order.shippingAddress.addressLine2 %><br>
-                            <% } %>
-                            <%= order.shippingAddress.city %>, <%= order.shippingAddress.state %> - <%= order.shippingAddress.pincode %><br>
-                            <strong>Phone:</strong> <%= order.shippingAddress.phone %>
-                          </p>
+                          <p class="font-semibold text-gray-800 text-sm sm:text-base mb-1">Customer Information</p>
+                          <p class="text-gray-700 text-sm sm:text-base"><%= order.user?.name || 'User' %></p>
+                          <p class="text-gray-600 text-xs sm:text-sm"><%= order.user?.email || '—' %></p>
                         </div>
 
-                        <div class="bg-green-50 border border-green-200 rounded-lg p-4">
-                          <p class="font-bold text-green-800 text-lg text-center">
-                            Refund Amount: ₹<%= (item.price * item.quantity).toFixed(2) %>
-                          </p>
-                          <p class="text-green-700 text-sm text-center mt-1">
-                            Will be credited to user's wallet after approval
+                        <div class="bg-gradient-to-br from-green-50 to-emerald-50 border border-green-200 rounded-lg p-3 sm:p-4">
+                          <p class="font-bold text-green-800 text-base sm:text-lg text-center mb-3">Refund to Wallet</p>
+                          <div class="space-y-2 text-sm">
+
+                            <% if (!hasBreakdown) { %>
+                              <div class="p-2 bg-yellow-50 border border-yellow-300 rounded text-xs text-yellow-800 text-center mb-2">
+                                This order was placed before detailed refund tracking was enabled.<br>
+                                <span class="font-semibold">Refund calculated based on order totals.</span>
+                              </div>
+                            <% } %>
+
+                            <div class="flex justify-between">
+                              <span>Item Subtotal:</span>
+                              <span>₹<%= itemSubtotal.toFixed(2) %></span>
+                            </div>
+
+                            <% if (couponShare > 0) { %>
+                              <div class="flex justify-between text-red-600">
+                                <span>Coupon Deduction:</span>
+                                <span>-₹<%= couponShare.toFixed(2) %></span>
+                              </div>
+                              
+                              <div class="flex justify-between">
+                                <span>After Coupon:</span>
+                                <span>₹<%= afterCoupon.toFixed(2) %></span>
+                              </div>
+                            <% } %>
+
+                            <% if (taxShare > 0) { %>
+                              <div class="flex justify-between">
+                                <span>Tax Share:</span>
+                                <span>+₹<%= taxShare.toFixed(2) %></span>
+                              </div>
+                            <% } %>
+
+                            <% if (shippingShare > 0) { %>
+                              <div class="flex justify-between">
+                                <span>Shipping Refund:</span>
+                                <span>+₹<%= shippingShare.toFixed(2) %></span>
+                              </div>
+                            <% } %>
+
+                            <div class="flex justify-between border-t pt-2 font-bold text-green-700">
+                              <span>Total to Wallet:</span>
+                              <span class="text-lg">₹<%= totalRefund.toFixed(2) %></span>
+                            </div>
+                          </div>
+
+                          <% if (order.coupon && order.coupon.code) { %>
+                            <div class="mt-3 p-2 bg-yellow-50 border border-yellow-200 rounded text-center">
+                              <p class="text-xs text-yellow-700">
+                                <i class="fas fa-tag mr-1"></i>
+                                Coupon Applied: <strong><%= order.coupon.code %></strong>
+                                (<%= typeof order.coupon.discountValue === 'number' ? order.coupon.discountValue + '%' : (order.coupon.discountValue || '') %> off)
+                              </p>
+                            </div>
+                          <% } %>
+
+                          <p class="text-green-700 text-xs sm:text-sm text-center mt-3">
+                            <i class="fas fa-wallet mr-1"></i> 
+                            ₹<%= totalRefund.toFixed(2) %> will be credited to user's wallet
                           </p>
                         </div>
                       </div>
                     </div>
                   </div>
 
-                  <!-- Action Buttons -->
-                  <div class="flex gap-4 justify-center pt-4 border-t border-gray-200">
+                  <div class="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center pt-4 border-t border-gray-200">
                     <button 
-                      onclick="approveReturn('<%= order._id %>', '<%= item._id %>', '<%= item.product.name %>', '<%= (item.price * item.quantity).toFixed(2) %>')"
-                      class="btn-success text-white px-8 py-3 rounded-xl font-semibold flex items-center gap-3">
-                      <i class="fas fa-check-circle"></i>
-                      Approve Return & Refund
+                      onclick="approveReturn(
+                        '<%= order._id %>',
+                        '<%= item._id %>',
+                        '<%= (item.product?.name || "").replace(/'/g, "\\'") %>',
+                        '<%= totalRefund.toFixed(2) %>'
+                      )"
+                      class="btn-success text-white px-4 sm:px-6 lg:px-8 py-2.5 sm:py-3 rounded-xl font-semibold flex items-center justify-center gap-2 sm:gap-3 text-sm sm:text-base order-2 sm:order-1">
+                      <i class="fas fa-check-circle"></i> Approve Return & Credit Wallet
                     </button>
 
                     <button 
-                      onclick="rejectReturn('<%= order._id %>', '<%= item._id %>', '<%= item.product.name %>')"
-                      class="btn-danger text-white px-8 py-3 rounded-xl font-semibold flex items-center gap-3">
-                      <i class="fas fa-times-circle"></i>
-                      Reject Return
+                      onclick="rejectReturn(
+                        '<%= order._id %>', 
+                        '<%= item._id %>', 
+                        '<%= (item.product?.name || "").replace(/'/g, '\\\'') %>'
+                      )" 
+                      class="btn-danger text-white px-4 sm:px-6 lg:px-8 py-2.5 sm:py-3 rounded-xl font-semibold flex items-center justify-center gap-2 sm:gap-3 text-sm sm:text-base order-1 sm:order-2">
+                      <i class="fas fa-times-circle"></i> Reject Return
                     </button>
                   </div>
                 </div>
@@ -340,85 +382,115 @@
     </div>
   </main>
 
+  <!-- Sidebar Toggle Script -->
   <script>
-    // Toggle return details
+    document.addEventListener('DOMContentLoaded', function() {
+      const mobileMenuButton = document.getElementById('mobile-menu-button');
+      const sidebar = document.getElementById('admin-sidebar');
+      const overlay = document.getElementById('mobile-overlay');
+      const body = document.body;
+
+      function toggleSidebar() {
+        sidebar.classList.toggle('-translate-x-full');
+        overlay.classList.toggle('active');
+        body.classList.toggle('sidebar-open');
+      }
+
+      function closeSidebar() {
+        sidebar.classList.add('-translate-x-full');
+        overlay.classList.remove('active');
+        body.classList.remove('sidebar-open');
+      }
+
+      if (mobileMenuButton && sidebar && overlay) {
+        mobileMenuButton.addEventListener('click', toggleSidebar);
+        overlay.addEventListener('click', closeSidebar);
+      }
+
+      document.querySelectorAll('#admin-sidebar a').forEach(link => {
+        link.addEventListener('click', () => {
+          if (window.innerWidth < 1024) {
+            closeSidebar();
+          }
+        });
+      });
+
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && window.innerWidth < 1024) {
+          closeSidebar();
+        }
+      });
+    });
+  </script>
+
+  <script>
     function toggleReturn(id) {
       const box = document.getElementById("details-" + id);
       const icon = document.getElementById("icon-" + id);
-
       box.classList.toggle("hidden");
-
-      if (box.classList.contains("hidden")) {
-        icon.classList.remove("fa-chevron-up");
-        icon.classList.add("fa-chevron-down");
-      } else {
-        icon.classList.remove("fa-chevron-down");
-        icon.classList.add("fa-chevron-up");
-      }
+      if (box.classList.contains("hidden")) { icon.classList.remove("fa-chevron-up"); icon.classList.add("fa-chevron-down"); }
+      else { icon.classList.remove("fa-chevron-down"); icon.classList.add("fa-chevron-up"); }
     }
 
-    // Approve return with SweetAlert
     function approveReturn(orderId, itemId, productName, refundAmount) {
       Swal.fire({
         title: 'Approve Return Request?',
         html: `
           <div class="text-left">
-            <p class="mb-3">Are you sure you want to approve the return request for:</p>
-            <p class="font-bold text-gray-800">${productName}</p>
-            <p class="text-green-600 font-semibold mt-2">Refund Amount: ₹${refundAmount}</p>
-            <p class="text-sm text-gray-600 mt-2">This amount will be credited to the user's wallet.</p>
+            <p class="mb-3 text-sm sm:text-base">
+              Are you sure you want to approve the return request for:
+            </p>
+
+            <p class="font-bold text-gray-800 mb-4">${productName}</p>
+
+            <div class="bg-gray-50 p-4 rounded-lg mb-4 text-center">
+              <p class="text-sm text-gray-600 mb-1">Amount to Credit to Wallet</p>
+              <p class="text-2xl font-bold text-green-700">
+                ₹${parseFloat(refundAmount).toFixed(2)}
+              </p>
+            </div>
+
+            <p class="text-xs sm:text-sm text-gray-600">
+              This exact amount (including tax and shipping share) will be credited to the user's wallet.
+            </p>
           </div>
         `,
         icon: 'question',
         showCancelButton: true,
         confirmButtonColor: '#10b981',
         cancelButtonColor: '#6b7280',
-        confirmButtonText: 'Yes, Approve & Refund!',
-        cancelButtonText: 'Cancel',
+        confirmButtonText: 'Yes, Approve & Credit Wallet!',
         showLoaderOnConfirm: true,
         preConfirm: async () => {
-          try {
-            const response = await fetch(`/admin/orders/returns/${orderId}/item/${itemId}/approve`, {
+          const res = await fetch(
+            `/admin/orders/returns/${orderId}/item/${itemId}/approve`,
+            {
               method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-              }
-            });
-            
-            if (!response.ok) {
-              throw new Error('Network response was not ok');
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({})
             }
-            
-            return await response.json();
-          } catch (error) {
-            Swal.showValidationMessage(`Request failed: ${error}`);
+          );
+
+          if (!res.ok) {
+            const err = await res.json();
+            throw new Error(err.message || 'Refund failed');
           }
+
+          return res.json();
         }
-      }).then((result) => {
-        if (result.isConfirmed) {
-          Swal.fire({
-            title: 'Return Approved!',
-            text: 'Return request has been approved and refund processed successfully.',
-            icon: 'success',
-            confirmButtonColor: '#10b981',
-            timer: 2000,
-            showConfirmButton: false
-          }).then(() => {
-            location.reload();
-          });
-        }
+      }).then(result => {
+        if (result.isConfirmed) location.reload();
       });
     }
 
-    // Reject return with SweetAlert
     function rejectReturn(orderId, itemId, productName) {
       Swal.fire({
         title: 'Reject Return Request?',
         html: `
           <div class="text-left">
-            <p class="mb-3">Are you sure you want to reject the return request for:</p>
+            <p class="mb-3 text-sm sm:text-base">Are you sure you want to reject the return request for:</p>
             <p class="font-bold text-gray-800">${productName}</p>
-            <p class="text-red-600 font-semibold mt-2">This action cannot be undone.</p>
+            <p class="text-red-600 font-semibold mt-2 text-sm sm:text-base">This action cannot be undone.</p>
           </div>
         `,
         icon: 'warning',
@@ -426,9 +498,7 @@
         inputLabel: 'Rejection Reason',
         inputPlaceholder: 'Enter reason for rejection...',
         inputValidator: (value) => {
-          if (!value) {
-            return 'Please provide a rejection reason!';
-          }
+          if (!value) return 'Please provide a rejection reason!';
         },
         showCancelButton: true,
         confirmButtonColor: '#ef4444',
@@ -439,20 +509,21 @@
         preConfirm: async (rejectionReason) => {
           try {
             const response = await fetch(`/admin/orders/returns/${orderId}/item/${itemId}/reject`, {
-              method: 'POST',
+              method: "POST",
               headers: {
-                'Content-Type': 'application/json',
+                "Content-Type": "application/json"
               },
               body: JSON.stringify({ rejectionReason })
             });
-            
+
             if (!response.ok) {
-              throw new Error('Network response was not ok');
+              const err = await response.json().catch(() => ({}));
+              throw new Error(err.message || "Failed to reject return");
             }
-            
+
             return await response.json();
           } catch (error) {
-            Swal.showValidationMessage(`Request failed: ${error}`);
+            Swal.showValidationMessage(`Request failed: ${error.message}`);
           }
         }
       }).then((result) => {
@@ -461,7 +532,6 @@
             title: 'Return Rejected!',
             text: 'Return request has been rejected successfully.',
             icon: 'success',
-            confirmButtonColor: '#ef4444',
             timer: 2000,
             showConfirmButton: false
           }).then(() => {
@@ -471,7 +541,6 @@
       });
     }
 
-    // Show success message if redirected with success parameter
     const urlParams = new URLSearchParams(window.location.search);
     if (urlParams.get('success') === 'true') {
       Swal.fire({

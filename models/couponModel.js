@@ -10,7 +10,7 @@ const couponSchema = new mongoose.Schema(
       uppercase: true,
     },
 
-    // only percentage
+  
     discountType: {
       type: String,
       enum: ["PERCENTAGE"],
@@ -18,7 +18,7 @@ const couponSchema = new mongoose.Schema(
       required: true,
     },
 
-    // 1–100% percentage
+
     discountValue: {
       type: Number,
       required: true,
@@ -69,6 +69,12 @@ const couponSchema = new mongoose.Schema(
       type: Number,
       default: 0,
     },
+     usedByUsers: [
+    {
+      userId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
+      count: { type: Number, default: 0 } // how many times user can use this
+    }
+  ],
 
     isActive: {
       type: Boolean,

@@ -1,17 +1,19 @@
 import Coupon from "../../models/couponModel.js";
-import Product from "../../models/productModel.js";
-import Category from "../../models/category.js";
-// GET: Show create coupon form
+
+ const escapeRegex = (text = "") =>
+  text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
 export const getCouponListPage = async (req, res) => {
   try {
-    const { q="", status="", type="", sort="", page=1, limit=10 } = req.query;
+    const { q = "", status = "", type = "", sort = "", page = 1, limit = 10 } = req.query;
     const now = new Date();
+
+    const safeQ = escapeRegex(q.trim());
 
     let query = {};
 
     if (q.trim()) {
-      query.code = { $regex: q.trim(), $options: "i" };
+      query.code = { $regex: safeQ, $options: "i" };
     }
 
     if (type === "percentage") query.discountType = "PERCENTAGE";
@@ -27,66 +29,45 @@ export const getCouponListPage = async (req, res) => {
     if (sort === "discountHigh") sortQuery.discountValue = -1;
     if (sort === "expiryNear") sortQuery.expiryDate = 1;
 
+    const totalCoupons = await Coupon.countDocuments(query);
+
     const coupons = await Coupon.find(query)
       .sort(sortQuery)
-      .skip((page-1)*limit)
-      .limit(limit)
+      .skip((page - 1) * Number(limit))
+      .limit(Number(limit))
       .lean();
+
+    const totalUsageAgg = await Coupon.aggregate([
+      { $group: { _id: null, total: { $sum: "$usedCount" } } }
+    ]);
 
     res.render("admin/couponList", {
       coupons,
-      totalCoupons: await Coupon.countDocuments(query),
-      activeCoupons: await Coupon.countDocuments({ ...query, isActive:true }),
-      expiredCoupons: await Coupon.countDocuments({ ...query, expiryDate:{ $lt:now }}),
-      totalUsage: coupons.reduce((a,c)=>a+(c.usedCount||0),0),
-      q, statusFilter:status, typeFilter:type, sort,
-      page:Number(page), limit:Number(limit), pages:1
+      totalCoupons,
+      activeCoupons: await Coupon.countDocuments({ isActive: true }),
+      expiredCoupons: await Coupon.countDocuments({ expiryDate: { $lt: now } }),
+      totalUsage: totalUsageAgg[0]?.total || 0,
+      q,
+      statusFilter: status,
+      typeFilter: type,
+      sort,
+      page: Number(page),
+      limit: Number(limit),
+      pages: Math.ceil(totalCoupons / Number(limit))
     });
 
   } catch (err) {
-    console.error("🔥 LIST PAGE ERROR:", err.message);
+    console.error("LIST PAGE ERROR:", err.message);
     res.status(500).send("Failed loading coupons");
   }
 };
 
 
-
-// Form page opens
-// ✅ Load form + send categories to EJS so it doesn't crash
-// export const getCreateCouponPage = async (req, res) => {
-//   try {
-//     const categories = await Category.find({}).lean(); // ✔ fetch categories from DB
-
-//    res.render("admin/couponCreate", {
-//   categories,
-//   error: null,
-//   success: null,
-//   oldInput: {},
-//   minOrderAmount:  minOrderAmount || 1,
-//   minDiscount: 5,
-//   maxDiscount: 90
-// });
-
-//   } catch (err) {
-//     res.render("admin/couponCreate", {
-//   categories: [],
-//   error: "Failed to load categories",
-//   success: null,
-//   oldInput: {},
-//   minOrderAmount:  minOrderAmount || 1,
-//   minDiscount: 5,
-//   maxDiscount: 90
-// });
-
-//   }
-// };
-
 export const getCreateCouponPage = async (req, res) => {
   try {
-    // Generate default dates for the form
     const now = new Date();
-    const defaultFrom = new Date(now.getTime() + 5 * 60 * 1000); // 5 minutes from now
-    const defaultTo = new Date(now.getTime() + 24 * 60 * 60 * 1000); // 24 hours from now
+    const defaultFrom = new Date(now.getTime() + 5 * 60 * 1000); 
+    const defaultTo = new Date(now.getTime() + 24 * 60 * 60 * 1000); 
 
     res.render("admin/couponCreate", {
       error: null,
@@ -130,7 +111,6 @@ export const createCoupon = async (req, res) => {
     const now = new Date();
     const errors = [];
 
-    // Normalize and convert
     code = code?.trim().toUpperCase();
     discountValue = Number(discountValue);
     maxDiscountAmount = Number(maxDiscountAmount || 0);
@@ -142,29 +122,24 @@ export const createCoupon = async (req, res) => {
     const validFromDate = validFrom ? new Date(validFrom) : null;
     const validToDate = validTo ? new Date(validTo) : null;
 
-    // Required field checks
     if (!code || code.length < 3) errors.push("Coupon Code must be at least 3 characters!");
     if (isNaN(discountValue)) errors.push("Discount percentage is required!");
     if (isNaN(maxDiscountAmount)) errors.push("Maximum Discount Amount is required!");
     if (!validFromDate) errors.push("Valid From is required!");
     if (!validToDate) errors.push("Valid To is required!");
 
-    // Discount range 5–90
     if (discountValue < 5 || discountValue > 90) {
       errors.push("Discount must be between 5–90%");
     }
 
-    // maxDiscountAmount < minOrderAmount
     if (maxDiscountAmount >= minOrderAmount) {
       errors.push("Max Discount Amount must be LESS than Min Order Amount");
     }
 
-    // maxUsagePerUser ≤ maxUsage
     if (maxUsage && maxUsagePerUser && maxUsagePerUser > maxUsage) {
       errors.push("Max usage per user cannot exceed total max usage");
     }
 
-    // Date validations
     const GRACE_MINUTES = 1;
     const safeNow = new Date(now.getTime() - GRACE_MINUTES * 60 * 1000);
     
@@ -172,13 +147,11 @@ export const createCoupon = async (req, res) => {
     if (validToDate <= validFromDate) errors.push("Valid To must be later than Valid From!");
     if (validToDate <= safeNow) errors.push("Valid To must be in the future!");
 
-    // Unique code check
     if (!errors.length) {
       const existing = await Coupon.findOne({ code });
       if (existing) errors.push(`Coupon "${code}" already exists!`);
     }
 
-    // If errors → return page
     if (errors.length > 0) {
       return res.render("admin/couponCreate", {
         error: errors,
@@ -192,7 +165,6 @@ export const createCoupon = async (req, res) => {
       });
     }
 
-    // Save to DB
     await Coupon.create({
       code,
       discountType: "PERCENTAGE",
@@ -234,7 +206,7 @@ export const getEditCouponPage = async (req, res) => {
     res.render("admin/couponEdit", { coupon });
 
   } catch (err) {
-    console.error("🔥 EDIT PAGE LOAD ERROR:", err.message);
+    console.error("EDIT PAGE LOAD ERROR:", err.message);
     res.status(500).send("Failed to load edit page");
   }
 };
@@ -256,9 +228,11 @@ export const updateCoupon = async (req, res) => {
       isActive
     } = req.body;
 
+    // console.log(" UPDATE PAYLOAD:", req.body); 
+
     const errors = [];
 
-    // Format fields
+    // Normalize and convert
     code = code?.trim().toUpperCase();
     discountValue = Number(discountValue);
     maxDiscountAmount = Number(maxDiscountAmount);
@@ -269,64 +243,103 @@ export const updateCoupon = async (req, res) => {
 
     const validFromDate = new Date(validFrom);
     const validToDate = new Date(validTo);
-    const expiryDateObj = validToDate; // ✅ EXPIRY always same as validTo
 
-    // ---- Date edge case rules ----
+    console.log(" DATES - From:", validFromDate, "To:", validToDate); 
 
-    if (!validFrom) 
-      errors.push("Valid From is required!");
+  
+    if (!code || code.length < 3) errors.push("Coupon Code must be at least 3 characters!");
+    if (isNaN(discountValue)) errors.push("Discount percentage is required!");
+    if (isNaN(maxDiscountAmount)) errors.push("Maximum Discount Amount is required!");
+    if (!validFrom) errors.push("Valid From is required!");
+    if (!validTo) errors.push("Valid To is required!");
 
-    if (!validTo) 
-      errors.push("Valid To is required!");
-
-    if (validFromDate < now)
-      errors.push("Valid From cannot be in past!");
-
-    if (validToDate <= now)
-      errors.push("Valid To / Expiry must be in future!");
-
-    if (validToDate <= validFromDate)
-      errors.push("Valid To must be later than Valid From!");
-
-    // Discount percentage limits
-    if (isNaN(discountValue) || discountValue < 1 || discountValue > 100)
-      errors.push("Discount % must be 1–100!");
-
-    if (isNaN(maxDiscountAmount) || maxDiscountAmount < 1)
-      errors.push("Max Discount must be at least ₹1!");
-
-    // Unique coupon code check excluding the current one
-    const existing = await Coupon.findOne({ code, _id: { $ne: id } });
-    if (existing)
-      errors.push(`Coupon "${code}" already exists!`);
-
-    // ❌ If any error → block save
-    if (errors.length > 0) {
-      console.error("🔥 VALIDATION FAILED:", errors);
-      return res.status(400).json({ success:false, message: errors });
+    if (discountValue < 5 || discountValue > 90) {
+      errors.push("Discount must be between 5–90%");
     }
 
-    // ✅ UPDATE to DB
-    await Coupon.findByIdAndUpdate(id, {
+    // maxDiscountAmount < minOrderAmount
+    if (maxDiscountAmount >= minOrderAmount) {
+      errors.push("Max Discount Amount must be LESS than Min Order Amount");
+    }
+
+    // maxUsagePerUser ≤ maxUsage
+    if (maxUsage && maxUsagePerUser && maxUsagePerUser > maxUsage) {
+      errors.push("Max usage per user cannot exceed total max usage");
+    }
+
+    // Date validations
+    const GRACE_MINUTES = 1;
+    const safeNow = new Date(now.getTime() - GRACE_MINUTES * 60 * 1000);
+    
+    if (validFromDate < safeNow) errors.push("Valid From cannot be in the past!");
+    if (validToDate <= validFromDate) errors.push("Valid To must be later than Valid From!");
+    if (validToDate <= safeNow) errors.push("Valid To must be in the future!");
+
+    // Unique coupon code check excluding the current one
+    if (errors.length === 0) {
+      const existing = await Coupon.findOne({ code, _id: { $ne: id } });
+      if (existing) errors.push(`Coupon "${code}" already exists!`);
+    }
+
+    if (errors.length > 0) {
+      console.error(" VALIDATION FAILED:", errors);
+      return res.status(400).json({ success: false, message: errors });
+    }
+
+    const updateData = {
       code,
       discountValue,
-      maxDiscountAmount: maxDiscountAmount,
+      maxDiscountAmount,
       minOrderAmount,
       validFrom: validFromDate,
       validTo: validToDate,
-      expiryDate: expiryDateObj,
-      maxUsage,
-      maxUsagePerUser,
+      expiryDate: validToDate,
+      maxUsage: maxUsage || null,
+      maxUsagePerUser: maxUsagePerUser || null,
       isActive
-    });
+    };
 
-    console.log("✅ COUPON UPDATED IN DB ✅🔥");
-    return res.json({ success:true, message:["Coupon updated successfully!"] });
+    // console.log(" SAVING TO DB:", updateData); 
+
+    const updatedCoupon = await Coupon.findByIdAndUpdate(
+      id, 
+      updateData,
+      { new: true, runValidators: true }
+    );
+
+    if (!updatedCoupon) {
+      return res.status(404).json({ success: false, message: ["Coupon not found!"] });
+    }
+
+    // console.log(" COUPON UPDATED IN DB:", updatedCoupon);
+    return res.json({ success: true, message: ["Coupon updated successfully!"] });
 
   } catch (err) {
-    console.error("🔥 SERVER ERROR:", err.message);
-    return res.status(500).json({ success:false, message:["Server error while updating coupon!"] });
+    console.error(" SERVER ERROR:", err.message);
+    return res.status(500).json({ success: false, message: ["Server error while updating coupon!"] });
   }
 };
 
+export const toggleCouponStatus = async (req, res) => {
+  try {
+    const { id } = req.params;
 
+    const coupon = await Coupon.findById(id);
+    if (!coupon) {
+      return res.status(404).json({ success: false, message: "Coupon not found!" });
+    }
+
+    coupon.isActive = !coupon.isActive;
+    await coupon.save();
+
+    return res.json({
+      success: true,
+      message: `Coupon ${coupon.code} is now ${coupon.isActive ? "Active " : "Inactive "}`,
+      isActive: coupon.isActive
+    });
+
+  } catch (err) {
+    console.error(" TOGGLE COUPON ERROR:", err.message);
+    return res.status(500).json({ success: false, message: "Server error while toggling coupon" });
+  }
+};

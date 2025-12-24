@@ -78,7 +78,7 @@
     <!-- Main Content -->
     <div class="container mx-auto px-4 py-8">
         <div class="flex flex-col lg:flex-row gap-8">
-            <!-- Sidebar Navigation - Updated to match profile.ejs -->
+            <!-- Sidebar Navigation  -->
             <%- include('../partials/userProfileSiderbar', {
     activePage: 'addresses',
     user,
@@ -86,15 +86,15 @@
     wishlistCount,
     unreadNotifications
 }) %>
-<div id="cropperModal" class="fixed inset-0 bg-black/50 hidden items-center justify-center">
-  <div class="bg-white p-5 rounded-xl">
-      <img id="cropImage" class="max-w-[400px] max-h-[400px]" />
-      <div class="flex justify-end gap-4 mt-4">
-          <button onclick="cancelCrop()" class="bg-gray-500 text-white px-4 py-2 rounded">Cancel</button>
-          <button onclick="applyCrop()" class="bg-blue-600 text-white px-4 py-2 rounded">Crop & Save</button>
-      </div>
-  </div>
-</div>
+        <div id="cropperModal" class="fixed inset-0 bg-black/50 hidden items-center justify-center">
+        <div class="bg-white p-5 rounded-xl">
+            <img id="cropImage" class="max-w-[400px] max-h-[400px]" />
+            <div class="flex justify-end gap-4 mt-4">
+                <button onclick="cancelCrop()" class="bg-gray-500 text-white px-4 py-2 rounded">Cancel</button>
+                <button onclick="applyCrop()" class="bg-blue-600 text-white px-4 py-2 rounded">Crop & Save</button>
+            </div>
+        </div>
+        </div>
 
             <!-- Main Content Area -->
             <div class="lg:w-3/4">
@@ -125,22 +125,18 @@
                         </button>
                     </div>
 
-                    <!-- Address List -->
-                    <div id="addressList" class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <% if (addresses && addresses.length > 0) { %>
-                            <% addresses.forEach(address => { %>
-                                <!-- <div class="address-card border border-gray-200 rounded-xl p-6 relative <%= address.isDefault ? 'selected' : '' %>"> -->
-                                   <div class="address-card border border-gray-200 rounded-xl p-6 relative <%= address.isDefault ? 'selected' : '' %>"
-     data-address-id="<%= address._id %>">
+                            <!-- Address List -->
+                            <div id="addressList" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <% if (addresses && addresses.length > 0) { %>
+                                    <% addresses.forEach(address => { %>
+                                        <div class="address-card border border-gray-200 rounded-xl p-6 relative <%= address.isDefault ? 'selected' : '' %>"
+            data-address-id="<%= address._id %>">
 
-                                    <% if (address.isDefault) { %>
-                                        <span class="absolute top-4 right-4 bg-blue-100 text-blue-800 text-xs font-semibold px-2 py-1 rounded-full">
-                                            Default
-                                        </span>
-<!-- 
-                                        <span class="default-badge absolute top-4 right-4 bg-blue-100 text-blue-800 text-xs font-semibold px-2 py-1 rounded-full">
-    Default
-</span> -->
+                                            <% if (address.isDefault) { %>
+                                                <span class="absolute top-4 right-4 bg-blue-100 text-blue-800 text-xs font-semibold px-2 py-1 rounded-full">
+                                                    Default
+                                                </span>
+
 
                                     <% } %>
                                     
@@ -171,13 +167,7 @@
                                             Set as Default
                                         </button>
                                        
-                                       <!-- <button 
-    onclick="setDefaultAddress('<%= address._id %>')"
-    class="set-default-btn flex-1 bg-gray-100 text-gray-700 py-2 rounded-lg hover:bg-gray-200 transition-all text-sm <%= address.isDefault ? 'hidden' : '' %>"
->
-    Set as Default
-</button> -->
-
+               
 
                                         <button 
                                             onclick="editAddress('<%= address._id %>')"
@@ -185,22 +175,11 @@
                                         >
                                             Edit
                                         </button>
-                                       <!-- <a href="/user/profile/addresses/edit/<%= address._id %>" 
-   class="flex-1 bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 text-sm text-center">
-   Edit
-</a> -->
-
                                        
-                                        <!-- <button 
-                                            onclick="deleteAddress('<%= address._id %>')"
-                                            class="flex-1 bg-red-600 text-white py-2 rounded-lg hover:bg-red-700 transition-all text-sm"
-                                        >
-                                            Delete
-                                        </button> -->
 
-                                        <button onclick="deleteAddress('<%= address._id %>')"
-class="flex-1 bg-red-600 text-white py-2 rounded-lg hover:bg-red-700 transition-all text-sm <%= address.isDefault ? 'hidden' : '' %>">
-    Delete
+                                                    <button onclick="deleteAddress('<%= address._id %>')"
+            class="flex-1 bg-red-600 text-white py-2 rounded-lg hover:bg-red-700 transition-all text-sm <%= address.isDefault ? 'hidden' : '' %>">
+                Delete
 </button>
 
                                     </div>
@@ -499,34 +478,6 @@ function isDuplicateAddress(data) {
 }
 
 
-        // Global variables
-        // let addresses = [];
-        // let addressToDelete = null;
-    //       window.addresses = <%- JSON.stringify(addresses) %>;
-    // addresses = window.addresses;
-    //     let isEditing = false;
-
-        // DOM Elements
-        // const addressModal = document.getElementById('addressModal');
-        // const deleteModal = document.getElementById('deleteModal');
-        // const addressForm = document.getElementById('addressForm');
-        // const addressList = document.getElementById('addressList');
-        // const modalTitle = document.getElementById('modalTitle');
-        // const saveAddressBtn = document.getElementById('saveAddressBtn');
-
-        // Initialize the page
-        // document.addEventListener('DOMContentLoaded', function() {
-        //     loadAddresses();
-            
-        //     // Add input event listeners for real-time validation
-        //     const inputs = addressForm.querySelectorAll('input, select');
-        //     inputs.forEach(input => {
-        //         input.addEventListener('input', function() {
-        //             hideError(input.id + 'Error');
-        //         });
-        //     });
-        // });
-
         // Load addresses from server
 
 
@@ -579,76 +530,7 @@ function closeAddressModal() {
             }
         }
 
-        // Render address list
-        // function renderAddressList() {
-        //     if (addresses.length === 0) {
-        //         addressList.innerHTML = `
-        //             <div class="text-center py-12 col-span-full">
-        //                 <i class="fas fa-map-marker-alt text-gray-300 text-5xl mb-4"></i>
-        //                 <h3 class="text-lg font-medium text-gray-700 mb-2">No addresses saved yet</h3>
-        //                 <p class="text-gray-500 mb-4">Add your first address to get started</p>
-        //                 <button 
-        //                     onclick="openAddAddressModal()"
-        //                     class="btn-primary text-white px-6 py-3 rounded-lg inline-flex items-center gap-2"
-        //                 >
-        //                     <i class="fas fa-plus"></i>
-        //                     <span>Add Your First Address</span>
-        //                 </button>
-        //             </div>
-        //         `;
-        //         return;
-        //     }
-
-        //     addressList.innerHTML = addresses.map(address => `
-        //         <div class="address-card border border-gray-200 rounded-xl p-6 relative ${address.isDefault ? 'selected' : ''}">
-        //             ${address.isDefault ? `
-        //                 <span class="absolute top-4 right-4 bg-blue-100 text-blue-800 text-xs font-semibold px-2 py-1 rounded-full">
-        //                     Default
-        //                 </span>
-        //             ` : ''}
-                    
-        //             <div class="flex items-start gap-3 mb-3">
-        //                 <div class="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600">
-        //                     <i class="fas fa-${getAddressTypeIcon(address.addressType)}"></i>
-        //                 </div>
-        //                 <div>
-        //                     <h3 class="font-semibold text-gray-900 capitalize">${address.addressType} Address</h3>
-        //                     <p class="text-sm text-gray-500">${address.fullName} • ${address.phone}</p>
-        //                 </div>
-        //             </div>
-                    
-        //             <div class="text-gray-700 mb-4">
-        //                 <p>${address.addressLine1}</p>
-        //                 ${address.addressLine2 ? `<p>${address.addressLine2}</p>` : ''}
-        //                 <p>${address.city}, ${address.state} - ${address.pincode}</p>
-        //                 <p>${address.country}</p>
-        //             </div>
-                    
-        //             <div class="flex gap-2 pt-4 border-t border-gray-200">
-        //                 <button 
-        //                     onclick="setDefaultAddress('${address._id}')"
-        //                     class="flex-1 bg-gray-100 text-gray-700 py-2 rounded-lg hover:bg-gray-200 transition-all text-sm ${address.isDefault ? 'hidden' : ''}"
-        //                 >
-        //                     Set as Default
-        //                 </button>
-        //                 <button 
-        //                     onclick="editAddress('${address._id}')"
-        //                     class="flex-1 bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition-all text-sm"
-        //                 >
-        //                     Edit
-        //                 </button>
-        //                 <button 
-        //                     onclick="deleteAddress('${address._id}')"
-        //                     class="flex-1 bg-red-600 text-white py-2 rounded-lg hover:bg-red-700 transition-all text-sm"
-        //                 >
-        //                     Delete
-        //                 </button>
-        //             </div>
-        //         </div>
-        //     `).join('');
-        // }
-
-        // Get address type icon
+       
         function getAddressTypeIcon(type) {
             const icons = {
                 'home': 'home',
@@ -657,108 +539,6 @@ function closeAddressModal() {
             };
             return icons[type] || 'map-marker-alt';
         }
-
-        // Open add address modal
-        // function openAddAddressModal() {
-        //     isEditing = false;
-        //     modalTitle.textContent = 'Add New Address';
-        //     addressForm.reset();
-        //     document.getElementById('addressId').value = '';
-        //     document.querySelector('input[name="addressType"][value="home"]').checked = true;
-        //     document.getElementById('isDefault').checked = addresses.length === 0;
-        //     addressModal.classList.remove('hidden');
-        // }
-
-        // Open edit address modal
-        // function editAddress(addressId) {
-        //     const address = addresses.find(addr => addr._id === addressId);
-        //     if (!address) return;
-
-        //     isEditing = true;
-        //     modalTitle.textContent = 'Edit Address';
-            
-        //     // Fill form with address data
-        //     document.getElementById('addressId').value = address._id;
-        //     document.querySelector(`input[name="addressType"][value="${address.addressType}"]`).checked = true;
-        //     document.getElementById('fullName').value = address.fullName;
-        //     document.getElementById('phone').value = address.phone;
-        //     document.getElementById('addressLine1').value = address.addressLine1;
-        //     document.getElementById('addressLine2').value = address.addressLine2 || '';
-        //     document.getElementById('city').value = address.city;
-        //     document.getElementById('state').value = address.state;
-        //     document.getElementById('pincode').value = address.pincode;
-        //     document.getElementById('country').value = address.country;
-        //     document.getElementById('isDefault').checked = address.isDefault;
-            
-        //     addressModal.classList.remove('hidden');
-        // }
-
-        // Close address modal
-        // function closeAddressModal() {
-        //     addressModal.classList.add('hidden');
-        // }
-
-        // Validate address form
-        // function validateAddressForm() {
-        //     const formData = new FormData(addressForm);
-        //     const data = Object.fromEntries(formData);
-            
-        //     // Reset errors
-        //     hideAllErrors();
-            
-        //     let isValid = true;
-            
-        //     // Validate full name
-        //     if (!data.fullName.trim()) {
-        //         showError('fullNameError', 'Please enter full name');
-        //         isValid = false;
-        //     }
-            
-        //     // Validate phone
-        //     if (!data.phone.trim()) {
-        //         showError('phoneError', 'Please enter phone number');
-        //         isValid = false;
-        //     } else if (!/^\d{10}$/.test(data.phone.replace(/\D/g, ''))) {
-        //         showError('phoneError', 'Please enter a valid 10-digit phone number');
-        //         isValid = false;
-        //     }
-            
-        //     // Validate address line 1
-        //     if (!data.addressLine1.trim()) {
-        //         showError('addressLine1Error', 'Please enter address line 1');
-        //         isValid = false;
-        //     }
-            
-        //     // Validate city
-        //     if (!data.city.trim()) {
-        //         showError('cityError', 'Please enter city');
-        //         isValid = false;
-        //     }
-            
-        //     // Validate state
-        //     if (!data.state.trim()) {
-        //         showError('stateError', 'Please enter state');
-        //         isValid = false;
-        //     }
-            
-        //     // Validate pincode
-        //     if (!data.pincode.trim()) {
-        //         showError('pincodeError', 'Please enter pincode');
-        //         isValid = false;
-        //     } else if (!/^\d{6}$/.test(data.pincode)) {
-        //         showError('pincodeError', 'Please enter a valid 6-digit pincode');
-        //         isValid = false;
-        //     }
-            
-        //     // Validate country
-        //     if (!data.country) {
-        //         showError('countryError', 'Please select country');
-        //         isValid = false;
-        //     }
-            
-        //     return isValid;
-        // }
-
 
         function validateAddressForm() {
     const formData = new FormData(addressForm);
@@ -886,24 +666,6 @@ function closeAddressModal() {
             }
         }
 
-        // Set default address
-
-      
-        // async function setDefaultAddress(addressId) {
-        //     try {
-        //         const response = await axios.patch(`/user/addresses/${addressId}/default`);
-                
-        //         if (response.data.success) {
-        //             showNotification('Default address updated successfully', 'success');
-        //             await loadAddresses(); // Reload addresses
-        //         } else {
-        //             showNotification('Failed to update default address', 'error');
-        //         }
-        //     } catch (error) {
-        //         console.error('Error setting default address:', error);
-        //         showNotification('Failed to update default address', 'error');
-        //     }
-        // }
 
 async function setDefaultAddress(addressId) {
   try {
@@ -922,44 +684,7 @@ async function setDefaultAddress(addressId) {
   }
 }
 
-// async function setDefaultAddress(addressId) {
-//     try {
-//         // disable if no id
-//         if (!addressId) return showNotification("Invalid address", "error");
-
-//         const btn = document.querySelector(`.set-default-btn[data-target="${addressId}"]`);
-//         if (btn) {
-//             btn.disabled = true;
-//             btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i><span>Setting...</span>';
-//         }
-
-//         const response = await axios.patch(`/user/addresses/${addressId}/default`);
-
-//         if (response && response.data && response.data.success) {
-//             showNotification("Default address updated", "success");
-//             // safe reload of address page (not whole site)
-//             setTimeout(() => {
-//                 window.location.href = "/user/profile/addresses";
-//             }, 350);
-//         } else {
-//             showNotification((response && response.data && response.data.message) || "Failed to update default", "error");
-//             if (btn) {
-//                 btn.disabled = false;
-//                 btn.innerHTML = 'Set as Default';
-//             }
-//         }
-//     } catch (err) {
-//         console.error("Error setting default:", err);
-//         showNotification("Error updating default", "error");
-//         const btn = document.querySelector(`.set-default-btn[data-target="${addressId}"]`);
-//         if (btn) {
-//             btn.disabled = false;
-//             btn.innerHTML = 'Set as Default';
-//         }
-//     }
-// }
-
-        // Delete address confirmation
+    
         function deleteAddress(addressId) {
             addressToDelete = addressId;
             deleteModal.classList.remove('hidden');
@@ -970,34 +695,6 @@ async function setDefaultAddress(addressId) {
             deleteModal.classList.add('hidden');
             addressToDelete = null;
         }
-
-        // Confirm address deletion
-        // async function confirmDeleteAddress() {
-        //     if (!addressToDelete) return;
-            
-        //     try {
-        //         const deleteBtn = document.getElementById('confirmDeleteBtn');
-        //         deleteBtn.disabled = true;
-        //         deleteBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i><span>Deleting...</span>';
-                
-        //         const response = await axios.delete(`/user/addresses/${addressToDelete}`);
-                
-        //         if (response.data.success) {
-        //             showNotification('Address deleted successfully', 'success');
-        //             closeDeleteModal();
-        //             await loadAddresses(); // Reload addresses
-        //         } else {
-        //             showNotification('Failed to delete address', 'error');
-        //         }
-        //     } catch (error) {
-        //         console.error('Error deleting address:', error);
-        //         showNotification('Failed to delete address', 'error');
-        //     } finally {
-        //         const deleteBtn = document.getElementById('confirmDeleteBtn');
-        //         deleteBtn.disabled = false;
-        //         deleteBtn.innerHTML = '<i class="fas fa-trash"></i><span>Delete Address</span>';
-        //     }
-        // }
 
 
         async function confirmDeleteAddress() {
@@ -1013,7 +710,7 @@ async function setDefaultAddress(addressId) {
         if (response.data.success) {
             showNotification('Address deleted successfully', 'success');
 
-            // ❗ REMOVE CARD FROM DOM IMMEDIATELY
+            //  REMOVE CARD FROM DOM IMMEDIATELY
             const card = document.querySelector(`[data-address-id="${addressToDelete}"]`);
             if (card) {
                 card.remove();

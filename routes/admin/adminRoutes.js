@@ -1,12 +1,15 @@
 import express from "express";
-import {renderAdminLogin,postAdminLogin,renderAdminDashboard,adminLogout} from "../../controllers/admin/adminController.js";
+import {renderAdminLogin,postAdminLogin,renderAdminDashboard,getRevenueData,adminLogout} from "../../controllers/admin/adminController.js";
 import { isAdminAuthenticated } from "../../middlewares/adminAuth.js";
+
 
 const router=express.Router();
 
 router.get("/",renderAdminLogin);
 router.post("/login",postAdminLogin);
 router.get("/dashboard",isAdminAuthenticated,renderAdminDashboard);
-router.get("/logout",adminLogout);
+router.get("/revenue-data", isAdminAuthenticated, getRevenueData);
+
+router.get("/logout",isAdminAuthenticated,adminLogout);
 
 export default router;
