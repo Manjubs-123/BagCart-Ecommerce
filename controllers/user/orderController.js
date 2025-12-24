@@ -264,6 +264,16 @@ orderId: generatedOrderId,
       orderStatus: "pending"
     }], { session });
 
+    // ✅ STEP X: INCREMENT COUPON USAGE COUNT
+if (couponCode) {
+  await Coupon.updateOne(
+    { code: couponCode.toUpperCase() },
+    { $inc: { usedCount: 1 } },
+    { session }
+  );
+}
+
+
     // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
     // STEP 8: STOCK DEDUCTION
     // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -348,6 +358,575 @@ if (paymentMethod === "cod" || paymentMethod === "wallet") {
   }
 };
 
+
+
+
+// export const createOrder = async (req, res) => {
+//   const session = await mongoose.startSession();
+//   session.startTransaction();
+
+//   try {
+//     const userId = req.session.user?.id;
+//     if (!userId) {
+//       await session.abortTransaction();
+//       session.endSession();
+//       return res.status(401).json({ success: false, message: "Not logged in" });
+//     }
+
+//     const { addressId, paymentMethod, couponCode } = req.body;
+
+//     if (!addressId || !paymentMethod) {
+//       await session.abortTransaction();
+//       session.endSession();
+//       return res.json({
+//         success: false,
+//         message: "Delivery address and payment method required"
+//       });
+//     }
+
+//     // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+//     // STEP 1: LOAD CART & APPLY OFFERS
+//     // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+//     const cart = await Cart.findOne({ user: userId })
+//       .populate("items.product")
+//       .session(session);
+
+//     if (!cart || cart.items.length === 0) {
+//       await session.abortTransaction();
+//       session.endSession();
+//       return res.json({ success: false, message: "Cart is empty" });
+//     }
+
+//     const user = await User.findById(userId).session(session);
+//     const address = user.addresses.id(addressId);
+//     if (!address) {
+//       await session.abortTransaction();
+//       session.endSession();
+//       return res.json({ success: false, message: "Address not found" });
+//     }
+
+//     // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+//     // ✅ FIX: BUILD ORDER ITEMS WITH CORRECT PRICES
+//     // Use prices EXACTLY from cart (which already has offers applied)
+//     // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+//     let orderItems = [];
+//     let subtotalBeforeCoupon = 0;
+//     const generatedOrderId = generateOrderId();
+
+//     for (const cartItem of cart.items) {
+//       const product = cartItem.product;
+//       const variant = product.variants[cartItem.variantIndex];
+
+//       if (!variant) {
+//         await session.abortTransaction();
+//         session.endSession();
+//         return res.json({ success: false, message: "Variant not found" });
+//       }
+
+//       // ✅ CRITICAL FIX: Use cart item prices directly (already has offers applied)
+//       const finalPrice = Number(cartItem.finalPrice);
+//       const regularPrice = Number(cartItem.regularPrice);
+//       const qty = Number(cartItem.quantity);
+
+//       const itemSubtotal = finalPrice * qty;
+//       subtotalBeforeCoupon += itemSubtotal;
+
+//       orderItems.push({
+//         product: product._id,
+//         variantIndex: cartItem.variantIndex,
+//         quantity: qty,
+//         price: +finalPrice.toFixed(2), // Per-unit price after product offers
+//         regularPrice: +regularPrice.toFixed(2), // Original MRP
+//         itemSubtotal: +itemSubtotal.toFixed(2), // Total for this item
+//         itemOrderId: `${generatedOrderId}-${orderItems.length + 1}`,
+//         color: variant.color,
+//         image: variant.images?.[0]?.url || ""
+//       });
+//     }
+
+//     subtotalBeforeCoupon = +subtotalBeforeCoupon.toFixed(2);
+
+//     console.log('📦 Order Items Built:', {
+//       itemCount: orderItems.length,
+//       subtotalBeforeCoupon
+//     });
+
+//     // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+//     // STEP 3: APPLY COUPON (IF ANY)
+//     // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+//     let couponDiscount = 0;
+//     let couponInfo = null;
+
+//     if (couponCode) {
+//       const coupon = await Coupon.findOne({
+//         code: couponCode.toUpperCase(),
+//         isActive: true
+//       }).session(session);
+
+//       if (!coupon) {
+//         await session.abortTransaction();
+//         session.endSession();
+//         return res.json({ success: false, message: "Invalid coupon" });
+//       }
+
+//       if (coupon.expiryDate < new Date()) {
+//         await session.abortTransaction();
+//         session.endSession();
+//         return res.json({ success: false, message: "Coupon expired" });
+//       }
+
+//       if (subtotalBeforeCoupon < coupon.minOrderAmount) {
+//         await session.abortTransaction();
+//         session.endSession();
+//         return res.json({
+//           success: false,
+//           message: `Minimum order ₹${coupon.minOrderAmount} required`
+//         });
+//       }
+
+//       const rawDiscount = (subtotalBeforeCoupon * coupon.discountValue) / 100;
+//       couponDiscount = Math.min(rawDiscount, coupon.maxDiscountAmount);
+//       couponDiscount = +couponDiscount.toFixed(2);
+
+//       couponInfo = {
+//         code: coupon.code,
+//         discountAmount: couponDiscount,
+//         subtotalBeforeCoupon: subtotalBeforeCoupon
+//       };
+
+//       console.log('🎟️ Coupon Applied:', couponInfo);
+//     }
+
+//     const subtotalAfterCoupon = subtotalBeforeCoupon - couponDiscount;
+
+//     // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+//     // STEP 4: CALCULATE TAX & SHIPPING
+//     // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+//     const taxRate = 0.10; // 10% GST
+//     const totalTax = +(subtotalAfterCoupon * taxRate).toFixed(2);
+//     const shippingFee = subtotalBeforeCoupon > 500 ? 0 : 50;
+
+//     console.log('💰 Order Calculations:', {
+//       subtotalBeforeCoupon,
+//       couponDiscount,
+//       subtotalAfterCoupon,
+//       totalTax,
+//       shippingFee
+//     });
+
+//     // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+//     // STEP 5: DISTRIBUTE COSTS TO ITEMS
+//     // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+//     distributeOrderCostsToItems(
+//       orderItems,
+//       subtotalBeforeCoupon,
+//       couponDiscount,
+//       totalTax,
+//       shippingFee
+//     );
+
+//     // ✅ CALCULATE TOTAL FROM ITEMS (SINGLE SOURCE OF TRUTH)
+//     const totalAmount = Number(
+//       orderItems
+//         .reduce((sum, item) => sum + item.itemFinalPayable, 0)
+//         .toFixed(2)
+//     );
+
+//     console.log('🎯 Final Order Total:', totalAmount);
+
+//     // ✅ Validation: Verify calculation
+//     const expectedTotal = +(subtotalAfterCoupon + totalTax + shippingFee).toFixed(2);
+//     if (Math.abs(totalAmount - expectedTotal) > 0.02) {
+//       console.error('⚠️ CALCULATION MISMATCH:', {
+//         totalAmount,
+//         expectedTotal,
+//         difference: totalAmount - expectedTotal
+//       });
+      
+//       await session.abortTransaction();
+//       session.endSession();
+//       return res.status(500).json({
+//         success: false,
+//         message: "Order calculation error. Please try again."
+//       });
+//     }
+
+//     // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+//     // STEP 6: COD & WALLET CHECKS
+//     // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+//     if (paymentMethod === "cod" && totalAmount > 1000) {
+//       await session.abortTransaction();
+//       session.endSession();
+//       return res.json({
+//         success: false,
+//         message: "COD not available above ₹1000"
+//       });
+//     }
+
+//     if (paymentMethod === "wallet") {
+//       const wallet = await Wallet.findOne({ user: userId }).session(session);
+//       if (!wallet || wallet.balance < totalAmount) {
+//         await session.abortTransaction();
+//         session.endSession();
+//         return res.json({
+//           success: false,
+//           message: "Insufficient wallet balance"
+//         });
+//       }
+//     }
+
+//     // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+//     // STEP 7: CREATE ORDER
+//     // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+//     const order = await Order.create([{
+//       orderId: generatedOrderId,
+//       user: userId,
+//       items: orderItems,
+//       shippingAddress: address,
+//       paymentMethod,
+//       subtotal: subtotalBeforeCoupon,
+//       tax: totalTax,
+//       shippingFee,
+//       totalAmount, // ✅ This MUST match frontend
+//       coupon: couponInfo,
+//       paymentStatus: paymentMethod === "wallet" ? "paid" : "pending",
+//       orderStatus: "pending"
+//     }], { session });
+
+//     // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+//     // STEP 8: STOCK DEDUCTION (ONLY FOR COD & WALLET)
+//     // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+//     if (paymentMethod === "cod" || paymentMethod === "wallet") {
+//       for (const cartItem of cart.items) {
+//         const product = await Product.findById(cartItem.product._id).session(session);
+//         if (!product) continue;
+
+//         const variant = product.variants[cartItem.variantIndex];
+//         if (!variant) continue;
+
+//         if (variant.stock < cartItem.quantity) {
+//           await session.abortTransaction();
+//           session.endSession();
+//           return res.json({
+//             success: false,
+//             message: `Insufficient stock for ${product.name}`
+//           });
+//         }
+
+//         variant.stock -= cartItem.quantity;
+//         product.markModified(`variants.${cartItem.variantIndex}.stock`);
+//         await product.save({ session });
+//       }
+//     }
+
+//     // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+//     // STEP 9: WALLET DEDUCTION (IF WALLET PAYMENT)
+//     // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+//     if (paymentMethod === "wallet") {
+//       const wallet = await Wallet.findOne({ user: userId }).session(session);
+//       wallet.balance -= totalAmount;
+//       wallet.transactions.push({
+//         type: "debit",
+//         amount: totalAmount,
+//         description: `Order ${order[0].orderId}`,
+//         date: new Date()
+//       });
+//       await wallet.save({ session });
+
+//       order[0].orderStatus = "confirmed";
+//       await order[0].save({ session });
+//     }
+
+//     // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+//     // STEP 10: CLEAR CART
+//     // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+//     cart.items = [];
+//     await cart.save({ session });
+
+//     await session.commitTransaction();
+//     session.endSession();
+
+//     console.log('✅ Order Created Successfully:', {
+//       orderId: order[0]._id,
+//       totalAmount: order[0].totalAmount
+//     });
+
+//     return res.json({
+//       success: true,
+//       orderId: order[0]._id,
+//       customOrderId: order[0].orderId,
+//       totalAmount: order[0].totalAmount, // ✅ THIS IS THE AMOUNT RAZORPAY WILL USE
+//       razorpayAmount: paymentMethod === "razorpay" ? order[0].totalAmount * 100 : null,
+//       paymentPending: paymentMethod === "razorpay"
+//     });
+
+//   } catch (err) {
+//     await session.abortTransaction();
+//     session.endSession();
+//     console.error("❌ ORDER CREATION ERROR:", err);
+//     return res.status(500).json({
+//       success: false,
+//       message: "Order failed",
+//       error: err.message
+//     });
+//   }
+// };
+
+// ============================================
+// FRONTEND FIX: Checkout EJS JavaScript
+// ============================================
+
+// Load checkout data - FIXED VERSION
+async function loadCheckoutData() {
+    try {
+        console.log('🔄 Loading checkout data...');
+
+        // Load cart items
+        const cartResponse = await axios.get('/api/cart');
+        if (cartResponse.data.success) {
+            checkoutState.cartItems = cartResponse.data.cart.items || [];
+            console.log('📦 Cart loaded:', checkoutState.cartItems.length, 'items');
+            
+            // ✅ Verify cart items have correct prices
+            checkoutState.cartItems.forEach((item, index) => {
+                console.log(`Item ${index + 1}:`, {
+                    name: item.product.name,
+                    finalPrice: item.finalPrice,
+                    regularPrice: item.regularPrice,
+                    quantity: item.quantity
+                });
+            });
+            
+            renderOrderItems();
+            updateOrderSummary();
+        }
+
+        // Load addresses
+        const addressResponse = await axios.get('/api/addresses');
+        if (addressResponse.data.success) {
+            checkoutState.addresses = addressResponse.data.addresses || [];
+            renderAddresses();
+        }
+
+        // Load wallet balance
+        const walletResponse = await axios.get('/api/wallet/balance');
+        if (walletResponse.data.success) {
+            checkoutState.walletBalance = walletResponse.data.balance || 0;
+            const walletBalanceUI = document.getElementById("walletBalanceDisplay");
+            if (walletBalanceUI) {
+                walletBalanceUI.textContent = checkoutState.walletBalance.toFixed(2);
+            }
+        }
+
+        // Load available coupons
+        loadAvailableCoupons();
+
+        console.log('✅ Checkout data loaded successfully');
+
+    } catch (error) {
+        console.error('❌ Error loading checkout data:', error);
+        showNotification('Failed to load checkout data', 'error');
+    }
+}
+
+// Update order summary - FIXED VERSION
+function updateOrderSummary() {
+    console.log('💰 Calculating order summary...');
+
+    // ✅ Calculate subtotal from cart items (prices already have product offers applied)
+    let subtotal = 0;
+    let itemCount = 0;
+
+    checkoutState.cartItems.forEach(item => {
+        const finalPrice = Number(item.finalPrice || 0);
+        const qty = Number(item.quantity || 0);
+        const itemTotal = finalPrice * qty;
+        
+        subtotal += itemTotal;
+        itemCount += qty;
+        
+        console.log(`  - ${item.product.name}: ₹${finalPrice} × ${qty} = ₹${itemTotal.toFixed(2)}`);
+    });
+
+    subtotal = Number(subtotal.toFixed(2));
+    console.log('  Subtotal (before coupon):', subtotal);
+
+    // ✅ Apply coupon discount
+    const couponDiscount = checkoutState.appliedCoupon 
+        ? Number(checkoutState.appliedCoupon.discountAmount || 0)
+        : 0;
+    
+    const subtotalAfterCoupon = Number((subtotal - couponDiscount).toFixed(2));
+    console.log('  Coupon discount:', couponDiscount);
+    console.log('  Subtotal (after coupon):', subtotalAfterCoupon);
+
+    // ✅ Calculate tax on discounted amount (10% GST)
+    const tax = Number((subtotalAfterCoupon * 0.10).toFixed(2));
+    console.log('  Tax (10% on after-coupon):', tax);
+
+    // ✅ Calculate shipping
+    const shipping = subtotal > 500 ? 0 : 50;
+    console.log('  Shipping:', shipping);
+
+    // ✅ FINAL TOTAL
+    const total = Number((subtotalAfterCoupon + tax + shipping).toFixed(2));
+    console.log('  🎯 GRAND TOTAL:', total);
+
+    // Store in state
+    checkoutState.orderSummary = { 
+        subtotal, 
+        shipping, 
+        tax, 
+        total, 
+        couponDiscount 
+    };
+
+    // Update UI
+    document.getElementById('subtotal').textContent = `₹${subtotal.toFixed(2)}`;
+    document.getElementById('shipping').textContent = shipping === 0 ? 'FREE' : `₹${shipping.toFixed(2)}`;
+    document.getElementById('taxAmount').textContent = `₹${tax.toFixed(2)}`;
+
+    // Show/Hide Coupon Discount Row
+    let couponRow = document.getElementById('couponDiscountRow');
+    
+    if (couponDiscount > 0) {
+        if (!couponRow) {
+            const summaryContainer = document.querySelector('.space-y-3.mb-6');
+            const taxRow = Array.from(summaryContainer.children).find(el => 
+                el.textContent.includes('Tax')
+            );
+            
+            couponRow = document.createElement('div');
+            couponRow.id = 'couponDiscountRow';
+            couponRow.className = 'flex justify-between text-green-600';
+            summaryContainer.insertBefore(couponRow, taxRow);
+        }
+        couponRow.innerHTML = `
+            <span>Coupon Discount</span>
+            <span class="font-medium">-₹${couponDiscount.toFixed(2)}</span>
+        `;
+    } else if (couponRow) {
+        couponRow.remove();
+    }
+
+    // Update Grand Total
+    document.getElementById('totalAmount').textContent = `₹${total.toFixed(2)}`;
+}
+
+// Handle place order - FIXED VERSION
+async function handlePlaceOrder() {
+    try {
+        console.log('🚀 Placing order...');
+
+        // Validation checks
+        if (!checkoutState.selectedAddress) {
+            return showNotification('Please select a delivery address', 'error');
+        }
+
+        if (!checkoutState.selectedPaymentMethod) {
+            return showNotification('Please select a payment method', 'error');
+        }
+
+        // Wallet balance check
+        if (checkoutState.selectedPaymentMethod === 'wallet') {
+            const total = checkoutState.orderSummary.total;
+            if (checkoutState.walletBalance < total) {
+                return showNotification(
+                    `Insufficient wallet balance. Required: ₹${total.toFixed(2)}, Available: ₹${checkoutState.walletBalance.toFixed(2)}`,
+                    'error'
+                );
+            }
+        }
+
+        // Disable button
+        const btn = document.getElementById('placeOrderBtn');
+        const originalHTML = btn.innerHTML;
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Processing...';
+
+        const orderData = {
+            addressId: checkoutState.selectedAddress,
+            paymentMethod: checkoutState.selectedPaymentMethod,
+            couponCode: checkoutState.appliedCoupon?.code || null
+        };
+
+        console.log('📤 Sending order data:', orderData);
+        console.log('💵 Frontend calculated total:', checkoutState.orderSummary.total);
+
+        const response = await axios.post('/api/orders', orderData);
+
+        console.log('📥 Backend response:', response.data);
+
+        if (!response.data.success) {
+            btn.disabled = false;
+            btn.innerHTML = originalHTML;
+            return showNotification(response.data.message, 'error');
+        }
+
+        // ✅ CRITICAL: Check if backend total matches frontend total
+        const backendTotal = Number(response.data.totalAmount);
+        const frontendTotal = Number(checkoutState.orderSummary.total);
+        
+        console.log('🔍 Comparing totals:', {
+            backend: backendTotal,
+            frontend: frontendTotal,
+            difference: Math.abs(backendTotal - frontendTotal)
+        });
+
+        if (Math.abs(backendTotal - frontendTotal) > 0.02) {
+            console.error('⚠️ PRICE MISMATCH DETECTED!');
+            btn.disabled = false;
+            btn.innerHTML = originalHTML;
+            return showNotification(
+                'Price calculation mismatch. Please refresh and try again.',
+                'error'
+            );
+        }
+
+        // COD - Direct redirect
+        if (checkoutState.selectedPaymentMethod === 'cod') {
+            console.log('✅ COD order placed');
+            return window.location.href = `/order/confirmation/${response.data.orderId}`;
+        }
+
+        // Wallet - Direct redirect
+        if (checkoutState.selectedPaymentMethod === 'wallet') {
+            console.log('✅ Wallet order placed');
+            return window.location.href = `/order/confirmation/${response.data.orderId}`;
+        }
+
+        // Razorpay - Create payment order
+        if (checkoutState.selectedPaymentMethod === 'razorpay') {
+            console.log('💳 Initializing Razorpay payment...');
+            
+            const rzpResponse = await axios.post('/api/payment/payment/create-order', {
+                orderId: response.data.orderId,
+                amount: response.data.totalAmount // ✅ Use backend amount
+            });
+
+            console.log('💳 Razorpay order created:', rzpResponse.data);
+
+            if (!rzpResponse.data.success) {
+                btn.disabled = false;
+                btn.innerHTML = originalHTML;
+                return showNotification('Payment initialization failed', 'error');
+            }
+
+            // Initialize Razorpay
+            return initiateRazorpayPayment(rzpResponse.data);
+        }
+
+    } catch (err) {
+        console.error('❌ Place order error:', err);
+        const btn = document.getElementById('placeOrderBtn');
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-lock"></i><span>Place Order</span>';
+        showNotification(
+            err.response?.data?.message || 'Order failed. Please try again.',
+            'error'
+        );
+    }
+}
 
 export const getOrderConfirmation = async (req, res) => {
   try {
