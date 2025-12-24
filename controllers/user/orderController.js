@@ -156,7 +156,7 @@ const generatedOrderId = generateOrderId();
       couponInfo = {
         code: coupon.code,
         discountAmount: couponDiscount,
-        subtotalBeforeCoupon: subtotalBeforeCoupon // ✅ NEW: Save original subtotal
+        subtotalBeforeCoupon: subtotalBeforeCoupon // NEW: Save original subtotal
       };
     }
 
@@ -173,7 +173,7 @@ const generatedOrderId = generateOrderId();
 
 
     // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-    // ✅✅✅ STEP 5: MAGIC PART - DISTRIBUTE COSTS TO ITEMS ✅✅✅
+    //  STEP 5: MAGIC PART - DISTRIBUTE COSTS TO ITEMS 
     // This calculates HOW MUCH coupon/tax/shipping belongs to each item
     // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
     distributeOrderCostsToItems(
@@ -184,7 +184,7 @@ const generatedOrderId = generateOrderId();
       shippingFee
     );
 
-    // ✅ SINGLE SOURCE OF TRUTH — NO FLOAT DRIFT
+    // SINGLE SOURCE OF TRUTH — NO FLOAT DRIFT
 const totalAmount = Number(
   orderItems
     .reduce((sum, item) => sum + item.itemFinalPayable, 0)
@@ -192,7 +192,7 @@ const totalAmount = Number(
 );
 
 
-    // ✅ Safety check: Make sure totals match
+    // Safety check: Make sure totals match
  const sumCheck = Number(
   orderItems
     .reduce((sum, item) => sum + item.itemFinalPayable, 0)
@@ -203,7 +203,7 @@ const orderTotalRounded = Number(totalAmount.toFixed(2));
 
 if (Math.abs(sumCheck - totalAmount) > 0.001) {
 
-  console.error("⚠️ Item totals don't match order total!", {
+  console.error(" Item totals don't match order total!", {
     sumCheck,
     orderTotalRounded
   });
@@ -264,7 +264,7 @@ orderId: generatedOrderId,
       orderStatus: "pending"
     }], { session });
 
-    // ✅ STEP X: INCREMENT COUPON USAGE COUNT
+    //  STEP X: INCREMENT COUPON USAGE COUNT
 if (couponCode) {
   await Coupon.updateOne(
     { code: couponCode.toUpperCase() },
@@ -274,20 +274,6 @@ if (couponCode) {
 }
 
 
-    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-    // STEP 8: STOCK DEDUCTION
-    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-    // for (const cartItem of cart.items) {
-    //   const product = await Product.findById(cartItem.product._id).session(session);
-    //   if (!product) continue;
-
-    //   const variant = product.variants[cartItem.variantIndex];
-    //   if (!variant) continue;
-
-    //   variant.stock = Math.max(0, variant.stock - cartItem.quantity);
-    //   product.markModified(`variants.${cartItem.variantIndex}.stock`);
-    //   await product.save({ session });
-    // }
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 // STEP 8: STOCK DEDUCTION (ONLY FOR COD & WALLET)
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -446,7 +432,7 @@ if (paymentMethod === "cod" || paymentMethod === "wallet") {
 
 //     subtotalBeforeCoupon = +subtotalBeforeCoupon.toFixed(2);
 
-//     console.log('📦 Order Items Built:', {
+//     console.log('Order Items Built:', {
 //       itemCount: orderItems.length,
 //       subtotalBeforeCoupon
 //     });
@@ -506,7 +492,7 @@ if (paymentMethod === "cod" || paymentMethod === "wallet") {
 //     const totalTax = +(subtotalAfterCoupon * taxRate).toFixed(2);
 //     const shippingFee = subtotalBeforeCoupon > 500 ? 0 : 50;
 
-//     console.log('💰 Order Calculations:', {
+//     console.log(' Order Calculations:', {
 //       subtotalBeforeCoupon,
 //       couponDiscount,
 //       subtotalAfterCoupon,
@@ -677,17 +663,19 @@ if (paymentMethod === "cod" || paymentMethod === "wallet") {
 // ============================================
 
 // Load checkout data - FIXED VERSION
+
+
 async function loadCheckoutData() {
     try {
-        console.log('🔄 Loading checkout data...');
+        // console.log(' Loading checkout data...');
 
         // Load cart items
         const cartResponse = await axios.get('/api/cart');
         if (cartResponse.data.success) {
             checkoutState.cartItems = cartResponse.data.cart.items || [];
-            console.log('📦 Cart loaded:', checkoutState.cartItems.length, 'items');
+            // console.log(' Cart loaded:', checkoutState.cartItems.length, 'items');
             
-            // ✅ Verify cart items have correct prices
+            //  Verify cart items have correct prices
             checkoutState.cartItems.forEach((item, index) => {
                 console.log(`Item ${index + 1}:`, {
                     name: item.product.name,
@@ -721,19 +709,19 @@ async function loadCheckoutData() {
         // Load available coupons
         loadAvailableCoupons();
 
-        console.log('✅ Checkout data loaded successfully');
+        // console.log(' Checkout data loaded successfully');
 
     } catch (error) {
-        console.error('❌ Error loading checkout data:', error);
+        console.error(' Error loading checkout data:', error);
         showNotification('Failed to load checkout data', 'error');
     }
 }
 
 // Update order summary - FIXED VERSION
 function updateOrderSummary() {
-    console.log('💰 Calculating order summary...');
+    // console.log(' Calculating order summary...');
 
-    // ✅ Calculate subtotal from cart items (prices already have product offers applied)
+    // Calculate subtotal from cart items (prices already have product offers applied)
     let subtotal = 0;
     let itemCount = 0;
 
@@ -749,28 +737,28 @@ function updateOrderSummary() {
     });
 
     subtotal = Number(subtotal.toFixed(2));
-    console.log('  Subtotal (before coupon):', subtotal);
+    // console.log('  Subtotal (before coupon):', subtotal);
 
-    // ✅ Apply coupon discount
+    //  Apply coupon discount
     const couponDiscount = checkoutState.appliedCoupon 
         ? Number(checkoutState.appliedCoupon.discountAmount || 0)
         : 0;
     
     const subtotalAfterCoupon = Number((subtotal - couponDiscount).toFixed(2));
-    console.log('  Coupon discount:', couponDiscount);
-    console.log('  Subtotal (after coupon):', subtotalAfterCoupon);
+    // console.log('  Coupon discount:', couponDiscount);
+    // console.log('  Subtotal (after coupon):', subtotalAfterCoupon);
 
-    // ✅ Calculate tax on discounted amount (10% GST)
+    //  Calculate tax on discounted amount (10% GST)
     const tax = Number((subtotalAfterCoupon * 0.10).toFixed(2));
-    console.log('  Tax (10% on after-coupon):', tax);
+    // console.log('  Tax (10% on after-coupon):', tax);
 
-    // ✅ Calculate shipping
+    //  Calculate shipping
     const shipping = subtotal > 500 ? 0 : 50;
-    console.log('  Shipping:', shipping);
+    // console.log('  Shipping:', shipping);
 
-    // ✅ FINAL TOTAL
+    //  FINAL TOTAL
     const total = Number((subtotalAfterCoupon + tax + shipping).toFixed(2));
-    console.log('  🎯 GRAND TOTAL:', total);
+    // console.log('   GRAND TOTAL:', total);
 
     // Store in state
     checkoutState.orderSummary = { 
@@ -816,7 +804,7 @@ function updateOrderSummary() {
 // Handle place order - FIXED VERSION
 async function handlePlaceOrder() {
     try {
-        console.log('🚀 Placing order...');
+        // console.log('Placing order...');
 
         // Validation checks
         if (!checkoutState.selectedAddress) {
@@ -850,12 +838,12 @@ async function handlePlaceOrder() {
             couponCode: checkoutState.appliedCoupon?.code || null
         };
 
-        console.log('📤 Sending order data:', orderData);
-        console.log('💵 Frontend calculated total:', checkoutState.orderSummary.total);
+        console.log(' Sending order data:', orderData);
+        console.log(' Frontend calculated total:', checkoutState.orderSummary.total);
 
         const response = await axios.post('/api/orders', orderData);
 
-        console.log('📥 Backend response:', response.data);
+        console.log(' Backend response:', response.data);
 
         if (!response.data.success) {
             btn.disabled = false;
@@ -863,18 +851,18 @@ async function handlePlaceOrder() {
             return showNotification(response.data.message, 'error');
         }
 
-        // ✅ CRITICAL: Check if backend total matches frontend total
+        //  CRITICAL: Check if backend total matches frontend total
         const backendTotal = Number(response.data.totalAmount);
         const frontendTotal = Number(checkoutState.orderSummary.total);
         
-        console.log('🔍 Comparing totals:', {
+        console.log(' Comparing totals:', {
             backend: backendTotal,
             frontend: frontendTotal,
             difference: Math.abs(backendTotal - frontendTotal)
         });
 
         if (Math.abs(backendTotal - frontendTotal) > 0.02) {
-            console.error('⚠️ PRICE MISMATCH DETECTED!');
+            console.error(' PRICE MISMATCH DETECTED!');
             btn.disabled = false;
             btn.innerHTML = originalHTML;
             return showNotification(
@@ -885,26 +873,26 @@ async function handlePlaceOrder() {
 
         // COD - Direct redirect
         if (checkoutState.selectedPaymentMethod === 'cod') {
-            console.log('✅ COD order placed');
+            console.log('COD order placed');
             return window.location.href = `/order/confirmation/${response.data.orderId}`;
         }
 
         // Wallet - Direct redirect
         if (checkoutState.selectedPaymentMethod === 'wallet') {
-            console.log('✅ Wallet order placed');
+            console.log('Wallet order placed');
             return window.location.href = `/order/confirmation/${response.data.orderId}`;
         }
 
         // Razorpay - Create payment order
         if (checkoutState.selectedPaymentMethod === 'razorpay') {
-            console.log('💳 Initializing Razorpay payment...');
+            console.log(' Initializing Razorpay payment...');
             
             const rzpResponse = await axios.post('/api/payment/payment/create-order', {
                 orderId: response.data.orderId,
-                amount: response.data.totalAmount // ✅ Use backend amount
+                amount: response.data.totalAmount //  Use backend amount
             });
 
-            console.log('💳 Razorpay order created:', rzpResponse.data);
+            console.log(' Razorpay order created:', rzpResponse.data);
 
             if (!rzpResponse.data.success) {
                 btn.disabled = false;
@@ -917,7 +905,7 @@ async function handlePlaceOrder() {
         }
 
     } catch (err) {
-        console.error('❌ Place order error:', err);
+        console.error(' Place order error:', err);
         const btn = document.getElementById('placeOrderBtn');
         btn.disabled = false;
         btn.innerHTML = '<i class="fas fa-lock"></i><span>Place Order</span>';
@@ -1006,7 +994,7 @@ export const getMyOrders = async (req, res) => {
         itemOrderId: item.itemOrderId || `${order.orderId}-${index + 1}`
       }));
 
-      // ✅ ADD THIS: Attach dynamic summary
+      //  ADD THIS: Attach dynamic summary
       const summary = buildOrderSummary({
         ...order,
         items: fixedItems
@@ -1039,170 +1027,6 @@ export const getMyOrders = async (req, res) => {
   }
 };
 
-// export const getMyOrders = async (req, res) => {
-//   try {
-//     const userId = req.session.user?.id;
-//     if (!userId) return res.redirect("/user/login");
-
-//     let orders = await Order.find({ user: userId })
-//       .populate("items.product")
-//       .sort({ createdAt: -1 })
-//       .lean();
-
-//     orders = orders.map(order => {
-//       const fixedItems = order.items.map((item, index) => ({
-//         ...item,
-//         itemOrderId: item.itemOrderId || `${order.orderId}-${index + 1}`
-//       }));
-
-//       return {
-//         ...order,
-//         items: fixedItems
-//       };
-//     });
-
-//     const ordersCount = orders.length;
-
-//     res.render("user/myOrders", {
-//       orders,
-//       user: req.session.user,
-//       ordersCount,
-//       currentPage: "orders"
-//     });
-
-//   } catch (err) {
-//     console.error("getMyOrders Error:", err);
-//     res.status(500).render("user/myOrders", {
-//       orders: [],
-//       user: req.session.user,
-//       ordersCount: 0,
-//       currentPage: "orders"
-//     });
-//   }
-// };
-
-
-
-// export const downloadInvoice = async (req, res) => {
-//   try {
-//     const { orderId } = req.params;
-//     const userId = req.session.user?.id;
-
-//     const order = await Order.findOne({ _id: orderId, user: userId })
-//       .populate("items.product")
-//       .lean();
-
-//     if (!order) return res.status(404).send("Order not found");
-
-//     const displayOrderId = order.orderId || order._id;
-//     const fileName = `Invoice-${displayOrderId}.pdf`;
-
-//     res.setHeader("Content-Type", "application/pdf");
-//     res.setHeader("Content-Disposition", `attachment; filename="${fileName}"`);
-
-//     const doc = new PDFDocument({ margin: 40 });
-//     const fontPath = path.join(__dirname, "../../public/fonts/DejaVuSans.ttf");
-
-//     doc.registerFont("Unicode", fontPath);
-//     doc.font("Unicode");
-//     doc.pipe(res);
-
-//     /* ---------------- HEADER ---------------- */
-//     doc.fontSize(20).text("BagHub", { align: "center" });
-//     doc.moveDown(0.5);
-//     doc.fontSize(14).text("INVOICE", { align: "center" });
-//     doc.moveDown(2);
-
-//     /* ---------------- ORDER INFO (2 COLUMN) ---------------- */
-//     const leftX = 40;
-//     const rightX = 330;
-//     let y = doc.y;
-
-//     doc.fontSize(11);
-//     doc.text(`Order ID: ${displayOrderId}`, leftX, y);
-//     doc.text(`Date: ${new Date(order.createdAt).toLocaleString()}`, rightX, y);
-
-//     y += 14;
-//     doc.text(`Customer: ${order.shippingAddress.fullName}`, leftX, y);
-//     doc.text(`Payment: ${order.paymentMethod}`, rightX, y);
-
-//     doc.moveDown(2);
-
-//     /* ---------------- SHIPPING ADDRESS ---------------- */
-//     const sa = order.shippingAddress;
-//     doc.fontSize(11).text("Shipping Address", { underline: true });
-//     doc.moveDown(0.5);
-//     doc.text(sa.fullName);
-//     doc.text(sa.addressLine1);
-//     if (sa.addressLine2) doc.text(sa.addressLine2);
-//     doc.text(`${sa.city}, ${sa.state} - ${sa.pincode}`);
-//     doc.text(`Phone: ${sa.phone}`);
-
-//     doc.moveDown(2);
-
-//     /* ---------------- ITEMS (CLEAN LIST STRUCTURE) ---------------- */
-//     doc.fontSize(11).text("Order Items", { underline: true });
-//     doc.moveDown(0.5);
-
-//     // Header line
-//     doc.text("Product", leftX);
-//     doc.text("Qty", 300, doc.y - 12);
-//     doc.text("Price", 350, doc.y - 12);
-//     doc.text("Total", 420, doc.y - 12);
-
-//     doc.moveTo(leftX, doc.y).lineTo(550, doc.y).stroke();
-//     doc.moveDown(0.5);
-
-//     order.items.forEach((item) => {
-//       const lineY = doc.y;
-
-//       doc.text(item.product?.name, leftX, lineY, { width: 240 });
-//       doc.text(item.quantity.toString(), 300, lineY);
-//       doc.text(`₹${item.price}`, 350, lineY);
-//       doc.text(
-//         `₹${(item.price * item.quantity).toFixed(2)}`,
-//         420,
-//         lineY
-//       );
-
-//       doc.moveDown(0.5);
-//     });
-
-//     doc.moveDown(2);
-
-//     /* ---------------- TOTALS (RIGHT ALIGNED, CLEAN) ---------------- */
-//     y = doc.y;
-//     const totalX = 350;
-
-//     doc.text(`Subtotal: ₹${order.subtotal.toFixed(2)}`, totalX, y);
-//     y += 14;
-
-//     if (order.coupon?.discountAmount > 0) {
-//       doc.text(
-//         `Coupon Discount: -₹${order.coupon.discountAmount.toFixed(2)}`,
-//         totalX,
-//         y
-//       );
-//       y += 14;
-//     }
-
-//     doc.text(`Tax: ₹${order.tax.toFixed(2)}`, totalX, y);
-//     y += 14;
-//     doc.text(`Shipping: ₹${order.shippingFee.toFixed(2)}`, totalX, y);
-//     y += 18;
-
-//     doc.fontSize(13).text(
-//       `Grand Total: ₹${order.totalAmount.toFixed(2)}`,
-//       totalX,
-//       y
-//     );
-
-//     doc.end();
-//   } catch (err) {
-//     console.error("downloadInvoice Error:", err);
-//     res.status(500).send("Could not generate invoice");
-//   }
-// };
 
 
 export const downloadInvoice = async (req, res) => {
@@ -1216,7 +1040,7 @@ export const downloadInvoice = async (req, res) => {
 
     if (!order) return res.status(404).send("Order not found");
 
-    // ✅ Calculate dynamic summary (accounts for cancellations/returns)
+    //  Calculate dynamic summary (accounts for cancellations/returns)
     const summary = buildOrderSummary(order);
 
     const displayOrderId = order.orderId || order._id;
@@ -1279,7 +1103,7 @@ export const downloadInvoice = async (req, res) => {
     doc.moveTo(leftX, doc.y).lineTo(550, doc.y).stroke();
     doc.moveDown(0.5);
 
-    // ✅ Display all items with their status
+    //  Display all items with their status
     order.items.forEach((item) => {
       const lineY = doc.y;
       const status = item.status || 'pending';
@@ -1289,7 +1113,7 @@ export const downloadInvoice = async (req, res) => {
       doc.text(item.quantity.toString(), 280, lineY);
       doc.text(`₹${item.price}`, 330, lineY);
       
-      // ✅ Show status with color coding
+      //  Show status with color coding
       const statusText = status.charAt(0).toUpperCase() + status.slice(1);
       if (['cancelled', 'returned'].includes(status)) {
         doc.fillColor('red').text(statusText, 400, lineY);
@@ -1316,7 +1140,7 @@ export const downloadInvoice = async (req, res) => {
     y = doc.y;
     const totalX = 350;
 
-    // ✅ Show active items subtotal (excludes cancelled/returned)
+    //  Show active items subtotal (excludes cancelled/returned)
     doc.text(`Subtotal (Active Items): ₹${summary.activeItemsSubtotal.toFixed(2)}`, totalX, y);
     y += 14;
 
@@ -1342,7 +1166,7 @@ export const downloadInvoice = async (req, res) => {
     doc.text(`Shipping: ₹${summary.activeItemsShipping.toFixed(2)}`, totalX, y);
     y += 18;
 
-    // ✅ Show cancelled/returned amounts if any
+    //  Show cancelled/returned amounts if any
     if (summary.cancelledTotal > 0) {
       doc.fillColor('red')
         .text(`Cancelled Items Refund: -₹${summary.cancelledTotal.toFixed(2)}`, totalX, y);
@@ -1362,13 +1186,13 @@ export const downloadInvoice = async (req, res) => {
       y += 6;
     }
 
-    // ✅ Show current payable amount (excludes refunded items)
+    //  Show current payable amount (excludes refunded items)
     doc.fontSize(13)
       .text(`Current Amount Due: ₹${summary.grandTotal.toFixed(2)}`, totalX, y);
     
     y += 18;
 
-    // ✅ Show original total if different from current
+    // Show original total if different from current
     if (Math.abs(summary.originalTotal - summary.grandTotal) > 0.01) {
       doc.fontSize(10)
         .fillColor('gray')
@@ -1462,33 +1286,33 @@ export const cancelItem = async (req, res) => {
         ["paid", "partial_refunded"].includes(order.paymentStatus));
 
     // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-    // ✅✅✅ STEP 5: CALCULATE REFUND (THE MAGIC!) ✅✅✅
+    //  STEP 5: CALCULATE REFUND (THE MAGIC!) 
     // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
     let refundAmount = 0;
 
     if (isPrepaid && !item.refundAmount) {
       
-      // 🎯 OPTION 1: If breakdown was saved (RECOMMENDED - NEW ORDERS)
+      // OPTION 1: If breakdown was saved (RECOMMENDED - NEW ORDERS)
       if (item.itemFinalPayable !== undefined && item.itemFinalPayable > 0) {
         // Simply use the saved amount!
         refundAmount = item.itemFinalPayable;
         
-        console.log("✅ Using saved breakdown for refund:", {
-          itemSubtotal: item.itemSubtotal,
-          couponShare: item.itemCouponShare,
-          afterCoupon: item.itemAfterCoupon,
-          taxShare: item.itemTaxShare,
-          shippingShare: item.itemShippingShare,
-          finalPayable: item.itemFinalPayable
-        });
+        // console.log(" Using saved breakdown for refund:", {
+        //   itemSubtotal: item.itemSubtotal,
+        //   couponShare: item.itemCouponShare,
+        //   afterCoupon: item.itemAfterCoupon,
+        //   taxShare: item.itemTaxShare,
+        //   shippingShare: item.itemShippingShare,
+        //   finalPayable: item.itemFinalPayable
+        // });
       } 
-      // 🎯 OPTION 2: OLD ORDERS without breakdown (FALLBACK)
+      //  OPTION 2: OLD ORDERS without breakdown (FALLBACK)
       else {
-        console.log("⚠️ No breakdown found, using old calculation method");
+        // console.log(" No breakdown found, using old calculation method");
         refundAmount = calculateRefundOldWay(order, item, itemId);
       }
 
-      // ✅ Safety cap: Cannot exceed remaining refundable amount
+      //  Safety cap: Cannot exceed remaining refundable amount
       const previousRefunds = order.items.reduce(
         (sum, i) => sum + (i.refundAmount || 0),
         0

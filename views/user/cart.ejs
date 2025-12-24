@@ -179,8 +179,8 @@
                       <button class="quantity-btn px-3 py-1 text-gray-600 hover:bg-gray-100"
                               data-item-id="<%= item._id %>"
                               data-action="increase"
-<%= isOutOfStock || item.quantity >= available ? 'disabled' : '' %>>                        
-<i class="fas fa-plus"></i>
+                              <%= isOutOfStock || item.quantity >= available ? 'disabled' : '' %>>                        
+                              <i class="fas fa-plus"></i>
                       </button>
                     </div>
 
@@ -328,48 +328,7 @@ const MAX_QTY_PER_PRODUCT = 5;
       if (checkoutBtn) checkoutBtn.addEventListener('click', handleCheckout);
     }
 
-    // Handle quantity changes
-    // async function handleQuantityChange(itemId, action) {
-    //   const itemEl = document.querySelector(`[data-item-id="${itemId}"]`);
-    //   if (!itemEl) return;
-
-    //   const currentQty = parseInt(itemEl.querySelector('.qty-value').textContent);
-    //   const available = parseInt(itemEl.getAttribute('data-available')) || 0;
-
-    //   let newQty = currentQty;
-
-    //   if (action === "increase") {
-    //     if (currentQty >= available) { 
-    //       showNotification(`Only ${available} available`, "error"); 
-    //       return; 
-    //     }
-    //     newQty++;
-    //   }
-
-    //   if (action === "decrease") {
-    //     if (currentQty <= 1) return; // Prevent zero
-    //     newQty--;
-    //   }
-
-    //   // Update UI immediately
-    //   itemEl.querySelector('.qty-value').textContent = newQty;
-    //   itemEl.setAttribute('data-qty', newQty);
-    //   updateItemTotal(itemId, newQty);
-
-    //   // Update button states
-    //   const plusBtn = itemEl.querySelector('[data-action="increase"]');
-    //   const minusBtn = itemEl.querySelector('[data-action="decrease"]');
-    //   plusBtn.disabled = newQty >= available;
-    //   minusBtn.disabled = newQty <= 1;
-
-    //   // Recalculate totals
-    //   updateCartSummary();
-
-    //   // Store the update and schedule API call
-    //   pendingUpdates.set(itemId, newQty);
-    //   scheduleUpdate(itemId);
-    // }
-async function handleQuantityChange(itemId, action) {
+    async function handleQuantityChange(itemId, action) {
   const itemEl = document.querySelector(`[data-item-id="${itemId}"]`);
   if (!itemEl) return;
 
@@ -381,7 +340,7 @@ async function handleQuantityChange(itemId, action) {
   let newQty = currentQty;
 
   if (action === "increase") {
-    // 🔒 MAX LIMIT (show error EVERY TIME)
+    //  MAX LIMIT (show error EVERY TIME)
     if (currentQty >= MAX_QTY_PER_PRODUCT) {
       showNotification(
         `You can only buy up to ${MAX_QTY_PER_PRODUCT} units of this product`,
@@ -390,7 +349,7 @@ async function handleQuantityChange(itemId, action) {
       return;
     }
 
-    // 🔒 STOCK LIMIT
+    //  STOCK LIMIT
     if (currentQty >= available) {
       showNotification(`Only ${available} available`, "error");
       return;
@@ -404,13 +363,13 @@ async function handleQuantityChange(itemId, action) {
     newQty--;
   }
 
-  // ✅ UI update
+  // UI update
   qtyEl.textContent = newQty;
   itemEl.setAttribute('data-qty', newQty);
   updateItemTotal(itemId, newQty);
   updateCartSummary();
 
-  // ✅ button state - ONLY disable for stock limit, NOT for 5-unit limit
+  //  button state - ONLY disable for stock limit, NOT for 5-unit limit
   const plusBtn = itemEl.querySelector('[data-action="increase"]');
   const minusBtn = itemEl.querySelector('[data-action="decrease"]');
 
@@ -418,7 +377,7 @@ async function handleQuantityChange(itemId, action) {
   plusBtn.disabled = newQty >= available;
   minusBtn.disabled = newQty <= 1;
 
-  // ✅ API update
+  //  API update
   pendingUpdates.set(itemId, newQty);
   scheduleUpdate(itemId);
 }
@@ -645,7 +604,7 @@ async function handleQuantityChange(itemId, action) {
 function showNotification(message, type) {
   const container = document.getElementById('notificationContainer');
 
-  // ✅ REMOVE all existing notifications before showing new one
+  //  REMOVE all existing notifications before showing new one
   container.innerHTML = "";
 
   const notification = document.createElement('div');

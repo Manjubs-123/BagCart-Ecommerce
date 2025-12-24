@@ -85,7 +85,7 @@ app.use(async (req, res, next) => {
     }
     next();
   } catch (err) {
-    console.log("User Load Error:", err);
+    // console.log("User Load Error:", err);
     res.locals.user = null;
     next();
   }
@@ -118,11 +118,6 @@ app.use(async (req, res, next) => {
 });
 
 
-// app.use(passport.initialize());
-// app.use(passport.session());
-
-
-
 app.use('/user/cart',cartRoutes);
 app.use('/admin', adminSalesReportRoutes);
 app.use("/admin", adminRoutes);
@@ -142,8 +137,6 @@ app.use('/user', couponRoutes);
 app.use('/admin/offers', offerRoutes);
 app.use("/api/payment", paymentRoutes);
 app.use("/", paymentRoutes);
-
-
 
 
 

@@ -6,12 +6,12 @@ const round2 = (n) => {
 };
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-// 🔥 CENTRALIZED REFUND CALCULATION FUNCTION
+//  CENTRALIZED REFUND CALCULATION FUNCTION
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 function calculateItemRefund(order, item, itemId) {
   let refundAmount = 0;
 
-  // 🎯 OPTION 1: New orders with saved breakdown (ACCURATE)
+  //  OPTION 1: New orders with saved breakdown (ACCURATE)
   if (
     item.itemFinalPayable !== undefined && 
     item.itemFinalPayable !== null &&
@@ -19,23 +19,23 @@ function calculateItemRefund(order, item, itemId) {
   ) {
     refundAmount = round2(Number(item.itemFinalPayable));
     
-    console.log("✅ Using saved breakdown for refund:", {
-      itemSubtotal: item.itemSubtotal,
-      couponShare: item.itemCouponShare,
-      afterCoupon: item.itemAfterCoupon,
-      taxShare: item.itemTaxShare,
-      shippingShare: item.itemShippingShare,
-      finalPayable: item.itemFinalPayable
-    });
+    // console.log(" Using saved breakdown for refund:", {
+    //   itemSubtotal: item.itemSubtotal,
+    //   couponShare: item.itemCouponShare,
+    //   afterCoupon: item.itemAfterCoupon,
+    //   taxShare: item.itemTaxShare,
+    //   shippingShare: item.itemShippingShare,
+    //   finalPayable: item.itemFinalPayable
+    // });
   } 
-  // 🎯 OPTION 2: Old orders without breakdown (FALLBACK)
+  //  OPTION 2: Old orders without breakdown (FALLBACK)
   else {
-    console.log("⚠️ No breakdown found, using fallback calculation");
+    // console.log(" No breakdown found, using fallback calculation");
     refundAmount = calculateRefundOldWay(order, item, itemId);
   }
 
   // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  // ✅ SAFETY CAPS
+  //  SAFETY CAPS
   // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
   // 1. Cannot exceed total order amount
@@ -55,12 +55,12 @@ function calculateItemRefund(order, item, itemId) {
   // 3. Cannot be negative
   refundAmount = Math.max(0, round2(refundAmount));
 
-  console.log("💰 Final refund calculation:", {
-    orderTotal: order.totalAmount,
-    previousRefunds,
-    refundableRemaining,
-    calculatedRefund: refundAmount
-  });
+  // console.log(" Final refund calculation:", {
+  //   orderTotal: order.totalAmount,
+  //   previousRefunds,
+  //   refundableRemaining,
+  //   calculatedRefund: refundAmount
+  // });
 
   return refundAmount;
 }
@@ -150,13 +150,13 @@ export const cancelItem = async (req, res) => {
 
     if (isPrepaid) {
       // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-      // ✅ STEP 4: CALCULATE REFUND
+      // STEP 4: CALCULATE REFUND
       // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
       refundAmount = calculateItemRefund(order, item, itemId);
 
       // Skip if refund is 0 or negative
       if (refundAmount <= 0) {
-        console.warn("⚠️ Refund amount is 0 or negative, skipping wallet credit");
+        console.warn(" Refund amount is 0 or negative, skipping wallet credit");
       } else {
         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         // STEP 5: CREDIT TO WALLET
@@ -240,7 +240,7 @@ export const cancelItem = async (req, res) => {
   } catch (err) {
     await session.abortTransaction();
     session.endSession();
-    console.error("❌ Cancel Error:", err);
+    console.error(" Cancel Error:", err);
     return res.status(500).json({
       success: false,
       message: "Something went wrong",
@@ -310,7 +310,7 @@ export const approveReturn = async (req, res) => {
     }
 
     // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-    // ✅ STEP 2: CALCULATE REFUND
+    //  STEP 2: CALCULATE REFUND
     // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
     const refundAmount = calculateItemRefund(order, item, itemId);
 
@@ -407,7 +407,7 @@ export const approveReturn = async (req, res) => {
   } catch (err) {
     await session.abortTransaction();
     session.endSession();
-    console.error("❌ Approve Return Error:", err);
+    console.error(" Approve Return Error:", err);
     return res.status(500).json({
       success: false,
       message: "Server error while approving return",
@@ -426,7 +426,7 @@ export function distributeOrderCostsToItems(
 ) {
   const numItems = items.length;
 
-  /* 1️⃣ Split coupon proportionally */
+  /* 1️ Split coupon proportionally */
   let remainingCoupon = round2(couponDiscount);
 
   for (let i = 0; i < numItems; i++) {
@@ -448,7 +448,7 @@ export function distributeOrderCostsToItems(
     item.itemAfterCoupon = round2(item.itemSubtotal - item.itemCouponShare);
   }
 
-  /* 2️⃣ Split tax proportionally */
+  /* 2️Split tax proportionally */
   const subtotalAfterCoupon = round2(
     items.reduce((sum, i) => sum + i.itemAfterCoupon, 0)
   );
@@ -471,12 +471,12 @@ export function distributeOrderCostsToItems(
     }
   }
 
-  /* 3️⃣ Shipping → only last item */
+  /* 3️ Shipping → only last item */
   items.forEach((item, index) => {
     item.itemShippingShare = index === numItems - 1 ? round2(shippingFee) : 0;
   });
 
-  /* 4️⃣ Final payable per item */
+  /* 4️ Final payable per item */
   items.forEach(item => {
     item.itemFinalPayable = round2(
       item.itemAfterCoupon +
@@ -485,7 +485,7 @@ export function distributeOrderCostsToItems(
     );
   });
 
-  /* 5️⃣ ✅ FINAL SAFETY CORRECTION (1 paisa fix) */
+  /* 5️ FINAL SAFETY CORRECTION (1 paisa fix) */
   const itemsTotal = round2(
     items.reduce((sum, i) => sum + i.itemFinalPayable, 0)
   );
@@ -503,13 +503,13 @@ export function distributeOrderCostsToItems(
     );
   }
 
-  // ✅ FINAL VALIDATION - Items must sum to order total
+  //  FINAL VALIDATION - Items must sum to order total
   const finalSum = round2(
     items.reduce((sum, i) => sum + i.itemFinalPayable, 0)
   );
 
   if (Math.abs(finalSum - orderTotal) > 0.01) {
-    console.error("❌ CRITICAL: Item distribution failed!", {
+    console.error(" CRITICAL: Item distribution failed!", {
       orderTotal,
       itemsSum: finalSum,
       difference: round2(orderTotal - finalSum)

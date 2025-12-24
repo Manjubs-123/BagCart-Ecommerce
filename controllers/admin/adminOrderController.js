@@ -331,7 +331,7 @@ export const getReturnRequests = async (req, res) => {
     .populate("items.product")
     .sort({ createdAt: -1 })
     .lean();
-console.log("Return page loaded");
+// console.log("Return page loaded");
 
     return res.render("admin/returnRequests", { orders });
   } catch (err) {
@@ -395,18 +395,18 @@ export const approveReturn = async (req, res) => {
     if (item.itemFinalPayable !== undefined && item.itemFinalPayable > 0) {
       refundAmount = item.itemFinalPayable;
       
-      console.log("Using saved breakdown for return refund:", {
-        itemSubtotal: item.itemSubtotal,
-        couponShare: item.itemCouponShare,
-        afterCoupon: item.itemAfterCoupon,
-        taxShare: item.itemTaxShare,
-        shippingShare: item.itemShippingShare,
-        finalPayable: item.itemFinalPayable
-      });
+      // console.log("Using saved breakdown for return refund:", {
+      //   itemSubtotal: item.itemSubtotal,
+      //   couponShare: item.itemCouponShare,
+      //   afterCoupon: item.itemAfterCoupon,
+      //   taxShare: item.itemTaxShare,
+      //   shippingShare: item.itemShippingShare,
+      //   finalPayable: item.itemFinalPayable
+      // });
     } 
     //  OPTION 2: OLD ORDERS without breakdown (FALLBACK)
     else {
-      console.log(" No breakdown found, using old calculation method");
+      // console.log(" No breakdown found, using old calculation method");
       refundAmount = calculateRefundOldWay(order, item, itemId);
     }
 
@@ -432,7 +432,7 @@ export const approveReturn = async (req, res) => {
         transactions: []
       }], { session }))[0];
     }
-    console.log(refundAmount)
+    // console.log(refundAmount)
     wallet.balance += refundAmount;
     wallet.transactions.push({
       type: "credit",

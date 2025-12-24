@@ -228,7 +228,7 @@ export const updateCoupon = async (req, res) => {
       isActive
     } = req.body;
 
-    console.log(" UPDATE PAYLOAD:", req.body); 
+    // console.log(" UPDATE PAYLOAD:", req.body); 
 
     const errors = [];
 
@@ -299,7 +299,7 @@ export const updateCoupon = async (req, res) => {
       isActive
     };
 
-    console.log(" SAVING TO DB:", updateData); 
+    // console.log(" SAVING TO DB:", updateData); 
 
     const updatedCoupon = await Coupon.findByIdAndUpdate(
       id, 
@@ -311,7 +311,7 @@ export const updateCoupon = async (req, res) => {
       return res.status(404).json({ success: false, message: ["Coupon not found!"] });
     }
 
-    console.log(" COUPON UPDATED IN DB:", updatedCoupon);
+    // console.log(" COUPON UPDATED IN DB:", updatedCoupon);
     return res.json({ success: true, message: ["Coupon updated successfully!"] });
 
   } catch (err) {

@@ -864,10 +864,10 @@ export const getSecuritySettings = async (req, res) => {
     if (!req.session.user) return res.redirect('/user/login');
 
     const userId = req.session.user.id || req.session.user._id;
-    console.log("USER ID:", userId);
+    // console.log("USER ID:", userId);
 
     const user = await User.findById(userId);
-    console.log("USER:", user);
+    // console.log("USER:", user);
 
     res.render("user/changepassword", { 
       user,
@@ -878,7 +878,7 @@ export const getSecuritySettings = async (req, res) => {
     });
 
   } catch (err) {
-    console.log("ERROR:", err);
+    // console.log("ERROR:", err);
     res.status(500).send("Server error");
   }
 };

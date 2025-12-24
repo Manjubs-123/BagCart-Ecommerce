@@ -54,10 +54,10 @@ export const postAdminLogin = async (req, res) => {
           console.error("Session save error:", err);
           return res.redirect("/admin?error=server");
         }
-        console.log("Admin logged in, session preserved:", {
-          isAdmin: req.session.isAdmin,
-          userStillLoggedIn: req.session.isLoggedIn
-        });
+        // console.log("Admin logged in, session preserved:", {
+        //   isAdmin: req.session.isAdmin,
+        //   userStillLoggedIn: req.session.isLoggedIn
+        // });
         return res.redirect("/admin/dashboard");
       });
 
@@ -302,7 +302,7 @@ export const getRevenueData = async (req, res) => {
     res.json({ labels: [], values: [] });
 
   } catch (err) {
-    console.log(err);
+    // console.log(err);
     res.json({ labels: [], values: [] });
   }
 };

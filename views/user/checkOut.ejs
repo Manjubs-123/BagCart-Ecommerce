@@ -631,7 +631,7 @@
         // INITIALIZATION
         // ============================================
         document.addEventListener('DOMContentLoaded', function() {
-            console.log('🚀 Initializing checkout page...');
+            // console.log(' Initializing checkout page...');
             loadCheckoutData();
             setupEventListeners();
             setupAddressModalValidation();
@@ -642,15 +642,15 @@
         // ============================================
         async function loadCheckoutData() {
             try {
-                console.log('📥 Loading checkout data...');
+                // console.log(' Loading checkout data...');
 
                 // Load cart items
                 const cartResponse = await axios.get('/api/cart');
-                console.log('📦 Cart Response:', cartResponse.data);
+                // console.log(' Cart Response:', cartResponse.data);
                 
                 if (cartResponse.data.success) {
                     checkoutState.cartItems = cartResponse.data.cart.items || [];
-                    console.log(`✅ Loaded ${checkoutState.cartItems.length} cart items`);
+                    // console.log(` Loaded ${checkoutState.cartItems.length} cart items`);
                     
                     // Log each item's prices for debugging
                     checkoutState.cartItems.forEach((item, index) => {
@@ -671,7 +671,7 @@
                 const addressResponse = await axios.get('/api/addresses');
                 if (addressResponse.data.success) {
                     checkoutState.addresses = addressResponse.data.addresses || [];
-                    console.log(`✅ Loaded ${checkoutState.addresses.length} addresses`);
+                    console.log(` Loaded ${checkoutState.addresses.length} addresses`);
                     renderAddresses();
                 }
 
@@ -679,7 +679,7 @@
                 const walletResponse = await axios.get('/api/wallet/balance');
                 if (walletResponse.data.success) {
                     checkoutState.walletBalance = round2(walletResponse.data.balance || 0);
-                    console.log(`✅ Wallet balance: ₹${checkoutState.walletBalance}`);
+                    console.log(` Wallet balance: ₹${checkoutState.walletBalance}`);
                     
                     const walletBalanceUI = document.getElementById("walletBalanceDisplay");
                     if (walletBalanceUI) {
@@ -690,10 +690,10 @@
                 // Load available coupons
                 loadAvailableCoupons();
 
-                console.log('✅ Checkout data loaded successfully');
+                // console.log(' Checkout data loaded successfully');
 
             } catch (error) {
-                console.error('❌ Error loading checkout data:', error);
+                console.error(' Error loading checkout data:', error);
                 showNotification('Failed to load checkout data', 'error');
             }
         }
@@ -702,7 +702,7 @@
         // UPDATE ORDER SUMMARY - FIXED VERSION
         // ============================================
         function updateOrderSummary() {
-            console.log('💰 Calculating order summary...');
+            // console.log('Calculating order summary...');
 
             // Calculate subtotal from cart items (USING CART PRICES)
             let subtotal = 0;
@@ -721,7 +721,7 @@
             });
 
             subtotal = round2(subtotal);
-            console.log(`  📊 Subtotal (before coupon): ₹${subtotal.toFixed(2)}`);
+            console.log(`   Subtotal (before coupon): ₹${subtotal.toFixed(2)}`);
 
             // Apply coupon discount
             const couponDiscount = checkoutState.appliedCoupon 
@@ -731,21 +731,21 @@
             const subtotalAfterCoupon = round2(subtotal - couponDiscount);
             
             if (couponDiscount > 0) {
-                console.log(`  🎟️ Coupon discount: -₹${couponDiscount.toFixed(2)}`);
-                console.log(`  📊 Subtotal (after coupon): ₹${subtotalAfterCoupon.toFixed(2)}`);
+                console.log(`   Coupon discount: -₹${couponDiscount.toFixed(2)}`);
+                console.log(`   Subtotal (after coupon): ₹${subtotalAfterCoupon.toFixed(2)}`);
             }
 
             // Calculate tax on discounted amount (10% GST)
             const tax = round2(subtotalAfterCoupon * 0.10);
-            console.log(`  💸 Tax (10%): ₹${tax.toFixed(2)}`);
+            console.log(`   Tax (10%): ₹${tax.toFixed(2)}`);
 
             // Calculate shipping
             const shipping = subtotal > 500 ? 0 : 50;
-            console.log(`  🚚 Shipping: ${shipping === 0 ? 'FREE' : '₹' + shipping.toFixed(2)}`);
+            console.log(`   Shipping: ${shipping === 0 ? 'FREE' : '₹' + shipping.toFixed(2)}`);
 
             // FINAL TOTAL
             const total = round2(subtotalAfterCoupon + tax + shipping);
-            console.log(`  🎯 GRAND TOTAL: ₹${total.toFixed(2)}`);
+            console.log(`   GRAND TOTAL: ₹${total.toFixed(2)}`);
 
             // Store in state
             checkoutState.orderSummary = { 
@@ -787,7 +787,7 @@
             // Update Grand Total
             document.getElementById('totalAmount').textContent = `₹${total.toFixed(2)}`;
             
-            console.log('✅ Order summary updated');
+            // console.log(' Order summary updated');
         }
 
         // ============================================
@@ -961,16 +961,16 @@
         // ============================================
         async function loadAvailableCoupons() {
             try {
-                console.log('🎟️ Loading available coupons...');
+                // console.log(' Loading available coupons...');
                 const response = await axios.get('/user/coupons/available');
                 
                 if (response.data.success) {
                     checkoutState.availableCoupons = response.data.coupons || [];
-                    console.log(`✅ Loaded ${checkoutState.availableCoupons.length} coupons`);
+                    console.log(`Loaded ${checkoutState.availableCoupons.length} coupons`);
                     renderAvailableCoupons();
                 }
             } catch (error) {
-                console.error('❌ Error loading coupons:', error);
+                console.error(' Error loading coupons:', error);
             }
         }
 
@@ -1023,7 +1023,7 @@
 
         async function applyCoupon() {
             const couponCode = document.getElementById('couponCode').value.trim().toUpperCase();
-            console.log('🎟️ Applying coupon:', couponCode);
+            console.log(' Applying coupon:', couponCode);
             const applyBtn = document.getElementById('applyCouponBtn');
             
             if (!couponCode) {
@@ -1048,7 +1048,7 @@
                     showCouponError(response.data.message);
                 }
             } catch (error) {
-                console.error('❌ Error applying coupon:', error);
+                console.error(' Error applying coupon:', error);
                 showCouponError('Failed to apply coupon');
             } finally {
                 applyBtn.disabled = false;
@@ -1190,7 +1190,7 @@
         // ============================================
         async function handlePlaceOrder() {
             try {
-                console.log('🚀 Placing order...');
+                // console.log(' Placing order...');
 
                 // Validation checks
                 if (!checkoutState.selectedAddress) {
@@ -1224,12 +1224,12 @@
                     couponCode: checkoutState.appliedCoupon?.code || null
                 };
 
-                console.log('📤 Sending order data:', orderData);
-                console.log('💵 Frontend calculated total:', checkoutState.orderSummary.total);
+                console.log(' Sending order data:', orderData);
+                console.log(' Frontend calculated total:', checkoutState.orderSummary.total);
 
                 const response = await axios.post('/api/orders', orderData);
 
-                console.log('📥 Backend response:', response.data);
+                console.log(' Backend response:', response.data);
 
                 if (!response.data.success) {
                     btn.disabled = false;
@@ -1237,18 +1237,18 @@
                     return showNotification(response.data.message, 'error');
                 }
 
-                // ✅ CRITICAL: Verify backend total matches frontend total
+                // CRITICAL: Verify backend total matches frontend total
                 const backendTotal = round2(response.data.totalAmount);
                 const frontendTotal = round2(checkoutState.orderSummary.total);
                 
-                console.log('🔍 Price verification:', {
+                console.log('Price verification:', {
                     backend: backendTotal,
                     frontend: frontendTotal,
                     difference: Math.abs(backendTotal - frontendTotal)
                 });
 
                 if (Math.abs(backendTotal - frontendTotal) > 0.02) {
-                    console.error('⚠️ PRICE MISMATCH DETECTED!');
+                    console.error(' PRICE MISMATCH DETECTED!');
                     console.error('Backend:', backendTotal, 'Frontend:', frontendTotal);
                     btn.disabled = false;
                     btn.innerHTML = originalHTML;
@@ -1258,30 +1258,30 @@
                     );
                 }
 
-                console.log('✅ Price verification passed');
+                console.log(' Price verification passed');
 
                 // COD - Direct redirect
                 if (checkoutState.selectedPaymentMethod === 'cod') {
-                    console.log('✅ COD order placed');
+                    console.log('COD order placed');
                     return window.location.href = `/order/confirmation/${response.data.orderId}`;
                 }
 
                 // Wallet - Direct redirect
                 if (checkoutState.selectedPaymentMethod === 'wallet') {
-                    console.log('✅ Wallet order placed');
+                    console.log('Wallet order placed');
                     return window.location.href = `/order/confirmation/${response.data.orderId}`;
                 }
 
                 // Razorpay - Create payment order
                 if (checkoutState.selectedPaymentMethod === 'razorpay') {
-                    console.log('💳 Initializing Razorpay payment...');
+                    console.log('Initializing Razorpay payment...');
                     
                     const rzpResponse = await axios.post('/api/payment/payment/create-order', {
                         orderId: response.data.orderId,
-                        amount: backendTotal // ✅ Use verified backend amount
+                        amount: backendTotal // Use verified backend amount
                     });
 
-                    console.log('💳 Razorpay order created:', rzpResponse.data);
+                    console.log('Razorpay order created:', rzpResponse.data);
 
                     if (!rzpResponse.data.success) {
                         btn.disabled = false;
@@ -1297,7 +1297,7 @@
                 }
 
             } catch (err) {
-                console.error('❌ Place order error:', err);
+                console.error(' Place order error:', err);
                 const btn = document.getElementById('placeOrderBtn');
                 btn.disabled = false;
                 btn.innerHTML = '<i class="fas fa-lock"></i><span>Place Order</span>';
@@ -1680,7 +1680,7 @@
         async function initiateRazorpayPayment(orderResponse) {
             const { orderId, amount, currency, razorpayOrderId } = orderResponse;
 
-            console.log('💳 Starting Razorpay with:', {
+            console.log(' Starting Razorpay with:', {
                 orderId,
                 amount,
                 currency,
@@ -1697,13 +1697,13 @@
 
                 modal: {
                     ondismiss: function () {
-                        console.log('❌ User closed Razorpay popup');
+                        console.log(' User closed Razorpay popup');
                         window.location.href = `/order/payment-failed/${orderId}`;
                     }
                 },
 
                 handler: async function (response) {
-                    console.log('✅ Payment successful, verifying...');
+                    console.log('Payment successful, verifying...');
                     
                     try {
                         const verifyRes = await axios.post("/api/payment/verify", {
@@ -1714,14 +1714,14 @@
                         });
 
                         if (verifyRes.data.success) {
-                            console.log('✅ Payment verified');
+                            console.log(' Payment verified');
                             window.location.href = `/order/confirmation/${orderId}`;
                         } else {
-                            console.error('❌ Payment verification failed');
+                            console.error(' Payment verification failed');
                             window.location.href = `/order/payment-failed/${orderId}`;
                         }
                     } catch (error) {
-                        console.error('❌ Verification error:', error);
+                        console.error(' Verification error:', error);
                         window.location.href = `/order/payment-failed/${orderId}`;
                     }
                 },
@@ -1733,7 +1733,7 @@
             const rzp = new Razorpay(options);
 
             rzp.on('payment.failed', function (response) {
-                console.error('❌ Razorpay payment failed:', response.error);
+                console.error('Razorpay payment failed:', response.error);
                 window.location.href = `/order/payment-failed/${orderId}`;
             });
 

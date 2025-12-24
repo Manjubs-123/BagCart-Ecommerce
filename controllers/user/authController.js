@@ -8,7 +8,7 @@ const DEFAULT_ID = "AdobeStock_1185421594_Preview_cvfm1v";
  * Google OAuth Callback Controller
  */
 export const googleCallbackController = async (req, res) => {
-  console.log("Google login successful for:", req.user?.email);
+//   console.log("Google login successful for:", req.user?.email);
 
   try {
     let user = await User.findOne({ email: req.user.email });
@@ -27,7 +27,7 @@ export const googleCallbackController = async (req, res) => {
       await user.save();
     }
 
-    // ✅ Preserve admin session if exists
+    //  Preserve admin session if exists
     const wasAdminLoggedIn = req.session.isAdmin;
 
     // Store user session
@@ -57,10 +57,10 @@ export const googleCallbackController = async (req, res) => {
         return res.redirect("/user/login");
       }
 
-      console.log("Session saved successfully:", {
-        user: req.session.user?.email,
-        isAdmin: req.session.isAdmin,
-      });
+    //   console.log("Session saved successfully:", {
+    //     user: req.session.user?.email,
+    //     isAdmin: req.session.isAdmin,
+    //   });
 
       res.redirect("/user/landing");
     });

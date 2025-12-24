@@ -158,8 +158,8 @@ export const getActiveCategories = async (req, res) => {
 
 export const addProduct = async (req, res) => {
   try {
-    console.log("Incoming body:", req.body);
-    console.log("Incoming files:", req.files);
+    // console.log("Incoming body:", req.body);
+    // console.log("Incoming files:", req.files);
 
     let { name, description, brand, category, variants } = req.body;
 

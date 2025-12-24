@@ -200,7 +200,7 @@ export const getActiveCategories = async (req, res) => {
 
 export const postCreateOffer = async (req, res) => {
   try {
-    console.log("Incoming BODY:", req.body);
+    // console.log("Incoming BODY:", req.body);
 
     let {
       type,

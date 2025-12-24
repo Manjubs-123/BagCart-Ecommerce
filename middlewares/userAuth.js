@@ -6,7 +6,7 @@ export const isUserLoggedIn = async (req, res, next) => {
   try {
 
 
-    console.log("Middleware", req.session)
+    // console.log("Middleware", req.session)
    
 
     if (!req.session || !req.session.isLoggedIn || !req.session.user) {
@@ -31,7 +31,7 @@ export const isUserLoggedIn = async (req, res, next) => {
 
     // Keep user in req for convenience
     req.user = user;
-    console.log("USER:", req.user);
+    // console.log("USER:", req.user);
 
     next();
   } catch (err) {

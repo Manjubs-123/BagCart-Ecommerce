@@ -37,7 +37,7 @@ export const getWalletPage = async (req, res) => {
       };
     }
 
-    // ✅ SORT transactions by date (latest FIRST)
+    //  SORT transactions by date (latest FIRST)
     wallet.transactions = wallet.transactions
       .slice()
       .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
