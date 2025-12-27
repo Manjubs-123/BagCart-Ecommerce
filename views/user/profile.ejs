@@ -219,6 +219,10 @@
                                             <input type="tel" id="phone" value="<%= user.phone || '' %>"
                                                 class="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:outline-none" />
                                         </div>
+                                        <p id="phoneWarning" class="text-red-500 text-sm mt-1 hidden">
+  Please enter a valid 10-digit Indian phone number
+</p>
+
 
                                         <div class="flex gap-3">
 
@@ -561,25 +565,18 @@
 
             <script>
                 // Tab switching functionality
-                function switchTab(tabName) {
-                    // Hide all tab contents
-                    document.querySelectorAll('.tab-content').forEach(tab => {
-                        tab.classList.add('hidden');
-                    });
+            function switchTab(tabName) {
+  // Hide all tab contents
+  document.querySelectorAll('.tab-content').forEach(tab => {
+    tab.classList.add('hidden');
+  });
 
-                    // Remove active state from all tab buttons
-                    document.querySelectorAll('.tab-button').forEach(button => {
-                        button.classList.remove('text-blue-600', 'font-semibold', 'bg-blue-50', 'border-l-4', 'border-blue-600');
-                        button.classList.add('text-gray-700', 'hover:bg-gray-100');
-                    });
-
-                    // Show selected tab content
-                    document.getElementById(`${tabName}-tab`).classList.remove('hidden');
-
-                    // Add active state to clicked tab button
-                    event.currentTarget.classList.remove('text-gray-700', 'hover:bg-gray-100');
-                    event.currentTarget.classList.add('text-blue-600', 'font-semibold', 'bg-blue-50', 'border-l-4', 'border-blue-600');
-                }
+  // Show selected tab if exists
+  const tab = document.getElementById(`${tabName}-tab`);
+  if (tab) {
+    tab.classList.remove('hidden');
+  }
+}
 
                 // Edit mode toggle
                 function toggleEditMode(formType) {
@@ -660,124 +657,124 @@
                     document.getElementById("cropperModal").classList.add("hidden");
                 }
 
+
+
                 const phoneInput = document.getElementById("phone");
-                const phoneWarning = document.getElementById("phoneWarning");
+const phoneWarning = document.getElementById("phoneWarning");
 
-                phoneInput.addEventListener("input", function () {
+phoneInput.addEventListener("input", function () {
+  // Allow digits only
+  this.value = this.value.replace(/\D/g, "");
 
-                    // Block letters & symbols
-                    this.value = this.value.replace(/[^0-9]/g, "");
+  // Limit to exactly 10 digits
+  if (this.value.length > 10) {
+    this.value = this.value.slice(0, 10);
+  }
 
-                    // Limit to 10 digits
-                    if (this.value.length > 10) {
-                        this.value = this.value.slice(0, 10);
-                    }
+  //  Strong Indian phone validation
+  const isValid = /^[6-9][0-9]{9}$/.test(this.value);
 
-                    const indianPhoneRegex = /^[6-9][0-9]{9}$/;
+  if (!this.value) {
+    // empty → neutral state
+    this.classList.remove("border-red-500", "border-green-500");
+    phoneWarning.classList.add("hidden");
+  } 
+  else if (isValid) {
+    // valid → green
+    this.classList.add("border-green-500");
+    this.classList.remove("border-red-500");
+    phoneWarning.classList.add("hidden");
+  } 
+  else {
+    // invalid → red + warning
+    this.classList.add("border-red-500");
+    this.classList.remove("border-green-500");
+    phoneWarning.classList.remove("hidden");
+  }
+});
 
-                    // LIVE RED / GREEN Border
-                    if (this.value.length === 0) {
-                        this.classList.remove("border-red-500", "border-green-500");
-                        phoneWarning.classList.add("hidden");
-                    }
-                    else if (indianPhoneRegex.test(this.value)) {
-                        this.classList.add("border-green-500");
-                        this.classList.remove("border-red-500");
-                        phoneWarning.classList.add("hidden");
-                    }
-                    else {
-                        this.classList.add("border-red-500");
-                        this.classList.remove("border-green-500");
-                        phoneWarning.classList.remove("hidden");
-                    }
-                });
 
-                function validateFullName() {
-  const nameInput = document.getElementById("fullName");
-  const name = nameInput.value.trim();
+function validateFullName() {
+  const input = document.getElementById("fullName");
+  const name = input.value.trim();
 
-  // Empty
+  //  Empty check
   if (!name) {
     Swal.fire("Invalid Name", "Name cannot be empty", "warning");
-    nameInput.focus();
+    input.focus();
     return false;
   }
 
-  // Minimum length
+  //  Minimum length
   if (name.length < 2) {
     Swal.fire("Invalid Name", "Name must be at least 2 characters", "warning");
-    nameInput.focus();
+    input.focus();
     return false;
   }
 
-  // Allow letters, space, dot, hyphen
-  const nameRegex = /^[A-Za-z]+([ .-][A-Za-z]+)*$/;
+  
+  const nameRegex = /^[A-Za-z]+( [A-Za-z]+)*$/;
 
   if (!nameRegex.test(name)) {
     Swal.fire(
       "Invalid Name",
-      "Name can contain only letters, spaces, dot (.) or hyphen (-)",
+      "Name can contain only letters and single spaces (no symbols, no numbers)",
       "warning"
     );
-    nameInput.focus();
+    input.focus();
     return false;
   }
 
   return true;
 }
 
+    async function saveProfile() {
+  // STOP if name invalid
+  if (!validateFullName()) return;
 
-                async function saveProfile() {
-                    const formData = new FormData();
-                    formData.append("name", document.getElementById("fullName").value);
-                    formData.append("phone", document.getElementById("phone").value);
+  const phone = document.getElementById("phone").value.trim();
+  const phoneValid = /^[6-9][0-9]{9}$/.test(phone);
 
-                    if (croppedImageBlob) {
-                        formData.append("profileImage", croppedImageBlob, "profile.jpg");
-                    }
+  // STOP if phone invalid
+  if (!phoneValid) {
+    Swal.fire(
+      "Invalid Phone Number",
+      "Please enter a valid 10-digit Indian phone number",
+      "warning"
+    );
+    document.getElementById("phone").focus();
+    return;
+  }
 
-                    try {
-                        const res = await axios.post("/user/updateProfile", formData, {
-                            headers: { "Content-Type": "multipart/form-data" }
-                        });
+  //  ONLY NOW proceed
+  const formData = new FormData();
+  formData.append("name", document.getElementById("fullName").value.trim());
+  formData.append("phone", phone);
 
-                     if (res.data.success) {
-  Swal.fire({
-    icon: "success",
-    title: "Profile Updated!",
-    text: "Your details & image are saved.",
-    confirmButtonColor: "#2563eb"
-  }).then(() => window.location.reload());
+  if (croppedImageBlob) {
+    formData.append("profileImage", croppedImageBlob, "profile.jpg");
+  }
 
-} else if (res.data.message === "No changes detected") {
-  Swal.fire({
-    icon: "info",
-    title: "No Changes",
-    text: "You didn’t change anything.",
-    confirmButtonColor: "#2563eb"
-  });
+  try {
+    const res = await axios.post("/user/updateProfile", formData);
 
-} else {
-  Swal.fire({
-    icon: "error",
-    title: "Update Failed",
-    text: res.data.message || "Failed to update profile"
-  });
+    if (res.data.success) {
+      Swal.fire({
+        icon: "success",
+        title: "Profile Updated",
+        confirmButtonColor: "#2563eb"
+      }).then(() => window.location.reload());
+    } else if (res.data.message === "No changes detected") {
+      Swal.fire("No Changes", "You didn’t change anything.", "info");
+    } else {
+      Swal.fire("Update Failed", res.data.message || "Failed", "error");
+    }
+  } catch (err) {
+    Swal.fire("Error", "Something went wrong", "error");
+  }
 }
-  
 
-                    } catch (err) {
-                        Swal.fire("Error", "Something went wrong", "error");
-                    }
-                }
-
-
-
-                function cancelCrop() {
-                    document.getElementById("cropperModal").classList.add("hidden");
-                }
-
-               
+             
                 function showNotification(message, type) {
                     const notification = document.createElement('div');
                     notification.className = `fixed top-4 right-4 p-4 rounded-lg shadow-lg z-50 transform transition-transform duration-300 ${type === 'success' ? 'bg-green-500 text-white' : 'bg-red-500 text-white'
