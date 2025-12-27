@@ -413,6 +413,9 @@ let currentEmail = '';
         otpVerificationCard.classList.remove("hidden");
 
         otpEmailDisplay.textContent = newEmail;
+//save state
+        sessionStorage.setItem("changeEmailStep", "otp");
+sessionStorage.setItem("changeEmailEmail", newEmail);
         startOTPTimer();
         document.querySelector(".otp-input").focus();
 
@@ -552,6 +555,8 @@ function startOTPTimer() {
         // SUCCESS
         otpVerificationCard.classList.add("hidden");
         successCard.classList.remove("hidden");
+        sessionStorage.removeItem("changeEmailStep");
+sessionStorage.removeItem("changeEmailEmail");
         successEmail.textContent = response.data.newEmail;
 
         clearInterval(otpTimer);
@@ -664,6 +669,24 @@ function startOTPTimer() {
         
         // Initialize the page
         document.addEventListener('DOMContentLoaded', function() {
+
+   const step = sessionStorage.getItem("changeEmailStep");
+    const email = sessionStorage.getItem("changeEmailEmail");
+
+    if (step === "otp" && email) {
+        emailEntryCard.classList.add("hidden");
+        otpVerificationCard.classList.remove("hidden");
+
+        otpEmailDisplay.textContent = email;
+        currentEmail = email;
+
+        startOTPTimer();
+        setTimeout(() => {
+            const firstOtp = document.querySelector(".otp-input");
+            if (firstOtp) firstOtp.focus();
+        }, 300);
+    }
+
             // Add input event listeners for real-time validation
             newEmailInput.addEventListener('input', function() {
                 hideError('emailError');
