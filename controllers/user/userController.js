@@ -276,7 +276,9 @@ export const loginUser = async (req, res) => {
 
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) return res.render("user/login", { error: "Invalid email or password." });
-
+    if(user.isVerified!==true){
+      return res.render("user/login", { error: "Email is not verified." });
+    }
     req.session.isLoggedIn = true;//mark user as logged in 
     req.session.user = { id: user._id, name: user.name, email: user.email,profileImage:user.profileImage,wishlistCount:user.wishlist?.length||0, cartCount: user.cart?.items?.length || 0 };
 
