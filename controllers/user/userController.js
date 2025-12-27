@@ -35,6 +35,11 @@ export const signupUser = async (req, res) => {
 
     const { name, email, password, confirmPassword } = req.body;
 
+    if(req.session?.user){
+      return res.render("user/signup",{
+        error:"You are already logged in.Please logout before creating a new account"
+      });
+    }
  
     if (!name?.trim()) return res.render("user/signup", { error: "Name is required." });
     if (name.trim().length < 6) return res.render("user/signup", { error: "Name must be at least 6 characters." });

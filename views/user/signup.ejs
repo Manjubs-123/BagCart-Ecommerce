@@ -8,8 +8,10 @@
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
 
-    <!-- Font Awesome -->
-    <script src="https://kit.fontawesome.com/a2e0da32f7.js" crossorigin="anonymous"></script>
+   <link
+  rel="stylesheet"
+  href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
+/>
 
     <style>
       :root {
@@ -89,12 +91,19 @@
         <!-- Signup Card -->
         <div class="card-hover bg-white rounded-2xl shadow-xl p-8">
           <!-- Global Error Message -->
-          <div id="errorMessage" class="bg-red-50 border border-red-200 text-red-700 p-4 rounded-lg text-sm text-center hidden mb-6" role="alert">
-            <div class="flex items-center">
-              <i class="fas fa-exclamation-circle mr-2"></i>
-              <span id="errorText"></span>
-            </div>
-          </div>
+      <% if (error) { %>
+  <div
+    class="bg-red-50 border border-red-200 text-red-700 p-4 rounded-lg text-sm text-center mb-6"
+    role="alert"
+  >
+    <div class="flex items-center justify-center">
+      <i class="fas fa-exclamation-circle mr-2"></i>
+      <span><%= error %></span>
+    </div>
+  </div>
+<% } %>
+
+
 
           <!-- Signup Form -->
           <form id="signupForm" action="/user/signup" method="POST" class="space-y-6" novalidate>
@@ -290,8 +299,7 @@
         const emailError = document.getElementById('emailError');
         const passwordError = document.getElementById('passwordError');
         const confirmError = document.getElementById('confirmError');
-        const errorMessage = document.getElementById('errorMessage');
-        const errorText = document.getElementById('errorText');
+      
         const togglePassword = document.getElementById('togglePassword');
         const toggleConfirmPassword = document.getElementById('toggleConfirmPassword');
         const submitBtn = document.getElementById('submitBtn');
@@ -387,7 +395,7 @@
               nameError.classList.add('hidden');
             }
           }
-          errorMessage.classList.add('hidden');
+        
         });
 
         email.addEventListener('input', () => {
@@ -402,7 +410,7 @@
               emailError.classList.add('hidden');
             }
           }
-          errorMessage.classList.add('hidden');
+         
         });
 
         password.addEventListener('input', () => {
@@ -428,7 +436,6 @@
             }
           }
           
-          errorMessage.classList.add('hidden');
         });
 
         confirmPassword.addEventListener('input', () => {
@@ -443,7 +450,6 @@
               confirmError.classList.add('hidden');
             }
           }
-          errorMessage.classList.add('hidden');
         });
 
         // Blur event handlers
@@ -551,13 +557,7 @@
 
           // Check if any validation failed
           if (!nameRes.valid || !emailRes.valid || !passRes.valid || !confirmRes.valid || !termsValid) {
-            if (!termsValid) {
-              errorText.textContent = 'You must agree to the Terms of Service and Privacy Policy.';
-            } else {
-              errorText.textContent = 'Please fix the highlighted errors before submitting.';
-            }
-            errorMessage.classList.remove('hidden');
-            
+           
             // Reset button state
             submitBtn.innerHTML = '<i class="fas fa-user-plus mr-2"></i> Create Account';
             submitBtn.disabled = false;
@@ -570,8 +570,7 @@
             return;
           }
 
-          // All valid - submit form
-          errorMessage.classList.add('hidden');
+         
           
           // Simulate API call delay
           setTimeout(() => {
