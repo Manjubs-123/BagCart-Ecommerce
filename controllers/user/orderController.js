@@ -209,10 +209,11 @@ if (Math.abs(sumCheck - totalAmount) > 0.001) {
   });
   await session.abortTransaction();
   session.endSession();
-  return res.status(500).json({
-    success: false,
-    message: "Order calculation error. Please try again."
-  });
+return res.status(409).json({
+  success: false,
+  message: err.message || "Stock changed. Please review your cart."
+});
+
 }
 
 
@@ -245,6 +246,34 @@ console.log({
         });
       }
     }
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// FINAL STOCK LOCK VALIDATION (MANDATORY)
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+for (const cartItem of cart.items) {
+  const product = await Product.findById(cartItem.product._id).session(session);
+  if (!product) {
+    throw new Error("Product not found");
+  }
+
+  const variant = product.variants[cartItem.variantIndex];
+  if (!variant) {
+    throw new Error("Variant not found");
+  }
+
+  if (variant.stock < cartItem.quantity) {
+   await session.abortTransaction();
+session.endSession();
+
+return res.status(409).json({
+  success: false,
+  message: `Stock changed for ${product.name}. Only ${variant.stock} left. Please review your cart.`
+});
+
+  }
+}
+
+
 
     // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
     // STEP 7: CREATE ORDER
