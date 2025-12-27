@@ -25,7 +25,7 @@ import { getProductDetails } from "../../controllers/user/shopController.js";
 import { isAuthenticated } from "../../middlewares/passportAuth.js";
 import profileUpload from "../../middlewares/profileUpload.js";
 
-const router = express.Router();
+const    router = express.Router();
 
 //Prevent browser caching
 router.use(noCache);
