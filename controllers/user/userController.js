@@ -1063,7 +1063,7 @@ export const toggleWishlist = async (req, res) => {
 };
 
 export const getCheckoutPage = (req, res) => {
-    res.render("user/checkOut", {
+    res.render("user/checkout", {
         user: req.session.user,
         ordersCount: 0,
         wishlistCount: req.session.user?.wishlistCount || 0,
