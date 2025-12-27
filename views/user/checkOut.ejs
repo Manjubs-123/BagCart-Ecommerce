@@ -3,12 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Checkout - BagHub</title>
+    <title>Address Modal - BagHub</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
     <style>
+        /* ALL YOUR EXISTING STYLES REMAIN THE SAME */
         :root {
             --primary: #1a56db;
             --primary-dark: #1e429f;
@@ -243,44 +245,46 @@
                         </div>
 
                         <!-- Razorpay Online Payment -->
-                        <div class="payment-method p-4 border border-gray-200 rounded-xl cursor-pointer"
-                             data-method="razorpay">
-                            <div class="flex items-center gap-4">
-                                <div class="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center text-blue-600">
-                                    <i class="fas fa-credit-card text-xl"></i>
-                                </div>
-                                <div class="flex-grow">
-                                    <h3 class="font-bold text-gray-900">Online Payment</h3>
-                                    <p class="text-gray-600 text-sm">Pay securely with Razorpay</p>
-                                </div>
-                                <div class="w-6 h-6 rounded-full border-2 border-gray-300 flex items-center justify-center">
-                                    <div class="w-3 h-3 rounded-full bg-blue-600 hidden"></div>
-                                </div>
-                            </div>
-                        </div>
+<div class="payment-method p-4 border border-gray-200 rounded-xl cursor-pointer"
+     data-method="razorpay">
+    <div class="flex items-center gap-4">
+        <div class="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center text-blue-600">
+            <i class="fas fa-credit-card text-xl"></i>
+        </div>
+        <div class="flex-grow">
+            <h3 class="font-bold text-gray-900">Online Payment</h3>
+            <p class="text-gray-600 text-sm">Pay securely with Razorpay</p>
+        </div>
+        <div class="w-6 h-6 rounded-full border-2 border-gray-300 flex items-center justify-center">
+            <div class="w-3 h-3 rounded-full bg-blue-600 hidden"></div>
+        </div>
+    </div>
+</div>
 
-                        <!-- Wallet Payment -->
-                        <div class="payment-method p-4 border border-gray-200 rounded-xl cursor-pointer"
-                             data-method="wallet">
-                            <div class="flex items-center gap-4">
-                                <div class="w-12 h-12 rounded-full bg-yellow-100 flex items-center justify-center text-yellow-600">
-                                    <i class="fas fa-wallet text-xl"></i>
-                                </div>
-                                <div class="flex-grow">
-                                    <h3 class="font-bold text-gray-900">Wallet</h3>
-                                    <p class="text-gray-600 text-sm">
-                                        Available Balance: ₹<span id="walletBalanceDisplay">0.00</span>
-                                    </p>
-                                </div>
-                                <div class="w-6 h-6 rounded-full border-2 border-gray-300 flex items-center justify-center">
-                                    <div class="w-3 h-3 rounded-full bg-blue-600 hidden"></div>
-                                </div>
-                            </div>
-                        </div>
+
+<!-- Wallet Payment -->
+<div class="payment-method p-4 border border-gray-200 rounded-xl cursor-pointer"
+     data-method="wallet">
+    <div class="flex items-center gap-4">
+        <div class="w-12 h-12 rounded-full bg-yellow-100 flex items-center justify-center text-yellow-600">
+            <i class="fas fa-wallet text-xl"></i>
+        </div>
+        <div class="flex-grow">
+            <h3 class="font-bold text-gray-900">Wallet</h3>
+            <p class="text-gray-600 text-sm">
+                Available Balance: ₹<span id="walletBalanceDisplay">0</span>
+            </p>
+        </div>
+        <div class="w-6 h-6 rounded-full border-2 border-gray-300 flex items-center justify-center">
+            <div class="w-3 h-3 rounded-full bg-blue-600 hidden"></div>
+        </div>
+    </div>
+</div>
+
                     </div>
                 </div>
 
-                <!-- Coupon Section -->
+                <!-- Coupon Section - FIXED -->
                 <div class="bg-white rounded-2xl shadow-sm p-6 card-hover mb-6">
                     <h2 class="text-xl font-bold text-gray-900 mb-6">Apply Coupon</h2>
                     
@@ -593,23 +597,11 @@
 
     <!-- Notification Container -->
     <div id="notificationContainer" class="fixed top-4 right-4 z-50 space-y-2"></div>
-    
-    <%- include('../partials/footer') %>
+  <%- include('../partials/footer') %>
+
 
     <script>
-        // ============================================
-        // UTILITY FUNCTIONS
-        // ============================================
-        
-        // Precise rounding to 2 decimal places
-        const round2 = (num) => {
-            if (num === null || num === undefined || isNaN(num)) return 0;
-            return Math.round((Number(num) + Number.EPSILON) * 100) / 100;
-        };
-
-        // ============================================
-        // CHECKOUT STATE
-        // ============================================
+        // Checkout state - ADD COUPON PROPERTIES
         const checkoutState = {
             selectedAddress: null,
             selectedPaymentMethod: null,
@@ -620,49 +612,27 @@
                 subtotal: 0,
                 shipping: 0,
                 tax: 0,
-                total: 0,
-                couponDiscount: 0
+                total: 0
             },
+            // ADD THESE TWO LINES:
             appliedCoupon: null,
             availableCoupons: []
         };
 
-        // ============================================
-        // INITIALIZATION
-        // ============================================
+        // Initialize checkout
         document.addEventListener('DOMContentLoaded', function() {
-            // console.log(' Initializing checkout page...');
             loadCheckoutData();
             setupEventListeners();
             setupAddressModalValidation();
         });
 
-        // ============================================
-        // LOAD CHECKOUT DATA
-        // ============================================
+        // Load checkout data - ADD COUPON LOADING
         async function loadCheckoutData() {
             try {
-                // console.log(' Loading checkout data...');
-
                 // Load cart items
                 const cartResponse = await axios.get('/api/cart');
-                // console.log(' Cart Response:', cartResponse.data);
-                
                 if (cartResponse.data.success) {
                     checkoutState.cartItems = cartResponse.data.cart.items || [];
-                    // console.log(` Loaded ${checkoutState.cartItems.length} cart items`);
-                    
-                    // Log each item's prices for debugging
-                    checkoutState.cartItems.forEach((item, index) => {
-                        console.log(`Item ${index + 1}:`, {
-                            name: item.product.name,
-                            finalPrice: item.finalPrice,
-                            regularPrice: item.regularPrice,
-                            quantity: item.quantity,
-                            total: round2(item.finalPrice * item.quantity)
-                        });
-                    });
-                    
                     renderOrderItems();
                     updateOrderSummary();
                 }
@@ -671,230 +641,31 @@
                 const addressResponse = await axios.get('/api/addresses');
                 if (addressResponse.data.success) {
                     checkoutState.addresses = addressResponse.data.addresses || [];
-                    console.log(` Loaded ${checkoutState.addresses.length} addresses`);
                     renderAddresses();
                 }
 
                 // Load wallet balance
                 const walletResponse = await axios.get('/api/wallet/balance');
                 if (walletResponse.data.success) {
-                    checkoutState.walletBalance = round2(walletResponse.data.balance || 0);
-                    console.log(` Wallet balance: ₹${checkoutState.walletBalance}`);
-                    
-                    const walletBalanceUI = document.getElementById("walletBalanceDisplay");
-                    if (walletBalanceUI) {
-                        walletBalanceUI.textContent = checkoutState.walletBalance.toFixed(2);
-                    }
+                    checkoutState.walletBalance = walletResponse.data.balance || 0;
+
+                     // ⭐ ADD THIS PART — UPDATE WALLET UI BLOCK
+    const walletBalanceUI = document.getElementById("walletBalanceDisplay");
+    if (walletBalanceUI) {
+        walletBalanceUI.textContent = checkoutState.walletBalance.toFixed(2);
+    }
                 }
 
-                // Load available coupons
+                // ADD THIS: Load available coupons
                 loadAvailableCoupons();
 
-                // console.log(' Checkout data loaded successfully');
-
             } catch (error) {
-                console.error(' Error loading checkout data:', error);
+                console.error('Error loading checkout data:', error);
                 showNotification('Failed to load checkout data', 'error');
             }
         }
 
-        // ============================================
-        // UPDATE ORDER SUMMARY - FIXED VERSION
-        // ============================================
-        function updateOrderSummary() {
-            // console.log('Calculating order summary...');
-
-            // Calculate subtotal from cart items (USING CART PRICES)
-            let subtotal = 0;
-            let itemCount = 0;
-
-            checkoutState.cartItems.forEach((item, index) => {
-                const finalPrice = round2(item.finalPrice || 0);
-                const qty = Number(item.quantity || 0);
-                const itemTotal = round2(finalPrice * qty);
-                
-                subtotal += itemTotal;
-                itemCount += qty;
-                
-                console.log(`  Item ${index + 1}: ${item.product.name}`);
-                console.log(`    Price: ₹${finalPrice} × ${qty} = ₹${itemTotal.toFixed(2)}`);
-            });
-
-            subtotal = round2(subtotal);
-            console.log(`   Subtotal (before coupon): ₹${subtotal.toFixed(2)}`);
-
-            // Apply coupon discount
-            const couponDiscount = checkoutState.appliedCoupon 
-                ? round2(checkoutState.appliedCoupon.discountAmount || 0)
-                : 0;
-            
-            const subtotalAfterCoupon = round2(subtotal - couponDiscount);
-            
-            if (couponDiscount > 0) {
-                console.log(`   Coupon discount: -₹${couponDiscount.toFixed(2)}`);
-                console.log(`   Subtotal (after coupon): ₹${subtotalAfterCoupon.toFixed(2)}`);
-            }
-
-            // Calculate tax on discounted amount (10% GST)
-            const tax = round2(subtotalAfterCoupon * 0.10);
-            console.log(`   Tax (10%): ₹${tax.toFixed(2)}`);
-
-            // Calculate shipping
-            const shipping = subtotal > 500 ? 0 : 50;
-            console.log(`   Shipping: ${shipping === 0 ? 'FREE' : '₹' + shipping.toFixed(2)}`);
-
-            // FINAL TOTAL
-            const total = round2(subtotalAfterCoupon + tax + shipping);
-            console.log(`   GRAND TOTAL: ₹${total.toFixed(2)}`);
-
-            // Store in state
-            checkoutState.orderSummary = { 
-                subtotal, 
-                shipping, 
-                tax, 
-                total, 
-                couponDiscount 
-            };
-
-            // Update UI
-            document.getElementById('subtotal').textContent = `₹${subtotal.toFixed(2)}`;
-            document.getElementById('shipping').textContent = shipping === 0 ? 'FREE' : `₹${shipping.toFixed(2)}`;
-            document.getElementById('taxAmount').textContent = `₹${tax.toFixed(2)}`;
-
-            // Show/Hide Coupon Discount Row
-            let couponRow = document.getElementById('couponDiscountRow');
-            
-            if (couponDiscount > 0) {
-                if (!couponRow) {
-                    const summaryContainer = document.querySelector('.space-y-3.mb-6');
-                    const taxRow = Array.from(summaryContainer.children).find(el => 
-                        el.textContent.includes('Tax')
-                    );
-                    
-                    couponRow = document.createElement('div');
-                    couponRow.id = 'couponDiscountRow';
-                    couponRow.className = 'flex justify-between text-green-600';
-                    summaryContainer.insertBefore(couponRow, taxRow);
-                }
-                couponRow.innerHTML = `
-                    <span>Coupon Discount</span>
-                    <span class="font-medium">-₹${couponDiscount.toFixed(2)}</span>
-                `;
-            } else if (couponRow) {
-                couponRow.remove();
-            }
-
-            // Update Grand Total
-            document.getElementById('totalAmount').textContent = `₹${total.toFixed(2)}`;
-            
-            // console.log(' Order summary updated');
-        }
-
-        // ============================================
-        // RENDER ORDER ITEMS
-        // ============================================
-        function renderOrderItems() {
-            const container = document.getElementById('orderItemsContainer');
-            const previewContainer = document.getElementById('orderPreviewContainer');
-
-            if (checkoutState.cartItems.length === 0) {
-                container.innerHTML = `
-                    <div class="text-center py-8">
-                        <i class="fas fa-shopping-cart text-gray-400 text-4xl mb-4"></i>
-                        <p class="text-gray-600">Your cart is empty</p>
-                    </div>
-                `;
-                previewContainer.innerHTML = '<p class="text-gray-600 text-sm">No items in cart</p>';
-                return;
-            }
-
-            container.innerHTML = checkoutState.cartItems.map(item => {
-                const product = item.product;
-                const variant = product.variants[item.variantIndex];
-                
-                const finalPrice = round2(item.finalPrice);
-                const regularPrice = round2(item.regularPrice);
-                const qty = Number(item.quantity);
-                
-                const itemTotal = round2(finalPrice * qty);
-                const regularTotal = round2(regularPrice * qty);
-                const discountPercent = regularPrice > 0 
-                    ? Math.round(((regularPrice - finalPrice) / regularPrice) * 100)
-                    : 0;
-
-                const available = variant.stock;
-                const isLowStock = available > 0 && available < 5;
-                const isOutOfStock = available <= 0;
-
-                return `
-                    <div class="checkout-item bg-white border border-gray-200 rounded-xl p-4 flex flex-col md:flex-row gap-4"
-                         data-item-id="${item._id}">
-                         
-                        <div class="flex-shrink-0">
-                            <img src="${variant?.images?.[0]?.url || '/images/no-image.jpg'}"
-                                 class="w-24 h-24 md:w-32 md:h-32 object-cover rounded-lg">
-                        </div>
-
-                        <div class="flex-grow">
-                            <h3 class="font-bold text-gray-900 text-lg">${product.name}</h3>
-                            <p class="text-gray-600 text-sm mt-1">Color: ${variant.color} | Qty: ${qty}</p>
-
-                            <div class="mt-2 flex items-center gap-4">
-                                ${isOutOfStock ? `
-                                    <span class="text-red-600 font-medium flex items-center gap-1">
-                                        <i class="fas fa-times-circle"></i> Out of stock
-                                    </span>
-                                ` : `
-                                    <span class="${isLowStock ? 'text-orange-600' : 'text-green-600'} font-medium flex items-center gap-1">
-                                        <i class="fas fa-check-circle"></i>
-                                        ${isLowStock ? `Only ${available} left` : 'In Stock'}
-                                    </span>
-                                `}
-                            </div>
-
-                            <div class="mt-3 flex flex-col md:flex-row md:items-center justify-between">
-                                <div>
-                                    <p class="text-2xl font-bold text-gray-900">₹${itemTotal.toFixed(2)}</p>
-                                    ${regularTotal > itemTotal ? `
-                                        <p class="text-gray-500 text-sm line-through">₹${regularTotal.toFixed(2)}</p>
-                                        <p class="text-green-600 text-sm font-semibold">${discountPercent}% Off</p>
-                                    ` : ''}
-                                </div>
-
-                                <button class="remove-item-btn text-red-500 hover:text-red-700 transition-colors mt-3 md:mt-0"
-                                        data-item-id="${item._id}">
-                                    <i class="fas fa-trash"></i> Remove
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                `;
-            }).join('');
-
-            // Preview in sidebar
-            previewContainer.innerHTML = checkoutState.cartItems.map(item => {
-                const variant = item.product.variants[item.variantIndex];
-                const finalPrice = round2(item.finalPrice);
-                const qty = Number(item.quantity);
-                const itemTotal = round2(finalPrice * qty);
-                
-                return `
-                    <div class="flex items-center gap-3">
-                        <img src="${variant?.images?.[0]?.url || '/images/no-image.jpg'}"
-                             class="w-12 h-12 object-cover rounded-lg">
-                        <div class="flex-grow">
-                            <p class="text-sm font-medium">${item.product.name}</p>
-                            <p class="text-xs text-gray-600">Qty: ${qty} × ₹${finalPrice.toFixed(2)}</p>
-                        </div>
-                        <p class="text-sm font-bold text-gray-900">₹${itemTotal.toFixed(2)}</p>
-                    </div>
-                `;
-            }).join('');
-        }
-
-        // ============================================
-        // RENDER ADDRESSES
-        // ============================================
+        // Render addresses - ADD EDIT BUTTON
         function renderAddresses() {
             const container = document.getElementById('addressesContainer');
 
@@ -924,6 +695,7 @@
                                     Default
                                 </span>
                             ` : ''}
+                            <!-- ADD EDIT BUTTON -->
                             <button onclick="event.stopPropagation(); openAddressModal('${address._id}')" 
                                     class="text-blue-600 hover:text-blue-800 transition-colors text-sm">
                                 <i class="fas fa-edit"></i>
@@ -956,24 +728,41 @@
             }
         }
 
-        // ============================================
-        // COUPON FUNCTIONS
-        // ============================================
-        async function loadAvailableCoupons() {
-            try {
-                // console.log(' Loading available coupons...');
-                const response = await axios.get('/user/coupons/available');
-                
-                if (response.data.success) {
-                    checkoutState.availableCoupons = response.data.coupons || [];
-                    console.log(`Loaded ${checkoutState.availableCoupons.length} coupons`);
-                    renderAvailableCoupons();
-                }
-            } catch (error) {
-                console.error(' Error loading coupons:', error);
-            }
-        }
+        // ========== COUPON FUNCTIONS - ADD THESE NEW FUNCTIONS ==========
+        
+        // Load available coupons
+        // async function loadAvailableCoupons() {
+        //     try {
+        //         const response = await axios.get('/user/coupons/available');
+        //         if (response.data.success) {
+        //             checkoutState.availableCoupons = response.data.coupons || [];
+        //             renderAvailableCoupons();
+        //         }
+        //     } catch (error) {
+        //         console.error('Error loading coupons:', error);
+        //     }
+        // }
 
+
+        
+async function loadAvailableCoupons() {
+    try {
+        console.log("🔄 Loading available coupons...");
+        const response = await axios.get('/user/coupons/available');
+        console.log("📦 Coupons response:", response.data);
+        
+        if (response.data.success) {
+            checkoutState.availableCoupons = response.data.coupons || [];
+            console.log("✅ Loaded coupons:", checkoutState.availableCoupons.length);
+            renderAvailableCoupons();
+        } else {
+            console.log("❌ Failed to load coupons:", response.data.message);
+        }
+    } catch (error) {
+        console.error("💥 Error loading coupons:", error);
+    }
+}
+        // Render available coupons
         function renderAvailableCoupons() {
             const list = document.getElementById('couponsList');
             
@@ -997,6 +786,9 @@
                             <div class="text-sm text-gray-600 mt-1">
                                 Min order: ₹${coupon.minOrderAmount} | Max discount: ₹${coupon.maxDiscountAmount}
                             </div>
+                            <div class="text-xs text-gray-500">
+                                Valid till: ${new Date(coupon.validTo).toLocaleDateString()}
+                            </div>
                         </div>
                         <button class="bg-blue-600 text-white px-3 py-1 rounded text-sm">
                             Apply
@@ -1006,6 +798,7 @@
             `).join('');
         }
 
+        // Toggle coupon list visibility
         function toggleCouponList() {
             const container = document.getElementById('availableCouponsContainer');
             const toggleText = document.getElementById('couponToggleText');
@@ -1016,14 +809,15 @@
                 : 'Hide Available Coupons';
         }
 
+        // Fill coupon code
         function fillCouponCode(code) {
             document.getElementById('couponCode').value = code;
-            toggleCouponList();
         }
 
+        // Apply coupon
         async function applyCoupon() {
             const couponCode = document.getElementById('couponCode').value.trim().toUpperCase();
-            console.log(' Applying coupon:', couponCode);
+             console.log("🎯 Applying coupon:", couponCode);
             const applyBtn = document.getElementById('applyCouponBtn');
             
             if (!couponCode) {
@@ -1048,7 +842,7 @@
                     showCouponError(response.data.message);
                 }
             } catch (error) {
-                console.error(' Error applying coupon:', error);
+                console.error('Error applying coupon:', error);
                 showCouponError('Failed to apply coupon');
             } finally {
                 applyBtn.disabled = false;
@@ -1056,6 +850,7 @@
             }
         }
 
+        // Remove coupon
         function removeCoupon() {
             checkoutState.appliedCoupon = null;
             document.getElementById('appliedCouponContainer').classList.add('hidden');
@@ -1064,18 +859,20 @@
             showNotification('Coupon removed', 'info');
         }
 
+        // Show applied coupon
         function showAppliedCoupon() {
             const container = document.getElementById('appliedCouponContainer');
             const couponCode = document.getElementById('appliedCouponCode');
             const couponDiscount = document.getElementById('appliedCouponDiscount');
             
             couponCode.textContent = checkoutState.appliedCoupon.code;
-            couponDiscount.textContent = `${checkoutState.appliedCoupon.discountValue}% off - Saved ₹${checkoutState.appliedCoupon.discountAmount.toFixed(2)}`;
+            couponDiscount.textContent = `${checkoutState.appliedCoupon.discountValue}% off - Saved ₹${checkoutState.appliedCoupon.discountAmount}`;
             
             container.classList.remove('hidden');
             document.getElementById('couponError').classList.add('hidden');
         }
 
+        // Show coupon error
         function showCouponError(message) {
             const errorContainer = document.getElementById('couponError');
             const errorText = document.getElementById('couponErrorText');
@@ -1088,9 +885,177 @@
             }, 5000);
         }
 
-        // ============================================
-        // EVENT LISTENERS
-        // ============================================
+        // Update order summary to include coupon discount
+        function updateOrderSummary() {
+            let subtotal = 0;
+            let itemCount = 0;
+
+            checkoutState.cartItems.forEach(item => {
+                const variant = item.product.variants[item.variantIndex];  
+subtotal += item.finalPrice * item.quantity;
+                itemCount += item.quantity;
+            });
+
+            const tax = subtotal * 0.10;
+            const shipping = subtotal > 500 ? 0 : 50;
+            const couponDiscount = checkoutState.appliedCoupon ? checkoutState.appliedCoupon.discountAmount : 0;
+            const total = subtotal + tax + shipping - couponDiscount;
+
+            checkoutState.orderSummary = { subtotal, shipping, tax, total, couponDiscount };
+
+            document.getElementById('subtotal').textContent = `₹${subtotal.toFixed(2)}`;
+            document.getElementById('shipping').textContent = shipping === 0 ? 'FREE' : `₹${shipping.toFixed(2)}`;
+            document.getElementById('taxAmount').textContent = `₹${tax.toFixed(2)}`;
+            
+            // Add coupon discount row
+            let couponRow = document.getElementById('couponDiscountRow');
+            if (couponDiscount > 0) {
+                if (!couponRow) {
+                    couponRow = document.createElement('div');
+                    couponRow.id = 'couponDiscountRow';
+                    couponRow.className = 'flex justify-between text-green-600';
+                    document.querySelector('.space-y-3.mb-6').appendChild(couponRow);
+                }
+                couponRow.innerHTML = `
+                    <span>Coupon Discount</span>
+                    <span class="font-medium">-₹${couponDiscount.toFixed(2)}</span>
+                `;
+            } else if (couponRow) {
+                couponRow.remove();
+            }
+            
+            document.getElementById('totalAmount').textContent = `₹${total.toFixed(2)}`;
+            // Update main coupon discount (dashboard stat card)
+const couponStat = document.getElementById("totalCouponDiscount");
+if (couponStat) {
+    couponStat.textContent = `₹${couponDiscount.toFixed(2)}`;
+}
+
+        }
+
+        // ========== ALL YOUR EXISTING FUNCTIONS REMAIN THE SAME ==========
+        // (renderOrderItems, setupEventListeners, handlePlaceOrder, etc.)
+        // ALL YOUR ORIGINAL CODE STAYS EXACTLY THE SAME
+
+        // Render order items
+function renderOrderItems() {
+    const container = document.getElementById('orderItemsContainer');
+    const previewContainer = document.getElementById('orderPreviewContainer');
+
+    if (checkoutState.cartItems.length === 0) {
+        container.innerHTML = `
+            <div class="text-center py-8">
+                <i class="fas fa-shopping-cart text-gray-400 text-4xl mb-4"></i>
+                <p class="text-gray-600">Your cart is empty</p>
+            </div>
+        `;
+        previewContainer.innerHTML = '<p class="text-gray-600 text-sm">No items in cart</p>';
+        return;
+    }
+
+    container.innerHTML = checkoutState.cartItems.map(item => {
+
+        const product = item.product;
+        const variant = product.variants[item.variantIndex];
+
+        // ⭐ USE API PRICES (correct)
+        const finalPrice = item.finalPrice;
+        const regularPrice = item.regularPrice;
+        const qty = item.quantity;
+
+        const available = variant.stock;
+        const isLowStock = available > 0 && available < 5;
+        const isOutOfStock = available <= 0;
+
+        return `
+            <div class="checkout-item bg-white border border-gray-200 rounded-xl p-4 flex flex-col md:flex-row gap-4"
+                 data-item-id="${item._id}">
+                 
+                <div class="flex-shrink-0">
+                    <img src="${variant?.images?.[0]?.url || '/images/no-image.jpg'}"
+                         class="w-24 h-24 md:w-32 md:h-32 object-cover rounded-lg">
+                </div>
+
+                <div class="flex-grow">
+                    <h3 class="font-bold text-gray-900 text-lg">${product.name}</h3>
+                    <p class="text-gray-600 text-sm mt-1">Color: ${variant.color}</p>
+
+                    <div class="mt-2 flex items-center gap-4">
+                        ${isOutOfStock ? `
+                            <span class="text-red-600 font-medium flex items-center gap-1">
+                                <i class="fas fa-times-circle"></i> Out of stock
+                            </span>
+                        ` : `
+                            <span class="${isLowStock ? 'text-red-600' : 'text-green-600'} font-medium flex items-center gap-1">
+                                <i class="fas fa-check-circle"></i>
+                                ${isLowStock ? 'Low Stock' : 'In Stock'}
+                            </span>
+                        `}
+                    </div>
+
+                    <!-- ⭐ Correct Price Block -->
+                  
+                    <div class="mt-3 md:text-right">
+
+    <!-- Final discounted price (per unit × quantity) -->
+    <p class="text-2xl font-bold text-gray-900">
+        ₹${finalPrice.toFixed(2)}
+    </p>
+
+    <!-- ❗ STRIKE THROUGH – total original MRP of all quantities -->
+    <p class="text-gray-500 text-sm line-through">
+        ₹${(regularPrice * qty).toFixed(2)}
+    </p>
+
+    <!-- Discount percentage -->
+    <p class="text-green-600 text-sm font-semibold">
+        ${Math.round(((regularPrice - finalPrice) / regularPrice) * 100)}% Off
+    </p>
+</div>
+
+
+
+
+                    <div class="flex flex-col md:flex-row md:items-center justify-between mt-4">
+                        <button class="remove-item-btn text-red-500 hover:text-red-700 transition-colors"
+                                data-item-id="${item._id}">
+                            <i class="fas fa-trash"></i> Remove
+                        </button>
+
+                        <p class="text-xl font-bold text-gray-900">
+                            ₹${(finalPrice * qty).toFixed(2)}
+                        </p>
+                    </div>
+                </div>
+            </div>
+        `;
+    }).join('');
+
+    // ⭐ RIGHT-SIDE PREVIEW TOTAL
+    previewContainer.innerHTML = checkoutState.cartItems.map(item => {
+        const variant = item.product.variants[item.variantIndex];
+        return `
+            <div class="flex items-center gap-3">
+                <img src="${variant?.images?.[0]?.url || '/images/no-image.jpg'}"
+                     class="w-12 h-12 object-cover rounded-lg">
+                <div class="flex-grow">
+                    <p class="text-sm font-medium">${item.product.name}</p>
+                    <p class="text-xs text-gray-600">Qty: ${item.quantity} × ₹${item.finalPrice}</p>
+                </div>
+                <p class="text-sm font-bold text-gray-900">
+                    ₹${(item.quantity * item.finalPrice).toFixed(2)}
+                </p>
+            </div>
+        `;
+    }).join('');
+}
+
+
+        // ALL YOUR OTHER EXISTING FUNCTIONS REMAIN EXACTLY THE SAME...
+        // (setupEventListeners, handleQuantityChange, handleRemoveItem, handlePlaceOrder, 
+        // handleAddOrUpdateAddress, openAddressModal, closeAddressModal, validation functions, etc.)
+
+        // Setup event listeners
         function setupEventListeners() {
             // Address selection
             document.addEventListener('click', function(e) {
@@ -1145,9 +1110,7 @@
             });
         }
 
-        // ============================================
-        // REMOVE ITEM
-        // ============================================
+        // Handle remove item
         async function handleRemoveItem(itemId) {
             Swal.fire({
                 title: "Remove item?",
@@ -1185,172 +1148,50 @@
             });
         }
 
-        // ============================================
-        // PLACE ORDER - CRITICAL FIX
-        // ============================================
-        async function handlePlaceOrder() {
-            try {
-                // console.log(' Placing order...');
+        // Handle place order
+ async function handlePlaceOrder() {
+  try {
+      const orderData = {
+          addressId: checkoutState.selectedAddress,
+          paymentMethod: checkoutState.selectedPaymentMethod,
+          couponCode: checkoutState.appliedCoupon ? checkoutState.appliedCoupon.code : null
+      };
 
-                // Validation checks
-                if (!checkoutState.selectedAddress) {
-                    return showNotification('Please select a delivery address', 'error');
-                }
+      const response = await axios.post('/api/orders', orderData);
 
-                if (!checkoutState.selectedPaymentMethod) {
-                    return showNotification('Please select a payment method', 'error');
-                }
+      // DEBUG LOG
+      console.log("ORDER RESPONSE FROM BACKEND:", response.data);
 
-                // Wallet balance check
-                if (checkoutState.selectedPaymentMethod === 'wallet') {
-                    const total = checkoutState.orderSummary.total;
-                    if (checkoutState.walletBalance < total) {
-                        return showNotification(
-                            `Insufficient wallet balance. Required: ₹${total.toFixed(2)}, Available: ₹${checkoutState.walletBalance.toFixed(2)}`,
-                            'error'
-                        );
-                    }
-                }
+      if (!response.data.success) {
+          return showNotification(response.data.message, "error");
+      }
 
-                // Disable button
-                const btn = document.getElementById('placeOrderBtn');
-                const originalHTML = btn.innerHTML;
-                btn.disabled = true;
-                btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Processing...';
+      // COD
+      if (checkoutState.selectedPaymentMethod === "cod") {
+          return window.location.href = `/order/confirmation/${response.data.orderId}`;
+      }
 
-                const orderData = {
-                    addressId: checkoutState.selectedAddress,
-                    paymentMethod: checkoutState.selectedPaymentMethod,
-                    couponCode: checkoutState.appliedCoupon?.code || null
-                };
+      // WALLET
+      if (checkoutState.selectedPaymentMethod === "wallet") {
+          return window.location.href = `/order/confirmation/${response.data.orderId}`;
+      }
 
-                console.log(' Sending order data:', orderData);
-                console.log(' Frontend calculated total:', checkoutState.orderSummary.total);
+      // ONLINE PAYMENT (razorpay)
+      const rzpResponse = await axios.post("/api/payment/payment/create-order", {
+          orderId: response.data.orderId,
+          amount: response.data.totalAmount
+      });
 
-                const response = await axios.post('/api/orders', orderData);
+      return initiateRazorpayPayment(rzpResponse.data);
 
-                console.log(' Backend response:', response.data);
+  } catch (err) {
+      console.error("FRONTEND ERROR:", err);
+      showNotification("Order failed (frontend JS error)", "error");
+  }
+}
 
-                if (!response.data.success) {
-                    btn.disabled = false;
-                    btn.innerHTML = originalHTML;
-                    return showNotification(response.data.message, 'error');
-                }
 
-                // CRITICAL: Verify backend total matches frontend total
-                const backendTotal = round2(response.data.totalAmount);
-                const frontendTotal = round2(checkoutState.orderSummary.total);
-                
-                console.log('Price verification:', {
-                    backend: backendTotal,
-                    frontend: frontendTotal,
-                    difference: Math.abs(backendTotal - frontendTotal)
-                });
-
-                if (Math.abs(backendTotal - frontendTotal) > 0.02) {
-                    console.error(' PRICE MISMATCH DETECTED!');
-                    console.error('Backend:', backendTotal, 'Frontend:', frontendTotal);
-                    btn.disabled = false;
-                    btn.innerHTML = originalHTML;
-                    return showNotification(
-                        'Price calculation mismatch. Please refresh and try again.',
-                        'error'
-                    );
-                }
-
-                console.log(' Price verification passed');
-
-                // COD - Direct redirect
-                if (checkoutState.selectedPaymentMethod === 'cod') {
-                    console.log('COD order placed');
-                    return window.location.href = `/order/confirmation/${response.data.orderId}`;
-                }
-
-                // Wallet - Direct redirect
-                if (checkoutState.selectedPaymentMethod === 'wallet') {
-                    console.log('Wallet order placed');
-                    return window.location.href = `/order/confirmation/${response.data.orderId}`;
-                }
-
-                // Razorpay - Create payment order
-                if (checkoutState.selectedPaymentMethod === 'razorpay') {
-                    console.log('Initializing Razorpay payment...');
-                    
-                    const rzpResponse = await axios.post('/api/payment/payment/create-order', {
-                        orderId: response.data.orderId,
-                        amount: backendTotal // Use verified backend amount
-                    });
-
-                    console.log('Razorpay order created:', rzpResponse.data);
-
-                    if (!rzpResponse.data.success) {
-                        btn.disabled = false;
-                        btn.innerHTML = originalHTML;
-                        return showNotification('Payment initialization failed', 'error');
-                    }
-
-                    // Initialize Razorpay
-                    return initiateRazorpayPayment({
-                        ...rzpResponse.data,
-                        orderId: response.data.orderId
-                    });
-                }
-
-            } catch (err) {
-                console.error(' Place order error:', err);
-                const btn = document.getElementById('placeOrderBtn');
-                btn.disabled = false;
-                btn.innerHTML = '<i class="fas fa-lock"></i><span>Place Order</span>';
-                showNotification(
-                    err.response?.data?.message || 'Order failed. Please try again.',
-                    'error'
-                );
-            }
-        }
-
-        // ============================================
-        // ADDRESS MODAL FUNCTIONS
-        // ============================================
-        function openAddressModal(addressId = null) {
-            if (addressId) {
-                const address = checkoutState.addresses.find(addr => addr._id === addressId);
-                if (address) {
-                    document.getElementById('modalTitle').textContent = 'Edit Address';
-                    document.getElementById('addressId').value = address._id;
-                    document.getElementById('addressForm').fullName.value = address.fullName;
-                    document.getElementById('addressForm').phone.value = address.phone;
-                    document.getElementById('addressForm').addressLine1.value = address.addressLine1;
-                    document.getElementById('addressForm').addressLine2.value = address.addressLine2 || '';
-                    document.getElementById('addressForm').city.value = address.city;
-                    document.getElementById('addressForm').state.value = address.state;
-                    document.getElementById('addressForm').pincode.value = address.pincode;
-                    document.getElementById('addressForm').country.value = address.country;
-                    
-                    document.querySelectorAll('input[name="addressType"]').forEach(radio => {
-                        if (radio.value === address.addressType) {
-                            radio.checked = true;
-                        }
-                    });
-                    
-                    document.getElementById('setDefault').checked = address.isDefault;
-                }
-            } else {
-                document.getElementById('modalTitle').textContent = 'Add New Address';
-                document.getElementById('addressId').value = '';
-                document.getElementById('addressForm').reset();
-            }
-            
-            document.getElementById('addressModal').classList.remove('hidden');
-            document.body.style.overflow = 'hidden';
-        }
-
-        function closeAddressModal() {
-            document.getElementById('addressModal').classList.add('hidden');
-            document.body.style.overflow = '';
-            document.getElementById('addressForm').reset();
-            hideAllErrors();
-        }
-
+        // Handle add or update address
         async function handleAddOrUpdateAddress(e) {
             e.preventDefault();
             
@@ -1414,9 +1255,52 @@
             }
         }
 
-        // ============================================
-        // ADDRESS VALIDATION
-        // ============================================
+        // Modal functions
+        function openAddressModal(addressId = null) {
+            if (addressId) {
+                const address = checkoutState.addresses.find(addr => addr._id === addressId);
+                if (address) {
+                    document.getElementById('modalTitle').textContent = 'Edit Address';
+                    document.getElementById('addressId').value = address._id;
+                    document.getElementById('addressForm').fullName.value = address.fullName;
+                    document.getElementById('addressForm').phone.value = address.phone;
+                    document.getElementById('addressForm').addressLine1.value = address.addressLine1;
+                    document.getElementById('addressForm').addressLine2.value = address.addressLine2 || '';
+                    document.getElementById('addressForm').city.value = address.city;
+                    document.getElementById('addressForm').state.value = address.state;
+                    document.getElementById('addressForm').pincode.value = address.pincode;
+                    document.getElementById('addressForm').country.value = address.country;
+                    
+                    document.querySelectorAll('input[name="addressType"]').forEach(radio => {
+                        if (radio.value === address.addressType) {
+                            radio.checked = true;
+                        }
+                    });
+                    
+                    document.getElementById('setDefault').checked = address.isDefault;
+                }
+            } else {
+                document.getElementById('modalTitle').textContent = 'Add New Address';
+                document.getElementById('addressId').value = '';
+                document.getElementById('addressForm').reset();
+            }
+            
+            document.getElementById('addressModal').classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeAddressModal() {
+            document.getElementById('addressModal').classList.add('hidden');
+            document.body.style.overflow = '';
+            document.getElementById('addressForm').reset();
+            hideAllErrors();
+        }
+
+        // ALL YOUR EXISTING VALIDATION FUNCTIONS REMAIN THE SAME...
+        // (validateAddressForm, validateField, validateFullName, validatePhone, etc.)
+        // (showError, hideError, hideAllErrors, showNotification, etc.)
+
+        // Setup address modal validation
         function setupAddressModalValidation() {
             const inputs = document.querySelectorAll('#addressForm input, #addressForm select');
             inputs.forEach(input => {
@@ -1501,33 +1385,33 @@
             hideError('phoneError');
             return true;
         }
+function validateAddressLine1(value) {
+    const address = value.trim();
 
-        function validateAddressLine1(value) {
-            const address = value.trim();
+    if (!address) {
+        showError('addressLine1Error', 'Address is required');
+        return false;
+    }
 
-            if (!address) {
-                showError('addressLine1Error', 'Address is required');
-                return false;
-            }
+    if (address.length < 5) {
+        showError('addressLine1Error', 'Address must be at least 5 characters');
+        return false;
+    }
 
-            if (address.length < 5) {
-                showError('addressLine1Error', 'Address must be at least 5 characters');
-                return false;
-            }
+    // ✅ Allow letters, numbers, spaces, , . - / #
+    const addressRegex = /^[A-Za-z0-9\s,.-/#]+$/;
 
-            const addressRegex = /^[A-Za-z0-9\s,.-/#]+$/;
+    if (!addressRegex.test(address)) {
+        showError(
+            'addressLine1Error',
+            'Address can contain only letters, numbers, spaces, and , . - / #'
+        );
+        return false;
+    }
 
-            if (!addressRegex.test(address)) {
-                showError(
-                    'addressLine1Error',
-                    'Address can contain only letters, numbers, spaces, and , . - / #'
-                );
-                return false;
-            }
-
-            hideError('addressLine1Error');
-            return true;
-        }
+    hideError('addressLine1Error');
+    return true;
+}
 
         function validateCity(value) {
             if (!value.trim()) {
@@ -1643,19 +1527,14 @@
             });
         }
 
-        // ============================================
-        // NOTIFICATION SYSTEM
-        // ============================================
         function showNotification(message, type) {
             const notification = document.createElement('div');
             notification.className = `p-4 rounded-lg shadow-lg transform transition-all duration-300 notification ${
-                type === 'success' ? 'bg-green-500 text-white' : 
-                type === 'info' ? 'bg-blue-500 text-white' : 
-                'bg-red-500 text-white'
+                type === 'success' ? 'bg-green-500 text-white' : 'bg-red-500 text-white'
             }`;
             notification.innerHTML = `
                 <div class="flex items-center gap-3">
-                    <i class="fas fa-${type === 'success' ? 'check' : type === 'info' ? 'info' : 'exclamation'}-circle"></i>
+                    <i class="fas fa-${type === 'success' ? 'check' : 'exclamation'}-circle"></i>
                     <span class="font-medium">${message}</span>
                 </div>
             `;
@@ -1672,74 +1551,88 @@
         }
     </script>
 
-    <!-- Razorpay SDK -->
     <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
 
-    <!-- Razorpay Payment Handler -->
-    <script>
-        async function initiateRazorpayPayment(orderResponse) {
-            const { orderId, amount, currency, razorpayOrderId } = orderResponse;
+<script>
 
-            console.log(' Starting Razorpay with:', {
-                orderId,
-                amount,
-                currency,
-                razorpayOrderId
-            });
+async function initiateRazorpayPayment(orderResponse) {
+    const { orderId, amount, currency, razorpayOrderId } = orderResponse;
 
-            const options = {
-                key: "<%= process.env.RZP_KEY_ID %>",
-                amount: Math.round(amount * 100), // Convert to paise
-                currency: currency || "INR",
-                name: "BagHub",
-                description: "Order Payment",
-                order_id: razorpayOrderId,
+    const options = {
+        key: "<%= process.env.RZP_KEY_ID %>",
+        amount: amount,
+        currency: currency,
+        name: "BagHub",
+        description: "Order Payment",
+        order_id: razorpayOrderId,
 
-                modal: {
-                    ondismiss: function () {
-                        console.log(' User closed Razorpay popup');
-                        window.location.href = `/order/payment-failed/${orderId}`;
-                    }
-                },
-
-                handler: async function (response) {
-                    console.log('Payment successful, verifying...');
-                    
-                    try {
-                        const verifyRes = await axios.post("/api/payment/verify", {
-                            orderId: orderId,
-                            razorpayPaymentId: response.razorpay_payment_id,
-                            razorpayOrderId: response.razorpay_order_id,
-                            razorpaySignature: response.razorpay_signature,
-                        });
-
-                        if (verifyRes.data.success) {
-                            console.log(' Payment verified');
-                            window.location.href = `/order/confirmation/${orderId}`;
-                        } else {
-                            console.error(' Payment verification failed');
-                            window.location.href = `/order/payment-failed/${orderId}`;
-                        }
-                    } catch (error) {
-                        console.error(' Verification error:', error);
-                        window.location.href = `/order/payment-failed/${orderId}`;
-                    }
-                },
-
-                prefill: {},
-                theme: { color: "#1a56db" },
-            };
-
-            const rzp = new Razorpay(options);
-
-            rzp.on('payment.failed', function (response) {
-                console.error('Razorpay payment failed:', response.error);
+        modal: {
+            ondismiss: function () {
+                // user closed popup
                 window.location.href = `/order/payment-failed/${orderId}`;
+            }
+        },
+
+        handler: async function (response) {
+            const verifyRes = await axios.post("/api/payment/verify", {
+                orderId: orderId,
+                razorpayPaymentId: response.razorpay_payment_id,
+                razorpayOrderId: response.razorpay_order_id,
+                razorpaySignature: response.razorpay_signature,
             });
 
-            rzp.open();
-        }
-    </script>
+            if (verifyRes.data.success) {
+                window.location.href = `/order/confirmation/${orderId}`;
+            } else {
+                window.location.href = `/order/payment-failed/${orderId}`;
+            }
+        },
+
+        //  PAYMENT FAILURE HANDLER (Very important)
+        "prefill": {},
+        "theme": {},
+    };
+
+    const rzp = new Razorpay(options);
+
+    rzp.on('payment.failed', function (response) {
+        // Razorpay payment failed, send to custom failure page
+        window.location.href = `/order/payment-failed/${orderId}`;
+    });
+
+    rzp.open();
+}
+
+</script>
+
+<script>
+function startRazorpay(orderId, amount, razorpayOrderId) {
+    var options = {
+        key: "YOUR_KEY",
+        amount: amount * 100,
+        currency: "INR",
+        name: "My Shop",
+        order_id: razorpayOrderId,
+
+        handler: function (response) {
+            window.location.href = `/payment-success/${orderId}`;
+        },
+
+        modal: {
+            ondismiss: function () {
+               window.location.href = `/order/payment-failed/${orderId}`;
+
+            }
+        },
+
+        theme: { color: "#3399cc" }
+    };
+
+    new Razorpay(options).open();
+}
+</script>
+
+
 
 </body>
 </html>
