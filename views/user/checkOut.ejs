@@ -1185,9 +1185,20 @@ function renderOrderItems() {
       return initiateRazorpayPayment(rzpResponse.data);
 
   } catch (err) {
-      console.error("FRONTEND ERROR:", err);
-      showNotification("Order failed (frontend JS error)", "error");
-  }
+  console.error("FRONTEND ERROR:", err);
+
+  const message =
+    err?.response?.data?.message ||
+    "Stock changed. Please review your cart.";
+
+  showNotification(message, "error");
+
+  // redirect user back to cart so they see updated stock
+  setTimeout(() => {
+    window.location.href = "/user/cart";
+  }, 1500);
+}
+
 }
 
 

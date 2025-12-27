@@ -62,14 +62,13 @@ export const getCartPage = async (req, res) => {
     const userId = req.session.user.id;
 
     let cart = await Cart.findOne({ user: userId })
-      .populate("items.product")
-      .lean();
+      .populate("items.product");
 
     const ordersCount = 0;
     const wishlistCount = req.session.user.wishlistCount || 0;
     const unreadNotifications = 0;
 
-    if (!cart) {
+    if (!cart || !cart.items.length) {
       return res.render("user/cart", {
         title: "Shopping Cart",
         currentPage: "cart",
@@ -81,23 +80,49 @@ export const getCartPage = async (req, res) => {
       });
     }
 
-    
-    //  APPLY OFFER PRICING TO EACH CART ITEM
-    
+    //  STOCK SYNC (ADMIN → USER)
+    let cartModified = false;
+
+    for (let item of cart.items) {
+      const product = item.product;
+      const variant = product?.variants?.[item.variantIndex];
+
+      // Variant removed or out of stock
+      if (!variant || variant.stock <= 0) {
+        item.quantity = 0;
+        cartModified = true;
+        continue;
+      }
+
+      // Admin reduced stock
+      if (item.quantity > variant.stock) {
+        item.quantity = variant.stock;
+        cartModified = true;
+      }
+    }
+
+    // Remove invalid items
+    cart.items = cart.items.filter(item => item.quantity > 0);
+
+    if (cartModified) {
+      await cart.save();
+    }
+
+    // APPLY OFFER PRICING (SAFE)
     for (let item of cart.items) {
       const product = item.product;
       const variant = product.variants[item.variantIndex];
 
       const offerData = await applyOfferToProduct({
-        ...product,
-        variants: [variant] 
+        ...product.toObject(),    
+        variants: [variant]
       });
 
       const offerVariant = offerData.variants[0];
 
-      item.finalPrice = offerVariant.finalPrice;           
-      item.regularPrice = offerVariant.regularPrice;       
-      item.appliedOffer = offerVariant.appliedOffer;       
+      item.finalPrice = offerVariant.finalPrice;
+      item.regularPrice = offerVariant.regularPrice;
+      item.appliedOffer = offerVariant.appliedOffer;
       item.totalPrice = offerVariant.finalPrice * item.quantity;
     }
 

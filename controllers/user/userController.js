@@ -12,6 +12,8 @@ import {
   isValidPincode,
 } from "../../utils/addressValidators.js";
 import fs from "fs";
+import Cart from "../../models/cartModel.js";
+import Product from "../../models/productModel.js";
 import mongoose from "mongoose";
 import {loadHomeProducts,renderLandingPage} from "./productController.js"; 
 import Order from "../../models/orderModel.js";
@@ -1067,13 +1069,52 @@ export const toggleWishlist = async (req, res) => {
     }
 };
 
-export const getCheckoutPage = (req, res) => {
+
+export const getCheckoutPage = async (req, res) => {
+  try {
+    if (!req.session.user) {
+      return res.redirect("/user/login");
+    }
+
+    const userId = req.session.user.id;
+
+    const cart = await Cart.findOne({ user: userId })
+      .populate("items.product");
+
+    if (!cart || !cart.items.length) {
+      return res.redirect("/user/cart");
+    }
+
+    //  FINAL STOCK VALIDATION BEFORE CHECKOUT
+    for (let item of cart.items) {
+      const product = item.product;
+      const variant = product?.variants?.[item.variantIndex];
+
+      if (!variant || variant.stock <= 0) {
+        return res.redirect(
+          "/user/cart?stockError=Some items are out of stock"
+        );
+      }
+
+      if (item.quantity > variant.stock) {
+        return res.redirect(
+          "/user/cart?stockError=Stock changed, cart updated"
+        );
+      }
+    }
+
+    //  SAFE TO CHECKOUT
     res.render("user/checkout", {
-        user: req.session.user,
-        ordersCount: 0,
-        wishlistCount: req.session.user?.wishlistCount || 0,
-        unreadNotifications: 0
+      user: req.session.user,
+      ordersCount: 0,
+      wishlistCount: req.session.user?.wishlistCount || 0,
+      unreadNotifications: 0
     });
+
+  } catch (err) {
+    console.error("Checkout Page Error:", err);
+    res.redirect("/user/cart");
+  }
 };
 
 
