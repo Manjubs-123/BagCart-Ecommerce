@@ -8,413 +8,413 @@ const round2 = (n) => {
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 //  CENTRALIZED REFUND CALCULATION FUNCTION
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-function calculateItemRefund(order, item, itemId) {
-  let refundAmount = 0;
+// function calculateItemRefund(order, item, itemId) {
+//   let refundAmount = 0;
 
-  //  OPTION 1: New orders with saved breakdown (ACCURATE)
-  if (
-    item.itemFinalPayable !== undefined && 
-    item.itemFinalPayable !== null &&
-    item.itemFinalPayable > 0
-  ) {
-    refundAmount = round2(Number(item.itemFinalPayable));
+//   //  OPTION 1: New orders with saved breakdown (ACCURATE)
+//   if (
+//     item.itemFinalPayable !== undefined && 
+//     item.itemFinalPayable !== null &&
+//     item.itemFinalPayable > 0
+//   ) {
+//     refundAmount = round2(Number(item.itemFinalPayable));
     
-    // console.log(" Using saved breakdown for refund:", {
-    //   itemSubtotal: item.itemSubtotal,
-    //   couponShare: item.itemCouponShare,
-    //   afterCoupon: item.itemAfterCoupon,
-    //   taxShare: item.itemTaxShare,
-    //   shippingShare: item.itemShippingShare,
-    //   finalPayable: item.itemFinalPayable
-    // });
-  } 
-  //  OPTION 2: Old orders without breakdown (FALLBACK)
-  else {
-    // console.log(" No breakdown found, using fallback calculation");
-    refundAmount = calculateRefundOldWay(order, item, itemId);
-  }
+//     console.log(" Using saved breakdown for refund:", {
+//       itemSubtotal: item.itemSubtotal,
+//       couponShare: item.itemCouponShare,
+//       afterCoupon: item.itemAfterCoupon,
+//       taxShare: item.itemTaxShare,
+//       shippingShare: item.itemShippingShare,
+//       finalPayable: item.itemFinalPayable
+//     });
+//   } 
+//   //  OPTION 2: Old orders without breakdown (FALLBACK)
+//   else {
+//     // console.log(" No breakdown found, using fallback calculation");
+//     refundAmount = calculateRefundOldWay(order, item, itemId);
+//   }
 
-  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  //  SAFETY CAPS
-  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+//   // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+//   //  SAFETY CAPS
+//   // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-  // 1. Cannot exceed total order amount
-  refundAmount = Math.min(refundAmount, round2(Number(order.totalAmount || 0)));
+//   // 1. Cannot exceed total order amount
+//   refundAmount = Math.min(refundAmount, round2(Number(order.totalAmount || 0)));
 
-  // 2. Cannot exceed remaining refundable amount
-  const previousRefunds = round2(
-    order.items.reduce((sum, i) => sum + Number(i.refundAmount || 0), 0)
-  );
+//   // 2. Cannot exceed remaining refundable amount
+//   const previousRefunds = round2(
+//     order.items.reduce((sum, i) => sum + Number(i.refundAmount || 0), 0)
+//   );
   
-  const refundableRemaining = round2(
-    Number(order.totalAmount || 0) - previousRefunds
-  );
+//   const refundableRemaining = round2(
+//     Number(order.totalAmount || 0) - previousRefunds
+//   );
 
-  refundAmount = Math.min(refundAmount, refundableRemaining);
+//   refundAmount = Math.min(refundAmount, refundableRemaining);
 
-  // 3. Cannot be negative
-  refundAmount = Math.max(0, round2(refundAmount));
+//   // 3. Cannot be negative
+//   refundAmount = Math.max(0, round2(refundAmount));
 
-  // console.log(" Final refund calculation:", {
-  //   orderTotal: order.totalAmount,
-  //   previousRefunds,
-  //   refundableRemaining,
-  //   calculatedRefund: refundAmount
-  // });
+//   console.log(" Final refund calculation:", {
+//     orderTotal: order.totalAmount,
+//     previousRefunds,
+//     refundableRemaining,
+//     calculatedRefund: refundAmount
+//   });
 
-  return refundAmount;
-}
+//   return refundAmount;
+// }
 
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 // FIXED CANCEL ITEM FUNCTION
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-export const cancelItem = async (req, res) => {
-  const session = await mongoose.startSession();
-  session.startTransaction();
+// export const cancelItem = async (req, res) => {
+//   const session = await mongoose.startSession();
+//   session.startTransaction();
 
-  try {
-    const { orderId, itemId } = req.params;
-    const { reason, details } = req.body;
-    const userId = req.session?.user?.id;
+//   try {
+//     const { orderId, itemId } = req.params;
+//     const { reason, details } = req.body;
+//     const userId = req.session?.user?.id;
 
-    if (!userId) {
-      await session.abortTransaction();
-      session.endSession();
-      return res.status(401).json({ success: false, message: "Not logged in" });
-    }
+//     if (!userId) {
+//       await session.abortTransaction();
+//       session.endSession();
+//       return res.status(401).json({ success: false, message: "Not logged in" });
+//     }
 
-    const order = await Order.findOne({ _id: orderId, user: userId }).session(session);
-    if (!order) {
-      await session.abortTransaction();
-      session.endSession();
-      return res.status(404).json({ success: false, message: "Order not found" });
-    }
+//     const order = await Order.findOne({ _id: orderId, user: userId }).session(session);
+//     if (!order) {
+//       await session.abortTransaction();
+//       session.endSession();
+//       return res.status(404).json({ success: false, message: "Order not found" });
+//     }
 
-    const item = order.items.id(itemId);
-    if (!item) {
-      await session.abortTransaction();
-      session.endSession();
-      return res.status(404).json({ success: false, message: "Item not found" });
-    }
+//     const item = order.items.id(itemId);
+//     if (!item) {
+//       await session.abortTransaction();
+//       session.endSession();
+//       return res.status(404).json({ success: false, message: "Item not found" });
+//     }
 
-    if (["cancelled", "returned", "delivered"].includes(item.status)) {
-      await session.abortTransaction();
-      session.endSession();
-      return res.json({ 
-        success: false, 
-        message: `Cannot cancel item with status: ${item.status}` 
-      });
-    }
+//     if (["cancelled", "returned", "delivered"].includes(item.status)) {
+//       await session.abortTransaction();
+//       session.endSession();
+//       return res.json({ 
+//         success: false, 
+//         message: `Cannot cancel item with status: ${item.status}` 
+//       });
+//     }
 
-    // Check if already refunded
-    if (item.refundAmount && item.refundAmount > 0) {
-      await session.abortTransaction();
-      session.endSession();
-      return res.json({ 
-        success: false, 
-        message: "Item already refunded" 
-      });
-    }
+//     // Check if already refunded
+//     if (item.refundAmount && item.refundAmount > 0) {
+//       await session.abortTransaction();
+//       session.endSession();
+//       return res.json({ 
+//         success: false, 
+//         message: "Item already refunded" 
+//       });
+//     }
 
-    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-    // STEP 1: RESTORE STOCK
-    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-    const product = await Product.findById(item.product).session(session);
-    if (product?.variants?.[item.variantIndex]) {
-      product.variants[item.variantIndex].stock = round2(
-        Number(product.variants[item.variantIndex].stock || 0) + 
-        Number(item.quantity || 0)
-      );
-      product.markModified(`variants.${item.variantIndex}.stock`);
-      await product.save({ session });
-    }
+//     // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+//     // STEP 1: RESTORE STOCK
+//     // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+//     const product = await Product.findById(item.product).session(session);
+//     if (product?.variants?.[item.variantIndex]) {
+//       product.variants[item.variantIndex].stock = round2(
+//         Number(product.variants[item.variantIndex].stock || 0) + 
+//         Number(item.quantity || 0)
+//       );
+//       product.markModified(`variants.${item.variantIndex}.stock`);
+//       await product.save({ session });
+//     }
 
-    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-    // STEP 2: MARK AS CANCELLED
-    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-    item.status = "cancelled";
-    item.cancelReason = reason || "Cancelled by user";
-    item.cancelDetails = details || "";
-    item.cancelledDate = new Date();
+//     // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+//     // STEP 2: MARK AS CANCELLED
+//     // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+//     item.status = "cancelled";
+//     item.cancelReason = reason || "Cancelled by user";
+//     item.cancelDetails = details || "";
+//     item.cancelledDate = new Date();
 
-    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-    // STEP 3: CHECK IF PREPAID
-    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-    const isPrepaid =
-      order.paymentMethod === "wallet" ||
-      (order.paymentMethod === "razorpay" &&
-        ["paid", "partial_refunded"].includes(order.paymentStatus));
+//     // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+//     // STEP 3: CHECK IF PREPAID
+//     // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+//     const isPrepaid =
+//       order.paymentMethod === "wallet" ||
+//       (order.paymentMethod === "razorpay" &&
+//         ["paid", "partial_refunded"].includes(order.paymentStatus));
 
-    let refundAmount = 0;
+//     let refundAmount = 0;
 
-    if (isPrepaid) {
-      // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-      // STEP 4: CALCULATE REFUND
-      // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-      refundAmount = calculateItemRefund(order, item, itemId);
+//     if (isPrepaid) {
+//       // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+//       // STEP 4: CALCULATE REFUND
+//       // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+//       refundAmount = calculateItemRefund(order, item, itemId);
 
-      // Skip if refund is 0 or negative
-      if (refundAmount <= 0) {
-        console.warn(" Refund amount is 0 or negative, skipping wallet credit");
-      } else {
-        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        // STEP 5: CREDIT TO WALLET
-        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        let wallet = await Wallet.findOne({ user: userId }).session(session);
-        if (!wallet) {
-          wallet = (await Wallet.create([{
-            user: userId,
-            balance: 0,
-            transactions: []
-          }], { session }))[0];
-        }
+//       // Skip if refund is 0 or negative
+//       if (refundAmount <= 0) {
+//         console.warn(" Refund amount is 0 or negative, skipping wallet credit");
+//       } else {
+//         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+//         // STEP 5: CREDIT TO WALLET
+//         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+//         let wallet = await Wallet.findOne({ user: userId }).session(session);
+//         if (!wallet) {
+//           wallet = (await Wallet.create([{
+//             user: userId,
+//             balance: 0,
+//             transactions: []
+//           }], { session }))[0];
+//         }
 
-        wallet.balance = round2(Number(wallet.balance || 0) + refundAmount);
-        wallet.transactions.push({
-          type: "credit",
-          amount: refundAmount,
-          description: `Refund for cancelled item ${item.itemOrderId || itemId}`,
-          date: new Date(),
-          meta: {
-            orderId: order.orderId,
-            itemSubtotal: item.itemSubtotal,
-            couponShare: item.itemCouponShare,
-            itemAfterCoupon: item.itemAfterCoupon,
-            taxShare: item.itemTaxShare,
-            shippingShare: item.itemShippingShare,
-            refundAmount: refundAmount
-          }
-        });
+//         wallet.balance = round2(Number(wallet.balance || 0) + refundAmount);
+//         wallet.transactions.push({
+//           type: "credit",
+//           amount: refundAmount,
+//           description: `Refund for cancelled item ${item.itemOrderId || itemId}`,
+//           date: new Date(),
+//           meta: {
+//             orderId: order.orderId,
+//             itemSubtotal: item.itemSubtotal,
+//             couponShare: item.itemCouponShare,
+//             itemAfterCoupon: item.itemAfterCoupon,
+//             taxShare: item.itemTaxShare,
+//             shippingShare: item.itemShippingShare,
+//             refundAmount: refundAmount
+//           }
+//         });
 
-        await wallet.save({ session });
+//         await wallet.save({ session });
 
-        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        // STEP 6: SAVE REFUND INFO
-        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        item.refundAmount = refundAmount;
-        item.refundMethod = "wallet";
-        item.refundStatus = "credited";
-        item.refundDate = new Date();
-      }
-    }
+//         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+//         // STEP 6: SAVE REFUND INFO
+//         // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+//         item.refundAmount = refundAmount;
+//         item.refundMethod = "wallet";
+//         item.refundStatus = "credited";
+//         item.refundDate = new Date();
+//       }
+//     }
 
-    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-    // STEP 7: UPDATE ORDER STATUS
-    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-    const allCancelled = order.items.every(i =>
-      ["cancelled", "returned"].includes(i.status)
-    );
+//     // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+//     // STEP 7: UPDATE ORDER STATUS
+//     // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+//     const allCancelled = order.items.every(i =>
+//       ["cancelled", "returned"].includes(i.status)
+//     );
 
-    if (allCancelled) {
-      order.orderStatus = "cancelled";
-      order.paymentStatus = "refunded";
-    } else {
-      const anyRefunded = order.items.some(i => 
-        i.refundAmount && i.refundAmount > 0
-      );
-      if (anyRefunded) {
-        order.paymentStatus = "partial_refunded";
-      }
-    }
+//     if (allCancelled) {
+//       order.orderStatus = "cancelled";
+//       order.paymentStatus = "refunded";
+//     } else {
+//       const anyRefunded = order.items.some(i => 
+//         i.refundAmount && i.refundAmount > 0
+//       );
+//       if (anyRefunded) {
+//         order.paymentStatus = "partial_refunded";
+//       }
+//     }
 
-    await order.save({ session });
+//     await order.save({ session });
 
-    await session.commitTransaction();
-    session.endSession();
+//     await session.commitTransaction();
+//     session.endSession();
 
-    return res.json({
-      success: true,
-      message: "Item cancelled successfully",
-      refundAmount: refundAmount,
-      breakdown: {
-        itemSubtotal: item.itemSubtotal,
-        couponDiscount: item.itemCouponShare,
-        itemAfterCoupon: item.itemAfterCoupon,
-        tax: item.itemTaxShare,
-        shipping: item.itemShippingShare,
-        totalRefund: refundAmount
-      }
-    });
+//     return res.json({
+//       success: true,
+//       message: "Item cancelled successfully",
+//       refundAmount: refundAmount,
+//       breakdown: {
+//         itemSubtotal: item.itemSubtotal,
+//         couponDiscount: item.itemCouponShare,
+//         itemAfterCoupon: item.itemAfterCoupon,
+//         tax: item.itemTaxShare,
+//         shipping: item.itemShippingShare,
+//         totalRefund: refundAmount
+//       }
+//     });
 
-  } catch (err) {
-    await session.abortTransaction();
-    session.endSession();
-    console.error(" Cancel Error:", err);
-    return res.status(500).json({
-      success: false,
-      message: "Something went wrong",
-      error: err.message
-    });
-  }
-};
+//   } catch (err) {
+//     await session.abortTransaction();
+//     session.endSession();
+//     console.error(" Cancel Error:", err);
+//     return res.status(500).json({
+//       success: false,
+//       message: "Something went wrong",
+//       error: err.message
+//     });
+//   }
+// };
 
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 // FIXED APPROVE RETURN FUNCTION
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-export const approveReturn = async (req, res) => {
-  const session = await mongoose.startSession();
-  session.startTransaction();
+// export const approveReturn = async (req, res) => {
+//   const session = await mongoose.startSession();
+//   session.startTransaction();
 
-  try {
-    const { orderId, itemId } = req.params;
+//   try {
+//     const { orderId, itemId } = req.params;
 
-    const order = await Order.findById(orderId)
-      .populate("user")
-      .session(session);
+//     const order = await Order.findById(orderId)
+//       .populate("user")
+//       .session(session);
 
-    if (!order) {
-      await session.abortTransaction();
-      session.endSession();
-      return res.status(404).json({ success: false, message: "Order not found" });
-    }
+//     if (!order) {
+//       await session.abortTransaction();
+//       session.endSession();
+//       return res.status(404).json({ success: false, message: "Order not found" });
+//     }
 
-    const item = order.items.id(itemId);
-    if (!item) {
-      await session.abortTransaction();
-      session.endSession();
-      return res.status(404).json({ success: false, message: "Return item not found" });
-    }
+//     const item = order.items.id(itemId);
+//     if (!item) {
+//       await session.abortTransaction();
+//       session.endSession();
+//       return res.status(404).json({ success: false, message: "Return item not found" });
+//     }
 
-    if (item.status !== "return-requested") {
-      await session.abortTransaction();
-      session.endSession();
-      return res.status(400).json({
-        success: false,
-        message: `Item status is '${item.status}', not 'return-requested'`
-      });
-    }
+//     if (item.status !== "return-requested") {
+//       await session.abortTransaction();
+//       session.endSession();
+//       return res.status(400).json({
+//         success: false,
+//         message: `Item status is '${item.status}', not 'return-requested'`
+//       });
+//     }
 
-    // Check if already refunded
-    if (item.refundAmount && item.refundAmount > 0) {
-      await session.abortTransaction();
-      session.endSession();
-      return res.json({ 
-        success: false, 
-        message: "Item already refunded" 
-      });
-    }
+//     // Check if already refunded
+//     if (item.refundAmount && item.refundAmount > 0) {
+//       await session.abortTransaction();
+//       session.endSession();
+//       return res.json({ 
+//         success: false, 
+//         message: "Item already refunded" 
+//       });
+//     }
 
-    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-    // STEP 1: RESTORE STOCK
-    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-    const product = await Product.findById(item.product).session(session);
-    if (product && product.variants[item.variantIndex]) {
-      product.variants[item.variantIndex].stock = round2(
-        Number(product.variants[item.variantIndex].stock || 0) + 
-        Number(item.quantity || 0)
-      );
-      product.markModified(`variants.${item.variantIndex}.stock`);
-      await product.save({ session });
-    }
+//     // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+//     // STEP 1: RESTORE STOCK
+//     // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+//     const product = await Product.findById(item.product).session(session);
+//     if (product && product.variants[item.variantIndex]) {
+//       product.variants[item.variantIndex].stock = round2(
+//         Number(product.variants[item.variantIndex].stock || 0) + 
+//         Number(item.quantity || 0)
+//       );
+//       product.markModified(`variants.${item.variantIndex}.stock`);
+//       await product.save({ session });
+//     }
 
-    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-    //  STEP 2: CALCULATE REFUND
-    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-    const refundAmount = calculateItemRefund(order, item, itemId);
+//     // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+//     //  STEP 2: CALCULATE REFUND
+//     // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+//     const refundAmount = calculateItemRefund(order, item, itemId);
 
-    if (refundAmount <= 0) {
-      await session.abortTransaction();
-      session.endSession();
-      return res.status(400).json({
-        success: false,
-        message: "Refund amount is 0 or invalid"
-      });
-    }
+//     if (refundAmount <= 0) {
+//       await session.abortTransaction();
+//       session.endSession();
+//       return res.status(400).json({
+//         success: false,
+//         message: "Refund amount is 0 or invalid"
+//       });
+//     }
 
-    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-    // STEP 3: CREDIT TO WALLET
-    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-    const userIdForWallet = order.user._id || order.user;
-    let wallet = await Wallet.findOne({ user: userIdForWallet }).session(session);
+//     // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+//     // STEP 3: CREDIT TO WALLET
+//     // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+//     const userIdForWallet = order.user._id || order.user;
+//     let wallet = await Wallet.findOne({ user: userIdForWallet }).session(session);
 
-    if (!wallet) {
-      wallet = (await Wallet.create([{
-        user: userIdForWallet,
-        balance: 0,
-        transactions: []
-      }], { session }))[0];
-    }
+//     if (!wallet) {
+//       wallet = (await Wallet.create([{
+//         user: userIdForWallet,
+//         balance: 0,
+//         transactions: []
+//       }], { session }))[0];
+//     }
 
-    wallet.balance = round2(Number(wallet.balance || 0) + refundAmount);
-    wallet.transactions.push({
-      type: "credit",
-      amount: refundAmount,
-      description: `Return refund for item ${item.itemOrderId || itemId}`,
-      date: new Date(),
-      meta: {
-        orderId: order.orderId,
-        itemSubtotal: item.itemSubtotal,
-        couponShare: item.itemCouponShare,
-        itemAfterCoupon: item.itemAfterCoupon,
-        taxShare: item.itemTaxShare,
-        shippingShare: item.itemShippingShare,
-        refundAmount: refundAmount
-      }
-    });
+//     wallet.balance = round2(Number(wallet.balance || 0) + refundAmount);
+//     wallet.transactions.push({
+//       type: "credit",
+//       amount: refundAmount,
+//       description: `Return refund for item ${item.itemOrderId || itemId}`,
+//       date: new Date(),
+//       meta: {
+//         orderId: order.orderId,
+//         itemSubtotal: item.itemSubtotal,
+//         couponShare: item.itemCouponShare,
+//         itemAfterCoupon: item.itemAfterCoupon,
+//         taxShare: item.itemTaxShare,
+//         shippingShare: item.itemShippingShare,
+//         refundAmount: refundAmount
+//       }
+//     });
 
-    await wallet.save({ session });
+//     await wallet.save({ session });
 
-    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-    // STEP 4: MARK AS RETURNED
-    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-    item.status = "returned";
-    item.returnApprovedDate = new Date();
-    item.refundAmount = refundAmount;
-    item.refundMethod = "wallet";
-    item.refundStatus = "credited";
-    item.refundDate = new Date();
+//     // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+//     // STEP 4: MARK AS RETURNED
+//     // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+//     item.status = "returned";
+//     item.returnApprovedDate = new Date();
+//     item.refundAmount = refundAmount;
+//     item.refundMethod = "wallet";
+//     item.refundStatus = "credited";
+//     item.refundDate = new Date();
 
-    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-    // STEP 5: UPDATE ORDER STATUS
-    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-    const allReturned = order.items.every(i =>
-      ["cancelled", "returned"].includes(i.status)
-    );
+//     // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+//     // STEP 5: UPDATE ORDER STATUS
+//     // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+//     const allReturned = order.items.every(i =>
+//       ["cancelled", "returned"].includes(i.status)
+//     );
 
-    if (allReturned) {
-      order.orderStatus = "cancelled";
-      order.paymentStatus = "refunded";
-    } else {
-      const anyRefunded = order.items.some(i => 
-        i.refundAmount && i.refundAmount > 0
-      );
-      if (anyRefunded) {
-        order.paymentStatus = "partial_refunded";
-      }
-    }
+//     if (allReturned) {
+//       order.orderStatus = "cancelled";
+//       order.paymentStatus = "refunded";
+//     } else {
+//       const anyRefunded = order.items.some(i => 
+//         i.refundAmount && i.refundAmount > 0
+//       );
+//       if (anyRefunded) {
+//         order.paymentStatus = "partial_refunded";
+//       }
+//     }
 
-    await order.save({ session });
+//     await order.save({ session });
 
-    await session.commitTransaction();
-    session.endSession();
+//     await session.commitTransaction();
+//     session.endSession();
 
-    return res.json({
-      success: true,
-      message: "Return approved and refund processed successfully",
-      refundAmount: refundAmount,
-      breakdown: {
-        itemSubtotal: item.itemSubtotal,
-        couponDiscount: item.itemCouponShare,
-        itemAfterCoupon: item.itemAfterCoupon,
-        tax: item.itemTaxShare,
-        shipping: item.itemShippingShare,
-        totalRefund: refundAmount
-      }
-    });
+//     return res.json({
+//       success: true,
+//       message: "Return approved and refund processed successfully",
+//       refundAmount: refundAmount,
+//       breakdown: {
+//         itemSubtotal: item.itemSubtotal,
+//         couponDiscount: item.itemCouponShare,
+//         itemAfterCoupon: item.itemAfterCoupon,
+//         tax: item.itemTaxShare,
+//         shipping: item.itemShippingShare,
+//         totalRefund: refundAmount
+//       }
+//     });
 
-  } catch (err) {
-    await session.abortTransaction();
-    session.endSession();
-    console.error(" Approve Return Error:", err);
-    return res.status(500).json({
-      success: false,
-      message: "Server error while approving return",
-      error: err.message
-    });
-  }
-};
+//   } catch (err) {
+//     await session.abortTransaction();
+//     session.endSession();
+//     console.error(" Approve Return Error:", err);
+//     return res.status(500).json({
+//       success: false,
+//       message: "Server error while approving return",
+//       error: err.message
+//     });
+//   }
+// };
 
 
 export function distributeOrderCostsToItems(
