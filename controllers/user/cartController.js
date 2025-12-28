@@ -27,7 +27,7 @@ export const getCart = async (req, res) => {
 
       const offerData = await applyOfferToProduct({
         ...product,
-        variants: [variant], // only selected variant
+        variants: [variant], 
       });
 
       const offerVariant = offerData.variants[0];
@@ -108,7 +108,7 @@ export const getCartPage = async (req, res) => {
       await cart.save();
     }
 
-    // APPLY OFFER PRICING (SAFE)
+    // APPLY OFFER PRICING 
     for (let item of cart.items) {
       const product = item.product;
       const variant = product.variants[item.variantIndex];
