@@ -412,8 +412,7 @@
                       <p class="text-sm text-gray-900 font-bold">₹<%= (order.totalAmount || 0).toFixed(2) %></p>
                     </div>
                   </div>
-                  
-                  <!-- Date -->
+                 
                   <div>
                     <h4 class="text-xs text-gray-500 font-medium mb-1">Date</h4>
                     <p class="text-sm text-gray-900">
@@ -421,7 +420,7 @@
                     </p>
                   </div>
                   
-                  <!-- Items List -->
+                  
                   <div>
                     <h4 class="text-xs text-gray-500 font-medium mb-2">Items</h4>
                     <div class="space-y-2 max-h-32 overflow-y-auto pr-2">
@@ -443,8 +442,7 @@
                       <% }) %>
                     </div>
                   </div>
-                  
-                  <!-- Actions -->
+              
                   <div class="flex flex-col sm:flex-row gap-2 pt-3">
                     <a 
                       href="/admin/orders/<%= order._id %>" 
