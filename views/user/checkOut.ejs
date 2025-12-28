@@ -649,7 +649,7 @@
                 if (walletResponse.data.success) {
                     checkoutState.walletBalance = walletResponse.data.balance || 0;
 
-                     // ⭐ ADD THIS PART — UPDATE WALLET UI BLOCK
+                     //  ADD THIS PART — UPDATE WALLET UI BLOCK
     const walletBalanceUI = document.getElementById("walletBalanceDisplay");
     if (walletBalanceUI) {
         walletBalanceUI.textContent = checkoutState.walletBalance.toFixed(2);
@@ -728,38 +728,25 @@
             }
         }
 
-        // ========== COUPON FUNCTIONS - ADD THESE NEW FUNCTIONS ==========
         
-        // Load available coupons
-        // async function loadAvailableCoupons() {
-        //     try {
-        //         const response = await axios.get('/user/coupons/available');
-        //         if (response.data.success) {
-        //             checkoutState.availableCoupons = response.data.coupons || [];
-        //             renderAvailableCoupons();
-        //         }
-        //     } catch (error) {
-        //         console.error('Error loading coupons:', error);
-        //     }
-        // }
 
 
         
 async function loadAvailableCoupons() {
     try {
-        console.log("🔄 Loading available coupons...");
+        console.log("Loading available coupons...");
         const response = await axios.get('/user/coupons/available');
-        console.log("📦 Coupons response:", response.data);
+        console.log("Coupons response:", response.data);
         
         if (response.data.success) {
             checkoutState.availableCoupons = response.data.coupons || [];
-            console.log("✅ Loaded coupons:", checkoutState.availableCoupons.length);
+            console.log(" Loaded coupons:", checkoutState.availableCoupons.length);
             renderAvailableCoupons();
         } else {
-            console.log("❌ Failed to load coupons:", response.data.message);
+            console.log(" Failed to load coupons:", response.data.message);
         }
     } catch (error) {
-        console.error("💥 Error loading coupons:", error);
+        console.error(" Error loading coupons:", error);
     }
 }
         // Render available coupons
@@ -817,7 +804,7 @@ async function loadAvailableCoupons() {
         // Apply coupon
         async function applyCoupon() {
             const couponCode = document.getElementById('couponCode').value.trim().toUpperCase();
-             console.log("🎯 Applying coupon:", couponCode);
+             console.log("Applying coupon:", couponCode);
             const applyBtn = document.getElementById('applyCouponBtn');
             
             if (!couponCode) {
@@ -885,57 +872,57 @@ async function loadAvailableCoupons() {
             }, 5000);
         }
 
-        // Update order summary to include coupon discount
-        function updateOrderSummary() {
-            let subtotal = 0;
-            let itemCount = 0;
+    function updateOrderSummary() {
+    let subtotal = 0;
 
-            checkoutState.cartItems.forEach(item => {
-                const variant = item.product.variants[item.variantIndex];  
-subtotal += item.finalPrice * item.quantity;
-                itemCount += item.quantity;
-            });
+    checkoutState.cartItems.forEach(item => {
+        subtotal += Number(item.finalPrice) * Number(item.quantity);
+    });
 
-            const tax = subtotal * 0.10;
-            const shipping = subtotal > 500 ? 0 : 50;
-            const couponDiscount = checkoutState.appliedCoupon ? checkoutState.appliedCoupon.discountAmount : 0;
-            const total = subtotal + tax + shipping - couponDiscount;
+    subtotal = Number(subtotal.toFixed(2));
 
-            checkoutState.orderSummary = { subtotal, shipping, tax, total, couponDiscount };
+    const couponDiscount = checkoutState.appliedCoupon
+        ? Number(checkoutState.appliedCoupon.discountAmount || 0)
+        : 0;
 
-            document.getElementById('subtotal').textContent = `₹${subtotal.toFixed(2)}`;
-            document.getElementById('shipping').textContent = shipping === 0 ? 'FREE' : `₹${shipping.toFixed(2)}`;
-            document.getElementById('taxAmount').textContent = `₹${tax.toFixed(2)}`;
-            
-            // Add coupon discount row
-            let couponRow = document.getElementById('couponDiscountRow');
-            if (couponDiscount > 0) {
-                if (!couponRow) {
-                    couponRow = document.createElement('div');
-                    couponRow.id = 'couponDiscountRow';
-                    couponRow.className = 'flex justify-between text-green-600';
-                    document.querySelector('.space-y-3.mb-6').appendChild(couponRow);
-                }
-                couponRow.innerHTML = `
-                    <span>Coupon Discount</span>
-                    <span class="font-medium">-₹${couponDiscount.toFixed(2)}</span>
-                `;
-            } else if (couponRow) {
-                couponRow.remove();
-            }
-            
-            document.getElementById('totalAmount').textContent = `₹${total.toFixed(2)}`;
-            // Update main coupon discount (dashboard stat card)
-const couponStat = document.getElementById("totalCouponDiscount");
-if (couponStat) {
-    couponStat.textContent = `₹${couponDiscount.toFixed(2)}`;
-}
+    const subtotalAfterCoupon = Number((subtotal - couponDiscount).toFixed(2));
+    const tax = Number((subtotalAfterCoupon * 0.10).toFixed(2));
+    const shipping = subtotal > 500 ? 0 : 50;
+    const total = Number((subtotalAfterCoupon + tax + shipping).toFixed(2));
 
+    checkoutState.orderSummary = {
+        subtotal,
+        couponDiscount,
+        tax,
+        shipping,
+        total
+    };
+
+    document.getElementById('subtotal').textContent = `₹${subtotal.toFixed(2)}`;
+    document.getElementById('taxAmount').textContent = `₹${tax.toFixed(2)}`;
+    document.getElementById('shipping').textContent =
+        shipping === 0 ? 'FREE' : `₹${shipping.toFixed(2)}`;
+    document.getElementById('totalAmount').textContent = `₹${total.toFixed(2)}`;
+
+    let couponRow = document.getElementById('couponDiscountRow');
+
+    if (couponDiscount > 0) {
+        if (!couponRow) {
+            couponRow = document.createElement('div');
+            couponRow.id = 'couponDiscountRow';
+            couponRow.className = 'flex justify-between text-green-600';
+            document.querySelector('.space-y-3.mb-6').appendChild(couponRow);
         }
 
-        // ========== ALL YOUR EXISTING FUNCTIONS REMAIN THE SAME ==========
-        // (renderOrderItems, setupEventListeners, handlePlaceOrder, etc.)
-        // ALL YOUR ORIGINAL CODE STAYS EXACTLY THE SAME
+        couponRow.innerHTML = `
+            <span>Coupon Discount</span>
+            <span class="font-medium">-₹${couponDiscount.toFixed(2)}</span>
+        `;
+    } else if (couponRow) {
+        couponRow.remove();
+    }
+}
+
 
         // Render order items
 function renderOrderItems() {
@@ -958,7 +945,7 @@ function renderOrderItems() {
         const product = item.product;
         const variant = product.variants[item.variantIndex];
 
-        // ⭐ USE API PRICES (correct)
+        // USE API PRICES (correct)
         const finalPrice = item.finalPrice;
         const regularPrice = item.regularPrice;
         const qty = item.quantity;
@@ -993,7 +980,7 @@ function renderOrderItems() {
                         `}
                     </div>
 
-                    <!-- ⭐ Correct Price Block -->
+                    <!--  Correct Price Block -->
                   
                     <div class="mt-3 md:text-right">
 
@@ -1002,7 +989,7 @@ function renderOrderItems() {
         ₹${finalPrice.toFixed(2)}
     </p>
 
-    <!-- ❗ STRIKE THROUGH – total original MRP of all quantities -->
+    <!--  STRIKE THROUGH – total original MRP of all quantities -->
     <p class="text-gray-500 text-sm line-through">
         ₹${(regularPrice * qty).toFixed(2)}
     </p>
@@ -1031,7 +1018,7 @@ function renderOrderItems() {
         `;
     }).join('');
 
-    // ⭐ RIGHT-SIDE PREVIEW TOTAL
+    //  RIGHT-SIDE PREVIEW TOTAL
     previewContainer.innerHTML = checkoutState.cartItems.map(item => {
         const variant = item.product.variants[item.variantIndex];
         return `
@@ -1051,9 +1038,7 @@ function renderOrderItems() {
 }
 
 
-        // ALL YOUR OTHER EXISTING FUNCTIONS REMAIN EXACTLY THE SAME...
-        // (setupEventListeners, handleQuantityChange, handleRemoveItem, handlePlaceOrder, 
-        // handleAddOrUpdateAddress, openAddressModal, closeAddressModal, validation functions, etc.)
+     
 
         // Setup event listeners
         function setupEventListeners() {
@@ -1307,9 +1292,6 @@ function renderOrderItems() {
             hideAllErrors();
         }
 
-        // ALL YOUR EXISTING VALIDATION FUNCTIONS REMAIN THE SAME...
-        // (validateAddressForm, validateField, validateFullName, validatePhone, etc.)
-        // (showError, hideError, hideAllErrors, showNotification, etc.)
 
         // Setup address modal validation
         function setupAddressModalValidation() {
@@ -1409,7 +1391,6 @@ function validateAddressLine1(value) {
         return false;
     }
 
-    // ✅ Allow letters, numbers, spaces, , . - / #
     const addressRegex = /^[A-Za-z0-9\s,.-/#]+$/;
 
     if (!addressRegex.test(address)) {
