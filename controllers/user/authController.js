@@ -4,11 +4,9 @@ const DEFAULT_URL =
   "https://res.cloudinary.com/db5uwjwdv/image/upload/v1763442856/AdobeStock_1185421594_Preview_cvfm1v.jpg";
 const DEFAULT_ID = "AdobeStock_1185421594_Preview_cvfm1v";
 
-/**
- * Google OAuth Callback Controller
- */
+
 export const googleCallbackController = async (req, res) => {
-//   console.log("Google login successful for:", req.user?.email);
+  console.log("Google login successful for:", req.user?.email);
 
   try {
     let user = await User.findOne({ email: req.user.email });
@@ -30,7 +28,7 @@ export const googleCallbackController = async (req, res) => {
     //  Preserve admin session if exists
     const wasAdminLoggedIn = req.session.isAdmin;
 
-    // Store user session
+ 
     req.session.user = {
       id: user._id,
       name: user.name,
@@ -57,10 +55,10 @@ export const googleCallbackController = async (req, res) => {
         return res.redirect("/user/login");
       }
 
-    //   console.log("Session saved successfully:", {
-    //     user: req.session.user?.email,
-    //     isAdmin: req.session.isAdmin,
-    //   });
+      console.log("Session saved successfully:", {
+        user: req.session.user?.email,
+        isAdmin: req.session.isAdmin,
+      });
 
       res.redirect("/user/landing");
     });
