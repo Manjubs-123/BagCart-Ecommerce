@@ -540,7 +540,6 @@
                                 showConfirmButton: false
                             });
 
-                            // Wait for SweetAlert to close before reload
                             setTimeout(() => location.reload(), 1500);
                         })
                         .catch(error => {
@@ -548,7 +547,7 @@
                             Swal.fire('Error', error.message || 'Failed to toggle product status', 'error');
                         })
                         .finally(() => {
-                            // Re-enable buttons after the fetch completes
+                         
                             document.querySelectorAll('button').forEach(btn => btn.disabled = false);
                         });
                 }
