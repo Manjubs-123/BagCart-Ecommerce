@@ -22,12 +22,16 @@ export const isUserLoggedIn = async (req, res, next) => {
     }
 
     //If user blocked 
-    if (user.isBlocked) {
-      req.session.destroy(() => {
-        res.redirect("/user/login?blocked=true");
-      });
-      return;
-    }
+   if (user.isBlocked) {
+  req.session.isBlocked = true; // store reason BEFORE destroy
+
+  req.session.save(() => {
+    req.session.destroy(() => {
+      res.redirect("/user/login?blocked=true");
+    });
+  });
+  return;
+}
 
     // Keep user in req for convenience
     req.user = user;
