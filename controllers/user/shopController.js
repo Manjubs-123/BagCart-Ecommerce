@@ -71,7 +71,7 @@ if (!/[a-zA-Z0-9]/.test(safeSearch)) {
 
     
     const totalCount = await Product.countDocuments(filter);
-
+  //  console.log("Total products found:", totalCount);  
     let sortObj = { createdAt: -1 }; 
     switch (sort) {
       case "price-low":
