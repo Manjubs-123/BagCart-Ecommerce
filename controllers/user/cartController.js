@@ -144,6 +144,7 @@ export const getCartPage = async (req, res) => {
 
 
 
+
 export const addToCart = async (req, res) => {
   try {
     const { productId, quantity, variantIndex } = req.body;

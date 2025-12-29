@@ -801,63 +801,137 @@ async function loadAvailableCoupons() {
             document.getElementById('couponCode').value = code;
         }
 
-        // Apply coupon
+        // // Apply coupon
+        // async function applyCoupon() {
+        //     const couponCode = document.getElementById('couponCode').value.trim().toUpperCase();
+        //      console.log("Applying coupon:", couponCode);
+        //     const applyBtn = document.getElementById('applyCouponBtn');
+            
+        //     if (!couponCode) {
+        //         showCouponError('Please enter a coupon code');
+        //         return;
+        //     }
+            
+        //     try {
+        //         applyBtn.disabled = true;
+        //         applyBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Applying...';
+                
+        //         const response = await axios.post('/user/coupons/apply', {
+        //             couponCode: couponCode
+        //         });
+                
+        //         if (response.data.success) {
+        //             checkoutState.appliedCoupon = response.data.coupon;
+        //             updateOrderSummary();
+        //             showAppliedCoupon();
+        //             showNotification('Coupon applied successfully!', 'success');
+        //         } else {
+        //             showCouponError(response.data.message);
+        //         }
+        //     } catch (error) {
+        //         console.error('Error applying coupon:', error);
+        //         showCouponError('Failed to apply coupon');
+        //     } finally {
+        //         applyBtn.disabled = false;
+        //         applyBtn.innerHTML = 'Apply';
+        //     }
+        // }
+
+
         async function applyCoupon() {
-            const couponCode = document.getElementById('couponCode').value.trim().toUpperCase();
-             console.log("Applying coupon:", couponCode);
-            const applyBtn = document.getElementById('applyCouponBtn');
+    const couponCode = document.getElementById('couponCode').value.trim().toUpperCase();
+    console.log("Applying coupon:", couponCode);
+    const applyBtn = document.getElementById('applyCouponBtn');
+    
+    if (!couponCode) {
+        showCouponError('Please enter a coupon code');
+        return;
+    }
+    
+    try {
+        applyBtn.disabled = true;
+        applyBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Applying...';
+        
+        const response = await axios.post('/user/coupons/apply', {
+            couponCode: couponCode
+        });
+        
+        if (response.data.success) {
+            // CRITICAL FIX: Store the actual discount amount from backend
+            const coupon = response.data.coupon;
             
-            if (!couponCode) {
-                showCouponError('Please enter a coupon code');
-                return;
-            }
+            // Calculate the actual discount amount
+            const subtotal = checkoutState.cartItems.reduce((sum, item) => 
+                sum + (Number(item.finalPrice) * Number(item.quantity)), 0
+            );
             
-            try {
-                applyBtn.disabled = true;
-                applyBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Applying...';
-                
-                const response = await axios.post('/user/coupons/apply', {
-                    couponCode: couponCode
-                });
-                
-                if (response.data.success) {
-                    checkoutState.appliedCoupon = response.data.coupon;
-                    updateOrderSummary();
-                    showAppliedCoupon();
-                    showNotification('Coupon applied successfully!', 'success');
-                } else {
-                    showCouponError(response.data.message);
-                }
-            } catch (error) {
-                console.error('Error applying coupon:', error);
-                showCouponError('Failed to apply coupon');
-            } finally {
-                applyBtn.disabled = false;
-                applyBtn.innerHTML = 'Apply';
-            }
+            const rawDiscount = (subtotal * coupon.discountValue) / 100;
+            const actualDiscount = Math.min(rawDiscount, coupon.maxDiscountAmount);
+            
+            checkoutState.appliedCoupon = {
+                code: coupon.code,
+                discountValue: coupon.discountValue,
+                maxDiscountAmount: coupon.maxDiscountAmount,
+                discountAmount: Number(actualDiscount.toFixed(2)) // Store actual discount
+            };
+            
+            updateOrderSummary(); // Recalculate with coupon
+            showAppliedCoupon();
+            showNotification('Coupon applied successfully!', 'success');
+        } else {
+            showCouponError(response.data.message);
         }
+    } catch (error) {
+        console.error('Error applying coupon:', error);
+        showCouponError(error.response?.data?.message || 'Failed to apply coupon');
+    } finally {
+        applyBtn.disabled = false;
+        applyBtn.innerHTML = 'Apply';
+    }
+}
 
-        // Remove coupon
-        function removeCoupon() {
-            checkoutState.appliedCoupon = null;
-            document.getElementById('appliedCouponContainer').classList.add('hidden');
-            document.getElementById('couponCode').value = '';
-            updateOrderSummary();
-            showNotification('Coupon removed', 'info');
-        }
 
-        // Show applied coupon
-        function showAppliedCoupon() {
-            const container = document.getElementById('appliedCouponContainer');
-            const couponCode = document.getElementById('appliedCouponCode');
-            const couponDiscount = document.getElementById('appliedCouponDiscount');
+function removeCoupon() {
+    checkoutState.appliedCoupon = null;
+    document.getElementById('appliedCouponContainer').classList.add('hidden');
+    document.getElementById('couponCode').value = '';
+    updateOrderSummary(); // Recalculate without coupon
+    showNotification('Coupon removed', 'info');
+}
+
+        // // Remove coupon
+        // function removeCoupon() {
+        //     checkoutState.appliedCoupon = null;
+        //     document.getElementById('appliedCouponContainer').classList.add('hidden');
+        //     document.getElementById('couponCode').value = '';
+        //     updateOrderSummary();
+        //     showNotification('Coupon removed', 'info');
+        // }
+
+         function showAppliedCoupon() {
+    const container = document.getElementById('appliedCouponContainer');
+    const couponCode = document.getElementById('appliedCouponCode');
+    const couponDiscount = document.getElementById('appliedCouponDiscount');
+    
+    couponCode.textContent = checkoutState.appliedCoupon.code;
+    couponDiscount.textContent = `${checkoutState.appliedCoupon.discountValue}% off - Saved ₹${checkoutState.appliedCoupon.discountAmount.toFixed(2)}`;
+    
+    container.classList.remove('hidden');
+    document.getElementById('couponError').classList.add('hidden');
+}
+
+        // // Show applied coupon
+        // function showAppliedCoupon() {
+        //     const container = document.getElementById('appliedCouponContainer');
+        //     const couponCode = document.getElementById('appliedCouponCode');
+        //     const couponDiscount = document.getElementById('appliedCouponDiscount');
             
-            couponCode.textContent = checkoutState.appliedCoupon.code;
-            couponDiscount.textContent = `${checkoutState.appliedCoupon.discountValue}% off - Saved ₹${checkoutState.appliedCoupon.discountAmount}`;
+        //     couponCode.textContent = checkoutState.appliedCoupon.code;
+        //     couponDiscount.textContent = `${checkoutState.appliedCoupon.discountValue}% off - Saved ₹${checkoutState.appliedCoupon.discountAmount}`;
             
-            container.classList.remove('hidden');
-            document.getElementById('couponError').classList.add('hidden');
-        }
+        //     container.classList.remove('hidden');
+        //     document.getElementById('couponError').classList.add('hidden');
+        // }
 
         // Show coupon error
         function showCouponError(message) {
@@ -872,60 +946,136 @@ async function loadAvailableCoupons() {
             }, 5000);
         }
 
-    function updateOrderSummary() {
-    let subtotal = 0;
+        function updateOrderSummary() {
+  // Step 1: Calculate subtotal from cart items
+  let subtotal = 0;
+  checkoutState.cartItems.forEach(item => {
+    const unitPrice = Number(item.finalPrice);
+    const qty = Number(item.quantity);
+    subtotal += unitPrice * qty;
+  });
+  subtotal = Number(subtotal.toFixed(2));
 
-    checkoutState.cartItems.forEach(item => {
-        subtotal += Number(item.finalPrice) * Number(item.quantity);
-    });
+  // Step 2: Apply coupon discount (if any)
+  let couponDiscount = 0;
+  if (checkoutState.appliedCoupon && checkoutState.appliedCoupon.discountAmount) {
+    couponDiscount = Number(checkoutState.appliedCoupon.discountAmount);
+  }
 
-    subtotal = Number(subtotal.toFixed(2));
+  // Step 3: Calculate subtotal AFTER coupon (this is critical!)
+  const subtotalAfterCoupon = Number((subtotal - couponDiscount).toFixed(2));
 
-    const couponDiscount = checkoutState.appliedCoupon
-        ? Number(checkoutState.appliedCoupon.discountAmount || 0)
-        : 0;
+  // Step 4: Calculate tax on the REDUCED amount (after coupon)
+  const tax = Number((subtotalAfterCoupon * 0.10).toFixed(2));
 
-    const subtotalAfterCoupon = Number((subtotal - couponDiscount).toFixed(2));
-    const tax = Number((subtotalAfterCoupon * 0.10).toFixed(2));
-    const shipping = subtotal > 500 ? 0 : 50;
-    const total = Number((subtotalAfterCoupon + tax + shipping).toFixed(2));
+  // Step 5: Calculate shipping (based on original subtotal for free shipping threshold)
+  const shipping = subtotal > 500 ? 0 : 50;
 
-    checkoutState.orderSummary = {
-        subtotal,
-        couponDiscount,
-        tax,
-        shipping,
-        total
-    };
+  // Step 6: Calculate final total
+  const total = Number((subtotalAfterCoupon + tax + shipping).toFixed(2));
 
-    document.getElementById('subtotal').textContent = `₹${subtotal.toFixed(2)}`;
-    document.getElementById('taxAmount').textContent = `₹${tax.toFixed(2)}`;
-    document.getElementById('shipping').textContent =
-        shipping === 0 ? 'FREE' : `₹${shipping.toFixed(2)}`;
-    document.getElementById('totalAmount').textContent = `₹${total.toFixed(2)}`;
+  // Update UI
+  document.getElementById("subtotal").textContent = `₹${subtotal.toFixed(2)}`;
+  document.getElementById("taxAmount").textContent = `₹${tax.toFixed(2)}`;
+  document.getElementById("shipping").textContent = 
+    shipping === 0 ? "FREE" : `₹${shipping.toFixed(2)}`;
+  document.getElementById("totalAmount").textContent = `₹${total.toFixed(2)}`;
 
-    let couponRow = document.getElementById('couponDiscountRow');
-
-    if (couponDiscount > 0) {
-        if (!couponRow) {
-            couponRow = document.createElement('div');
-            couponRow.id = 'couponDiscountRow';
-            couponRow.className = 'flex justify-between text-green-600';
-            document.querySelector('.space-y-3.mb-6').appendChild(couponRow);
-        }
-
-        couponRow.innerHTML = `
-            <span>Coupon Discount</span>
-            <span class="font-medium">-₹${couponDiscount.toFixed(2)}</span>
-        `;
-    } else if (couponRow) {
-        couponRow.remove();
+  // Display coupon discount row
+  let couponRow = document.getElementById("couponDiscountRow");
+  
+  if (couponDiscount > 0) {
+    if (!couponRow) {
+      // Create coupon row if it doesn't exist
+      couponRow = document.createElement("div");
+      couponRow.id = "couponDiscountRow";
+      couponRow.className = "flex justify-between text-green-600";
+      
+      // Insert after subtotal, before tax
+      const summaryContainer = document.querySelector(".space-y-3.mb-6");
+      const taxRow = Array.from(summaryContainer.children).find(
+        child => child.textContent.includes("Tax")
+      );
+      summaryContainer.insertBefore(couponRow, taxRow);
     }
+    
+    // Update coupon row content
+    couponRow.innerHTML = `
+      <span>Coupon Discount</span>
+      <span class="font-medium">-₹${couponDiscount.toFixed(2)}</span>
+    `;
+  } else if (couponRow) {
+    // Remove coupon row if no coupon applied
+    couponRow.remove();
+  }
+
+  // Store in state for order placement
+  checkoutState.orderSummary = {
+    subtotal,
+    couponDiscount,
+    subtotalAfterCoupon,
+    tax,
+    shipping,
+    total
+  };
 }
+
+//     function updateOrderSummary() {
+//     let subtotal = 0;
+
+//     checkoutState.cartItems.forEach(item => {
+//         subtotal += Number(item.finalPrice) * Number(item.quantity);
+//     });
+
+//     subtotal = Number(subtotal.toFixed(2));
+
+//     const couponDiscount = checkoutState.appliedCoupon
+//         ? Number(checkoutState.appliedCoupon.discountAmount || 0)
+//         : 0;
+
+//     const subtotalAfterCoupon = Number((subtotal - couponDiscount).toFixed(2));
+//     const tax = Number((subtotalAfterCoupon * 0.10).toFixed(2));
+//     const shipping = subtotal > 500 ? 0 : 50;
+//     const total = Number((subtotalAfterCoupon + tax + shipping).toFixed(2));
+
+//     checkoutState.orderSummary = {
+//         subtotal,
+//         couponDiscount,
+//         tax,
+//         shipping,
+//         total
+//     };
+
+//     document.getElementById('subtotal').textContent = `₹${subtotal.toFixed(2)}`;
+//     document.getElementById('taxAmount').textContent = `₹${tax.toFixed(2)}`;
+//     document.getElementById('shipping').textContent =
+//         shipping === 0 ? 'FREE' : `₹${shipping.toFixed(2)}`;
+//     document.getElementById('totalAmount').textContent = `₹${total.toFixed(2)}`;
+
+//     let couponRow = document.getElementById('couponDiscountRow');
+
+//     if (couponDiscount > 0) {
+//         if (!couponRow) {
+//             couponRow = document.createElement('div');
+//             couponRow.id = 'couponDiscountRow';
+//             couponRow.className = 'flex justify-between text-green-600';
+//             document.querySelector('.space-y-3.mb-6').appendChild(couponRow);
+//         }
+
+//         couponRow.innerHTML = `
+//             <span>Coupon Discount</span>
+//             <span class="font-medium">-₹${couponDiscount.toFixed(2)}</span>
+//         `;
+//     } else if (couponRow) {
+//         couponRow.remove();
+//     }
+// }
 
 
         // Render order items
-function renderOrderItems() {
+
+
+    function renderOrderItems() {
     const container = document.getElementById('orderItemsContainer');
     const previewContainer = document.getElementById('orderPreviewContainer');
 

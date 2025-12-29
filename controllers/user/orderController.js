@@ -454,11 +454,15 @@ export const getMyOrders = async (req, res) => {
       }));
 
       //  ADD THIS: Attach dynamic summary
-      const summary = buildOrderSummary({
-        ...order,
-        items: fixedItems
-      });
-
+    const summary = buildOrderSummary({
+  ...order,
+  items: fixedItems
+}) || {
+  subtotal: 0,
+  tax: 0,
+  shipping: 0,
+  total: 0
+};
       return {
         ...order,
         items: fixedItems,
@@ -866,6 +870,9 @@ export const cancelItem = async (req, res) => {
     });
   }
 };
+
+
+
 
 
 
