@@ -411,6 +411,8 @@ export const getVariantByColor = async (req, res) => {
       return res.json({ success: false, message: "Variant not found" });
     }
 
+    
+
     const variant = product.variants[variantIndex];
 
     const variantProduct = {
