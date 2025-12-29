@@ -25,7 +25,6 @@ const generateOrderId = () => {
   return "BH-" + Math.floor(100000 + Math.random() * 900000).toString();
 };
 
-
 export const createOrder = async (req, res) => {
   const session = await mongoose.startSession();
   session.startTransaction();
@@ -71,23 +70,54 @@ export const createOrder = async (req, res) => {
     }
 
     // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    // 🔥 FIX 1: VALIDATE STOCK FIRST (BEFORE ANY CALCULATION)
+    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    for (const cartItem of cart.items) {
+      const product = await Product.findById(cartItem.product._id).session(session);
+      if (!product) {
+        await session.abortTransaction();
+        session.endSession();
+        return res.status(404).json({
+          success: false,
+          message: "Product not found"
+        });
+      }
+
+      const variant = product.variants[cartItem.variantIndex];
+      if (!variant) {
+        await session.abortTransaction();
+        session.endSession();
+        return res.status(404).json({
+          success: false,
+          message: "Variant not found"
+        });
+      }
+
+      // 🔥 CRITICAL: Check stock BEFORE creating order
+      if (variant.stock < cartItem.quantity) {
+        await session.abortTransaction();
+        session.endSession();
+        return res.status(409).json({
+          success: false,
+          message: `Stock changed for ${product.name}. Only ${variant.stock} left. Please review your cart.`,
+          productName: product.name,
+          availableStock: variant.stock,
+          requestedQty: cartItem.quantity
+        });
+      }
+    }
+
+    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
     // STEP 2: BUILD ORDER ITEMS WITH PRICES
     // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
     let orderItems = [];
     let subtotalBeforeCoupon = 0;
-const generatedOrderId = generateOrderId();
+    const generatedOrderId = generateOrderId();
 
     for (const cartItem of cart.items) {
       const product = cartItem.product;
       const variant = product.variants[cartItem.variantIndex];
 
-      if (!variant) {
-        await session.abortTransaction();
-        session.endSession();
-        return res.json({ success: false, message: "Variant not found" });
-      }
-
-      // Apply offers to get final price
       const offerData = await applyOfferToProduct({
         ...product.toObject(),
         variants: [variant]
@@ -105,10 +135,10 @@ const generatedOrderId = generateOrderId();
         product: product._id,
         variantIndex: cartItem.variantIndex,
         quantity: qty,
-        price: +finalPrice.toFixed(2), // Unit price
+        price: +finalPrice.toFixed(2),
         regularPrice: +regularPrice.toFixed(2),
-        itemSubtotal: +itemSubtotal.toFixed(2), // NEW: Total for this item
-          itemOrderId: `${generatedOrderId}-${orderItems.length + 1}`,
+        itemSubtotal: +itemSubtotal.toFixed(2),
+        itemOrderId: `${generatedOrderId}-${orderItems.length + 1}`,
         color: variant.color,
         image: variant.images?.[0]?.url || ""
       });
@@ -156,7 +186,7 @@ const generatedOrderId = generateOrderId();
       couponInfo = {
         code: coupon.code,
         discountAmount: couponDiscount,
-        subtotalBeforeCoupon: subtotalBeforeCoupon // NEW: Save original subtotal
+        subtotalBeforeCoupon: subtotalBeforeCoupon
       };
     }
 
@@ -165,16 +195,12 @@ const generatedOrderId = generateOrderId();
     // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
     // STEP 4: CALCULATE TAX & SHIPPING
     // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-    const taxRate = 0.10; // 10% GST
+    const taxRate = 0.10;
     const totalTax = +(subtotalAfterCoupon * taxRate).toFixed(2);
     const shippingFee = subtotalBeforeCoupon > 500 ? 0 : 50;
 
-   
-
-
     // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-    //  STEP 5: MAGIC PART - DISTRIBUTE COSTS TO ITEMS 
-    // This calculates HOW MUCH coupon/tax/shipping belongs to each item
+    // STEP 5: DISTRIBUTE COSTS TO ITEMS
     // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
     distributeOrderCostsToItems(
       orderItems,
@@ -184,44 +210,31 @@ const generatedOrderId = generateOrderId();
       shippingFee
     );
 
-    // SINGLE SOURCE OF TRUTH — NO FLOAT DRIFT
-const totalAmount = Number(
-  orderItems
-    .reduce((sum, item) => sum + item.itemFinalPayable, 0)
-    .toFixed(2)
-);
+    const totalAmount = Number(
+      orderItems
+        .reduce((sum, item) => sum + item.itemFinalPayable, 0)
+        .toFixed(2)
+    );
 
+    // 🔥 FIX 2: VALIDATE TOTAL CALCULATION
+    const sumCheck = Number(
+      orderItems
+        .reduce((sum, item) => sum + item.itemFinalPayable, 0)
+        .toFixed(2)
+    );
 
-    // Safety check: Make sure totals match
- const sumCheck = Number(
-  orderItems
-    .reduce((sum, item) => sum + item.itemFinalPayable, 0)
-    .toFixed(2)
-);
-
-const orderTotalRounded = Number(totalAmount.toFixed(2));
-
-if (Math.abs(sumCheck - totalAmount) > 0.001) {
-
-  console.error(" Item totals don't match order total!", {
-    sumCheck,
-    orderTotalRounded
-  });
-  await session.abortTransaction();
-  session.endSession();
-return res.status(409).json({
-  success: false,
-  message: err.message || "Stock changed. Please review your cart."
-});
-
-}
-
-
-console.log({
-  orderTotal: totalAmount,
-  itemsSum: orderItems.reduce((s, i) => s + i.itemFinalPayable, 0)
-});
-
+    if (Math.abs(sumCheck - totalAmount) > 0.01) {
+      console.error("❌ Item totals don't match order total!", {
+        sumCheck,
+        totalAmount
+      });
+      await session.abortTransaction();
+      session.endSession();
+      return res.status(500).json({
+        success: false,
+        message: "Order calculation error. Please try again."
+      });
+    }
 
     // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
     // STEP 6: COD & WALLET CHECKS
@@ -247,41 +260,13 @@ console.log({
       }
     }
 
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-// FINAL STOCK LOCK VALIDATION (MANDATORY)
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-for (const cartItem of cart.items) {
-  const product = await Product.findById(cartItem.product._id).session(session);
-  if (!product) {
-    throw new Error("Product not found");
-  }
-
-  const variant = product.variants[cartItem.variantIndex];
-  if (!variant) {
-    throw new Error("Variant not found");
-  }
-
-  if (variant.stock < cartItem.quantity) {
-   await session.abortTransaction();
-session.endSession();
-
-return res.status(409).json({
-  success: false,
-  message: `Stock changed for ${product.name}. Only ${variant.stock} left. Please review your cart.`
-});
-
-  }
-}
-
-
-
     // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
     // STEP 7: CREATE ORDER
     // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
     const order = await Order.create([{
-orderId: generatedOrderId,
+      orderId: generatedOrderId,
       user: userId,
-      items: orderItems, // Now has breakdown for each item!
+      items: orderItems,
       shippingAddress: address,
       paymentMethod,
       subtotal: subtotalBeforeCoupon,
@@ -293,37 +278,41 @@ orderId: generatedOrderId,
       orderStatus: "pending"
     }], { session });
 
-    //  STEP X: INCREMENT COUPON USAGE COUNT
-if (couponCode) {
-  await Coupon.updateOne(
-    { code: couponCode.toUpperCase() },
-    { $inc: { usedCount: 1 } },
-    { session }
-  );
-}
-
-
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-// STEP 8: STOCK DEDUCTION (ONLY FOR COD & WALLET)
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-if (paymentMethod === "cod" || paymentMethod === "wallet") {
-  for (const cartItem of cart.items) {
-    const product = await Product.findById(cartItem.product._id).session(session);
-    if (!product) continue;
-
-    const variant = product.variants[cartItem.variantIndex];
-    if (!variant) continue;
-
-    if (variant.stock < cartItem.quantity) {
-      throw new Error("Insufficient stock");
+    // INCREMENT COUPON USAGE COUNT
+    if (couponCode) {
+      await Coupon.updateOne(
+        { code: couponCode.toUpperCase() },
+        { $inc: { usedCount: 1 } },
+        { session }
+      );
     }
 
-    variant.stock -= cartItem.quantity;
-    product.markModified(`variants.${cartItem.variantIndex}.stock`);
-    await product.save({ session });
-  }
-}
+    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    // STEP 8: STOCK DEDUCTION (ONLY FOR COD & WALLET)
+    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    if (paymentMethod === "cod" || paymentMethod === "wallet") {
+      for (const cartItem of cart.items) {
+        const product = await Product.findById(cartItem.product._id).session(session);
+        if (!product) continue;
 
+        const variant = product.variants[cartItem.variantIndex];
+        if (!variant) continue;
+
+        // 🔥 DOUBLE CHECK STOCK (Critical for race conditions)
+        if (variant.stock < cartItem.quantity) {
+          await session.abortTransaction();
+          session.endSession();
+          return res.status(409).json({
+            success: false,
+            message: `Stock changed for ${product.name}. Please retry.`
+          });
+        }
+
+        variant.stock -= cartItem.quantity;
+        product.markModified(`variants.${cartItem.variantIndex}.stock`);
+        await product.save({ session });
+      }
+    }
 
     // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
     // STEP 9: WALLET DEDUCTION (IF WALLET PAYMENT)
@@ -352,26 +341,393 @@ if (paymentMethod === "cod" || paymentMethod === "wallet") {
     await session.commitTransaction();
     session.endSession();
 
+    // 🔥 FIX 3: RETURN EXACT AMOUNT TO FRONTEND
     return res.json({
       success: true,
       orderId: order[0]._id,
       customOrderId: order[0].orderId,
-      totalAmount: order[0].totalAmount,
-      razorpayAmount: paymentMethod === "razorpay" ? order[0].totalAmount * 100 : null,
-      paymentPending: paymentMethod === "razorpay"
+      totalAmount: order[0].totalAmount, // ✅ This must match Razorpay amount
+      razorpayAmount: paymentMethod === "razorpay" ? Math.round(order[0].totalAmount * 100) : null,
+      paymentPending: paymentMethod === "razorpay",
+      // 🔥 NEW: Send breakdown for verification
+      breakdown: {
+        subtotal: subtotalBeforeCoupon,
+        couponDiscount,
+        tax: totalTax,
+        shipping: shippingFee,
+        total: totalAmount
+      }
     });
 
   } catch (err) {
     await session.abortTransaction();
     session.endSession();
     console.error("ORDER CREATION ERROR:", err);
+    
+    // 🔥 FIX 4: Better error handling
+    if (err.message && err.message.includes('Stock')) {
+      return res.status(409).json({
+        success: false,
+        message: err.message
+      });
+    }
+    
     return res.status(500).json({
       success: false,
-      message: "Order failed",
+      message: "Order failed. Please try again.",
       error: err.message
     });
   }
 };
+
+
+
+// export const createOrder = async (req, res) => {
+//   const session = await mongoose.startSession();
+//   session.startTransaction();
+
+//   try {
+//     const userId = req.session.user?.id;
+//     if (!userId) {
+//       await session.abortTransaction();
+//       session.endSession();
+//       return res.status(401).json({ success: false, message: "Not logged in" });
+//     }
+
+//     const { addressId, paymentMethod, couponCode } = req.body;
+
+//     if (!addressId || !paymentMethod) {
+//       await session.abortTransaction();
+//       session.endSession();
+//       return res.json({
+//         success: false,
+//         message: "Delivery address and payment method required"
+//       });
+//     }
+
+//     // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+//     // STEP 1: LOAD CART & APPLY OFFERS
+//     // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+//     const cart = await Cart.findOne({ user: userId })
+//       .populate("items.product")
+//       .session(session);
+
+//     if (!cart || cart.items.length === 0) {
+//       await session.abortTransaction();
+//       session.endSession();
+//       return res.json({ success: false, message: "Cart is empty" });
+//     }
+
+//     const user = await User.findById(userId).session(session);
+//     const address = user.addresses.id(addressId);
+//     if (!address) {
+//       await session.abortTransaction();
+//       session.endSession();
+//       return res.json({ success: false, message: "Address not found" });
+//     }
+
+//     // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+//     // STEP 2: BUILD ORDER ITEMS WITH PRICES
+//     // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+//     let orderItems = [];
+//     let subtotalBeforeCoupon = 0;
+// const generatedOrderId = generateOrderId();
+
+//     for (const cartItem of cart.items) {
+//       const product = cartItem.product;
+//       const variant = product.variants[cartItem.variantIndex];
+
+//       if (!variant) {
+//         await session.abortTransaction();
+//         session.endSession();
+//         return res.json({ success: false, message: "Variant not found" });
+//       }
+
+//       // Apply offers to get final price
+//       const offerData = await applyOfferToProduct({
+//         ...product.toObject(),
+//         variants: [variant]
+//       });
+
+//       const offerVariant = offerData?.variants?.[0] || {};
+//       const finalPrice = Number(offerVariant.finalPrice ?? variant.price);
+//       const regularPrice = Number(offerVariant.regularPrice ?? variant.mrp ?? variant.price);
+//       const qty = Number(cartItem.quantity);
+
+//       const itemSubtotal = finalPrice * qty;
+//       subtotalBeforeCoupon += itemSubtotal;
+
+//       orderItems.push({
+//         product: product._id,
+//         variantIndex: cartItem.variantIndex,
+//         quantity: qty,
+//         price: +finalPrice.toFixed(2), // Unit price
+//         regularPrice: +regularPrice.toFixed(2),
+//         itemSubtotal: +itemSubtotal.toFixed(2), // NEW: Total for this item
+//           itemOrderId: `${generatedOrderId}-${orderItems.length + 1}`,
+//         color: variant.color,
+//         image: variant.images?.[0]?.url || ""
+//       });
+//     }
+
+//     subtotalBeforeCoupon = +subtotalBeforeCoupon.toFixed(2);
+
+//     // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+//     // STEP 3: APPLY COUPON (IF ANY)
+//     // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+//     let couponDiscount = 0;
+//     let couponInfo = null;
+
+//     if (couponCode) {
+//       const coupon = await Coupon.findOne({
+//         code: couponCode.toUpperCase(),
+//         isActive: true
+//       }).session(session);
+
+//       if (!coupon) {
+//         await session.abortTransaction();
+//         session.endSession();
+//         return res.json({ success: false, message: "Invalid coupon" });
+//       }
+
+//       if (coupon.expiryDate < new Date()) {
+//         await session.abortTransaction();
+//         session.endSession();
+//         return res.json({ success: false, message: "Coupon expired" });
+//       }
+
+//       if (subtotalBeforeCoupon < coupon.minOrderAmount) {
+//         await session.abortTransaction();
+//         session.endSession();
+//         return res.json({
+//           success: false,
+//           message: `Minimum order ₹${coupon.minOrderAmount} required`
+//         });
+//       }
+
+//       const rawDiscount = (subtotalBeforeCoupon * coupon.discountValue) / 100;
+//       couponDiscount = Math.min(rawDiscount, coupon.maxDiscountAmount);
+//       couponDiscount = +couponDiscount.toFixed(2);
+
+//       couponInfo = {
+//         code: coupon.code,
+//         discountAmount: couponDiscount,
+//         subtotalBeforeCoupon: subtotalBeforeCoupon // NEW: Save original subtotal
+//       };
+//     }
+
+//     const subtotalAfterCoupon = subtotalBeforeCoupon - couponDiscount;
+
+//     // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+//     // STEP 4: CALCULATE TAX & SHIPPING
+//     // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+//     const taxRate = 0.10; // 10% GST
+//     const totalTax = +(subtotalAfterCoupon * taxRate).toFixed(2);
+//     const shippingFee = subtotalBeforeCoupon > 500 ? 0 : 50;
+
+   
+
+
+//     // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+//     //  STEP 5: MAGIC PART - DISTRIBUTE COSTS TO ITEMS 
+//     // This calculates HOW MUCH coupon/tax/shipping belongs to each item
+//     // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+//     distributeOrderCostsToItems(
+//       orderItems,
+//       subtotalBeforeCoupon,
+//       couponDiscount,
+//       totalTax,
+//       shippingFee
+//     );
+
+//     // SINGLE SOURCE OF TRUTH — NO FLOAT DRIFT
+// const totalAmount = Number(
+//   orderItems
+//     .reduce((sum, item) => sum + item.itemFinalPayable, 0)
+//     .toFixed(2)
+// );
+
+
+//     // Safety check: Make sure totals match
+//  const sumCheck = Number(
+//   orderItems
+//     .reduce((sum, item) => sum + item.itemFinalPayable, 0)
+//     .toFixed(2)
+// );
+
+// const orderTotalRounded = Number(totalAmount.toFixed(2));
+
+// if (Math.abs(sumCheck - totalAmount) > 0.001) {
+
+//   console.error(" Item totals don't match order total!", {
+//     sumCheck,
+//     orderTotalRounded
+//   });
+//   await session.abortTransaction();
+//   session.endSession();
+// return res.status(409).json({
+//   success: false,
+//   message: err.message || "Stock changed. Please review your cart."
+// });
+
+// }
+
+
+// console.log({
+//   orderTotal: totalAmount,
+//   itemsSum: orderItems.reduce((s, i) => s + i.itemFinalPayable, 0)
+// });
+
+
+//     // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+//     // STEP 6: COD & WALLET CHECKS
+//     // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+//     if (paymentMethod === "cod" && totalAmount > 1000) {
+//       await session.abortTransaction();
+//       session.endSession();
+//       return res.json({
+//         success: false,
+//         message: "COD not available above ₹1000"
+//       });
+//     }
+
+//     if (paymentMethod === "wallet") {
+//       const wallet = await Wallet.findOne({ user: userId }).session(session);
+//       if (!wallet || wallet.balance < totalAmount) {
+//         await session.abortTransaction();
+//         session.endSession();
+//         return res.json({
+//           success: false,
+//           message: "Insufficient wallet balance"
+//         });
+//       }
+//     }
+
+// // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// // FINAL STOCK LOCK VALIDATION (MANDATORY)
+// // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// for (const cartItem of cart.items) {
+//   const product = await Product.findById(cartItem.product._id).session(session);
+//   if (!product) {
+//     throw new Error("Product not found");
+//   }
+
+//   const variant = product.variants[cartItem.variantIndex];
+//   if (!variant) {
+//     throw new Error("Variant not found");
+//   }
+
+//   if (variant.stock < cartItem.quantity) {
+//    await session.abortTransaction();
+// session.endSession();
+
+// return res.status(409).json({
+//   success: false,
+//   message: `Stock changed for ${product.name}. Only ${variant.stock} left. Please review your cart.`
+// });
+
+//   }
+// }
+
+
+
+//     // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+//     // STEP 7: CREATE ORDER
+//     // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+//     const order = await Order.create([{
+// orderId: generatedOrderId,
+//       user: userId,
+//       items: orderItems, // Now has breakdown for each item!
+//       shippingAddress: address,
+//       paymentMethod,
+//       subtotal: subtotalBeforeCoupon,
+//       tax: totalTax,
+//       shippingFee,
+//       totalAmount,
+//       coupon: couponInfo,
+//       paymentStatus: paymentMethod === "wallet" ? "paid" : "pending",
+//       orderStatus: "pending"
+//     }], { session });
+
+//     //  STEP X: INCREMENT COUPON USAGE COUNT
+// if (couponCode) {
+//   await Coupon.updateOne(
+//     { code: couponCode.toUpperCase() },
+//     { $inc: { usedCount: 1 } },
+//     { session }
+//   );
+// }
+
+
+// // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// // STEP 8: STOCK DEDUCTION (ONLY FOR COD & WALLET)
+// // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// if (paymentMethod === "cod" || paymentMethod === "wallet") {
+//   for (const cartItem of cart.items) {
+//     const product = await Product.findById(cartItem.product._id).session(session);
+//     if (!product) continue;
+
+//     const variant = product.variants[cartItem.variantIndex];
+//     if (!variant) continue;
+
+//     if (variant.stock < cartItem.quantity) {
+//       throw new Error("Insufficient stock");
+//     }
+
+//     variant.stock -= cartItem.quantity;
+//     product.markModified(`variants.${cartItem.variantIndex}.stock`);
+//     await product.save({ session });
+//   }
+// }
+
+
+//     // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+//     // STEP 9: WALLET DEDUCTION (IF WALLET PAYMENT)
+//     // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+//     if (paymentMethod === "wallet") {
+//       const wallet = await Wallet.findOne({ user: userId }).session(session);
+//       wallet.balance -= totalAmount;
+//       wallet.transactions.push({
+//         type: "debit",
+//         amount: totalAmount,
+//         description: `Order ${order[0].orderId}`,
+//         date: new Date()
+//       });
+//       await wallet.save({ session });
+
+//       order[0].orderStatus = "confirmed";
+//       await order[0].save({ session });
+//     }
+
+//     // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+//     // STEP 10: CLEAR CART
+//     // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+//     cart.items = [];
+//     await cart.save({ session });
+
+//     await session.commitTransaction();
+//     session.endSession();
+
+//     return res.json({
+//       success: true,
+//       orderId: order[0]._id,
+//       customOrderId: order[0].orderId,
+//       totalAmount: order[0].totalAmount,
+//       razorpayAmount: paymentMethod === "razorpay" ? order[0].totalAmount * 100 : null,
+//       paymentPending: paymentMethod === "razorpay"
+//     });
+
+//   } catch (err) {
+//     await session.abortTransaction();
+//     session.endSession();
+//     console.error("ORDER CREATION ERROR:", err);
+//     return res.status(500).json({
+//       success: false,
+//       message: "Order failed",
+//       error: err.message
+//     });
+//   }
+// };
 
 
 

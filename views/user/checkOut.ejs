@@ -1134,57 +1134,57 @@ function renderOrderItems() {
         }
 
         // Handle place order
- async function handlePlaceOrder() {
-  try {
-      const orderData = {
-          addressId: checkoutState.selectedAddress,
-          paymentMethod: checkoutState.selectedPaymentMethod,
-          couponCode: checkoutState.appliedCoupon ? checkoutState.appliedCoupon.code : null
-      };
+//  async function handlePlaceOrder() {
+//   try {
+//       const orderData = {
+//           addressId: checkoutState.selectedAddress,
+//           paymentMethod: checkoutState.selectedPaymentMethod,
+//           couponCode: checkoutState.appliedCoupon ? checkoutState.appliedCoupon.code : null
+//       };
 
-      const response = await axios.post('/api/orders', orderData);
+//       const response = await axios.post('/api/orders', orderData);
 
-      // DEBUG LOG
-      console.log("ORDER RESPONSE FROM BACKEND:", response.data);
+//       // DEBUG LOG
+//       console.log("ORDER RESPONSE FROM BACKEND:", response.data);
 
-      if (!response.data.success) {
-          return showNotification(response.data.message, "error");
-      }
+//       if (!response.data.success) {
+//           return showNotification(response.data.message, "error");
+//       }
 
-      // COD
-      if (checkoutState.selectedPaymentMethod === "cod") {
-          return window.location.href = `/order/confirmation/${response.data.orderId}`;
-      }
+//       // COD
+//       if (checkoutState.selectedPaymentMethod === "cod") {
+//           return window.location.href = `/order/confirmation/${response.data.orderId}`;
+//       }
 
-      // WALLET
-      if (checkoutState.selectedPaymentMethod === "wallet") {
-          return window.location.href = `/order/confirmation/${response.data.orderId}`;
-      }
+//       // WALLET
+//       if (checkoutState.selectedPaymentMethod === "wallet") {
+//           return window.location.href = `/order/confirmation/${response.data.orderId}`;
+//       }
 
-      // ONLINE PAYMENT (razorpay)
-      const rzpResponse = await axios.post("/api/payment/payment/create-order", {
-          orderId: response.data.orderId,
-          amount: response.data.totalAmount
-      });
+//       // ONLINE PAYMENT (razorpay)
+//       const rzpResponse = await axios.post("/api/payment/payment/create-order", {
+//           orderId: response.data.orderId,
+//           amount: response.data.totalAmount
+//       });
 
-      return initiateRazorpayPayment(rzpResponse.data);
+//       return initiateRazorpayPayment(rzpResponse.data);
 
-  } catch (err) {
-  console.error("FRONTEND ERROR:", err);
+//   } catch (err) {
+//   console.error("FRONTEND ERROR:", err);
 
-  const message =
-    err?.response?.data?.message ||
-    "Stock changed. Please review your cart.";
+//   const message =
+//     err?.response?.data?.message ||
+//     "Stock changed. Please review your cart.";
 
-  showNotification(message, "error");
+//   showNotification(message, "error");
 
-  // redirect user back to cart so they see updated stock
-  setTimeout(() => {
-    window.location.href = "/user/cart";
-  }, 1500);
-}
+//   // redirect user back to cart so they see updated stock
+//   setTimeout(() => {
+//     window.location.href = "/user/cart";
+//   }, 1500);
+// }
 
-}
+// }
 
 
         // Handle add or update address
@@ -1541,11 +1541,278 @@ function validateAddressLine1(value) {
                 }, 300);
             }, 5000);
         }
+
+        // 🔥 FIXED handlePlaceOrder function - Replace your existing one
+async function handlePlaceOrder() {
+  try {
+    // Validate selections
+    if (!checkoutState.selectedAddress) {
+      showNotification('Please select a delivery address', 'error');
+      return;
+    }
+
+    if (!checkoutState.selectedPaymentMethod) {
+      showNotification('Please select a payment method', 'error');
+      return;
+    }
+
+    // Disable button to prevent double submission
+    const placeOrderBtn = document.getElementById('placeOrderBtn');
+    placeOrderBtn.disabled = true;
+    placeOrderBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Processing...';
+
+    // Prepare order data
+    const orderData = {
+      addressId: checkoutState.selectedAddress,
+      paymentMethod: checkoutState.selectedPaymentMethod,
+      couponCode: checkoutState.appliedCoupon ? checkoutState.appliedCoupon.code : null
+    };
+
+    console.log("🔥 Placing order:", orderData);
+
+    // Create order
+    const response = await axios.post('/api/orders', orderData);
+
+    console.log("✅ Order response:", response.data);
+
+    // Handle errors
+    if (!response.data.success) {
+      placeOrderBtn.disabled = false;
+      placeOrderBtn.innerHTML = '<i class="fas fa-lock"></i><span>Place Order</span>';
+      
+      // 🔥 FIX: Handle stock errors specifically
+      if (response.status === 409) {
+        showNotification(response.data.message, "error");
+        setTimeout(() => {
+          window.location.href = "/user/cart";
+        }, 2000);
+        return;
+      }
+      
+      return showNotification(response.data.message, "error");
+    }
+
+    // 🔥 CRITICAL: Store order data in session for verification
+    sessionStorage.setItem('pendingOrder', JSON.stringify({
+      orderId: response.data.orderId,
+      totalAmount: response.data.totalAmount,
+      breakdown: response.data.breakdown
+    }));
+
+    // COD - Direct redirect
+    if (checkoutState.selectedPaymentMethod === "cod") {
+      return window.location.href = `/order/confirmation/${response.data.orderId}`;
+    }
+
+    // WALLET - Direct redirect
+    if (checkoutState.selectedPaymentMethod === "wallet") {
+      return window.location.href = `/order/confirmation/${response.data.orderId}`;
+    }
+
+    // ONLINE PAYMENT (razorpay)
+    if (checkoutState.selectedPaymentMethod === "razorpay") {
+      console.log("🔥 Creating Razorpay order...");
+      
+      const rzpResponse = await axios.post("/api/payment/payment/create-order", {
+        orderId: response.data.orderId,
+        amount: response.data.totalAmount // Use backend amount
+      });
+
+      console.log("✅ Razorpay order created:", rzpResponse.data);
+
+      // 🔥 FIX: Verify amount matches before showing Razorpay
+      if (Math.abs(rzpResponse.data.amount - response.data.totalAmount) > 0.01) {
+        console.error("❌ Amount mismatch!", {
+          orderAmount: response.data.totalAmount,
+          razorpayAmount: rzpResponse.data.amount
+        });
+        
+        placeOrderBtn.disabled = false;
+        placeOrderBtn.innerHTML = '<i class="fas fa-lock"></i><span>Place Order</span>';
+        
+        showNotification("Amount mismatch. Please refresh and try again.", "error");
+        return;
+      }
+
+      return initiateRazorpayPayment(rzpResponse.data);
+    }
+
+  } catch (err) {
+    console.error("❌ FRONTEND ERROR:", err);
+
+    // Re-enable button
+    const placeOrderBtn = document.getElementById('placeOrderBtn');
+    placeOrderBtn.disabled = false;
+    placeOrderBtn.innerHTML = '<i class="fas fa-lock"></i><span>Place Order</span>';
+
+    // 🔥 FIX: Better error handling for stock issues
+    if (err?.response?.status === 409) {
+      const message = err?.response?.data?.message || "Stock changed. Please review your cart.";
+      showNotification(message, "error");
+      
+      setTimeout(() => {
+        window.location.href = "/user/cart";
+      }, 2000);
+      return;
+    }
+
+    const message = err?.response?.data?.message || "Something went wrong. Please try again.";
+    showNotification(message, "error");
+  }
+}
+
+// 🔥 FIXED Razorpay initiation - Replace your existing one
+async function initiateRazorpayPayment(orderResponse) {
+  const { orderId, amount, currency, razorpayOrderId, breakdown } = orderResponse;
+
+  console.log("🔥 Initiating Razorpay:", {
+    orderId,
+    amount,
+    razorpayOrderId,
+    breakdown
+  });
+
+  // 🔥 FIX: Verify with stored order data
+  const pendingOrder = JSON.parse(sessionStorage.getItem('pendingOrder') || '{}');
+  
+  if (pendingOrder.orderId && pendingOrder.orderId !== orderId) {
+    console.error("❌ Order ID mismatch!");
+    showNotification("Order verification failed. Please try again.", "error");
+    return;
+  }
+
+  if (Math.abs(pendingOrder.totalAmount - amount) > 0.01) {
+    console.error("❌ Amount mismatch!", {
+      stored: pendingOrder.totalAmount,
+      razorpay: amount
+    });
+    showNotification("Amount mismatch. Please refresh and try again.", "error");
+    return;
+  }
+
+  const options = {
+    key: "<%= process.env.RZP_KEY_ID %>",
+    amount: Math.round(amount * 100), // Ensure integer paise
+    currency: currency,
+    name: "BagHub",
+    description: "Order Payment",
+    order_id: razorpayOrderId,
+    
+    // 🔥 FIX: Better modal dismiss handling
+    modal: {
+      ondismiss: function() {
+        console.log("⚠️ User closed Razorpay modal");
+        
+        // Clear pending order
+        sessionStorage.removeItem('pendingOrder');
+        
+        // Mark as failed and redirect
+        axios.post("/api/payment/verify", {
+          orderId: orderId,
+          failed: true
+        }).then(() => {
+          window.location.href = `/order/payment-failed/${orderId}`;
+        }).catch(() => {
+          window.location.href = `/order/payment-failed/${orderId}`;
+        });
+      }
+    },
+
+    handler: async function(response) {
+      console.log("✅ Payment successful:", response);
+      
+      try {
+        const verifyRes = await axios.post("/api/payment/verify", {
+          orderId: orderId,
+          razorpayPaymentId: response.razorpay_payment_id,
+          razorpayOrderId: response.razorpay_order_id,
+          razorpaySignature: response.razorpay_signature,
+        });
+
+        // Clear pending order
+        sessionStorage.removeItem('pendingOrder');
+
+        if (verifyRes.data.success) {
+          window.location.href = `/order/confirmation/${orderId}`;
+        } else {
+          // Handle refund case
+          if (verifyRes.data.refundInitiated) {
+            showNotification(verifyRes.data.message, "error");
+            setTimeout(() => {
+              window.location.href = `/order/payment-failed/${orderId}`;
+            }, 3000);
+          } else {
+            window.location.href = `/order/payment-failed/${orderId}`;
+          }
+        }
+      } catch (error) {
+        console.error("❌ Verification error:", error);
+        window.location.href = `/order/payment-failed/${orderId}`;
+      }
+    },
+
+    prefill: {
+      name: checkoutState.addresses.find(a => a._id === checkoutState.selectedAddress)?.fullName || "",
+      contact: checkoutState.addresses.find(a => a._id === checkoutState.selectedAddress)?.phone || ""
+    },
+
+    theme: {
+      color: "#1a56db"
+    },
+
+    // 🔥 CRITICAL: Handle payment failure
+    retry: {
+      enabled: true,
+      max_count: 3
+    }
+  };
+
+  const rzp = new Razorpay(options);
+
+  // 🔥 FIX: Handle Razorpay payment failure event
+  rzp.on('payment.failed', function(response) {
+    console.error("❌ Payment failed:", response.error);
+    
+    // Clear pending order
+    sessionStorage.removeItem('pendingOrder');
+    
+    axios.post("/api/payment/verify", {
+      orderId: orderId,
+      failed: true
+    }).then(() => {
+      window.location.href = `/order/payment-failed/${orderId}`;
+    }).catch(() => {
+      window.location.href = `/order/payment-failed/${orderId}`;
+    });
+  });
+
+  rzp.open();
+}
+
+// 🔥 NEW: Add verification on page load
+document.addEventListener('DOMContentLoaded', function() {
+  // Clear any stale pending orders
+  const pendingOrder = sessionStorage.getItem('pendingOrder');
+  if (pendingOrder) {
+    const orderData = JSON.parse(pendingOrder);
+    console.log("⚠️ Found pending order:", orderData);
+    
+    // If order is more than 5 minutes old, clear it
+    if (Date.now() - (orderData.timestamp || 0) > 5 * 60 * 1000) {
+      sessionStorage.removeItem('pendingOrder');
+    }
+  }
+  
+  loadCheckoutData();
+  setupEventListeners();
+  setupAddressModalValidation();
+});
     </script>
+    
 
     <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
 
-<script>
+<!-- <script>
 
 async function initiateRazorpayPayment(orderResponse) {
     const { orderId, amount, currency, razorpayOrderId } = orderResponse;
@@ -1622,7 +1889,7 @@ function startRazorpay(orderId, amount, razorpayOrderId) {
 
     new Razorpay(options).open();
 }
-</script>
+</script> -->
 
 
 

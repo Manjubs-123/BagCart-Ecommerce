@@ -39,3 +39,6 @@ export const sendOtpMail = async (email, otp) => {
     throw new Error("Failed to send OTP email");
   }
 };
+
+
+
