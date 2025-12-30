@@ -1104,7 +1104,7 @@ export const getCheckoutPage = async (req, res) => {
     }
 
     //  SAFE TO CHECKOUT
-    res.render("user/checkout", {
+    res.render("user/checkOut", {
       user: req.session.user,
       ordersCount: 0,
       wishlistCount: req.session.user?.wishlistCount || 0,
