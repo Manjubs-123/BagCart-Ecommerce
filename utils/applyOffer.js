@@ -2,7 +2,9 @@ import Offer from "../models/offerModel.js";
 
 export async function applyOfferToProduct(product) {
     try {
-        const now = new Date();
+        // const now = new Date();
+        const now = new Date(Date.now() - new Date().getTimezoneOffset() * 60000);
+
         const categoryId = product.category?._id || product.category;
 
         const offers = await Offer.find({
@@ -45,11 +47,11 @@ export async function applyOfferToProduct(product) {
                 finalPrice,
                 appliedOffer: bestOffer
                     ? {
-                          offerId: bestOffer._id,
-                          offerType: bestOffer.type,
-                          discountValue: bestOffer.discountValue,
-                          offerName: bestOffer.name
-                      }
+                        offerId: bestOffer._id,
+                        offerType: bestOffer.type,
+                        discountValue: bestOffer.discountValue,
+                        offerName: bestOffer.name
+                    }
                     : null
             };
         });

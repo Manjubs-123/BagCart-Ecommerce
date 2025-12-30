@@ -238,6 +238,8 @@ export const postCreateOffer = async (req, res) => {
 
     const start = new Date(validFrom);
     const end = new Date(validTo);
+        //  const now = new Date(Date.now() - new Date().getTimezoneOffset() * 60000);
+    // const newStart = new Date(start.getTime() - start.getTimezoneOffset() * 60000);
 
     if (isNaN(start) || isNaN(end)) {
       return res.status(400).json({
