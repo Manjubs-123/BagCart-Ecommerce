@@ -355,7 +355,7 @@ FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
 
 <div align="center">
 
-> 📋 See the full license in [`LICENSE.md`](https://github.com/Manjubs-123/BagCart-Ecommerce/blob/main/LICENSE.md)
+> 📋 See the full license in [`LICENSE`](https://github.com/Manjubs-123/BagCart-Ecommerce/blob/main/LICENSE)
 
 </div>
 
