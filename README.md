@@ -4,7 +4,7 @@
 <img src="https://capsule-render.vercel.app/api?type=waving&color=0:1a3a6b,50:0d6e8a,100:0e8b7a&height=220&section=header&text=🛍️%20BagHub&fontSize=80&fontColor=ffffff&animation=fadeIn&fontAlignY=40&desc=Adventure+Awaits+with+Premium+Bags&descAlignY=62&descAlign=50&descSize=20&descColor=f5a623" width="100%" />
 
 <!-- Typing SVG -->
-  <img src="https://readme-typing-svg.demolab.com?font=Poppins&weight=700&size=24&pause=1000&color=F5A623&center=true&vCenter=true&width=700&lines=🛍️+Premium+Bag+E-Commerce+Platform;🎒+Backpacks+%7C+School+Bags+%7C+Travel+Bags;⚡+Powered+by+Node.js+%26+MongoDB;🎨+Styled+with+Tailwind+CSS;🚀+Explore+Our+Hand-Picked+Collection!" alt="Typing SVG" />
+
 </a>
 
 <br/><br/>
